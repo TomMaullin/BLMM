@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.sparse
-from 2dtools import faclev_indices2D
+from lib.tools2d import faclev_indices2D
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #

@@ -1,0 +1,7 @@
+/well/win/software/packages/fsl/5.0.11/fslpython/envs/fslpython/lib/python3.6/site-packages/h5py/__init__.py:36: FutureWarning: Conversion of the second argument of issubdtype from `float` to `np.floating` is deprecated. In future, it will be treated as `np.float64 == np.dtype(float).type`.
+  from ._conv import register_converters as _register_converters
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/gpfs0/users/nichols/inf852/BLMM/lib/simRF.py", line 8, in <module>
+    import nilearn
+ModuleNotFoundError: No module named 'nilearn'

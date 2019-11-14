@@ -1,7 +1,7 @@
 import numpy as np
 import scipy
-from 3dtools import *
-from 2dtools import *
+from lib.tools3d import *
+from lib.tools2d import *
 
 def FS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
   

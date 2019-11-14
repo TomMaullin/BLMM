@@ -6,7 +6,7 @@ import scipy.sparse.linalg
 import sys
 import nibabel as nib
 import nilearn
-from 3dtools import *
+from lib.tools3d import *
 import sparse
 from FS import FS
 
