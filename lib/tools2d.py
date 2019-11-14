@@ -81,6 +81,37 @@ def vech2vec2D(vech):
 
 # ============================================================================
 #
+# This function maps a vector of the elements of the lower half of a square
+# symmetric matrix stacked column-wise to the original matrix.
+#
+# ============================================================================
+def vech2mat2D(vech):
+  
+  # dimension of matrix
+  n = np.int64((-1+np.sqrt(1+8*vech.shape[0]))/2)
+  matrix = np.zeros((n,n))
+  
+  # Get lower triangular indices
+  rowinds, colinds = np.tril_indices(matrix.shape[0])
+  
+  # They're in the wrong order so we need to order them
+  # To do this we first hash them
+  indhash = colinds*matrix.shape[0]+rowinds
+  
+  # Sort permutation
+  perm=np.argsort(indhash)
+  
+  # Assign values to lower half
+  matrix[rowinds[perm],colinds[perm]] = vech.reshape(vech.shape[0])
+  
+  # Assign values to upper half
+  matrix[colinds[perm],rowinds[perm]] = vech.reshape(vech.shape[0])
+  
+  # Return vectorised half-matrix
+  return(matrix)
+
+# ============================================================================
+#
 # This function generates a duplication matrix of size n^2 by n(n+1)/2,
 # which maps vech(X) to vec(X) for any symmetric n by n matrix X.
 #
