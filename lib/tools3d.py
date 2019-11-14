@@ -886,3 +886,43 @@ def getConvergedIndices(convergedBeforeIt, convergedDuringIt):
   local_notconverged = np.arange(len(convergedDuringIt))[convergedDuringIt==0]
   
   return(indices_ConAfterIt, indices_notConAfterIt, indices_conDuringIt, local_converged, local_notconverged)
+
+
+
+# TO DOCUMENT
+
+def get_mat_covdlDk(k, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict):
+  
+  # Sum of R_k kron R_(k1, k2, i, j) over i and j 
+  for i in np.arange(nlevels[k]):
+
+    # Get the indices for the kth factor jth level
+    Iki = faclev_indices2D(k, i, nlevels, nparams)
+
+    # Work out R_k
+    Rki = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Iki,Iki)] - (ZtZ[:,Iki,:] @ DinvIplusZtZD @ ZtZ[:,:,Iki])
+
+    # Work out Rk kron Rk
+    RkRt = kron3D(Rki,Rki)
+
+    # Add together
+    if i == 0:
+
+      RkRtSum = RkRt
+
+    else:
+
+      RkRtSum = RkRtSum + RkRt
+
+  
+  # Return the result
+  return(forceSym3D(RkRtSum))
+
+def get_vec_2dlDk(k, nlevels, nparams, sigma2, ZtZ, Zte, DinvIplusZtZD):
+      
+  # Convert it to vector
+  vecOfInterest = 2*mat2vec3D(get_dldDk3D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD))
+  
+  # Return it
+  return(vecOfInterest)
+
