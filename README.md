@@ -211,3 +211,7 @@ fslpython -c "import blm_serial; blm_serial.main('./test/cfg/test_cfg01_copy.yml
 fslpython -c "import blm_serial; blm_serial.main('./test/cfg/test_cfg02_copy.yml')
 fslpython -c "import blm_serial; blm_serial.main('./test/cfg/test_cfg03_copy.yml')
 ```
+
+# BLMM
+This repository contains all code for the BLMM toolbox. It is currently a WIP.
+
