@@ -8,7 +8,8 @@ import nibabel as nib
 import nilearn
 from lib.tools3d import *
 import sparse
-from lib.FS import FS
+#from lib.FS import FS
+from lib.SFS import SFS
 
 # Random Field based simulation
 def main():
@@ -204,7 +205,7 @@ def main():
 	# Run Simulation
 	#================================================================================
 	t1 = time.time()
-	paramVec = FS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6,n)
+	paramVec = SFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6,n)
 	t2 = time.time()
 	print(t2-t1)
 
