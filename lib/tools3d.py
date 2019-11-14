@@ -319,7 +319,7 @@ def initSigma23D(ete, n):
 # - `Dkest`: The inital estimate of D_k (Dhat_k in the above notation).
 #
 # ============================================================================
-def initDk3D(k, lk, ZtZ, Zte, sigma2):
+def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nparams):
   
   # Initalize D to zeros
   invSig2ZteetZminusZtZ = np.zeros((Zte.shape[0],nparams[k],nparams[k]))

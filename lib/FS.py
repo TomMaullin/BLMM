@@ -1,3 +1,5 @@
+import time
+import os
 import numpy as np
 import scipy
 from lib.tools3d import *
@@ -44,7 +46,7 @@ def FS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
   Ddict = dict()
   for k in np.arange(len(nparams)):
 
-    Ddict[k] = makeDnnd3D(initDk3D(k, nlevels[k], ZtZ, Zte, sigma2))
+    Ddict[k] = makeDnnd3D(initDk3D(k, ZtZ, Zte, sigma2, nlevels, nparams))
   
   # Full version of D
   D = getDfromDict3D(Ddict, nparams, nlevels)
@@ -233,11 +235,11 @@ def FS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     
     t2 = time.time()
     nit = nit + 1
-    print('Iteration num: ', nit)
-    print('Iteration time: ', t2-t1)
-    print('Num converged:', nv-nv_iter)
+    #print('Iteration num: ', nit)
+    #print('Iteration time: ', t2-t1)
+    #print('Num converged:', nv-nv_iter)
   
-  print('Total time taken: ', time.time()-t1_total)
-  print('Estimated NIFTI time (hours): ', 100*100*100/(nv*60*60)*(time.time()-t1_total))
+  #print('Total time taken: ', time.time()-t1_total)
+  #print('Estimated NIFTI time (hours): ', 100*100*100/(nv*60*60)*(time.time()-t1_total))
   
   return(savedparams)
