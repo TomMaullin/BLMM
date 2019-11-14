@@ -8,7 +8,7 @@ import nibabel as nib
 import nilearn
 from lib.tools3d import *
 import sparse
-from FS import FS
+from lib.FS import FS
 
 # Random Field based simulation
 def main():
@@ -22,7 +22,7 @@ def main():
 	#print(r)
 
 	# Number of levels, random number between 2 and 8
-	nlevels = [100,10]#np.random.randint(2,8,size=(r))
+	nlevels = np.array([30,10])#np.random.randint(2,8,size=(r))
 	# Let the first number of levels be a little larger (typically like subjects)
 	#nlevels[0] = np.random.randint(2,35,size=1)
 	#nlevels = np.sort(nlevels)[::-1]
@@ -30,7 +30,7 @@ def main():
 	#print(nlevels)
 
 	# Number of parameters, random number between 1 and 5
-	nparams = [3,1]#np.random.randint(1,6,size=(r))
+	nparams = np.array([3,1])#np.random.randint(1,6,size=(r))
 	#print("Number of parameters for each factor:")
 	#print(nparams)
 
@@ -50,7 +50,7 @@ def main():
 	#print(n)
 
 	# Voxel dimensions
-	dimv = [30,30,30]
+	dimv = [20,20,20]
 	nv = np.prod(dimv)
 	#print("Number of voxels:")
 	#print(nv)

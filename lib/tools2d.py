@@ -142,7 +142,7 @@ def invDupMat2D(n):
   vech = np.arange(n*(n+1)/2)
   
   # Convert to vec
-  vec = np.int64(vech2vec(vech))
+  vec = np.int64(vech2vec2D(vech))
   vec = vec.reshape(vec.shape[0])
   
   # Work out frequency of each entry
