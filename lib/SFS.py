@@ -46,7 +46,7 @@ def SFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
   Ddict = dict()
   for k in np.arange(len(nparams)):
 
-    Ddict[k] = makeDnnd3D(initDk3D(k, nlevels[k], ZtZ, Zte, sigma2))
+    Ddict[k] = makeDnnd3D(initDk3D(k, ZtZ, Zte, sigma2, nlevels, nparams))
   
   # Full version of D
   D = getDfromDict3D(Ddict, nparams, nlevels)
@@ -58,7 +58,7 @@ def SFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
   dupDuptMatdict = dict()
   for i in np.arange(len(nparams)):
 
-    invDupMatdict[i] = np.asarray(invDupMat(nparams[i]).todense())
+    invDupMatdict[i] = np.asarray(invDupMat2D(nparams[i]).todense())
     #dupInvDupMatdict[i] = np.asarray(dupMat(nparams[i]).todense()) @ invDupMatdict[i]
     #dupDuptMatdict[i] = np.asarray(dupMat(nparams[i]).todense()) @ np.asarray(dupMat(nparams[i]).todense()).transpose()
   
@@ -223,9 +223,5 @@ def SFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
   
   return(savedparams)
 
-t1 = time.time()
-paramVec = SFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6,n)
-t2 = time.time()
-print(t2-t1)
 
 
