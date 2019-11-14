@@ -729,7 +729,7 @@ def get_covdldDkdsigma23D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDu
   for j in np.arange(nlevels[k]):
 
     # Get the indices for the kth factor jth level
-    Ikj = faclev_indices(k, j, nlevels, nparams)
+    Ikj = faclev_indices2D(k, j, nlevels, nparams)
 
     # Work out R_(k, j)
     Rkj = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ikj,Ikj)] - forceSym3D(ZtZ[:,Ikj,:] @ DinvIplusZtZD @ ZtZ[:,:,Ikj])

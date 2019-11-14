@@ -225,6 +225,7 @@ def main():
 	beta = paramVec[:,0:p,:]
 	sigma2 = paramVec[:,p:(p+1)][:,0,0]
 
+	Ddict = dict()
 	# D as a dictionary
 	for k in np.arange(len(nparams)):
 
