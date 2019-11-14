@@ -824,3 +824,41 @@ def get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdi
   
   # Return the result
   return(covdldDk1dldk2)
+
+# TO DOCUMENT
+
+def get_mat_covdlDk(k, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict):
+  
+  # Sum of R_k kron R_(k1, k2, i, j) over i and j 
+  for i in np.arange(nlevels[k]):
+
+    # Get the indices for the kth factor jth level
+    Iki = faclev_indices(k, i, nlevels, nparams)
+
+    # Work out R_k
+    Rki = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Iki,Iki)] - (ZtZ[:,Iki,:] @ DinvIplusZtZD @ ZtZ[:,:,Iki])
+
+    # Work out Rk kron Rk
+    RkRt = kron_broadcasted(Rki,Rki)
+
+    # Add together
+    if i == 0:
+
+      RkRtSum = RkRt
+
+    else:
+
+      RkRtSum = RkRtSum + RkRt
+
+  
+  # Return the result
+  return(forceSym_broadcasted(RkRtSum))
+
+def get_vec_2dlDk(k, nlevels, nparams, sigma2, ZtZ, Zte, DinvIplusZtZD):
+      
+  # Convert it to vector
+  vecOfInterest = 2*mat2vec_broadcasted(get_dldDk_broadcasted(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD))
+  
+  # Return it
+  return(vecOfInterest)
+
