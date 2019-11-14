@@ -1,0 +1,8 @@
+Y_files:
+X:
+outdir:
+contrasts:
+  - c1:
+      name:
+      vector:
+      statType:
