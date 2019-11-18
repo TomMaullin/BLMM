@@ -250,3 +250,6 @@ def main():
 	b_est = (DinvIplusZtZD @ Zte).reshape(dimv[0],dimv[1],dimv[2],q)
 	b_true = b.reshape(dimv[0],dimv[1],dimv[2],q)
 	print(np.mean(np.mean(np.mean(np.abs(b_true-b_est)))))
+	print(np.mean(np.mean(np.mean(b_true-b_est))))
+	print(np.mean(np.mean(np.mean(b_true))))
+	print(np.mean(np.mean(np.mean(b_est))))
