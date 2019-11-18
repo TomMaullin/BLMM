@@ -172,7 +172,7 @@ def pFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     
     # Update step
     # ----------------------------------------------------------------------------
-    FisherInfoMat = forceSym3D(FisherInfoMat)
+    #FisherInfoMat = forceSym3D(FisherInfoMat)
     
     paramVector = paramVector + np.einsum('i,ijk->ijk',lam,(np.linalg.inv(FisherInfoMat) @ derivVector))
     
