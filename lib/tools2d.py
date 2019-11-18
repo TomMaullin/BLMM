@@ -824,3 +824,126 @@ def get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdi
   
   # Return the result
   return(covdldDk1dldk2)
+
+
+# ============================================================================
+#
+# The below function applies a mapping to a vector of parameters. (Used in PLS
+# - equivalent of what is described in Bates 2015)
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `theta`: the vector of theta parameters.
+# - `theta_inds`: A vector specifying how many times each theta parameter 
+#                 should be repeated. For example, if theta=[0.1,0.8,0.3] 
+#                 and theta_inds=[1,1,1,2,3,3], then the values to be mapped 
+#                 into the sparse matrix would be [0.1,0.1,0.1,0.8,0.3,0.3].
+# - `r_inds`: The row indices of the elements mapped into the sparse matrix.
+# - `c_inds`: The column indices of the elements mapped into the sparse matrix.
+#
+# ----------------------------------------------------------------------------
+#
+# It returns as outputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `Lambda`: The sparse matrix containing the elements oftheta in the correct
+#             indices.
+#
+# ============================================================================
+def mapping2D(theta, theta_inds, r_inds, c_inds):
+
+    return(spmatrix(theta[theta_inds.astype(np.int64)].tolist(), r_inds.astype(np.int64), c_inds.astype(np.int64)))
+    
+
+# ============================================================================
+#
+# This function takes in a square matrix M and outputs P and L from it's 
+# sparse cholesky decomposition of the form PAP'=LL'.
+#
+# Note: P is given as a permutation vector rather than a matrix. Also 
+# cholmod.options['supernodal'] must be set to 2.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `M`: The matrix to be sparse cholesky decomposed as an spmatrix from the 
+#        cvxopt package.
+# - `perm`: Input permutation (*optional*, one will be calculated if not)
+# - `retF`: Return the factorisation object or not
+# - `retP`: Return the permutation or not
+# - `retL`: Return the lower cholesky or not
+#
+# ----------------------------------------------------------------------------
+#
+# It returns as outputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `F`: A factorization object.
+#
+# ============================================================================
+def sparse_chol2D(M, perm=None, retF=False, retP=True, retL=True):
+
+    # Quick check that M is square
+    if M.size[0]!=M.size[1]:
+        raise Exception('M must be square.')
+
+    if not perm is None:
+        # Make an expression for the factorisation
+        F=cholmod.symbolic(M,p=perm)
+    else:
+        # Make an expression for the factorisation
+        F=cholmod.symbolic(M)
+
+    # Calculate the factorisation
+    cholmod.numeric(M, F)
+
+    # Empty factorisation object
+    factorisation = {}
+
+    if (retF and retL) or (retF and retP):
+
+        # Calculate the factorisation again (buggy if returning L for
+        # some reason)
+        F2=cholmod.symbolic(M,p=perm)
+        cholmod.numeric(M, F2)
+
+        # If we want to return the F object, add it to the dictionary
+        factorisation['F']=F2
+        
+    else:
+      
+      factorisation['F']=F
+
+    if retP:
+
+        # Set p to [0,...,n-1]
+        P = cvxopt.matrix(range(M.size[0]), (M.size[0],1), tc='d')
+
+        # Solve and replace p with the true permutation used
+        cholmod.solve(F, P, sys=7)
+
+        # Convert p into an integer array; more useful that way
+        P=cvxopt.matrix(np.array(P).astype(np.int64),tc='i')
+
+        # If we want to return the permutation, add it to the dictionary
+        factorisation['P']=P
+
+    if retL:
+
+        # Get the sparse cholesky factor
+        L=cholmod.getfactor(F)
+        
+        # If we want to return the factor, add it to the dictionary
+        factorisation['L']=L
+
+    # Return P and L
+    return(factorisation)

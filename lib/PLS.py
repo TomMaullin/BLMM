@@ -18,7 +18,7 @@ def PLS2D(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, ri
 
     # Obtain Lambda
     #t1 = time.time()
-    Lambda = mapping(theta, tinds, rinds, cinds)
+    Lambda = mapping2D(theta, tinds, rinds, cinds)
     #t2 = time.time()
     #print(t2-t1)#3.170967102050781e-05   9
     
@@ -43,7 +43,7 @@ def PLS2D(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, ri
     #print(t2-t1)#3.790855407714844e-05   2
     
     #t1 = time.time()
-    chol_dict = sparse_chol(LambdatZtZLambda+I, perm=P, retF=True, retP=False, retL=False)
+    chol_dict = sparse_chol2D(LambdatZtZLambda+I, perm=P, retF=True, retP=False, retL=False)
     F = chol_dict['F']
     #t2 = time.time()
     #print(t2-t1)#0.0001342296600341797   1
@@ -116,3 +116,43 @@ def PLS2D(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, ri
     #print(t2-t1)#4.506111145019531e-05   3
     
     return(-logllh)
+
+def PLS2D_getBeta(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, tinds, rinds, cinds):
+
+    # Obtain Lambda
+    Lambda = mapping(theta, tinds, rinds, cinds)
+    
+    # Obtain Lambda'
+    Lambdat = spmatrix.trans(Lambda)
+
+    # Obtain Lambda'Z'Y and Lambda'Z'X
+    LambdatZtY = Lambdat*ZtY
+    LambdatZtX = Lambdat*ZtX
+    
+    # Set the factorisation to use LL' instead of LDL'
+    cholmod.options['supernodal']=2
+
+    # Obtain the cholesky decomposition
+    LambdatZtZLambda = Lambdat*ZtZ*Lambda
+    I = spmatrix(1.0, range(Lambda.size[0]), range(Lambda.size[0]))
+    chol_dict = sparse_chol(LambdatZtZLambda+I, perm=P, retF=True, retP=False, retL=False)
+    F = chol_dict['F']
+
+    # Obtain C_u (annoyingly solve writes over the second argument,
+    # whereas spsolve outputs)
+    Cu = LambdatZtY[P,:]
+    cholmod.solve(F,Cu,sys=4)
+
+    # Obtain RZX
+    RZX = LambdatZtX[P,:]
+    cholmod.solve(F,RZX,sys=4)
+
+    # Obtain RXtRX
+    RXtRX = XtX - matrix.trans(RZX)*RZX
+
+    # Obtain beta estimates (note: gesv also replaces the second
+    # argument)
+    betahat = XtY - matrix.trans(RZX)*Cu
+    lapack.posv(RXtRX, betahat)
+
+    return(betahat)

@@ -174,7 +174,7 @@ def pFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     # ----------------------------------------------------------------------------
     #FisherInfoMat = forceSym3D(FisherInfoMat)
     
-    paramVector = paramVector + np.einsum('i,ijk->ijk',lam,(np.linalg.inv(FisherInfoMat) @ derivVector))
+    paramVector = paramVector + np.einsum('i,ijk->ijk',lam,(forceSym3D(np.linalg.inv(FisherInfoMat)) @ derivVector))
     
     # Get the new parameters
     beta = paramVector[:,0:p,:]
