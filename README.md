@@ -215,3 +215,10 @@ fslpython -c "import blm_serial; blm_serial.main('./test/cfg/test_cfg03_copy.yml
 # BLMM
 This repository contains all code for the BLMM toolbox. It is currently a WIP.
 
+#### Running simulations
+
+```
+$FSLDIR/fslpython/bin/conda config --append channels conda-forge
+$FSLDIR/fslpython/bin/conda create python=3.6 nilearn sparse -p ./blmmenv
+
+```
