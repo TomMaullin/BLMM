@@ -223,8 +223,8 @@ def main():
 	print(np.mean(np.mean(np.mean(np.abs(beta_True_map-beta_est_map)))))
 
 
-
-	FishIndsDk = np.int32(np.cumsum(nparams*(nparams+1)/2) + p + 1)
+	FishIndsDk = np.int32(np.cumsum(nparams**2) + p + 1)
+	#FishIndsDk = np.int32(np.cumsum(nparams*(nparams+1)/2) + p + 1)
 	FishIndsDk = np.insert(FishIndsDk,0,p+1)
 
 	# Get the parameters
@@ -235,7 +235,9 @@ def main():
 	# D as a dictionary
 	for k in np.arange(len(nparams)):
 
-	  Ddict[k] = makeDnnd3D(vech2mat3D(paramVec[:,FishIndsDk[k]:FishIndsDk[k+1],:]))
+	  #Ddict[k] = makeDnnd3D(vech2mat3D(paramVec[:,FishIndsDk[k]:FishIndsDk[k+1],:]))
+
+	  Ddict[k] = makeDnnd3D(vec2mat3D(paramVec[:,FishIndsDk[k]:FishIndsDk[k+1],:]))
 
 
 	  
@@ -250,6 +252,3 @@ def main():
 	b_est = (DinvIplusZtZD @ Zte).reshape(dimv[0],dimv[1],dimv[2],q)
 	b_true = b.reshape(dimv[0],dimv[1],dimv[2],q)
 	print(np.mean(np.mean(np.mean(np.abs(b_true-b_est)))))
-	print(np.mean(np.mean(np.mean(b_true-b_est))))
-	print(np.mean(np.mean(np.mean(b_true))))
-	print(np.mean(np.mean(np.mean(b_est))))
