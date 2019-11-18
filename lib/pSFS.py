@@ -5,7 +5,7 @@ import scipy
 from lib.tools3d import *
 from lib.tools2d import *
 
-def SFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
+def pSFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
   
   t1_total = time.time()
   t1 = time.time()

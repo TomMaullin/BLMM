@@ -9,7 +9,9 @@ import nilearn
 from lib.tools3d import *
 import sparse
 #from lib.FS import FS
-from lib.SFS import SFS
+#from lib.SFS import SFS
+from lib.pFS import pFS
+#from lib.pSFS import pSFS
 
 # Random Field based simulation
 def main():
@@ -205,7 +207,10 @@ def main():
 	# Run Simulation
 	#================================================================================
 	t1 = time.time()
-	paramVec = SFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6,n)
+	#paramVec = FS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6,n)
+	paramVec = pFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6,n)
+	#paramVec = SFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6,n)
+	#paramVec = pSFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6,n)
 	t2 = time.time()
 	print(t2-t1)
 
