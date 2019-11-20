@@ -73,7 +73,14 @@ def PLS2D(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, ri
     # argument)
     #t1 = time.time()
     betahat = XtY - matrix.trans(RZX)*Cu
-    lapack.posv(RXtRX, betahat)
+    try:
+        lapack.posv(RXtRX, betahat)
+    except:
+        print(P)
+        print(betahat)
+        print(RZX)
+        print(cu)
+        print(RXtRX)
     #t2 = time.time()
     #print(t2-t1)#1.7404556274414062e-05   6
 
