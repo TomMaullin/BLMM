@@ -123,7 +123,7 @@ def PLS2D(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, ri
 def PLS2D_getBeta(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, tinds, rinds, cinds):
 
     # Obtain Lambda
-    Lambda = mapping(theta, tinds, rinds, cinds)
+    Lambda = mapping2D(theta, tinds, rinds, cinds)
     
     # Obtain Lambda'
     Lambdat = spmatrix.trans(Lambda)
@@ -138,7 +138,7 @@ def PLS2D_getBeta(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, tind
     # Obtain the cholesky decomposition
     LambdatZtZLambda = Lambdat*ZtZ*Lambda
     I = spmatrix(1.0, range(Lambda.size[0]), range(Lambda.size[0]))
-    chol_dict = sparse_chol(LambdatZtZLambda+I, perm=P, retF=True, retP=False, retL=False)
+    chol_dict = sparse_chol2D(LambdatZtZLambda+I, perm=P, retF=True, retP=False, retL=False)
     F = chol_dict['F']
 
     # Obtain C_u (annoyingly solve writes over the second argument,
@@ -160,7 +160,7 @@ def PLS2D_getBeta(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, tind
         lapack.posv(RXtRX, betahat)
     except:
         lapack.gesv(RXtRX, betahat)
-        
+
     return(betahat)
 
 
@@ -260,7 +260,7 @@ def PLS2D_getSigma2(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, ti
 def PLS2D_getD(theta, tinds, rinds, cinds, sigma2):
 
     # Obtain Lambda
-    Lambda = mapping(theta, tinds, rinds, cinds)
+    Lambda = mapping2D(theta, tinds, rinds, cinds)
     
     # Obtain Lambda'
     Lambdat = spmatrix.trans(Lambda)
