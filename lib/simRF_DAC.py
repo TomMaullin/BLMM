@@ -247,7 +247,7 @@ def main():
     # Performance metric for beta
     #================================================================================
     # See how well it did
-    beta_True_map=beta_True.reshape(dimv[0],dimv[1],dimv[2],beta.shape[1])
+    #beta_True_map=beta_True.reshape(dimv[0],dimv[1],dimv[2],beta.shape[1])
     #beta_est_map=paramVec[:,0:p,:].reshape(dimv[0],dimv[1],dimv[2],beta.shape[1])
     #print(np.mean(np.mean(np.mean(np.abs(beta_True_map-beta_est_map)))))
 
@@ -265,6 +265,8 @@ def main():
         YtZ_current = cvxopt.matrix(YtZ[i,:,:])
         ZtY_current = cvxopt.matrix(ZtY[i,:,:])
         beta_est = PLS2D_getBeta(theta, ZtX, ZtY_current, XtX, ZtZ, XtY_current, YtX_current, YtZ_current, XtZ, YtY_current, n, P, tinds, rinds, cinds)
+        print(beta_est)
+        print(beta_True[i,:])
         sigma2_est = PLS2D_getSigma2(theta, ZtX, ZtY_current, XtX, ZtZ, XtY_current, YtX_current, YtZ_current, XtZ, YtY_current, n, P, tinds, rinds, cinds)
         D_est = PLS2D_getD(theta, tinds, rinds, cinds, sigma2)
     #DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
