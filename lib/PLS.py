@@ -76,7 +76,9 @@ def PLS2D(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, ri
     try:
         lapack.posv(RXtRX, betahat)
     except:
-        print(RXtRX)
+        print(XtY.size)
+        print(RZX.size)
+        print(Cu.size)
         print(RXtRX.size)
     #t2 = time.time()
     #print(t2-t1)#1.7404556274414062e-05   6
