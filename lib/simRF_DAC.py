@@ -235,7 +235,7 @@ def main():
     # Run Simulation
     #================================================================================
     t1 = time.time()
-    est_theta = divAndConq(theta0, inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+    est_theta = divAndConq_PLS(theta0, inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
     t2 = time.time()
     print('Time taken (seconds):', t2-t1)
 
