@@ -12,7 +12,7 @@ import sparse
 #from lib.SFS import SFS
 #from lib.pFS import pFS
 #from lib.pSFS import pSFS
-from lib.PLS import PLS2D, PLS2D_getBeta
+from lib.PLS import PLS2D, PLS2D_getBeta, PLS2D_getD, PLS2D_getSigma2
 import cvxopt
 import cvxopt.amd
 from cvxopt import cholmod
@@ -255,14 +255,15 @@ def main():
     ZtX_current = cvxopt.matrix(ZtX[0,:,:])
     ZtZ_current = cvxopt.sparse(cvxopt.matrix(ZtZ[0,:,:]))
     for i in theta_est.shape[0]:
+        theta = est_theta[i,:]
         XtY_current = cvxopt.matrix(XtY[i,:,:])
         YtX_current = cvxopt.matrix(YtX[i,:,:])
         YtY_current = cvxopt.matrix(YtY[i,:,:])
         YtZ_current = cvxopt.matrix(YtZ[i,:,:])
         ZtY_current = cvxopt.matrix(ZtY[i,:,:])
         beta_est = PLS2D_getBeta(theta, ZtX, ZtY_current, XtX, ZtZ, XtY_current, YtX_current, YtZ_current, XtZ, YtY_current, n, P, tinds, rinds, cinds)
-      
-    
+        sigma2_est = PLS2D_getSigma2(theta, ZtX, ZtY_current, XtX, ZtZ, XtY_current, YtX_current, YtZ_current, XtZ, YtY_current, n, P, tinds, rinds, cinds)
+        D_est = PLS2D_getD(theta, tinds, rinds, cinds, sigma2)
     #DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
 
     #Zte = ZtY - ZtX @ beta
