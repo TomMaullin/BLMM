@@ -231,11 +231,15 @@ def main():
 
     # Identity (Actually quicker to calculate outside of estimation)
     I = spmatrix(1.0, range(Lam.size[0]), range(Lam.size[0]))
+
+    # New array we will store estimates in
+    est_theta = np.zeros((XtY.shape[0], init_theta.shape[0]))
+
     #================================================================================
     # Run Simulation
     #================================================================================
     t1 = time.time()
-    est_theta = divAndConq_PLS(theta0, inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+    est_theta = divAndConq_PLS(theta0, inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
     t2 = time.time()
     print('Time taken (seconds):', t2-t1)
 
@@ -273,12 +277,7 @@ def main():
     #print(np.mean(np.mean(np.mean(np.abs(b_true-b_est)))))
 
 
-def divAndConq_PLS(init_theta, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta=[]):
-  
-    # If we haven't yet initialized our theta estimates, initialize them now
-    if not est_theta:
-
-        est_theta = np.zeros((XtY.shape[0], init_theta.shape[0]))
+def divAndConq_PLS(init_theta, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta):
 
     # Number of voxels and dimension of block we are looking at
     current_dimv = current_inds.shape
