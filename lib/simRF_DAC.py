@@ -260,19 +260,15 @@ def main():
     XtZ_current = cvxopt.matrix(XtZ[0,:,:])
     ZtX_current = cvxopt.matrix(ZtX[0,:,:])
     ZtZ_current = cvxopt.sparse(cvxopt.matrix(ZtZ[0,:,:]))
-    print('DAC done')
     for i in np.arange(est_theta.shape[0]):
         theta = est_theta[i,:]
-        print(theta.shape)
         XtY_current = cvxopt.matrix(XtY[i,:,:])
         YtX_current = cvxopt.matrix(YtX[i,:,:])
         YtY_current = cvxopt.matrix(YtY[i,:,:])
         YtZ_current = cvxopt.matrix(YtZ[i,:,:])
         ZtY_current = cvxopt.matrix(ZtY[i,:,:])
-        beta_est = PLS2D_getBeta(theta, ZtX, ZtY_current, XtX, ZtZ, XtY_current, YtX_current, YtZ_current, XtZ, YtY_current, n, P, tinds, rinds, cinds)
-        print(beta_est)
-        print(beta_True[i,:])
-        sigma2_est = PLS2D_getSigma2(theta, ZtX, ZtY_current, XtX, ZtZ, XtY_current, YtX_current, YtZ_current, XtZ, YtY_current, n, P, tinds, rinds, cinds)
+        beta_est = PLS2D_getBeta(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, tinds, rinds, cinds)
+        sigma2_est = PLS2D_getSigma2(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, tinds, rinds, cinds)
         D_est = PLS2D_getD(theta, tinds, rinds, cinds, sigma2)
     #DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
 
@@ -397,7 +393,6 @@ def divAndConq_PLS(init_theta, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, 
 
         # Save parameter estimates in correct location if we are only looking at one voxel
         est_theta[current_inds[:],:] = new_theta
-        print(est_theta.shape)
 
     return(est_theta)
 
