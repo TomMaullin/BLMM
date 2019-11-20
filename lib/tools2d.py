@@ -947,3 +947,95 @@ def sparse_chol2D(M, perm=None, retF=False, retP=True, retL=True):
 
     # Return P and L
     return(factorisation)
+
+
+# ============================================================================
+# This function takes in a vector of parameters, theta, and returns indices 
+# which maps them the to lower triangular block diagonal matrix, lambda.
+#
+# ----------------------------------------------------------------------------
+#
+# The following inputs are required for this function:
+#
+# ----------------------------------------------------------------------------
+#
+# - `nlevels`: a vector of the number of levels for each grouping factor. 
+#              e.g. nlevels=[10,2] means there are 10 levels for factor 1 and 
+#              2 levels for factor 2.
+# - `nparams`: a vector of the number of variables for each grouping factor. 
+#              e.g. nparams=[3,4] means there are 3 variables for factor 1 and
+#              4 variables for factor 2.
+#
+# All arrays must be np arrays.
+#
+# ----------------------------------------------------------------------------
+#
+# It returns as outputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `theta_repeated_inds`: This is a vector that tells us how to repeat the 
+#                          values in the theta vector. 
+# - `row_indices`: This is the row indices we enter the theta values into.
+# - `column_indices`: This is the column indices we enter the theta values 
+#                     into.
+#
+# Example: theta_repeated_inds = [1,1,2], row_inds = [2,3,3], col_inds = [3, 2, 3]
+#          This means we enter the first value of theta into elements [2,3] of 
+#          [3,2] of Lambda and the second element of theta into element [3,3]
+#          of Lambda.
+#
+# ============================================================================
+def get_mapping2D(nlevels, nparams):
+
+    # Work out how many factors there are
+    n_f = len(nlevels)
+
+    # Quick check that nlevels and nparams are the same length
+    if len(nlevels)!=len(nparams):
+        raise Exception('The number of parameters and number of levels should be recorded for every grouping factor.')
+
+    # Work out how many lambda components needed for each factor
+    n_lamcomps = (np.multiply(nparams,(nparams+1))/2).astype(np.int64)
+
+    # Block index is the index of the next un-indexed diagonal element
+    # of Lambda
+    block_index = 0
+
+    # Row indices and column indices of theta
+    row_indices = np.array([])
+    col_indices = np.array([])
+
+    # This will have the values of theta repeated several times, once
+    # for each time each value of theta appears in lambda
+    theta_repeated_inds = np.array([])
+    
+    # Loop through factors generating the indices to map theta to.
+    for i in range(0,n_f):
+
+        # Work out the indices of a lower triangular matrix
+        # of size #variables(factor) by #variables(factor)
+        row_inds_tri, col_inds_tri = np.tril_indices(nparams[i])
+
+        # Work out theta for this block
+        theta_current_inds = np.arange(np.sum(n_lamcomps[0:i]),np.sum(n_lamcomps[0:(i+1)]))
+
+        # Work out the repeated theta
+        theta_repeated_inds = np.hstack((theta_repeated_inds, np.tile(theta_current_inds, nlevels[i])))
+
+        # For each level of the factor we must repeat the lower
+        # triangular matrix
+        for j in range(0,nlevels[i]):
+
+            # Append the row/column indices to the running list
+            row_indices = np.hstack((row_indices, (row_inds_tri+block_index)))
+            col_indices = np.hstack((col_indices, (col_inds_tri+block_index)))
+
+            # Move onto the next block
+            block_index = block_index + nparams[i]
+
+    # Create lambda as a sparse matrix
+    #lambda_theta = spmatrix(theta_repeated.tolist(), row_indices.astype(np.int64), col_indices.astype(np.int64))
+
+    # Return lambda
+    return(theta_repeated_inds, row_indices, col_indices)

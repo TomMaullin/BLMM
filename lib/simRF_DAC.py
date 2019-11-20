@@ -220,8 +220,8 @@ def main():
     # Indices required by DAC
     #================================================================================
     inds = np.arange(nv).reshape(dimv)
-    tinds,rinds,cinds=get_mapping(nlevels, nparams)
-    Lam=mapping(np.random.randn(theta0.shape[0]),tinds,rinds,cinds)
+    tinds,rinds,cinds=get_mapping2D(nlevels, nparams)
+    Lam=mapping2D(np.random.randn(theta0.shape[0]),tinds,rinds,cinds)
 
     # Obtain Lambda'Z'ZLambda
     LamtZtZLam = spmatrix.trans(Lam)*cvxopt.sparse(matrix(ZtZ[0,:,:]))*Lam
