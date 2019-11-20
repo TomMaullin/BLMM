@@ -278,7 +278,7 @@ def divAndConq_PLS(init_theta, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, 
     # If we haven't yet initialized our theta estimates, initialize them now
     if not est_theta:
 
-        est_theta = np.zeros(XtX.shape[0], init_theta.shape[1])
+        est_theta = np.zeros(XtX.shape[0], init_theta.shape[0])
 
     # Number of voxels and dimension of block we are looking at
     current_dimv = current_inds.shape
@@ -401,7 +401,7 @@ def divAndConq_FS(init_theta, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, X
     # If we haven't yet initialized our theta estimates, initialize them now
     if not est_theta:
 
-        est_theta = np.zeros(XtX.shape[0], init_theta.shape[1])
+        est_theta = np.zeros(XtX.shape[0], init_theta.shape[0])
 
     # Number of voxels and dimension of block we are looking at
     current_dimv = current_inds.shape
