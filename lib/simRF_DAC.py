@@ -233,7 +233,7 @@ def main():
     I = spmatrix(1.0, range(Lam.size[0]), range(Lam.size[0]))
 
     # New array we will store estimates in
-    est_theta = np.zeros((XtY.shape[0], init_theta.shape[0]))
+    est_theta = np.zeros((XtY.shape[0], theta0.shape[0]))
 
     #================================================================================
     # Run Simulation
