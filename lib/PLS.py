@@ -156,8 +156,11 @@ def PLS2D_getBeta(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, tind
     # Obtain beta estimates (note: gesv also replaces the second
     # argument)
     betahat = XtY - matrix.trans(RZX)*Cu
-    lapack.posv(RXtRX, betahat)
-
+    try:
+        lapack.posv(RXtRX, betahat)
+    except:
+        lapack.gesv(RXtRX, betahat)
+        
     return(betahat)
 
 
@@ -221,7 +224,10 @@ def PLS2D_getSigma2(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, ti
     # argument)
     #t1 = time.time()
     betahat = XtY - matrix.trans(RZX)*Cu
-    lapack.posv(RXtRX, betahat)
+    try:
+        lapack.posv(RXtRX, betahat)
+    except:
+        lapack.gesv(RXtRX, betahat)
     #t2 = time.time()
     #print(t2-t1)#1.7404556274414062e-05   6
 
