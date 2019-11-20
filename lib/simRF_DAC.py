@@ -260,6 +260,7 @@ def main():
     XtZ_current = cvxopt.matrix(XtZ[0,:,:])
     ZtX_current = cvxopt.matrix(ZtX[0,:,:])
     ZtZ_current = cvxopt.sparse(cvxopt.matrix(ZtZ[0,:,:]))
+    print('DAC done')
     for i in np.arange(est_theta.shape[0]):
         theta = est_theta[i,:]
         print(theta.shape)
@@ -394,16 +395,8 @@ def divAndConq_PLS(init_theta, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, 
 
     else:
 
-        print('active')
-        print('est_theta shape')
-        print(est_theta.shape)
-        print('new_theta shape')
-        print(new_theta.shape)
-        print('current inds')
-        print(current_inds)
         # Save parameter estimates in correct location if we are only looking at one voxel
         est_theta[current_inds[:],:] = new_theta
-        print('est_theta shape new')
         print(est_theta.shape)
 
     return(est_theta)
