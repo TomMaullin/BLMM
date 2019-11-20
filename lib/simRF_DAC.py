@@ -267,17 +267,21 @@ def main():
         YtY_current = cvxopt.matrix(YtY[i,:,:])
         YtZ_current = cvxopt.matrix(YtZ[i,:,:])
         ZtY_current = cvxopt.matrix(ZtY[i,:,:])
-        beta_est = PLS2D_getBeta(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, tinds, rinds, cinds)
+
+        beta_est = np.array(PLS2D_getBeta(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, tinds, rinds, cinds))
+
         sigma2_est = PLS2D_getSigma2(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)
-        D_est = PLS2D_getD(theta, tinds, rinds, cinds, sigma2)
-    #DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+        D_est = np.array(PLS2D_getD(theta, tinds, rinds, cinds, sigma2_est))
+        DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+        Zte = ZtY - ZtX @ beta
+        b_est = (DinvIplusZtZD @ Zte)
+        b_true = b[i,:]
 
-    #Zte = ZtY - ZtX @ beta
+        beta_runningsum = beta_runningsum + np.sum(np.abs(beta_True[i,:] - beta_est))
+        b_runningsum = b_runningsum + np.sum(np.abs(b_true - beta_est))
 
-        
-    #b_est = (DinvIplusZtZD @ Zte).reshape(dimv[0],dimv[1],dimv[2],q)
-    #b_true = b.reshape(dimv[0],dimv[1],dimv[2],q)
-    #print(np.mean(np.mean(np.mean(np.abs(b_true-b_est)))))
+    print(beta_runningsum/nv)
+    print(b_runningsum/nv)
 
 
 def divAndConq_PLS(init_theta, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta):
