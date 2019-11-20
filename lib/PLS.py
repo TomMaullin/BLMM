@@ -12,6 +12,7 @@ import sparse
 import nibabel as nib
 import nilearn
 import sparse
+from lib.tools2d import *
 
 def PLS2D(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds):
 
