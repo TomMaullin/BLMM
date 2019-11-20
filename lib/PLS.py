@@ -1,7 +1,6 @@
 import numpy as np
 import cvxopt
 from cvxopt import cholmod, umfpack, amd, matrix, spmatrix, lapack
-import pandas as pd
 from scipy.optimize import root
 from scipy.optimize import minimize
 import scipy.sparse
