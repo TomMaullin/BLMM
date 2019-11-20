@@ -273,7 +273,7 @@ def main():
     #print(np.mean(np.mean(np.mean(np.abs(b_true-b_est)))))
 
 
-def divAndConq_PLS_PLS(init_theta, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta=[]):
+def divAndConq_PLS(init_theta, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta=[]):
   
     # If we haven't yet initialized our theta estimates, initialize them now
     if not est_theta:
