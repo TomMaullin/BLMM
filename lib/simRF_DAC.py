@@ -15,10 +15,8 @@ import sparse
 #from lib.pSFS import pSFS
 from lib.PLS import PLS2D, PLS2D_getBeta, PLS2D_getD, PLS2D_getSigma2
 import cvxopt
-import cvxopt.amd
-from cvxopt import cholmod
-from cvxopt import sparse
-from cvxopt import matrix
+from cvxopt import cholmod, umfpack, amd, matrix, spmatrix, lapack
+from scipy.optimize import minimize
 
 # Random Field based simulation
 def main():
@@ -228,7 +226,7 @@ def main():
     LamtZtZLam = spmatrix.trans(Lam)*cvxopt.sparse(matrix(ZtZ[0,:,:]))*Lam
 
     # Obtaining permutation for PLS
-    P=cvxopt.amd.order(LamtZtZLam)
+    P=amd.order(LamtZtZLam)
 
     # Identity (Actually quicker to calculate outside of estimation)
     I = spmatrix(1.0, range(Lam.size[0]), range(Lam.size[0]))
@@ -276,6 +274,129 @@ def main():
 
 
 def divAndConq_PLS(init_theta, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta=[]):
+  
+    # If we haven't yet initialized our theta estimates, initialize them now
+    if not est_theta:
+
+        est_theta = np.zeros(XtX.shape[0], init_theta.shape[1])
+
+    # Number of voxels and dimension of block we are looking at
+    current_dimv = current_inds.shape
+    current_nv = np.prod(current_dimv)
+
+    # Current indices as a vector
+    current_inds_vec = current_inds.reshape(current_nv)
+
+    # Matrices for estimating mean of current block
+    XtX_current = cvxopt.matrix(XtX[0,:,:])
+    XtY_current = cvxopt.matrix(np.mean(XtY[current_inds_vec,:,:], axis=0))
+    XtZ_current = cvxopt.matrix(XtZ[0,:,:])
+    YtX_current = cvxopt.matrix(np.mean(YtX[current_inds_vec,:,:],axis=0))
+    YtY_current = cvxopt.matrix(np.mean(YtY[current_inds_vec,:,:],axis=0))
+    YtZ_current = cvxopt.matrix(np.mean(YtZ[current_inds_vec,:,:],axis=0))
+    ZtX_current = cvxopt.matrix(ZtX[0,:,:])
+    ZtY_current = cvxopt.matrix(np.mean(ZtY[current_inds_vec,:,:],axis=0))
+    ZtZ_current = cvxopt.sparse(cvxopt.matrix(ZtZ[0,:,:]))
+
+    # Get new theta
+    tmp = minimize(PLS2D, init_theta, args=(ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds), method='L-BFGS-B', tol=1e-6)
+    new_theta = tmp.x
+
+    if current_dimv[0]!=1 and current_dimv[1]!=1 and current_dimv[2]!=1:
+
+        # Split into blocks - assuming current inds is a block
+        current_inds_block1 = current_inds[:(current_dimv[0]//2),:(current_dimv[1]//2),:(current_dimv[2]//2)]
+        current_inds_block2 = current_inds[(current_dimv[0]//2):,:(current_dimv[1]//2),:(current_dimv[2]//2)]
+        current_inds_block3 = current_inds[:(current_dimv[0]//2),(current_dimv[1]//2):,:(current_dimv[2]//2)]
+        current_inds_block4 = current_inds[:(current_dimv[0]//2),:(current_dimv[1]//2),(current_dimv[2]//2):]
+        current_inds_block5 = current_inds[(current_dimv[0]//2):,(current_dimv[1]//2):,:(current_dimv[2]//2)]
+        current_inds_block6 = current_inds[(current_dimv[0]//2):,:(current_dimv[1]//2),(current_dimv[2]//2):]
+        current_inds_block7 = current_inds[:(current_dimv[0]//2),(current_dimv[1]//2):,(current_dimv[2]//2):]
+        current_inds_block8 = current_inds[(current_dimv[0]//2):,(current_dimv[1]//2):,(current_dimv[2]//2):]
+
+        est_theta = divAndConq(new_theta, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+        est_theta = divAndConq(new_theta, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+        est_theta = divAndConq(new_theta, current_inds_block3, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+        est_theta = divAndConq(new_theta, current_inds_block4, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+        est_theta = divAndConq(new_theta, current_inds_block5, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+        est_theta = divAndConq(new_theta, current_inds_block6, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+        est_theta = divAndConq(new_theta, current_inds_block7, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+        est_theta = divAndConq(new_theta, current_inds_block8, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+
+    elif current_dimv[0]!=1 and current_dimv[1]!=1:
+
+        # Split into blocks - assuming current inds is a block
+        current_inds_block1 = current_inds[:(current_dimv[0]//2),:(current_dimv[1]//2),:]
+        current_inds_block2 = current_inds[(current_dimv[0]//2):,:(current_dimv[1]//2),:]
+        current_inds_block3 = current_inds[:(current_dimv[0]//2),(current_dimv[1]//2):,:]
+        current_inds_block4 = current_inds[(current_dimv[0]//2):,(current_dimv[1]//2):,:]
+
+        est_theta = divAndConq(new_theta, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+        est_theta = divAndConq(new_theta, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+        est_theta = divAndConq(new_theta, current_inds_block3, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+        est_theta = divAndConq(new_theta, current_inds_block4, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+
+    elif current_dimv[0]!=1 and current_dimv[2]!=1:
+
+        # Split into blocks - assuming current inds is a block
+        current_inds_block1 = current_inds[:(current_dimv[0]//2),:,:(current_dimv[2]//2)]
+        current_inds_block2 = current_inds[(current_dimv[0]//2):,:,:(current_dimv[2]//2)]
+        current_inds_block3 = current_inds[:(current_dimv[0]//2),:,(current_dimv[2]//2):]
+        current_inds_block4 = current_inds[(current_dimv[0]//2):,:,(current_dimv[2]//2):]
+
+        est_theta = divAndConq(new_theta, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+        est_theta = divAndConq(new_theta, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+        est_theta = divAndConq(new_theta, current_inds_block3, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+        est_theta = divAndConq(new_theta, current_inds_block4, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+
+
+    elif current_dimv[1]!=1 and current_dimv[2]!=1:
+
+        # Split into blocks - assuming current inds is a block
+        current_inds_block1 = current_inds[:,:(current_dimv[1]//2),:(current_dimv[2]//2)]
+        current_inds_block2 = current_inds[:,(current_dimv[1]//2):,:(current_dimv[2]//2)]
+        current_inds_block3 = current_inds[:,:(current_dimv[1]//2),(current_dimv[2]//2):]
+        current_inds_block4 = current_inds[:,(current_dimv[1]//2):,(current_dimv[2]//2):]
+
+        est_theta = divAndConq(new_theta, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+        est_theta = divAndConq(new_theta, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+        est_theta = divAndConq(new_theta, current_inds_block3, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+        est_theta = divAndConq(new_theta, current_inds_block4, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+
+    elif current_dimv[0]!=1:
+
+        current_inds_block1 = current_inds[:(current_dimv[0]//2),:,:]
+        current_inds_block2 = current_inds[(current_dimv[0]//2):,:,:]
+
+        est_theta = divAndConq(new_theta, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+        est_theta = divAndConq(new_theta, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+
+    elif current_dimv[1]!=1:
+
+        current_inds_block1 = current_inds[:,:(current_dimv[1]//2),:]
+        current_inds_block2 = current_inds[:,(current_dimv[1]//2):,:]
+
+        est_theta = divAndConq(new_theta, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+        est_theta = divAndConq(new_theta, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+
+    elif current_dimv[2]!=1:
+
+        current_inds_block1 = current_inds[:,:,:(current_dimv[2]//2)]
+        current_inds_block2 = current_inds[:,:,(current_dimv[2]//2):]
+
+        est_theta = divAndConq(new_theta, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+        est_theta = divAndConq(new_theta, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+
+    else:
+
+        # Save parameter estimates in correct location if we are only looking at one voxel
+        est_theta[current_inds[:]] = new_theta
+
+
+    return(est_theta)
+
+
+def divAndConq_FS(init_theta, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta=[]):
   
     # If we haven't yet initialized our theta estimates, initialize them now
     if not est_theta:

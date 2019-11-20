@@ -1,5 +1,7 @@
 import numpy as np
 import scipy.sparse
+import cvxopt
+from cvxopt import cholmod, umfpack, amd, matrix, spmatrix, lapack
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
