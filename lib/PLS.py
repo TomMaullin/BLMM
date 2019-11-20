@@ -266,6 +266,6 @@ def PLS2D_getD(theta, tinds, rinds, cinds, sigma2):
     Lambdat = spmatrix.trans(Lambda)
 
     # Get D
-    D = Lambda @ Lambdat * sigma2
+    D = Lambda * Lambdat * sigma2
 
     return(D)
