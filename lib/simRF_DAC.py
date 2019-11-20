@@ -235,6 +235,9 @@ def main():
     # New array we will store estimates in
     est_theta = np.zeros((XtY.shape[0], theta0.shape[0]))
 
+    print('original est_theta shape')
+    print(est_theta.shape)
+
     #================================================================================
     # Run Simulation
     #================================================================================
@@ -391,9 +394,17 @@ def divAndConq_PLS(init_theta, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, 
 
     else:
 
+        print('active')
+        print('est_theta shape')
+        print(est_theta.shape)
+        print('new_theta shape')
+        print(new_theta.shape)
+        print('current inds')
+        print(current_inds)
         # Save parameter estimates in correct location if we are only looking at one voxel
         est_theta[current_inds[:],:] = new_theta
-
+        print('est_theta shape new')
+        print(est_theta.shape)
 
     return(est_theta)
 
