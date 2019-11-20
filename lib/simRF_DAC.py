@@ -12,7 +12,12 @@ import sparse
 #from lib.SFS import SFS
 #from lib.pFS import pFS
 #from lib.pSFS import pSFS
-from lib.PLS import PLS2D
+from lib.PLS import PLS2D, PLS2D_getBeta
+import cvxopt
+import cvxopt.amd
+from cvxopt import cholmod
+from cvxopt import sparse
+from cvxopt import matrix
 
 # Random Field based simulation
 def main():
@@ -215,6 +220,17 @@ def main():
     # Indices required by DAC
     #================================================================================
     inds = np.arange(nv).reshape(dimv)
+    tinds,rinds,cinds=get_mapping(nlevels, nparams)
+    Lam=mapping(np.random.randn(theta0.shape[0]),tinds,rinds,cinds)
+
+    # Obtain Lambda'Z'ZLambda
+    LamtZtZLam = spmatrix.trans(Lam)*cvxopt.sparse(matrix(ZtZ[0,:,:]))*Lam
+
+    # Obtaining permutation for PLS
+    P=cvxopt.amd.order(LamtZtZLam)
+
+    # Identity (Actually quicker to calculate outside of estimation)
+    I = spmatrix(1.0, range(Lam.size[0]), range(Lam.size[0]))
 
     #================================================================================
     # Run Simulation
@@ -231,6 +247,20 @@ def main():
     beta_True_map=beta_True.reshape(dimv[0],dimv[1],dimv[2],beta.shape[1])
     #beta_est_map=paramVec[:,0:p,:].reshape(dimv[0],dimv[1],dimv[2],beta.shape[1])
     #print(np.mean(np.mean(np.mean(np.abs(beta_True_map-beta_est_map)))))
+
+    beta_est = np.zeros(beta_True.shape)
+    # Get betas from theta estimate
+    XtX_current = cvxopt.matrix(XtX[0,:,:])
+    XtZ_current = cvxopt.matrix(XtZ[0,:,:])
+    ZtX_current = cvxopt.matrix(ZtX[0,:,:])
+    ZtZ_current = cvxopt.sparse(cvxopt.matrix(ZtZ[0,:,:]))
+    for i in theta_est.shape[0]:
+        XtY_current = cvxopt.matrix(XtY[i,:,:])
+        YtX_current = cvxopt.matrix(YtX[i,:,:])
+        YtY_current = cvxopt.matrix(YtY[i,:,:])
+        YtZ_current = cvxopt.matrix(YtZ[i,:,:])
+        ZtY_current = cvxopt.matrix(ZtY[i,:,:])
+        beta_est = PLS2D_getBeta(theta, ZtX, ZtY_current, XtX, ZtZ, XtY_current, YtX_current, YtZ_current, XtZ, YtY_current, n, P, tinds, rinds, cinds)
       
     
     #DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
