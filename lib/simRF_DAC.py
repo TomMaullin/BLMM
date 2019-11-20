@@ -259,6 +259,7 @@ def main():
     ZtZ_current = cvxopt.sparse(cvxopt.matrix(ZtZ[0,:,:]))
     for i in np.arange(est_theta.shape[0]):
         theta = est_theta[i,:]
+        print(theta.shape)
         XtY_current = cvxopt.matrix(XtY[i,:,:])
         YtX_current = cvxopt.matrix(YtX[i,:,:])
         YtY_current = cvxopt.matrix(YtY[i,:,:])
