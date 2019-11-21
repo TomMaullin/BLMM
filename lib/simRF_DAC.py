@@ -311,10 +311,6 @@ def main():
         # Inital beta
         beta = initBeta2D(XtX_current, XtY_current)
 
-        print(beta.shape)
-        print(YtX_current.shape)
-        print(YtY_current.shape)
-        print(XtX_current.shape)
         # Work out e'e
         ete = ssr2D(YtX_current, YtY_current, XtX_current, beta)
 

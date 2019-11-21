@@ -35,6 +35,7 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, 
 
   if init_paramVector is not None:
 
+    print(init_paramVector.shape)
     beta = init_paramVector[0:p]
     sigma2 = init_paramVector[p:(p+1)][0,0]
 
