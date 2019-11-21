@@ -260,6 +260,8 @@ def main():
     XtZ_current = cvxopt.matrix(XtZ[0,:,:])
     ZtX_current = cvxopt.matrix(ZtX[0,:,:])
     ZtZ_current = cvxopt.sparse(cvxopt.matrix(ZtZ[0,:,:]))
+    beta_runningsum = 0
+    b_runningsum = 0
     for i in np.arange(est_theta.shape[0]):
         theta = est_theta[i,:]
         XtY_current = cvxopt.matrix(XtY[i,:,:])
@@ -272,9 +274,7 @@ def main():
 
         sigma2_est = PLS2D_getSigma2(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)
         D_est = np.array(matrix(PLS2D_getD(theta, tinds, rinds, cinds, sigma2_est)))
-        print(D_est)
-        print(D_est.shape)
-        print(np.array(ZtZ[0,:,:]).shape)
+
         DinvIplusZtZD = D_est @ np.linalg.inv(np.eye(q) + np.array(ZtZ[0,:,:]) @ D_est)
         Zte = np.array(ZtY_current) - np.array(ZtX[0,:,:]) @ beta_est
         b_est = (DinvIplusZtZD @ Zte)
