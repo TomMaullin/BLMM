@@ -70,6 +70,18 @@ def vec2vech2D(vec):
 
 # ============================================================================
 #
+# This function maps the vector created by stacking the columns of a matrix on
+# top of one another to it's corresponding square matrix.
+#
+# ============================================================================
+def vec2mat2D(vec):
+  
+  # Return matrix
+  return(vec.reshape(np.int64(np.sqrt(vec.shape[0])),np.int64(np.sqrt(vec.shape[0]))).transpose())
+
+
+# ============================================================================
+#
 # This function maps a vector of the elements of the lower half of a
 # symmetric matrix stacked column-wise to the vector of all elements
 # of the matrix, duplicates included.
