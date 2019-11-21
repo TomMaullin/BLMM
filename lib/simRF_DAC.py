@@ -308,7 +308,7 @@ def divAndConq_PLS(init_theta, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, 
     ZtZ_current = cvxopt.sparse(cvxopt.matrix(ZtZ[0,:,:]))
 
     # Get new theta
-    tmp = minimize(PLS2D, init_theta, args=(ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds), method='L-BFGS-B', tol=1e-6)
+    tmp = minimize(PLS2D, init_theta, args=(ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds), method='L-BFGS-B', tol=1e-7)
     new_theta = tmp.x
 
     if current_dimv[0]!=1 and current_dimv[1]!=1 and current_dimv[2]!=1:
