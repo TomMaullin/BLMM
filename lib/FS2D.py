@@ -19,6 +19,17 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, 
   # Number of fixed effects, p
   p = XtX.shape[0]
 
+  
+  # Index variables
+  # ------------------------------------------------------------------------------
+  # Work out the total number of paramateres
+  tnp = np.int32(p + 1 + np.sum(nparams*(nparams+1)/2))
+
+  # Indices for submatrics corresponding to Dks
+  FishIndsDk = np.int32(np.cumsum(nparams*(nparams+1)/2) + p + 1)
+  FishIndsDk = np.insert(FishIndsDk,0,p+1)
+  #print('inds',FishIndsDk)
+
   # Initial estimates
   # ------------------------------------------------------------------------------
 
@@ -84,16 +95,6 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, 
   for i in np.arange(len(nparams)):
 
     invDupMatdict[i] = invDupMat2D(nparams[i])
-
-  # Index variables
-  # ------------------------------------------------------------------------------
-  # Work out the total number of paramateres
-  tnp = np.int32(p + 1 + np.sum(nparams*(nparams+1)/2))
-
-  # Indices for submatrics corresponding to Dks
-  FishIndsDk = np.int32(np.cumsum(nparams*(nparams+1)/2) + p + 1)
-  FishIndsDk = np.insert(FishIndsDk,0,p+1)
-  #print('inds',FishIndsDk)
 
   Zte = ZtY - (ZtX @ beta)
 
