@@ -37,7 +37,7 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, 
 
     beta = init_paramVector[0:p]
     sigma2 = init_paramVector[p:(p+1)][0,0]
-    
+
     Ddict = dict()
     for k in np.arange(len(nparams)):
 
@@ -190,7 +190,7 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, 
       paramVector = np.concatenate((paramVector, mat2vech2D(Ddict[k])))
       derivVector = np.concatenate((derivVector, mat2vech2D(dldDdict[k])))
 
-    FisherInfoMat = forceSym(FisherInfoMat)
+    FisherInfoMat = forceSym2D(FisherInfoMat)
 
     paramVector = paramVector + lam*(np.linalg.inv(FisherInfoMat) @ derivVector)
     
