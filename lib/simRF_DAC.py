@@ -281,7 +281,7 @@ def main():
         b_true = b[i,:]
 
         beta_runningsum = beta_runningsum + np.sum(np.abs(beta_True[i,:] - beta_est))
-        b_runningsum = b_runningsum + np.sum(np.abs(b_true - beta_est))
+        b_runningsum = b_runningsum + np.sum(np.abs(b_true - b_est))
 
     print(beta_runningsum/(nv*p))
     print(b_runningsum/(nv*q))
