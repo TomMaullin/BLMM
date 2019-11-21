@@ -328,7 +328,7 @@ def main():
         Ddict = dict()
         for k in np.arange(len(nparams)):
 
-          Ddict[k] = makeDnnd2D(initDk2D(k, nlevels[k], ZtZ_current, Zte, sigma2))
+          Ddict[k] = makeDnnd2D(initDk2D(k, nlevels[k], ZtZ_current, Zte, sigma2, nparams, nlevels))
           
         paramVector = np.concatenate((beta, np.array([[sigma2]])))
 

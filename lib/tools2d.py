@@ -350,7 +350,7 @@ def initSigma22D(ete, n):
 # - `Dkest`: The inital estimate of D_k (Dhat_k in the above notation).
 #
 # ============================================================================
-def initDk2D(k, lk, ZtZ, Zte, sigma2):
+def initDk2D(k, lk, ZtZ, Zte, sigma2, nparams, nlevels):
   
   # Initalize D to zeros
   invSig2ZteetZminusZtZ = np.zeros((nparams[k],nparams[k]))
