@@ -500,7 +500,8 @@ def divAndConq_FS(init_params, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, 
     ZtZ_current = ZtZ[0,:,:]
 
     # Get new params
-    new_params = FS2D(XtX_current, XtY_current, ZtX_current, ZtY_current, ZtZ_current, XtZ_current, YtZ_current, YtY_current, YtX_current, nlevels, nparams, 1e-6, n, init_params)
+    tmp = FS2D(XtX_current, XtY_current, ZtX_current, ZtY_current, ZtZ_current, XtZ_current, YtZ_current, YtY_current, YtX_current, nlevels, nparams, 1e-6, n, init_params)
+    new_params = tmp[0]
 
     if current_dimv[0]!=1 and current_dimv[1]!=1 and current_dimv[2]!=1:
 
