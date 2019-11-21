@@ -299,13 +299,13 @@ def main():
         
         # Matrices for estimating mean of current block
         XtX_current = XtX[0,:,:]
-        XtY_current = np.mean(XtY[inds,:,:], axis=0)
+        XtY_current = np.mean(XtY, axis=0)
         XtZ_current = XtZ[0,:,:]
-        YtX_current = np.mean(YtX[inds,:,:],axis=0)
-        YtY_current = np.mean(YtY[inds,:,:],axis=0)
-        YtZ_current = np.mean(YtZ[inds,:,:],axis=0)
+        YtX_current = np.mean(YtX,axis=0)
+        YtY_current = np.mean(YtY,axis=0)
+        YtZ_current = np.mean(YtZ,axis=0)
         ZtX_current = ZtX[0,:,:]
-        ZtY_current = np.mean(ZtY[inds,:,:],axis=0)
+        ZtY_current = np.mean(ZtY,axis=0)
         ZtZ_current = ZtZ[0,:,:]
 
         # Inital beta
