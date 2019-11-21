@@ -272,8 +272,8 @@ def main():
 
         sigma2_est = PLS2D_getSigma2(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)
         D_est = np.array(PLS2D_getD(theta, tinds, rinds, cinds, sigma2_est))
-        DinvIplusZtZD = D_est @ np.linalg.inv(np.eye(q) + ZtZ_current @ D_est)
-        Zte = ZtY_current - ZtX_current @ beta_est
+        DinvIplusZtZD = D_est @ np.linalg.inv(np.eye(q) + np.array(ZtZ[0,:,:]) @ D_est)
+        Zte = np.array(ZtY_current) - np.array(ZtX[0,:,:]) @ beta_est
         b_est = (DinvIplusZtZD @ Zte)
         b_true = b[i,:]
 
