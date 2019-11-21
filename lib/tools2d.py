@@ -648,7 +648,7 @@ def get_dldDk2D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD):
     
     # Get (the kj^th columns of Z)^T multiplied by (the kj^th columns of Z)
     Z_kjtZ_kj = ZtZ[np.ix_(Ikj,Ikj)]
-    secondterm = forceSym(Z_kjtZ_kj) - forceSym2D(Z_kjtZ @ DinvIplusZtZD @ Z_kjtZ.transpose())
+    secondterm = forceSym2D(Z_kjtZ_kj) - forceSym2D(Z_kjtZ @ DinvIplusZtZD @ Z_kjtZ.transpose())
     
     if j == 0:
       
