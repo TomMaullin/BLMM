@@ -272,16 +272,16 @@ def main():
 
         sigma2_est = PLS2D_getSigma2(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)
         D_est = np.array(PLS2D_getD(theta, tinds, rinds, cinds, sigma2_est))
-        DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
-        Zte = ZtY - ZtX @ beta
+        DinvIplusZtZD = D_est @ np.linalg.inv(np.eye(q) + ZtZ_current @ D_est)
+        Zte = ZtY_current - ZtX_current @ beta_est
         b_est = (DinvIplusZtZD @ Zte)
         b_true = b[i,:]
 
         beta_runningsum = beta_runningsum + np.sum(np.abs(beta_True[i,:] - beta_est))
         b_runningsum = b_runningsum + np.sum(np.abs(b_true - beta_est))
 
-    print(beta_runningsum/nv)
-    print(b_runningsum/nv)
+    print(beta_runningsum/(nv*p))
+    print(b_runningsum/(nv*q))
 
 
 def divAndConq_PLS(init_theta, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta):
