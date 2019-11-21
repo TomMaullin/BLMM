@@ -208,83 +208,157 @@ def main():
     # X'X
     XtX = np.matmul(X.transpose(0,2,1),X)
 
-    #================================================================================
-    # Initial theta
-    #================================================================================
-    theta0 = np.array([])
-    for i in np.arange(r):
-      theta0 = np.hstack((theta0, mat2vech2D(np.eye(nparams[i])).reshape(np.int64(nparams[i]*(nparams[i]+1)/2))))
-  
-    #================================================================================
-    # Indices required by DAC
-    #================================================================================
-    inds = np.arange(nv).reshape(dimv)
-    tinds,rinds,cinds=get_mapping2D(nlevels, nparams)
-    Lam=mapping2D(np.random.randn(theta0.shape[0]),tinds,rinds,cinds)
+    mode = 'FS'
 
-    # Obtain Lambda'Z'ZLambda
-    LamtZtZLam = spmatrix.trans(Lam)*cvxopt.sparse(matrix(ZtZ[0,:,:]))*Lam
+    if mode == 'PLS':
 
-    # Obtaining permutation for PLS
-    cholmod.options['supernodal']=2
-    P=amd.order(LamtZtZLam)
+        #================================================================================
+        # Initial theta
+        #================================================================================
+        theta0 = np.array([])
+        for i in np.arange(r):
+          theta0 = np.hstack((theta0, mat2vech2D(np.eye(nparams[i])).reshape(np.int64(nparams[i]*(nparams[i]+1)/2))))
+      
+        #================================================================================
+        # Indices required by DAC
+        #================================================================================
+        inds = np.arange(nv).reshape(dimv)
+        tinds,rinds,cinds=get_mapping2D(nlevels, nparams)
+        Lam=mapping2D(np.random.randn(theta0.shape[0]),tinds,rinds,cinds)
 
-    # Identity (Actually quicker to calculate outside of estimation)
-    I = spmatrix(1.0, range(Lam.size[0]), range(Lam.size[0]))
+        # Obtain Lambda'Z'ZLambda
+        LamtZtZLam = spmatrix.trans(Lam)*cvxopt.sparse(matrix(ZtZ[0,:,:]))*Lam
 
-    # New array we will store estimates in
-    est_theta = np.zeros((XtY.shape[0], theta0.shape[0]))
+        # Obtaining permutation for PLS
+        cholmod.options['supernodal']=2
+        P=amd.order(LamtZtZLam)
 
-    print('original est_theta shape')
-    print(est_theta.shape)
+        # Identity (Actually quicker to calculate outside of estimation)
+        I = spmatrix(1.0, range(Lam.size[0]), range(Lam.size[0]))
 
-    #================================================================================
-    # Run Simulation
-    #================================================================================
-    t1 = time.time()
-    est_theta = divAndConq_PLS(theta0, inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
-    t2 = time.time()
-    print('Time taken (seconds):', t2-t1)
+        # New array we will store estimates in
+        est_theta = np.zeros((XtY.shape[0], theta0.shape[0]))
 
-    #================================================================================
-    # Performance metric for beta
-    #================================================================================
-    # See how well it did
-    #beta_True_map=beta_True.reshape(dimv[0],dimv[1],dimv[2],beta.shape[1])
-    #beta_est_map=paramVec[:,0:p,:].reshape(dimv[0],dimv[1],dimv[2],beta.shape[1])
-    #print(np.mean(np.mean(np.mean(np.abs(beta_True_map-beta_est_map)))))
+        print('original est_theta shape')
+        print(est_theta.shape)
 
-    beta_est = np.zeros(beta_True.shape)
-    # Get betas from theta estimate
-    XtX_current = cvxopt.matrix(XtX[0,:,:])
-    XtZ_current = cvxopt.matrix(XtZ[0,:,:])
-    ZtX_current = cvxopt.matrix(ZtX[0,:,:])
-    ZtZ_current = cvxopt.sparse(cvxopt.matrix(ZtZ[0,:,:]))
-    beta_runningsum = 0
-    b_runningsum = 0
-    for i in np.arange(est_theta.shape[0]):
-        theta = est_theta[i,:]
-        XtY_current = cvxopt.matrix(XtY[i,:,:])
-        YtX_current = cvxopt.matrix(YtX[i,:,:])
-        YtY_current = cvxopt.matrix(YtY[i,:,:])
-        YtZ_current = cvxopt.matrix(YtZ[i,:,:])
-        ZtY_current = cvxopt.matrix(ZtY[i,:,:])
+        #================================================================================
+        # Run Simulation
+        #================================================================================
+        t1 = time.time()
+        est_theta = divAndConq_PLS(theta0, inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
+        t2 = time.time()
+        print('Time taken (seconds):', t2-t1)
 
-        beta_est = np.array(PLS2D_getBeta(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, tinds, rinds, cinds))
+        #================================================================================
+        # Performance metric for beta
+        #================================================================================
+        # See how well it did
+        #beta_True_map=beta_True.reshape(dimv[0],dimv[1],dimv[2],beta.shape[1])
+        #beta_est_map=paramVec[:,0:p,:].reshape(dimv[0],dimv[1],dimv[2],beta.shape[1])
+        #print(np.mean(np.mean(np.mean(np.abs(beta_True_map-beta_est_map)))))
 
-        sigma2_est = PLS2D_getSigma2(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)
-        D_est = np.array(matrix(PLS2D_getD(theta, tinds, rinds, cinds, sigma2_est)))
+        beta_est = np.zeros(beta_True.shape)
+        # Get betas from theta estimate
+        XtX_current = cvxopt.matrix(XtX[0,:,:])
+        XtZ_current = cvxopt.matrix(XtZ[0,:,:])
+        ZtX_current = cvxopt.matrix(ZtX[0,:,:])
+        ZtZ_current = cvxopt.sparse(cvxopt.matrix(ZtZ[0,:,:]))
+        beta_runningsum = 0
+        b_runningsum = 0
+        for i in np.arange(est_theta.shape[0]):
+            theta = est_theta[i,:]
+            XtY_current = cvxopt.matrix(XtY[i,:,:])
+            YtX_current = cvxopt.matrix(YtX[i,:,:])
+            YtY_current = cvxopt.matrix(YtY[i,:,:])
+            YtZ_current = cvxopt.matrix(YtZ[i,:,:])
+            ZtY_current = cvxopt.matrix(ZtY[i,:,:])
 
-        DinvIplusZtZD = D_est @ np.linalg.inv(np.eye(q) + np.array(ZtZ[0,:,:]) @ D_est)
-        Zte = np.array(ZtY_current) - np.array(ZtX[0,:,:]) @ beta_est
-        b_est = (DinvIplusZtZD @ Zte)
-        b_true = b[i,:]
+            beta_est = np.array(PLS2D_getBeta(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, tinds, rinds, cinds))
 
-        beta_runningsum = beta_runningsum + np.sum(np.abs(beta_True[i,:] - beta_est))
-        b_runningsum = b_runningsum + np.sum(np.abs(b_true - b_est))
+            sigma2_est = PLS2D_getSigma2(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)
+            D_est = np.array(matrix(PLS2D_getD(theta, tinds, rinds, cinds, sigma2_est)))
 
-    print(beta_runningsum/(nv*p))
-    print(b_runningsum/(nv*q))
+            DinvIplusZtZD = D_est @ np.linalg.inv(np.eye(q) + np.array(ZtZ[0,:,:]) @ D_est)
+            Zte = np.array(ZtY_current) - np.array(ZtX[0,:,:]) @ beta_est
+            b_est = (DinvIplusZtZD @ Zte)
+            b_true = b[i,:]
+
+            beta_runningsum = beta_runningsum + np.sum(np.abs(beta_True[i,:] - beta_est))
+            b_runningsum = b_runningsum + np.sum(np.abs(b_true - b_est))
+
+        print(beta_runningsum/(nv*p))
+        print(b_runningsum/(nv*q))
+
+    if mode == 'FS':
+        #================================================================================
+        # Indices required by DAC
+        #================================================================================
+        inds = np.arange(nv).reshape(dimv)
+        
+        # Matrices for estimating mean of current block
+        XtX_current = XtX[0,:,:]
+        XtY_current = np.mean(XtY[inds,:,:], axis=0)
+        XtZ_current = XtZ[0,:,:]
+        YtX_current = np.mean(YtX[inds,:,:],axis=0)
+        YtY_current = np.mean(YtY[inds,:,:],axis=0)
+        YtZ_current = np.mean(YtZ[inds,:,:],axis=0)
+        ZtX_current = ZtX[0,:,:]
+        ZtY_current = np.mean(ZtY[inds,:,:],axis=0)
+        ZtZ_current = ZtZ[0,:,:]
+
+        # Inital beta
+        beta = initBeta2D(XtX_current, XtY_current)
+
+        # Work out e'e
+        ete = ssr2D(YtX_current, YtY_current, XtX_current, beta)
+
+        # Initial sigma2
+        sigma2 = initSigma22D(ete, n)
+
+        Zte = ZtY - (ZtX @ beta)
+
+        # Inital D
+        # Dictionary version
+        Ddict = dict()
+        for k in np.arange(len(nparams)):
+
+          Ddict[k] = makeDnnd2D(initDk2D(k, nlevels[k], ZtZ_current, Zte, sigma2))
+          
+        paramVector = np.concatenate((beta, np.array([[sigma2]])))
+
+        for k in np.arange(len(nparams)):
+
+          paramVector = np.concatenate((paramVector, mat2vech2D(Ddict[k])))
+
+        # New array we will store estimates in
+        est_params = np.zeros((XtY.shape[0], paramVector.shape[0]))
+
+        t1 = time.time()
+        est_params = divAndConq_FS(paramVector, inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        t2 = time.time()
+        print(t2-t1)
+
+        #print(paramVector)
+        beta = est_params[:,0:p]
+        sigma2 = est_params[:,p:(p+1)][0,0]
+
+        #for k in np.arange(len(nparams)):
+
+        #  Ddict[k] = makeDnnd2D(vech2mat2D(paramVector[FishIndsDk[k]:FishIndsDk[k+1]]))
+          
+        #for i in np.arange(len(nparams)):
+
+        #  for j in np.arange(nlevels[i]):
+
+
+        #    if i == 0 and j == 0:
+
+        #      D = Ddict[i]
+
+        #    else:
+
+        #      D = scipy.linalg.block_diag(D, Ddict[i])
 
 
 def divAndConq_PLS(init_theta, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta):
@@ -402,4 +476,121 @@ def divAndConq_PLS(init_theta, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, 
         est_theta[current_inds[:],:] = new_theta
 
     return(est_theta)
+
+
+def divAndConq_FS(init_params, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params):
+
+    # Number of voxels and dimension of block we are looking at
+    current_dimv = current_inds.shape
+    current_nv = np.prod(current_dimv)
+
+    # Current indices as a vector
+    current_inds_vec = current_inds.reshape(current_nv)
+
+    # Matrices for estimating mean of current block
+    XtX_current = XtX[0,:,:]
+    XtY_current = np.mean(XtY[current_inds_vec,:,:], axis=0)
+    XtZ_current = XtZ[0,:,:]
+    YtX_current = np.mean(YtX[current_inds_vec,:,:],axis=0)
+    YtY_current = np.mean(YtY[current_inds_vec,:,:],axis=0)
+    YtZ_current = np.mean(YtZ[current_inds_vec,:,:],axis=0)
+    ZtX_current = ZtX[0,:,:]
+    ZtY_current = np.mean(ZtY[current_inds_vec,:,:],axis=0)
+    ZtZ_current = ZtZ[0,:,:]
+
+    # Get new params
+    new_params = FS2D(XtX_current, XtY_current, ZtX_current, ZtY_current, ZtZ_current, XtZ_current, YtZ_current, YtY_current, YtX_current, nlevels, nparams, 1e-6, n, init_params)
+
+    if current_dimv[0]!=1 and current_dimv[1]!=1 and current_dimv[2]!=1:
+
+        # Split into blocks - assuming current inds is a block
+        current_inds_block1 = current_inds[:(current_dimv[0]//2),:(current_dimv[1]//2),:(current_dimv[2]//2)]
+        current_inds_block2 = current_inds[(current_dimv[0]//2):,:(current_dimv[1]//2),:(current_dimv[2]//2)]
+        current_inds_block3 = current_inds[:(current_dimv[0]//2),(current_dimv[1]//2):,:(current_dimv[2]//2)]
+        current_inds_block4 = current_inds[:(current_dimv[0]//2),:(current_dimv[1]//2),(current_dimv[2]//2):]
+        current_inds_block5 = current_inds[(current_dimv[0]//2):,(current_dimv[1]//2):,:(current_dimv[2]//2)]
+        current_inds_block6 = current_inds[(current_dimv[0]//2):,:(current_dimv[1]//2),(current_dimv[2]//2):]
+        current_inds_block7 = current_inds[:(current_dimv[0]//2),(current_dimv[1]//2):,(current_dimv[2]//2):]
+        current_inds_block8 = current_inds[(current_dimv[0]//2):,(current_dimv[1]//2):,(current_dimv[2]//2):]
+
+        est_params = divAndConq_FS(new_params, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_FS(new_params, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_FS(new_params, current_inds_block3, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_FS(new_params, current_inds_block4, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_FS(new_params, current_inds_block5, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_FS(new_params, current_inds_block6, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_FS(new_params, current_inds_block7, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_FS(new_params, current_inds_block8, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+
+    elif current_dimv[0]!=1 and current_dimv[1]!=1:
+
+        # Split into blocks - assuming current inds is a block
+        current_inds_block1 = current_inds[:(current_dimv[0]//2),:(current_dimv[1]//2),:]
+        current_inds_block2 = current_inds[(current_dimv[0]//2):,:(current_dimv[1]//2),:]
+        current_inds_block3 = current_inds[:(current_dimv[0]//2),(current_dimv[1]//2):,:]
+        current_inds_block4 = current_inds[(current_dimv[0]//2):,(current_dimv[1]//2):,:]
+
+        est_params = divAndConq_FS(new_params, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_FS(new_params, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_FS(new_params, current_inds_block3, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_FS(new_params, current_inds_block4, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+
+    elif current_dimv[0]!=1 and current_dimv[2]!=1:
+
+        # Split into blocks - assuming current inds is a block
+        current_inds_block1 = current_inds[:(current_dimv[0]//2),:,:(current_dimv[2]//2)]
+        current_inds_block2 = current_inds[(current_dimv[0]//2):,:,:(current_dimv[2]//2)]
+        current_inds_block3 = current_inds[:(current_dimv[0]//2),:,(current_dimv[2]//2):]
+        current_inds_block4 = current_inds[(current_dimv[0]//2):,:,(current_dimv[2]//2):]
+
+        est_params = divAndConq_FS(new_params, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_FS(new_params, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_FS(new_params, current_inds_block3, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_FS(new_params, current_inds_block4, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+
+
+    elif current_dimv[1]!=1 and current_dimv[2]!=1:
+
+        # Split into blocks - assuming current inds is a block
+        current_inds_block1 = current_inds[:,:(current_dimv[1]//2),:(current_dimv[2]//2)]
+        current_inds_block2 = current_inds[:,(current_dimv[1]//2):,:(current_dimv[2]//2)]
+        current_inds_block3 = current_inds[:,:(current_dimv[1]//2),(current_dimv[2]//2):]
+        current_inds_block4 = current_inds[:,(current_dimv[1]//2):,(current_dimv[2]//2):]
+
+        est_params = divAndConq_FS(new_params, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_FS(new_params, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_FS(new_params, current_inds_block3, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_FS(new_params, current_inds_block4, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+
+    elif current_dimv[0]!=1:
+
+        current_inds_block1 = current_inds[:(current_dimv[0]//2),:,:]
+        current_inds_block2 = current_inds[(current_dimv[0]//2):,:,:]
+
+        est_params = divAndConq_FS(new_params, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_FS(new_params, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+
+    elif current_dimv[1]!=1:
+
+        current_inds_block1 = current_inds[:,:(current_dimv[1]//2),:]
+        current_inds_block2 = current_inds[:,(current_dimv[1]//2):,:]
+
+        est_params = divAndConq_FS(new_params, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_FS(new_params, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+
+    elif current_dimv[2]!=1:
+
+        current_inds_block1 = current_inds[:,:,:(current_dimv[2]//2)]
+        current_inds_block2 = current_inds[:,:,(current_dimv[2]//2):]
+
+        est_params = divAndConq_FS(new_params, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_FS(new_params, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+
+    else:
+
+        # Save parameter estimates in correct location if we are only looking at one voxel
+        est_params[current_inds[:],:] = new_params
+
+    return(est_params)
+
 
