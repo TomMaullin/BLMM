@@ -341,25 +341,26 @@ def main():
         print(t2-t1)
 
         #print(paramVector)
-        beta = est_params[:,0:p]
+        beta = est_params[:,0:p].reshape(beta_True.shape)
         sigma2 = est_params[:,p:(p+1)][0,0]
 
-        #for k in np.arange(len(nparams)):
+        # D as a dictionary
+        for k in np.arange(len(nparams)):
 
-        #  Ddict[k] = makeDnnd2D(vech2mat2D(paramVector[FishIndsDk[k]:FishIndsDk[k+1]]))
-          
-        #for i in np.arange(len(nparams)):
+            Ddict[k] = makeDnnd3D(vech2mat3D(paramVector[:,FishIndsDk[k]:FishIndsDk[k+1]]))
 
-        #  for j in np.arange(nlevels[i]):
+        # Full version of D
+        D = getDfromDict3D(Ddict, nparams, nlevels)
 
+        betaDiff = np.mean(np.mean(np.mean(np.abs(beta_True - beta))))
+        print(betaDiff)
 
-        #    if i == 0 and j == 0:
+        DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+        Zte = ZtY - ZtX @ beta
+        b_est = (DinvIplusZtZD @ Zte).reshape(b.shape)
+        bDiff = np.mean(np.mean(np.mean(np.abs(b_est - b))))
 
-        #      D = Ddict[i]
-
-        #    else:
-
-        #      D = scipy.linalg.block_diag(D, Ddict[i])
+        print(bDiff)
 
 
 def divAndConq_PLS(init_theta, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta):
