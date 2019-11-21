@@ -19,7 +19,7 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, 
   # Number of fixed effects, p
   p = XtX.shape[0]
 
-  
+
   # Index variables
   # ------------------------------------------------------------------------------
   # Work out the total number of paramateres
@@ -37,7 +37,8 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, 
 
     beta = init_paramVector[0:p]
     sigma2 = init_paramVector[p:(p+1)][0,0]
-
+    
+    Ddict = dict()
     for k in np.arange(len(nparams)):
 
       Ddict[k] = makeDnnd2D(vech2mat2D(init_paramVector[FishIndsDk[k]:FishIndsDk[k+1]]))
