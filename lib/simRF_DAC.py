@@ -13,6 +13,7 @@ import sparse
 #from lib.SFS import SFS
 #from lib.pFS import pFS
 #from lib.pSFS import pSFS
+from lib.FS2D import FS2D
 from lib.PLS import PLS2D, PLS2D_getBeta, PLS2D_getD, PLS2D_getSigma2
 import cvxopt
 from cvxopt import cholmod, umfpack, amd, matrix, spmatrix, lapack
@@ -310,6 +311,10 @@ def main():
         # Inital beta
         beta = initBeta2D(XtX_current, XtY_current)
 
+        print(beta.shape)
+        print(YtX_current.shape)
+        print(YtY_current.shape)
+        print(XtX_current.shape)
         # Work out e'e
         ete = ssr2D(YtX_current, YtY_current, XtX_current, beta)
 
