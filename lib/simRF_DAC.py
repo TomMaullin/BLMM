@@ -321,7 +321,7 @@ def main():
         # Initial sigma2
         sigma2 = initSigma22D(ete, n)
 
-        Zte = ZtY - (ZtX @ beta)
+        Zte = ZtY_current - (ZtX_current @ beta)
 
         # Inital D
         # Dictionary version

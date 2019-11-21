@@ -333,13 +333,13 @@ def initSigma22D(ete, n):
 #
 # - `k`: The grouping factor we wish to estimate D for (k in the above
 #        notation)
-# - `lk`: The number of levels belonging to grouping factor k ($l_k$ in the
+# - `lk`: The number of levels belonging to grouping factor k (l_k in the
 #         above notation).
 # - `ZtZ`: The Z matrix transposed and then multiplied by itself (Z'Z in the
 #          above notation).
 # - `Zte`: The Z matrix transposed and then multiplied by the OLS residuals
 #          (Z'e=Z'(Y-X\beta) in the above notation).
-# - `sigma2`: The OLS estimate of \sigma^2 (\sigma^2$ in the above notation).
+# - `sigma2`: The OLS estimate of \sigma^2 (\sigma^2 in the above notation).
 #
 # ----------------------------------------------------------------------------
 #
