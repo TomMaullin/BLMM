@@ -421,7 +421,7 @@ def main():
         sigma2 = est_params[:,p:(p+1)][0,0]
 
 
-        FishIndsDk = np.int32(np.cumsum(nparams*(nparams+1)/2) + p + 1)
+        FishIndsDk = np.int32(np.cumsum(nparams**2) + p + 1)
         FishIndsDk = np.insert(FishIndsDk,0,p+1)
 
         # D as a dictionary
@@ -718,14 +718,14 @@ def divAndConq_pFS(init_params, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ,
         current_inds_block7 = current_inds[:(current_dimv[0]//2),(current_dimv[1]//2):,(current_dimv[2]//2):]
         current_inds_block8 = current_inds[(current_dimv[0]//2):,(current_dimv[1]//2):,(current_dimv[2]//2):]
 
-        est_params = divAndConq_FS(new_params, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
-        est_params = divAndConq_FS(new_params, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
-        est_params = divAndConq_FS(new_params, current_inds_block3, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
-        est_params = divAndConq_FS(new_params, current_inds_block4, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
-        est_params = divAndConq_FS(new_params, current_inds_block5, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
-        est_params = divAndConq_FS(new_params, current_inds_block6, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
-        est_params = divAndConq_FS(new_params, current_inds_block7, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
-        est_params = divAndConq_FS(new_params, current_inds_block8, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_pFS(new_params, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_pFS(new_params, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_pFS(new_params, current_inds_block3, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_pFS(new_params, current_inds_block4, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_pFS(new_params, current_inds_block5, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_pFS(new_params, current_inds_block6, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_pFS(new_params, current_inds_block7, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_pFS(new_params, current_inds_block8, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
 
     elif current_dimv[0]!=1 and current_dimv[1]!=1:
 
@@ -735,10 +735,10 @@ def divAndConq_pFS(init_params, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ,
         current_inds_block3 = current_inds[:(current_dimv[0]//2),(current_dimv[1]//2):,:]
         current_inds_block4 = current_inds[(current_dimv[0]//2):,(current_dimv[1]//2):,:]
 
-        est_params = divAndConq_FS(new_params, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
-        est_params = divAndConq_FS(new_params, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
-        est_params = divAndConq_FS(new_params, current_inds_block3, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
-        est_params = divAndConq_FS(new_params, current_inds_block4, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_pFS(new_params, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_pFS(new_params, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_pFS(new_params, current_inds_block3, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_pFS(new_params, current_inds_block4, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
 
     elif current_dimv[0]!=1 and current_dimv[2]!=1:
 
@@ -748,10 +748,10 @@ def divAndConq_pFS(init_params, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ,
         current_inds_block3 = current_inds[:(current_dimv[0]//2),:,(current_dimv[2]//2):]
         current_inds_block4 = current_inds[(current_dimv[0]//2):,:,(current_dimv[2]//2):]
 
-        est_params = divAndConq_FS(new_params, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
-        est_params = divAndConq_FS(new_params, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
-        est_params = divAndConq_FS(new_params, current_inds_block3, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
-        est_params = divAndConq_FS(new_params, current_inds_block4, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_pFS(new_params, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_pFS(new_params, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_pFS(new_params, current_inds_block3, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_pFS(new_params, current_inds_block4, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
 
 
     elif current_dimv[1]!=1 and current_dimv[2]!=1:
@@ -762,34 +762,34 @@ def divAndConq_pFS(init_params, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ,
         current_inds_block3 = current_inds[:,:(current_dimv[1]//2),(current_dimv[2]//2):]
         current_inds_block4 = current_inds[:,(current_dimv[1]//2):,(current_dimv[2]//2):]
 
-        est_params = divAndConq_FS(new_params, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
-        est_params = divAndConq_FS(new_params, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
-        est_params = divAndConq_FS(new_params, current_inds_block3, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
-        est_params = divAndConq_FS(new_params, current_inds_block4, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_pFS(new_params, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_pFS(new_params, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_pFS(new_params, current_inds_block3, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_pFS(new_params, current_inds_block4, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
 
     elif current_dimv[0]!=1:
 
         current_inds_block1 = current_inds[:(current_dimv[0]//2),:,:]
         current_inds_block2 = current_inds[(current_dimv[0]//2):,:,:]
 
-        est_params = divAndConq_FS(new_params, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
-        est_params = divAndConq_FS(new_params, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_pFS(new_params, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_pFS(new_params, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
 
     elif current_dimv[1]!=1:
 
         current_inds_block1 = current_inds[:,:(current_dimv[1]//2),:]
         current_inds_block2 = current_inds[:,(current_dimv[1]//2):,:]
 
-        est_params = divAndConq_FS(new_params, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
-        est_params = divAndConq_FS(new_params, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_pFS(new_params, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_pFS(new_params, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
 
     elif current_dimv[2]!=1:
 
         current_inds_block1 = current_inds[:,:,:(current_dimv[2]//2)]
         current_inds_block2 = current_inds[:,:,(current_dimv[2]//2):]
 
-        est_params = divAndConq_FS(new_params, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
-        est_params = divAndConq_FS(new_params, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_pFS(new_params, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_pFS(new_params, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
 
     else:
 
