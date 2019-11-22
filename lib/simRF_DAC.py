@@ -406,7 +406,7 @@ def main():
 
         for k in np.arange(len(nparams)):
 
-          paramVector = np.concatenate((paramVector, mat2vech2D(Ddict[k])))
+          paramVector = np.concatenate((paramVector, mat2vec2D(Ddict[k])))
 
         # New array we will store estimates in
         est_params = np.zeros((XtY.shape[0], paramVector.shape[0]))
@@ -427,7 +427,7 @@ def main():
         # D as a dictionary
         for k in np.arange(len(nparams)):
 
-            Ddict[k] = makeDnnd3D(vech2mat3D(est_params[:,FishIndsDk[k]:FishIndsDk[k+1]]))
+            Ddict[k] = makeDnnd3D(vec2mat3D(est_params[:,FishIndsDk[k]:FishIndsDk[k+1]]))
 
         # Full version of D
         D = getDfromDict3D(Ddict, nparams, nlevels)
