@@ -59,7 +59,7 @@ def main():
     #print(n)
 
     # Voxel dimensions
-    dimv = [20,20,20]
+    dimv = [4,4,4]
     nv = np.prod(dimv)
     #print("Number of voxels:")
     #print(nv)
@@ -343,6 +343,10 @@ def main():
         #print(paramVector)
         beta = est_params[:,0:p].reshape(beta_True.shape)
         sigma2 = est_params[:,p:(p+1)][0,0]
+
+
+        FishIndsDk = np.int32(np.cumsum(nparams*(nparams+1)/2) + p + 1)
+        FishIndsDk = np.insert(FishIndsDk,0,p+1)
 
         # D as a dictionary
         for k in np.arange(len(nparams)):
