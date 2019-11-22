@@ -28,7 +28,7 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
   # Indices for submatrics corresponding to Dks
   FishIndsDk = np.int32(np.cumsum(nparams**2) + p + 1)
   FishIndsDk = np.insert(FishIndsDk,0,p+1)
-  #print('inds',FishIndsDk)
+  print('inds',FishIndsDk)
 
   # Initial estimates
   # ------------------------------------------------------------------------------
