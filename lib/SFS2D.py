@@ -110,6 +110,20 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
   # Initial log likelihoods
   llhprev = np.inf
   llhcurr = -np.inf
+
+  # Work out D indices (there is one block of D per level)
+  Dinds = np.zeros(np.sum(nlevels)+1)
+  counter = 0
+  for k in np.arange(len(nparams)):
+    for j in np.arange(nlevels[k]):
+      Dinds[counter] = np.concatenate((np.array([0]), np.cumsum(nlevels*nparams)))[k] + nparams[k]*j
+      counter = counter + 1
+      
+  # Last index will be missing so add it
+  Dinds[len(Dinds)-1]=Dinds[len(Dinds)-2]+nparams[-1]
+  
+  # Make sure indices are ints
+  Dinds = np.int64(Dinds)
   
   while np.abs(llhprev-llhcurr)>tol:
     
