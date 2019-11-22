@@ -165,7 +165,11 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
     llhcurr = llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D)[0,0]
     if llhprev>llhcurr:
       lam = lam/2
-      
+
+  paramVector = np.concatenate((beta, np.array([[sigma2]])))
+  for k in np.arange(len(nparams)):
+    paramVector = np.concatenate((paramVector, mat2vech2D(Ddict[k])))
+    
   bvals = DinvIplusZtZD @ Zte
   
   return(paramVector, bvals)
