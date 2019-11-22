@@ -351,13 +351,9 @@ def main():
         # D as a dictionary
         for k in np.arange(len(nparams)):
 
-            Ddict[k] = makeDnnd3D(vech2mat3D(paramVector[:,FishIndsDk[k]:FishIndsDk[k+1]]))
+            Ddict[k] = makeDnnd3D(vech2mat3D(est_params[:,FishIndsDk[k]:FishIndsDk[k+1]]))
 
         # Full version of D
-        print(nparams)
-        print(nlevels)
-        print(Ddict[0].shape)
-        print(Ddict[1].shape)
         D = getDfromDict3D(Ddict, nparams, nlevels)
 
         betaDiff = np.mean(np.mean(np.mean(np.abs(beta_True - beta))))
