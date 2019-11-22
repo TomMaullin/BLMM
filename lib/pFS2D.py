@@ -227,5 +227,7 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
       lam = lam/2
       
   bvals = DinvIplusZtZD @ Zte
+
+  print(paramVector.shape)
   
   return(paramVector, bvals)
