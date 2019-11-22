@@ -730,6 +730,9 @@ def get_covdldbeta2D(XtZ, XtX, ZtZ, DinvIplusZtZD, sigma2):
 # - `DinvIplusZtZD`: D(I+Z'ZD)^(-1) in the above notation.
 # - `invDupMatdict`: A dictionary of inverse duplication matrices such that 
 #                   `invDupMatdict[k]` = DupMat_k^+.
+# - `vec`: This is a boolean value which by default is false. If True it gives
+#          the update vector for vec (i.e. duplicates included), otherwise it
+#          gives the update vector for vech.
 #
 # ----------------------------------------------------------------------------
 #
@@ -742,7 +745,7 @@ def get_covdldbeta2D(XtZ, XtX, ZtZ, DinvIplusZtZD, sigma2):
 #                       derivative with respect to \sigma^2.
 #
 # ============================================================================
-def get_covdldDkdsigma22D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict):
+def get_covdldDkdsigma22D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False):
   
   # Sum of R_(k, j) over j
   RkSum = np.zeros(nparams[k],nparams[k])
@@ -759,8 +762,11 @@ def get_covdldDkdsigma22D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDu
     RkSum = RkSum + Rkj
 
   # Multiply by duplication matrices and save
-  covdldDdldsigma2 = 1/(2*sigma2) * invDupMatdict[k] @ mat2vec2D(RkSum)
-  
+  if not vec:
+    covdldDdldsigma2 = 1/(2*sigma2) * invDupMatdict[k] @ mat2vec2D(RkSum)
+  else:
+    covdldDdldsigma2 = 1/(2*sigma2) * mat2vec2D(RkSum)  
+
   return(covdldDdldsigma2)
 
 
@@ -795,6 +801,9 @@ def get_covdldDkdsigma22D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDu
 # - `DinvIplusZtZD`: D(I+Z'ZD)^(-1) in the above notation.
 # - `invDupMatdict`: A dictionary of inverse duplication matrices such that 
 #                    `invDupMatdict[k]` = DupMat_k^+
+# - `vec`: This is a boolean value which by default is false. If True it gives
+#          the update vector for vec (i.e. duplicates included), otherwise it
+#          gives the update vector for vech.
 #
 # ----------------------------------------------------------------------------
 #
@@ -807,7 +816,7 @@ def get_covdldDkdsigma22D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDu
 #                     derivative with respect to vech(D_(k2)).
 #
 # ============================================================================
-def get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict):
+def get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False):
   
   # Sum of R_(k1, k2, i, j) kron R_(k1, k2, i, j) over i and j 
   for i in np.arange(nlevels[k1]):
@@ -834,7 +843,11 @@ def get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdi
         RkRtSum = RkRtSum + RkRt
     
   # Multiply by duplication matrices and save
-  covdldDk1dldk2 = 1/2 * invDupMatdict[k1] @ RkRtSum @ invDupMatdict[k2].transpose()
+  if not vec:
+    covdldDk1dldk2 = 1/2 * invDupMatdict[k1] @ RkRtSum @ invDupMatdict[k2].transpose()
+  else:
+    covdldDk1dldk2 = 1/2 * RkRtSum 
+
   
   # Return the result
   return(covdldDk1dldk2)
