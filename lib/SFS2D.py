@@ -123,7 +123,7 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
     # Update sigma^2
     ete = ssr2D(YtX, YtY, XtX, beta)
     Zte = ZtY - (ZtX @ beta)
-    sigma2 = 1/n*(ete - Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte)
+    sigma2 = 1/n*(ete - Zte.transpose() @ DinvIplusZtZD @ Zte)
     
     # Update D_k
     counter = 0
