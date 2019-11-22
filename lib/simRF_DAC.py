@@ -671,6 +671,8 @@ def divAndConq_FS(init_params, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, 
 
     else:
 
+        print(est_params.shape)
+        print(new_params.shape)
         # Save parameter estimates in correct location if we are only looking at one voxel
         est_params[current_inds[:],:] = new_params.reshape(est_params[current_inds[:],:].shape)
 
