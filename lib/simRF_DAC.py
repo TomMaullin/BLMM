@@ -210,7 +210,7 @@ def main():
     # X'X
     XtX = np.matmul(X.transpose(0,2,1),X)
 
-    mode = 'FS'
+    mode = 'pFS'
 
     if mode == 'PLS':
 
