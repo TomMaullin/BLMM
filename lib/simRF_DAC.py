@@ -15,6 +15,7 @@ import sparse
 #from lib.pSFS import pSFS
 from lib.FS2D import FS2D
 from lib.pFS2D import pFS2D
+from lib.SFS2D import SFS2D
 from lib.PLS import PLS2D, PLS2D_getBeta, PLS2D_getD, PLS2D_getSigma2
 import cvxopt
 from cvxopt import cholmod, umfpack, amd, matrix, spmatrix, lapack
