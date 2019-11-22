@@ -210,7 +210,7 @@ def main():
     # X'X
     XtX = np.matmul(X.transpose(0,2,1),X)
 
-    mode = 'pFS'
+    mode = 'SFS'
 
     if mode == 'PLS':
 
@@ -428,6 +428,81 @@ def main():
         for k in np.arange(len(nparams)):
 
             Ddict[k] = makeDnnd3D(vec2mat3D(est_params[:,FishIndsDk[k]:FishIndsDk[k+1]]))
+
+        # Full version of D
+        D = getDfromDict3D(Ddict, nparams, nlevels)
+
+        betaDiff = np.mean(np.mean(np.mean(np.abs(beta_True - beta))))
+        print(betaDiff)
+
+        DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+        Zte = ZtY - ZtX @ beta
+        b_est = (DinvIplusZtZD @ Zte).reshape(b.shape)
+        bDiff = np.mean(np.mean(np.mean(np.abs(b_est - b))))
+
+        print(bDiff)
+
+    if mode == 'SFS':
+        #================================================================================
+        # Indices required by DAC
+        #================================================================================
+        inds = np.arange(nv).reshape(dimv)
+        
+        # Matrices for estimating mean of current block
+        XtX_current = XtX[0,:,:]
+        XtY_current = np.mean(XtY, axis=0)
+        XtZ_current = XtZ[0,:,:]
+        YtX_current = np.mean(YtX,axis=0)
+        YtY_current = np.mean(YtY,axis=0)
+        YtZ_current = np.mean(YtZ,axis=0)
+        ZtX_current = ZtX[0,:,:]
+        ZtY_current = np.mean(ZtY,axis=0)
+        ZtZ_current = ZtZ[0,:,:]
+
+        # Inital beta
+        beta = initBeta2D(XtX_current, XtY_current)
+
+        # Work out e'e
+        ete = ssr2D(YtX_current, YtY_current, XtX_current, beta)
+
+        # Initial sigma2
+        sigma2 = initSigma22D(ete, n)
+
+        Zte = ZtY_current - (ZtX_current @ beta)
+
+        # Inital D
+        # Dictionary version
+        Ddict = dict()
+        for k in np.arange(len(nparams)):
+
+          Ddict[k] = makeDnnd2D(initDk2D(k, nlevels[k], ZtZ_current, Zte, sigma2, nparams, nlevels))
+          
+        paramVector = np.concatenate((beta, np.array([[sigma2]])))
+
+        for k in np.arange(len(nparams)):
+
+          paramVector = np.concatenate((paramVector, mat2vech2D(Ddict[k])))
+
+        # New array we will store estimates in
+        est_params = np.zeros((XtY.shape[0], paramVector.shape[0]))
+
+        t1 = time.time()
+        est_params = divAndConq_SFS(paramVector, inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        t2 = time.time()
+        print(t2-t1)
+
+        #print(paramVector)
+        beta = est_params[:,0:p].reshape(beta_True.shape)
+        sigma2 = est_params[:,p:(p+1)][0,0]
+
+
+        FishIndsDk = np.int32(np.cumsum(nparams*(nparams+1)/2) + p + 1)
+        FishIndsDk = np.insert(FishIndsDk,0,p+1)
+
+        # D as a dictionary
+        for k in np.arange(len(nparams)):
+
+            Ddict[k] = makeDnnd3D(vech2mat3D(est_params[:,FishIndsDk[k]:FishIndsDk[k+1]]))
 
         # Full version of D
         D = getDfromDict3D(Ddict, nparams, nlevels)
@@ -799,3 +874,124 @@ def divAndConq_pFS(init_params, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ,
     return(est_params)
 
 
+
+
+def divAndConq_SFS(init_params, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params):
+
+    # Number of voxels and dimension of block we are looking at
+    current_dimv = current_inds.shape
+    current_nv = np.prod(current_dimv)
+
+    # Current indices as a vector
+    current_inds_vec = current_inds.reshape(current_nv)
+
+    # Matrices for estimating mean of current block
+    XtX_current = XtX[0,:,:]
+    XtY_current = np.mean(XtY[current_inds_vec,:,:], axis=0)
+    XtZ_current = XtZ[0,:,:]
+    YtX_current = np.mean(YtX[current_inds_vec,:,:],axis=0)
+    YtY_current = np.mean(YtY[current_inds_vec,:,:],axis=0)
+    YtZ_current = np.mean(YtZ[current_inds_vec,:,:],axis=0)
+    ZtX_current = ZtX[0,:,:]
+    ZtY_current = np.mean(ZtY[current_inds_vec,:,:],axis=0)
+    ZtZ_current = ZtZ[0,:,:]
+
+    # Get new params
+    tmp = SFS2D(XtX_current, XtY_current, ZtX_current, ZtY_current, ZtZ_current, XtZ_current, YtZ_current, YtY_current, YtX_current, nlevels, nparams, 1e-6, n, init_params)
+    new_params = tmp[0]
+
+    if current_dimv[0]!=1 and current_dimv[1]!=1 and current_dimv[2]!=1:
+
+        # Split into blocks - assuming current inds is a block
+        current_inds_block1 = current_inds[:(current_dimv[0]//2),:(current_dimv[1]//2),:(current_dimv[2]//2)]
+        current_inds_block2 = current_inds[(current_dimv[0]//2):,:(current_dimv[1]//2),:(current_dimv[2]//2)]
+        current_inds_block3 = current_inds[:(current_dimv[0]//2),(current_dimv[1]//2):,:(current_dimv[2]//2)]
+        current_inds_block4 = current_inds[:(current_dimv[0]//2),:(current_dimv[1]//2),(current_dimv[2]//2):]
+        current_inds_block5 = current_inds[(current_dimv[0]//2):,(current_dimv[1]//2):,:(current_dimv[2]//2)]
+        current_inds_block6 = current_inds[(current_dimv[0]//2):,:(current_dimv[1]//2),(current_dimv[2]//2):]
+        current_inds_block7 = current_inds[:(current_dimv[0]//2),(current_dimv[1]//2):,(current_dimv[2]//2):]
+        current_inds_block8 = current_inds[(current_dimv[0]//2):,(current_dimv[1]//2):,(current_dimv[2]//2):]
+
+        est_params = divAndConq_SFS(new_params, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_SFS(new_params, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_SFS(new_params, current_inds_block3, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_SFS(new_params, current_inds_block4, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_SFS(new_params, current_inds_block5, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_SFS(new_params, current_inds_block6, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_SFS(new_params, current_inds_block7, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_SFS(new_params, current_inds_block8, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+
+    elif current_dimv[0]!=1 and current_dimv[1]!=1:
+
+        # Split into blocks - assuming current inds is a block
+        current_inds_block1 = current_inds[:(current_dimv[0]//2),:(current_dimv[1]//2),:]
+        current_inds_block2 = current_inds[(current_dimv[0]//2):,:(current_dimv[1]//2),:]
+        current_inds_block3 = current_inds[:(current_dimv[0]//2),(current_dimv[1]//2):,:]
+        current_inds_block4 = current_inds[(current_dimv[0]//2):,(current_dimv[1]//2):,:]
+
+        est_params = divAndConq_SFS(new_params, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_SFS(new_params, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_SFS(new_params, current_inds_block3, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_SFS(new_params, current_inds_block4, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+
+    elif current_dimv[0]!=1 and current_dimv[2]!=1:
+
+        # Split into blocks - assuming current inds is a block
+        current_inds_block1 = current_inds[:(current_dimv[0]//2),:,:(current_dimv[2]//2)]
+        current_inds_block2 = current_inds[(current_dimv[0]//2):,:,:(current_dimv[2]//2)]
+        current_inds_block3 = current_inds[:(current_dimv[0]//2),:,(current_dimv[2]//2):]
+        current_inds_block4 = current_inds[(current_dimv[0]//2):,:,(current_dimv[2]//2):]
+
+        est_params = divAndConq_SFS(new_params, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_SFS(new_params, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_SFS(new_params, current_inds_block3, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_SFS(new_params, current_inds_block4, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+
+
+    elif current_dimv[1]!=1 and current_dimv[2]!=1:
+
+        # Split into blocks - assuming current inds is a block
+        current_inds_block1 = current_inds[:,:(current_dimv[1]//2),:(current_dimv[2]//2)]
+        current_inds_block2 = current_inds[:,(current_dimv[1]//2):,:(current_dimv[2]//2)]
+        current_inds_block3 = current_inds[:,:(current_dimv[1]//2),(current_dimv[2]//2):]
+        current_inds_block4 = current_inds[:,(current_dimv[1]//2):,(current_dimv[2]//2):]
+
+        est_params = divAndConq_SFS(new_params, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_SFS(new_params, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_SFS(new_params, current_inds_block3, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_SFS(new_params, current_inds_block4, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+
+    elif current_dimv[0]!=1:
+
+        current_inds_block1 = current_inds[:(current_dimv[0]//2),:,:]
+        current_inds_block2 = current_inds[(current_dimv[0]//2):,:,:]
+
+        est_params = divAndConq_SFS(new_params, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_SFS(new_params, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+
+    elif current_dimv[1]!=1:
+
+        current_inds_block1 = current_inds[:,:(current_dimv[1]//2),:]
+        current_inds_block2 = current_inds[:,(current_dimv[1]//2):,:]
+
+        est_params = divAndConq_SFS(new_params, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_SFS(new_params, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+
+    elif current_dimv[2]!=1:
+
+        current_inds_block1 = current_inds[:,:,:(current_dimv[2]//2)]
+        current_inds_block2 = current_inds[:,:,(current_dimv[2]//2):]
+
+        est_params = divAndConq_SFS(new_params, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+        est_params = divAndConq_SFS(new_params, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
+
+    else:
+
+        print(nparams)
+        print(nlevels)
+        print(est_params.shape)
+        print(new_params.shape)
+        # Save parameter estimates in correct location if we are only looking at one voxel
+        est_params[current_inds[:],:] = new_params.reshape(est_params[current_inds[:],:].shape)
+
+    return(est_params)
