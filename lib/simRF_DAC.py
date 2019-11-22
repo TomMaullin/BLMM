@@ -59,7 +59,7 @@ def main():
     #print(n)
 
     # Voxel dimensions
-    dimv = [4,4,4]
+    dimv = [20,20,20]
     nv = np.prod(dimv)
     #print("Number of voxels:")
     #print(nv)
