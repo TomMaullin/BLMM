@@ -197,6 +197,8 @@ def getDfromDict3D(Ddict, nparams, nlevels):
   
   # Last index will be missing so add it
   inds[len(inds)-1]=inds[len(inds)-2]+nparams[-1]
+
+  print(inds)
   
   # Make sure indices are ints
   inds = np.int64(inds)
