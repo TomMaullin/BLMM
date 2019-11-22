@@ -206,7 +206,7 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
 
     for k in np.arange(len(nparams)):
 
-      Ddict[k] = makeDnnd2D(vech2mat2D(paramVector[FishIndsDk[k]:FishIndsDk[k+1]]))
+      Ddict[k] = makeDnnd2D(vec2mat2D(paramVector[FishIndsDk[k]:FishIndsDk[k+1]]))
       
     for i in np.arange(len(nparams)):
 
