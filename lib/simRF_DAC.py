@@ -212,7 +212,7 @@ def main():
     # X'X
     XtX = np.matmul(X.transpose(0,2,1),X)
 
-    mode = 'pSFS'
+    mode = 'SFS'
 
     if mode == 'PLS':
 
