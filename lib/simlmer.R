@@ -6,9 +6,9 @@
 
 library(MASS)
 library(Matrix)
-install.packages("lme4")
+#install.packages("lme4")
 library(lme4)
-install.packages("tictoc")
+#install.packages("tictoc")
 library(tictoc)
 
 runningtime <- 0
