@@ -1,12 +1,14 @@
 #!/apps/well/R/3.4.3/bin/Rscript
 #$ -cwd
 #$ -q short.qc
-#$ -o $HOME/loglmer
-#$ -e $HOME/loglmer
+#$ -o ./loglmer/
+#$ -e ./loglmer/
 
 library(MASS)
 library(Matrix)
+install.packages("lme4")
 library(lme4)
+install.packages("tictoc")
 library(tictoc)
 
 runningtime <- 0
