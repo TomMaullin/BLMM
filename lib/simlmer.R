@@ -7,9 +7,9 @@
 library(MASS)
 library(Matrix)
 #install.packages("lme4")
-library(lme4)
+library(lme4, lib.loc="/users/nichols/inf852/BLMM/Rpackages/")
 #install.packages("tictoc")
-library(tictoc)
+library(tictoc, lib.loc="/users/nichols/inf852/BLMM/Rpackages/")
 
 runningtime <- 0
 runningbdiff <- 0
