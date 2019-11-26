@@ -24,7 +24,7 @@ for (i in seq(20)){
     num_s <- 5
     
     # Random intercept and random readings as RFX
-    XS <- cbind(1,rnorm(1000),rnorm(1000))
+    XS <- cbind(rnorm(1000),rnorm(1000),rnorm(1000))
     
     # Generate random effects matrix for subject factor
     ZS <- t(KhatriRao(t(JS), t(XS)))
@@ -54,22 +54,9 @@ for (i in seq(20)){
     # Fixed effects matrix
     X <- cbind(1, rnorm(1000), rnorm(1000), rnorm(1000), rnorm(1000))
     
-    # Make RFX variance matrix
-    cov_s <- diag(3)# matrix(c(2,0.5,0.5,4),nrow=2,ncol=2)
-    cov_g <- diag(1)# matrix(c(6,0.1,0.1,1),nrow=2,ncol=2)
-    
-    # Combine to get sparse block diag
-    sigma <- cov_s
-    for (i in c(2:30)){
-      sigma <- bdiag(sigma, cov_s)
-    }
-    for (i in c(1:10)){
-      sigma <- bdiag(sigma, cov_g)
-    }
-    
     # Generate b
-    b <- 20*mvrnorm(n = 1, matrix(0L, nrow = dim(Z)[2], ncol = 1), Sigma=sigma, tol = 1e-10, empirical = FALSE, EISPACK = FALSE)
-    
+    b <- 20*rnorm(100)
+      
     # Generate beta
     beta <- 20*rnorm(5)
     
@@ -92,8 +79,7 @@ for (i in seq(20)){
     #z4 <- as.matrix(XG[,1])# CAREFUL HERE
     
     tic('lmer time')
-    contr <- lmerControl(boundary.tol=1e-10)
-    m <- lmer(y ~ x2 + x3 + x4 + x5 + (1 + z2 + z3|fS) + (0 + XG|fG), control=contr, REML=FALSE) #Don't need intercepts in R - automatically assumed
+    m <- lmer(y ~ x2 + x3 + x4 + x5 + (0 + z1 + z2 + z3|fS) + (0 + XG|fG)) #Don't need intercepts in R - automatically assumed
     t<-toc()
     
     runningtime <- runningtime + t$toc - t$tic
