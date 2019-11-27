@@ -212,7 +212,7 @@ def main():
     # X'X
     XtX = np.matmul(X.transpose(0,2,1),X)
 
-    mode = 'PLS'
+    mode = 'FS'
 
     if mode == 'PLS':
 
@@ -819,7 +819,7 @@ def divAndConq_FS(init_params, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, 
         est_params = divAndConq_FS(new_params, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
 
     else:
-        
+
         # Save parameter estimates in correct location if we are only looking at one voxel
         est_params[current_inds[:],:] = new_params.reshape(est_params[current_inds[:],:].shape)
 
