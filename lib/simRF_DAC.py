@@ -243,9 +243,6 @@ def main():
         # New array we will store estimates in
         est_theta = np.zeros((XtY.shape[0], theta0.shape[0]))
 
-        print('original est_theta shape')
-        print(est_theta.shape)
-
         #================================================================================
         # Run Simulation
         #================================================================================
@@ -822,11 +819,7 @@ def divAndConq_FS(init_params, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, 
         est_params = divAndConq_FS(new_params, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, est_params)
 
     else:
-
-        print(nparams)
-        print(nlevels)
-        print(est_params.shape)
-        print(new_params.shape)
+        
         # Save parameter estimates in correct location if we are only looking at one voxel
         est_params[current_inds[:],:] = new_params.reshape(est_params[current_inds[:],:].shape)
 
