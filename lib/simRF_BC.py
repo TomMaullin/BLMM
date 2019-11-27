@@ -8,10 +8,10 @@ import nibabel as nib
 import nilearn
 from lib.tools3d import *
 import sparse
-#from lib.FS import FS
-#from lib.SFS import SFS
+from lib.FS import FS
+from lib.SFS import SFS
 from lib.pFS import pFS
-#from lib.pSFS import pSFS
+from lib.pSFS import pSFS
 
 # Random Field based simulation
 def main():
