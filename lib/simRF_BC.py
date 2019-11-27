@@ -20,7 +20,7 @@ def main():
 	# Scalars
 	#================================================================================
 	# Number of factors, random integer between 1 and 3
-	r = 2#np.random.randint(2,4)#np.random.randint(1,4)
+	r = 1#np.random.randint(2,4)#np.random.randint(1,4)
 	#print("Number of grouping factors for random effects:")
 	#print(r)
 
