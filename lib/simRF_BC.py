@@ -25,7 +25,7 @@ def main():
 	#print(r)
 
 	# Number of levels, random number between 2 and 8
-	nlevels = np.array([30,10])#np.random.randint(2,8,size=(r))
+	nlevels = np.array([20])#np.random.randint(2,8,size=(r))
 	# Let the first number of levels be a little larger (typically like subjects)
 	#nlevels[0] = np.random.randint(2,35,size=1)
 	#nlevels = np.sort(nlevels)[::-1]
@@ -33,7 +33,7 @@ def main():
 	#print(nlevels)
 
 	# Number of parameters, random number between 1 and 5
-	nparams = np.array([3,1])#np.random.randint(1,6,size=(r))
+	nparams = np.array([2])#np.random.randint(1,6,size=(r))
 	#print("Number of parameters for each factor:")
 	#print(nparams)
 
@@ -96,7 +96,7 @@ def main():
 			factorVec = factorVec[0:n]
 
 			# Give the data an intercept
-			Zdata_factor[:,0]=1
+			#Zdata_factor[:,0]=1
 
 		else:
 
@@ -126,8 +126,8 @@ def main():
 	# Smoothed beta
 	#================================================================================
 	# Random 4D matrix (unsmoothed)
-	beta_us = np.random.randn(nv*p).reshape(dimv[0],dimv[1],dimv[2],p)*20
-	beta_us[3:5,3:5,3:5,3] = beta_us[3:5,3:5,3:5,3] + 100
+	beta_us = np.random.randn(nv*p).reshape(dimv[0],dimv[1],dimv[2],p)
+	#beta_us[3:5,3:5,3:5,3] = beta_us[3:5,3:5,3:5,3] + 100
 
 	t1 = time.time()
 	# Some random affine, not important for this simulation
@@ -145,7 +145,7 @@ def main():
 	# Smoothed b
 	#================================================================================
 	# Random 4D matrix (unsmoothed)
-	b_us = np.random.randn(nv*q).reshape(dimv[0],dimv[1],dimv[2],q)*20
+	b_us = np.random.randn(nv*q).reshape(dimv[0],dimv[1],dimv[2],q)
 
 	# Some random affine, not important for this simulation
 	affine = np.diag([1, 1, 1, 1])
