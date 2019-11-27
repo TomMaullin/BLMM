@@ -155,7 +155,7 @@ def pSFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
       
       # Update D_k
       #Ddict[k] = makeDnnd3D(vec2mat3D(mat2vec3D(Ddict[k]) + update_p))
-      Ddict[k] = makeDnnd3D(vech2mat3D(mat2vech3D(Ddict[k]) + update))
+      Ddict[k] = makeDnnd3D(vech2mat3D(mat2vech3D(Ddict[k]) + update_p))
       
       # Add D_k back into D and recompute DinvIplusZtZD
       for j in np.arange(nlevels[k]):
