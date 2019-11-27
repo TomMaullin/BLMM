@@ -223,8 +223,8 @@ def main():
 	print(np.mean(np.mean(np.mean(np.abs(beta_True_map-beta_est_map)))))
 
 
-	FishIndsDk = np.int32(np.cumsum(nparams**2) + p + 1)
-	#FishIndsDk = np.int32(np.cumsum(nparams*(nparams+1)/2) + p + 1)
+	#FishIndsDk = np.int32(np.cumsum(nparams**2) + p + 1)
+	FishIndsDk = np.int32(np.cumsum(nparams*(nparams+1)/2) + p + 1)
 	FishIndsDk = np.insert(FishIndsDk,0,p+1)
 
 	# Get the parameters
@@ -237,7 +237,7 @@ def main():
 
 	  #Ddict[k] = makeDnnd3D(vech2mat3D(paramVec[:,FishIndsDk[k]:FishIndsDk[k+1],:]))
 
-	  Ddict[k] = makeDnnd3D(vec2mat3D(paramVec[:,FishIndsDk[k]:FishIndsDk[k+1],:]))
+	  Ddict[k] = makeDnnd3D(vech2mat3D(paramVec[:,FishIndsDk[k]:FishIndsDk[k+1],:]))
 
 
 	  
