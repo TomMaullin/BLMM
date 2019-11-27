@@ -55,10 +55,10 @@ for (i in seq(20)){
     X <- cbind(1, rnorm(1000), rnorm(1000), rnorm(1000), rnorm(1000))
     
     # Generate b
-    b <- 20*rnorm(100)
+    b <- rnorm(100)
       
     # Generate beta
-    beta <- 20*rnorm(5)
+    beta <- rnorm(5)
     
     # Generate response 
     y <- X%*%beta + Z%*%b + rnorm(1000)
@@ -99,7 +99,7 @@ for (i in seq(20)){
     tmp2_est <- ranef(m)$fG
     diff2<-as.list(abs(tmp2-tmp2_est))
     
-    runningbdiff <- runningbdiff + mean(rbind(diff1$z2, diff1$z3, diff1$`(Intercept)`, diff2$XG))
+    runningbdiff <- runningbdiff + mean(rbind(diff1$z1, diff1$z2, diff1$z3, diff2$XG))
     runningbetadiff <- runningbetadiff + mean(abs(beta-betahat))
     }}}
 

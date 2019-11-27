@@ -135,7 +135,7 @@ def main():
     # Smoothed beta
     #================================================================================
     # Random 4D matrix (unsmoothed)
-    beta_us = np.random.randn(nv*p).reshape(dimv[0],dimv[1],dimv[2],p)*20
+    beta_us = np.random.randn(nv*p).reshape(dimv[0],dimv[1],dimv[2],p)
     #beta_us[3:5,3:5,3:5,3] = beta_us[3:5,3:5,3:5,3] + 100
 
     t1 = time.time()
@@ -154,7 +154,7 @@ def main():
     # Smoothed b
     #================================================================================
     # Random 4D matrix (unsmoothed)
-    b_us = np.random.randn(nv*q).reshape(dimv[0],dimv[1],dimv[2],q)*20
+    b_us = np.random.randn(nv*q).reshape(dimv[0],dimv[1],dimv[2],q)
 
     # Some random affine, not important for this simulation
     affine = np.diag([1, 1, 1, 1])
