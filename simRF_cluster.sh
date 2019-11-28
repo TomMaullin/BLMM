@@ -11,6 +11,6 @@ n=100
 while [ "$i" -le "$n" ]; do
 
   # Submit n simulations 
-  fsl_sub -l logpFS/ -N sim$i bash $BLM_PATH/sim/simRF.sh
+  fsl_sub -l logFS/ -N sim$i bash $BLM_PATH/sim/simRF.sh
   i=$(($i + 1))
 done
