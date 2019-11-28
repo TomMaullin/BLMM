@@ -255,7 +255,7 @@ def main():
     YtXtmp = matrix(YtX[i,:,:])
     
     t1 = time.time()
-    theta_est = minimize(PLS2D, theta0, args=(ZtXtmp, ZtYtmp, XtXtmp, ZtZtmp, XtYtmp, YtXtmp, YtZtmp, XtZtmp, YtYtmp, n, P, I, tinds, rinds, cinds), method='L-BFGS-B', tol=1e-6)
+    theta_est = minimize(PLS2D, theta0, args=(ZtXtmp, ZtYtmp, XtXtmp, ZtZtmp, XtYtmp, YtXtmp, YtZtmp, XtZtmp, YtYtmp, n, P, I, tinds, rinds, cinds), method='L-BFGS-B', tol=1e-7)
     runningtime = runningtime + time.time()-t1
 
     nit = theta_est.nit
