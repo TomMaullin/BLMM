@@ -49,7 +49,7 @@ for (i in seq(20)){
       Z <- ZS
       
       # Image of Z'Z
-      image(t(Z)%*%Z)
+      #image(t(Z)%*%Z)
       
       # Image of Zi'Zi where Z1 is the first 10 rows of Z, 
       # z2 is second and so on
