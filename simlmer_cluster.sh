@@ -11,6 +11,6 @@ n=100
 while [ "$i" -le "$n" ]; do
 
   # Submit n simulations 
-  qsub $BLM_PATH/lib/simlmer2.R 
+  qsub $BLM_PATH/lib/simlmer.R 
   i=$(($i + 1))
 done
