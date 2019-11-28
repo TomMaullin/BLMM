@@ -87,7 +87,6 @@ def pFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
   savedparams = np.zeros((nv, np.int32(np.sum(nparams**2) + p + 1),1))
   
   t2 = time.time()
-  print('Setup time: ', t2-t1)
   
   nit=0
   while np.any(np.abs(llhprev-llhcurr)>tol):
@@ -239,7 +238,6 @@ def pFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     #print('Iteration time: ', t2-t1)
     #print('Num converged:', nv-nv_iter)
 
-  print(nit)  
   #print('Total time taken: ', time.time()-t1_total)
   #print('Estimated NIFTI time (hours): ', 100*100*100/(nv*60*60)*(time.time()-t1_total))
   
