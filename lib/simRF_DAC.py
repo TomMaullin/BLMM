@@ -29,12 +29,12 @@ def main():
     # Scalars
     #================================================================================
     # Number of factors, random integer between 1 and 3
-    r = 1#np.random.randint(2,4)#np.random.randint(1,4)
+    r = 2#np.random.randint(2,4)#np.random.randint(1,4)
     #print("Number of grouping factors for random effects:")
     #print(r)
 
     # Number of levels, random number between 2 and 8
-    nlevels = np.array([20])#np.random.randint(2,8,size=(r))
+    nlevels = np.array([30,10])#np.random.randint(2,8,size=(r))
     # Let the first number of levels be a little larger (typically like subjects)
     #nlevels[0] = np.random.randint(2,35,size=1)
     #nlevels = np.sort(nlevels)[::-1]
@@ -42,7 +42,7 @@ def main():
     #print(nlevels)
 
     # Number of parameters, random number between 1 and 5
-    nparams = np.array([2])#np.random.randint(1,6,size=(r))
+    nparams = np.array([3,1])#np.random.randint(1,6,size=(r))
     #print("Number of parameters for each factor:")
     #print(nparams)
 
@@ -212,7 +212,7 @@ def main():
     # X'X
     XtX = np.matmul(X.transpose(0,2,1),X)
 
-    mode = 'pFS'
+    mode = 'PLS'
 
     if mode == 'PLS':
 
