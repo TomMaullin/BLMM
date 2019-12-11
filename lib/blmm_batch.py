@@ -135,6 +135,8 @@ def main(*args):
 
             Z = np.hstack((Z,Zi))
 
+    print('XZ', X.shape, Y.shape)
+
     # Mask volumes (if they are given)
     if 'data_mask_files' in inputs:
 
@@ -176,6 +178,10 @@ def main(*args):
 
     # Reduce Y_files to only Y files for this block
     Y_files = Y_files[(blksize*(batchNo-1)):min((blksize*batchNo),len(Y_files))]
+
+    print('Y_files shape')
+    print(Y_files.shape)
+    print(Y_files[0])
     
     # Verify input
     verifyInput(Y_files, M_files, Y0)
@@ -185,11 +191,12 @@ def main(*args):
     Y, Mask, nmap = obtainY(Y_files, M_files, M_t)
 
     print(Y.shape)
-    print(Y[0])
-    
+
     # Work out voxel specific designs
     MX = blkMX(X, Y)
+    print('MXY ran')
     MZ = blkMX(Z, Y) # MIGHT NEED TO THINK ABOUT SPARSITY HERE LATER
+    print('MZY ran')
     
     # Get X transpose Y, Z transpose Y and Y transpose Y.
     XtY = blkXtY(X, Y, Mask)
