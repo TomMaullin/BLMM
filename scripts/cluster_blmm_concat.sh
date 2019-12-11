@@ -1,2 +1,2 @@
 #!/bin/bash
-fslpython -c "from lib import blm_concat; blm_concat.main('$1')"
+fslpython -c "from lib import blmm_concat; blmm_concat.main('$1')"

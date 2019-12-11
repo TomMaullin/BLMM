@@ -1,2 +1,2 @@
 #!/bin/bash
-fslpython -c "from lib import blm_setup; blm_setup.main('$1')"
+fslpython -c "from lib import blmm_setup; blmm_setup.main('$1')"
