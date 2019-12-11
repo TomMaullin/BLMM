@@ -1,5 +1,10 @@
 Y_files:
 X:
+Z:
+  - f1:
+      name:
+      factor:
+      design:
 outdir:
 contrasts:
   - c1:

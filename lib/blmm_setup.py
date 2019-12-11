@@ -10,8 +10,8 @@ import sys
 import os
 import shutil
 import yaml
-from lib.blm_eval import blm_eval
-from lib.blm_load import blm_load
+from lib.blmm_eval import blmm_eval
+from lib.blmm_load import blmm_load
 
 # Main takes in two arguments at most:
 # - input: Either the path to an input file or an input structure
@@ -21,13 +21,13 @@ from lib.blm_load import blm_load
 #          in a text file (retnb=False).
 def main(*args):
 
-    # Change to blm directory
+    # Change to blmm directory
     pwd = os.getcwd()
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
     if len(args)==0 or (not args[0]):
         # Load in inputs
-        ipath = os.path.abspath(os.path.join('..','blm_config.yml'))
+        ipath = os.path.abspath(os.path.join('..','blmm_config.yml'))
         with open(ipath, 'r') as stream:
             inputs = yaml.load(stream)
         retnb = False
@@ -90,6 +90,13 @@ def main(*args):
             # Change output directory in inputs
             inputs['outdir'] = os.path.join(pwd, inputs['outdir'])
 
+        # Change each random effects factor
+        n_f = len(inputs['Z'])
+        for i in range(0,n_f):
+
+            inputs['Z'][i]['f' + str(i+1)]['factor'] = os.path.join(pwd, inputs['Z'][i]['f' + str(i+1)]['factor'])
+            inputs['Z'][i]['f' + str(i+1)]['design'] = os.path.join(pwd, inputs['Z'][i]['f' + str(i+1)]['design'])
+
         # Update inputs
         with open(ipath, 'w') as outfile:
             yaml.dump(inputs, outfile, default_flow_style=False)
@@ -103,7 +110,7 @@ def main(*args):
     OutDir = inputs['outdir']
 
     # Get number of parameters
-    c1 = blm_eval(inputs['contrasts'][0]['c' + str(1)]['vector'])
+    c1 = blmm_eval(inputs['contrasts'][0]['c' + str(1)]['vector'])
     c1 = np.array(c1)
     n_p = c1.shape[0]
     del c1
@@ -124,7 +131,7 @@ def main(*args):
 
     # Load in one nifti to check NIFTI size
     try:
-        Y0 = blm_load(Y_files[0])
+        Y0 = blmm_load(Y_files[0])
     except Exception as error:
         raise ValueError('The NIFTI "' + Y_files[0] + '"does not exist')
 
@@ -149,7 +156,7 @@ def main(*args):
     for i in range(0,n_c):
 
         # Read in contrast vector
-        cvec = blm_eval(inputs['contrasts'][i]['c' + str(i+1)]['vector'])
+        cvec = blmm_eval(inputs['contrasts'][i]['c' + str(i+1)]['vector'])
         cvec = np.array(cvec)
 
         if cvec.ndim>1:

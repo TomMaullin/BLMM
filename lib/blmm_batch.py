@@ -13,8 +13,9 @@ import shutil
 import yaml
 import time
 np.set_printoptions(threshold=np.nan)
-from lib.blm_eval import blm_eval
-from lib.blm_load import blm_load
+from lib.blmm_eval import blmm_eval
+from lib.blmm_load import blmm_load
+import scipy.sparse
 
 def main(*args):
 
@@ -25,7 +26,7 @@ def main(*args):
 
     if len(args)==1 or (not args[1]):
         # Load in inputs
-        with open(os.path.join(os.getcwd(),'..','blm_config.yml'), 'r') as stream:
+        with open(os.path.join(os.getcwd(),'..','blmm_config.yml'), 'r') as stream:
             inputs = yaml.load(stream)
     else:
         if type(args[1]) is str:
@@ -43,8 +44,8 @@ def main(*args):
 
     OutDir = inputs['outdir']
 
-    # Get number of parameters
-    c1 = blm_eval(inputs['contrasts'][0]['c' + str(1)]['vector'])
+    # Get number of ffx parameters
+    c1 = blmm_eval(inputs['contrasts'][0]['c' + str(1)]['vector'])
     c1 = np.array(c1)
     n_p = c1.shape[0]
     del c1
@@ -60,7 +61,7 @@ def main(*args):
 
     # Load in one nifti to check NIFTI size
     try:
-        Y0 = blm_load(Y_files[0])
+        Y0 = blmm_load(Y_files[0])
     except Exception as error:
         raise ValueError('The NIFTI "' + Y_files[0] + '"does not exist')
 
@@ -74,10 +75,68 @@ def main(*args):
     blksize = int(np.floor(MAXMEM/8/NIFTIsize/n_p));
 
     # Reduce X to X for this block.
-    X = blm_load(inputs['X'])
+    X = blmm_load(inputs['X'])
     print(X.shape)
     X = X[(blksize*(batchNo-1)):min((blksize*batchNo),len(Y_files))]
     
+
+    # Number of random effects factors.
+    n_f = len(inputs['Z'])
+
+    # Read in each factor
+    for i in range(0,n_f):
+
+        Zi_factor = blmm_load(inputs['Z'][i]['f' + str(i+1)]['factor'])
+        Zi_design = blmm_load(inputs['Z'][i]['f' + str(i+1)]['design'])
+
+        # Number of levels for factor i
+        l_i = np.amax(Zi_factor)
+
+        # Number of parameters for factor i
+        q_i = Zi_design.shape[1]
+
+        print('l')
+        print(l_i)
+        print('q')
+        print(q_i)
+
+        print("Z shapes (full)")
+        print(Zi_design.shape)
+        print(Zi_factor.shape)
+
+        # One hot encode the factor vector
+        Zi_factor = pd.get_dummies(pd.DataFrame(Zi_factor)[0]).values
+
+        # Reduce to block.
+        Zi_design = Zi_design[(blksize*(batchNo-1)):min((blksize*batchNo),len(Y_files))]
+        Zi_factor = Zi_factor[(blksize*(batchNo-1)):min((blksize*batchNo),len(Y_files))]
+
+        print("Z shapes (block)")
+        print(Zi_design.shape)
+        print(Zi_factor.shape)
+
+
+        # Repeat Zi_factor for each parameter
+        Zi = np.repeat(Zi_factor, q_i,axis=1).astype(np.float64)
+
+        # Fill the one values with the design
+        Zi[Zi==1]=Zi_design.reshape(Zi[Zi==1].shape)
+
+        print('Z shape')
+        print(Zi.shape)
+
+        # Concatenate Z's Horizontally
+        if i == 0:
+
+            Z = Zi
+
+        else:
+
+            Z = np.hstack((Z,Zi))
+    
+    print(X.shape)
+    X = X[(blksize*(batchNo-1)):min((blksize*batchNo),len(Y_files))]
+
     # Mask volumes (if they are given)
     if 'data_mask_files' in inputs:
 
@@ -129,10 +188,12 @@ def main(*args):
 
     # Work out voxel specific designs
     MX = blkMX(X, Y)
+    MZ = blkMX(Z, Y) # MIGHT NEED TO THINK ABOUT SPARSITY HERE LATER
     
-    # Get X transpose Y, X transpose X and Y transpose Y.
+    # Get X transpose Y, Z transpose Y and Y transpose Y.
     XtY = blkXtY(X, Y, Mask)
     YtY = blkYtY(Y, Mask)
+    ZtY = blkXtY(Z, Y, Mask) # REVISIT ONCE SPARSED
 
     # In a spatially varying design XtX has dimensions n_voxels
     # by n_parameters by n_parameters. We reshape to n_voxels by
@@ -144,24 +205,58 @@ def main(*args):
     XtX = np.zeros([Mask.shape[0],XtX_m.shape[1]])
     XtX[np.flatnonzero(Mask),:] = XtX_m[:]
 
+    # In a spatially varying design ZtX has dimensions n_voxels
+    # by n_q by n_parameters. We reshape to n_voxels by
+    # n_parameters^2 so that we can save as a csv.
+    ZtX_m = blkZtX(MZ, MX)
+    ZtX_m = XtX_m.reshape([ZtX_m.shape[0], ZtX_m.shape[1]*ZtX_m.shape[2]])
+
+    # We then need to unmask XtX as we now are saving XtX.
+    ZtX = np.zeros([Mask.shape[0],ZtX_m.shape[1]])
+    ZtX[np.flatnonzero(Mask),:] = ZtX_m[:]
+
+    # ======================================================================
+    # NEED TO THINK ABOUT SPARSE HERE
+    # ======================================================================
+    #
+    # In a spatially varying design ZtZ has dimensions n_voxels
+    # by n_q by n_q. We reshape to n_voxels by n_q^2 so that we
+    # can save as a csv.
+    ZtZ_m = blkXtX(MZ)
+    ZtZ_m = ZtZ_m.reshape([ZtZ_m.shape[0], ZtZ_m.shape[1]*ZtZ_m.shape[2]])
+
+    # We then need to unmask XtX as we now are saving XtX.
+    ZtZ = np.zeros([Mask.shape[0],ZtZ_m.shape[1]])
+    ZtZ[np.flatnonzero(Mask),:] = ZtZ_m[:]
+
+    # ======================================================================
+
     # Pandas reads and writes files much more quickly with nrows <<
     # number of columns
     XtY = XtY.transpose()
+    ZtY = ZtY.transpose()
 
     if (len(args)==1) or (type(args[1]) is str):
-        # Record XtX and XtY
+        # Record product matrices 
         np.save(os.path.join(OutDir,"tmp","XtX" + str(batchNo)), 
                    XtX)
         np.save(os.path.join(OutDir,"tmp","XtY" + str(batchNo)), 
                    XtY) 
         np.save(os.path.join(OutDir,"tmp","YtY" + str(batchNo)), 
                    YtY) 
+        np.save(os.path.join(OutDir,"tmp","ZtY" + str(batchNo)), 
+                   ZtY) 
+        np.save(os.path.join(OutDir,"tmp","ZtX" + str(batchNo)), 
+                   ZtX) 
+        np.save(os.path.join(OutDir,"tmp","ZtZ" + str(batchNo)), 
+                   ZtZ) 
+
         # Get map of number of scans at voxel.
         nmap = nib.Nifti1Image(nmap,
                                Y0.affine,
                                header=Y0.header)
         nib.save(nmap, os.path.join(OutDir,'tmp',
-                        'blm_vox_n_batch'+ str(batchNo) + '.nii'))
+                        'blmm_vox_n_batch'+ str(batchNo) + '.nii'))
     else:
         # Return XtX, XtY, YtY, nB
         return(XtX, XtY, YtY, nmap)
@@ -179,7 +274,7 @@ def verifyInput(Y_files, M_files, Y0):
         Y_file = Y_files[i]
 
         try:
-            Y = blm_load(Y_file)
+            Y = blmm_load(Y_file)
         except Exception as error:
             raise ValueError('The NIFTI "' + Y_file + '"does not exist')
 
@@ -202,7 +297,7 @@ def verifyInput(Y_files, M_files, Y0):
             M_file = M_files[i]
 
             try:
-                M = blm_load(M_file)
+                M = blmm_load(M_file)
             except Exception as error:
                 raise ValueError('The NIFTI "' + M_file + '"does not exist')
 
@@ -237,7 +332,7 @@ def blkMX(X,Y):
 def obtainY(Y_files, M_files, M_t):
 
     # Load in one nifti to check NIFTI size
-    Y0 = blm_load(Y_files[0])
+    Y0 = blmm_load(Y_files[0])
     d = Y0.get_data()
     
     # Get number of voxels.
@@ -254,13 +349,13 @@ def obtainY(Y_files, M_files, M_t):
     for i in range(0, len(Y_files)):
 
         # Read in each individual NIFTI.
-        Y_indiv = blm_load(Y_files[i])
+        Y_indiv = blmm_load(Y_files[i])
 
         # Mask Y if necesart
         if M_files:
         
             # Apply mask
-            M_indiv = blm_load(M_files[i]).get_data()
+            M_indiv = blmm_load(M_files[i]).get_data()
             d = np.multiply(
                 Y_indiv.get_data(),
                 M_indiv)
@@ -356,6 +451,32 @@ def blkXtX(X):
             XtX = np.array([XtX])
 
     return XtX
+
+
+def blkZtX(Z,X):
+
+    if np.ndim(Z) == 3:
+
+        Zt = Z.transpose((0, 2, 1))
+        ZtX = np.matmul(Zt, X)
+
+    else:
+
+        # Calculate XtX
+        ZtX = np.asarray(
+                    np.dot(np.transpose(Z), X))
+
+        # Check the dimensions haven't been reduced
+        # (numpy will lower the dimension of the 
+        # array if the length in one dimension is
+        # one)
+        if np.ndim(ZtX) == 0:
+            ZtX = np.array([ZtX])
+        elif np.ndim(ZtX) == 1:
+            ZtX = np.array([ZtX])
+
+    return ZtX
+
 
 
 if __name__ == "__main__":

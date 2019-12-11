@@ -4,7 +4,7 @@ import nibabel as nib
 import numpy as np
 
 # This is a small function to load in a file based on it's prefix.
-def blm_load(filepath):
+def blmm_load(filepath):
 
     # If the file is text data in the form of csv, tsv, txt or dat
     if filepath.lower().endswith(('.csv', '.tsv', '.txt', '.dat')):
