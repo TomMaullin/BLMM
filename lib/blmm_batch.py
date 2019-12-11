@@ -219,7 +219,7 @@ def main(*args):
     # by n_q by n_parameters. We reshape to n_voxels by
     # n_parameters^2 so that we can save as a csv.
     ZtX_m = blkZtX(MZ, MX)
-    ZtX_m = XtX_m.reshape([ZtX_m.shape[0], ZtX_m.shape[1]*ZtX_m.shape[2]])
+    ZtX_m = ZtX_m.reshape([ZtX_m.shape[0], ZtX_m.shape[1]*ZtX_m.shape[2]])
 
     # We then need to unmask XtX as we now are saving XtX.
     ZtX = np.zeros([Mask.shape[0],ZtX_m.shape[1]])
@@ -423,15 +423,6 @@ def blkYtY(Y, Mask):
 def blkXtY(X, Y, Mask):
     
     # Calculate X transpose Y (Masked)
-    print('inside blkXtY')
-    print(Y.shape)
-    print(X.shape)
-    print(type(Y))
-    print(type(X))
-    print(Y[0])
-    print(X[0])
-    print(type(Y[0]))
-    print(type(X[0]))
     XtY_m = np.asarray(
                 np.dot(np.transpose(X), Y))
 
