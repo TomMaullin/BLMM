@@ -184,6 +184,9 @@ def main(*args):
     # with no studies present.
     Y, Mask, nmap = obtainY(Y_files, M_files, M_t)
 
+    print(Y.shape)
+    print(Y[0])
+    
     # Work out voxel specific designs
     MX = blkMX(X, Y)
     MZ = blkMX(Z, Y) # MIGHT NEED TO THINK ABOUT SPARSITY HERE LATER
