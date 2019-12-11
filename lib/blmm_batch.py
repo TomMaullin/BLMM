@@ -135,7 +135,7 @@ def main(*args):
 
             Z = np.hstack((Z,Zi))
 
-    print('XZ', X.shape, Y.shape)
+    print('XZ', X.shape, Z.shape)
 
     # Mask volumes (if they are given)
     if 'data_mask_files' in inputs:
