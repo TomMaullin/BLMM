@@ -1,6 +1,6 @@
 # This is a small function to help evaluate a string containing
 # a contrast vector
-def blm_eval(c):
+def blmm_eval(c):
 
     c = str(c)
     c = c.replace("'", "")
