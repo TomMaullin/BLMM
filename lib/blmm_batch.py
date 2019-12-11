@@ -134,9 +134,6 @@ def main(*args):
         else:
 
             Z = np.hstack((Z,Zi))
-    
-    print(X.shape)
-    X = X[(blksize*(batchNo-1)):min((blksize*batchNo),len(Y_files))]
 
     # Mask volumes (if they are given)
     if 'data_mask_files' in inputs:
