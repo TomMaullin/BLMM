@@ -16,6 +16,7 @@ np.set_printoptions(threshold=np.nan)
 from lib.blmm_eval import blmm_eval
 from lib.blmm_load import blmm_load
 import scipy.sparse
+import pandas as pd
 
 def main(*args):
 
