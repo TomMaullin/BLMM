@@ -179,8 +179,7 @@ def main(*args):
     # Reduce Y_files to only Y files for this block
     Y_files = Y_files[(blksize*(batchNo-1)):min((blksize*batchNo),len(Y_files))]
 
-    print('Y_files shape')
-    print(Y_files.shape)
+    print('Y_files 0')
     print(Y_files[0])
     
     # Verify input
