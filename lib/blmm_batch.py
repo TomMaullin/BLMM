@@ -199,8 +199,11 @@ def main(*args):
     
     # Get X transpose Y, Z transpose Y and Y transpose Y.
     XtY = blkXtY(X, Y, Mask)
+    print('XtY ran')
     YtY = blkYtY(Y, Mask)
+    print('YtY ran')
     ZtY = blkXtY(Z, Y, Mask) # REVISIT ONCE SPARSED
+    print('ZtY ran')
 
     # In a spatially varying design XtX has dimensions n_voxels
     # by n_parameters by n_parameters. We reshape to n_voxels by
@@ -243,7 +246,11 @@ def main(*args):
     XtY = XtY.transpose()
     ZtY = ZtY.transpose()
 
+    print('got here')
+
     if (len(args)==1) or (type(args[1]) is str):
+
+        print('also got here')
         # Record product matrices 
         np.save(os.path.join(OutDir,"tmp","XtX" + str(batchNo)), 
                    XtX)
