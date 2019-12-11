@@ -4,15 +4,15 @@ RealPath() {
     (echo $(cd $(dirname "$1") && pwd -P)/$(basename "$1"))
 }
 
-BLM_PATH=$(dirname $(RealPath "${BASH_SOURCE[0]}"))
+BLMM_PATH=$(dirname $(RealPath "${BASH_SOURCE[0]}"))
 
 # include parse_yaml function
-. $BLM_PATH/scripts/parse_yaml.sh
+. $BLMM_PATH/scripts/parse_yaml.sh
 
 # Work out if we have been given multiple analyses configurations
-# Else just assume blm_config is the correct configuration
+# Else just assume blmm_config is the correct configuration
 if [ "$1" == "" ] ; then
-  cfg=$(RealPath "blm_config.yml")
+  cfg=$(RealPath "blmm_config.yml")
 else
   cfg=$1
 fi
@@ -40,7 +40,7 @@ touch $config_outdir/nb.txt
 inputs=$config_outdir/inputs.yml
 cp $cfg $inputs
 
-fsl_sub -l log/ -N setup bash $BLM_PATH/scripts/cluster_blm_setup.sh $inputs > /tmp/$$ && setupID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
+fsl_sub -l log/ -N setup bash $BLMM_PATH/scripts/cluster_blmm_setup.sh $inputs > /tmp/$$ && setupID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
 if [ "$setupID" == "" ] ; then
   echo "Setup job submission failed!"
 fi
@@ -93,7 +93,7 @@ i=1
 while [ "$i" -le "$nb" ]; do
 
   # Submit nb batches and get the ids for them
-  fsl_sub -j $setupID -l log/ -N batch${i} bash $BLM_PATH/scripts/cluster_blm_batch.sh $i $inputs > /tmp/$$ && batchIDs=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$batchIDs
+  fsl_sub -j $setupID -l log/ -N batch${i} bash $BLMM_PATH/scripts/cluster_blmm_batch.sh $i $inputs > /tmp/$$ && batchIDs=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$batchIDs
   i=$(($i + 1))
 done
 if [ "$batchIDs" == "" ] ; then
@@ -105,7 +105,7 @@ else
 fi
 
 # Submit results job 
-fsl_sub -j $batchIDs -l log/ -N results bash $BLM_PATH/scripts/cluster_blm_concat.sh $inputs > /tmp/$$ && resultsID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
+fsl_sub -j $batchIDs -l log/ -N results bash $BLMM_PATH/scripts/cluster_blmm_concat.sh $inputs > /tmp/$$ && resultsID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
 if [ "$resultsID" == "" ] ; then
   echo "Results job submission failed!"
 fi
