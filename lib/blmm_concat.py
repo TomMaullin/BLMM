@@ -96,7 +96,7 @@ def main(*args):
         uniquenessMask = blmm_load(os.path.join(OutDir,"tmp", 
             "blmm_vox_uniqueM_batch1.nii")).get_data().reshape(n_v)
 
-        maxM = np.amax(uniquenessMask)
+        maxM = np.int32(np.amax(uniquenessMask))
         print('maxM', maxM)
 
         # read in XtX, ZtX, ZtZ
@@ -160,7 +160,7 @@ def main(*args):
             uniquenessMask = blmm_load(os.path.join(OutDir,"tmp", 
                 "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii")).get_data().reshape(n_v)
 
-            maxM = np.amax(uniquenessMask)
+            maxM = np.int32(np.amax(uniquenessMask))
 
             # read in XtX, ZtX, ZtZ
             ZtZ_batch_unique = np.load(
