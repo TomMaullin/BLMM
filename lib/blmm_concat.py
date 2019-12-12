@@ -97,6 +97,7 @@ def main(*args):
             "blmm_vox_uniqueM_batch1.nii")).get_data().reshape(n_v)
 
         maxM = np.amax(uniquenessMask)
+        print('maxM', maxM)
 
         # read in XtX, ZtX, ZtZ
         ZtZ_batch_unique = np.load(
@@ -179,8 +180,9 @@ def main(*args):
 
                 print('check3')
                 print('maxM ', maxM)
-                print('where: ')
-                print(np.where(uniquenessMask==m))
+                print(m)
+                print(m-1)
+                print(ZtZ_batch_unique.shape)
                 print('Uniques:')
                 print(ZtZ_batch_unique[(m-1),:])
 
