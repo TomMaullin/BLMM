@@ -194,7 +194,7 @@ def main(*args):
     # Work out voxel specific designs
     MX = blkMX(X, Y, M)
     print('MXY ran')
-    MZ = blkMX(Z, Y) # MIGHT NEED TO THINK ABOUT SPARSITY HERE LATER
+    MZ = blkMX(Z, Y, M) # MIGHT NEED TO THINK ABOUT SPARSITY HERE LATER
     print('MZY ran', M)
     
     # Get X transpose Y, Z transpose Y and Y transpose Y.
