@@ -257,7 +257,7 @@ def main(*args):
         nmap = nib.Nifti1Image(nmap,
                                Y0.affine,
                                header=Y0.header)
-        nib.save(Mmap, os.path.join(OutDir,'tmp',
+        nib.save(nmap, os.path.join(OutDir,'tmp',
                         'blmm_vox_n_batch'+ str(batchNo) + '.nii'))
         # Get map of number of scans at voxel.
         Mmap = nib.Nifti1Image(Mmap,
