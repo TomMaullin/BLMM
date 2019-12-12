@@ -77,7 +77,6 @@ def main(*args):
 
     # Reduce X to X for this block.
     X = blmm_load(inputs['X'])
-    print(X.shape)
     X = X[(blksize*(batchNo-1)):min((blksize*batchNo),len(Y_files))]
     
 
@@ -96,15 +95,6 @@ def main(*args):
         # Number of parameters for factor i
         q_i = Zi_design.shape[1]
 
-        print('l')
-        print(l_i)
-        print('q')
-        print(q_i)
-
-        print("Z shapes (full)")
-        print(Zi_design.shape)
-        print(Zi_factor.shape)
-
         # One hot encode the factor vector
         Zi_factor = pd.get_dummies(pd.DataFrame(Zi_factor)[0]).values
 
@@ -112,19 +102,11 @@ def main(*args):
         Zi_design = Zi_design[(blksize*(batchNo-1)):min((blksize*batchNo),len(Y_files))]
         Zi_factor = Zi_factor[(blksize*(batchNo-1)):min((blksize*batchNo),len(Y_files))]
 
-        print("Z shapes (block)")
-        print(Zi_design.shape)
-        print(Zi_factor.shape)
-
-
         # Repeat Zi_factor for each parameter
         Zi = np.repeat(Zi_factor, q_i,axis=1).astype(np.float64)
 
         # Fill the one values with the design
         Zi[Zi==1]=Zi_design.reshape(Zi[Zi==1].shape)
-
-        print('Z shape')
-        print(Zi.shape)
 
         # Concatenate Z's Horizontally
         if i == 0:
@@ -134,8 +116,6 @@ def main(*args):
         else:
 
             Z = np.hstack((Z,Zi))
-
-    print('XZ', X.shape, Z.shape)
 
     # Mask volumes (if they are given)
     if 'data_mask_files' in inputs:
@@ -178,9 +158,6 @@ def main(*args):
 
     # Reduce Y_files to only Y files for this block
     Y_files = Y_files[(blksize*(batchNo-1)):min((blksize*batchNo),len(Y_files))]
-
-    print('Y_files 0')
-    print(Y_files[0])
     
     # Verify input
     verifyInput(Y_files, M_files, Y0)
@@ -189,21 +166,14 @@ def main(*args):
     # with no studies present.
     Y, Mask, nmap, M, Mmap = obtainY(Y_files, M_files, M_t)
 
-    print(Y.shape)
-
     # Work out voxel specific designs
     MX = blkMX(X, Y, M)
-    print('MXY ran')
     MZ = blkMX(Z, Y, M) # MIGHT NEED TO THINK ABOUT SPARSITY HERE LATER
-    print('MZY ran', M)
     
     # Get X transpose Y, Z transpose Y and Y transpose Y.
     XtY = blkXtY(X, Y, Mask)
-    print('XtY ran')
     YtY = blkYtY(Y, Mask)
-    print('YtY ran')
     ZtY = blkXtY(Z, Y, Mask) # REVISIT ONCE SPARSED
-    print('ZtY ran')
 
     # In a spatially varying design XtX has dimensions n_voxels
     # by n_parameters by n_parameters. We reshape to n_voxels by
@@ -234,11 +204,8 @@ def main(*args):
     XtY = XtY.transpose()
     ZtY = ZtY.transpose()
 
-    print('got here')
-
     if (len(args)==1) or (type(args[1]) is str):
 
-        print('also got here')
         # Record product matrices 
         np.save(os.path.join(OutDir,"tmp","XtX" + str(batchNo)), 
                    XtX)
@@ -394,12 +361,14 @@ def obtainY(Y_files, M_files, M_t):
     M_df['id'] = M_df.groupby(M_df.columns.tolist(), sort=False).ngroup() + 1
     unique_id_nifti = M_df['id'].values
     Mmap = np.zeros(Mask.shape)
-    Mmap[Mask > 0] = unique_id_nifti[:]
+    print('Mask shape: ', Mask.shape)
+    print('Masked mmap shape: ', Mmap[Mask > 0].shape)
+    print('unique_id_nifti shape: ', unique_id_nifti.shape)
+    Mmap[np.flatnonzero(Mask)] = unique_id_nifti[:]
     Mmap = Mmap.reshape(nmap.shape)
 
     # Get the unique columns of M
     M = np.unique(M, axis=1)
-    print(nmap.shape)
 
 
 
