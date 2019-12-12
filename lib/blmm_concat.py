@@ -113,7 +113,7 @@ def main(*args):
         XtX_batch_full = np.zeros((n_v, XtX_batch_unique.shape[1]))
 
         # Fill with unique maskings
-        for m in np.arange(1,maxM):
+        for m in range(1,maxM+1):
 
             print('check1')
 
@@ -176,23 +176,23 @@ def main(*args):
             XtX_batch_full = np.zeros((n_v, XtX_batch_unique.shape[1]))
 
             # Fill with unique maskings
-            for m in np.arange(1,maxM):
+            for m in range(1,maxM+1):
 
-                print('check3')
-                print('maxM ', maxM)
-                print(m)
-                print(m-1)
-                print(ZtZ_batch_unique.shape)
-                print('Uniques:')
-                print(ZtZ_batch_unique[(m-1),:])
+                # print('check3')
+                # print('maxM ', maxM)
+                # print(m)
+                # print(m-1)
+                # print(ZtZ_batch_unique.shape)
+                # print('Uniques:')
+                # print(ZtZ_batch_unique[(m-1),:])
 
-                print('ZtZ_batch_unique shape: ', ZtZ_batch_unique.shape)
-                print('ZtX_batch_unique shape: ', ZtX_batch_unique.shape)
-                print('XtX_batch_unique shape: ', XtX_batch_unique.shape)
+                # print('ZtZ_batch_unique shape: ', ZtZ_batch_unique.shape)
+                # print('ZtX_batch_unique shape: ', ZtX_batch_unique.shape)
+                # print('XtX_batch_unique shape: ', XtX_batch_unique.shape)
 
-                print('ZtZ_batch_full shape: ', ZtZ_batch_full.shape)
-                print('ZtX_batch_full shape: ', ZtX_batch_full.shape)
-                print('XtX_batch_full shape: ', XtX_batch_full.shape)
+                # print('ZtZ_batch_full shape: ', ZtZ_batch_full.shape)
+                # print('ZtX_batch_full shape: ', ZtX_batch_full.shape)
+                # print('XtX_batch_full shape: ', XtX_batch_full.shape)
 
                 ZtZ_batch_full[np.where(uniquenessMask==m),:] = ZtZ_batch_unique[(m-1),:]
                 ZtX_batch_full[np.where(uniquenessMask==m),:] = ZtX_batch_unique[(m-1),:]
