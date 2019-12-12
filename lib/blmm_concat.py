@@ -124,6 +124,11 @@ def main(*args):
 
             print('check2')
 
+        sumXtX = XtX_batch_full
+        sumZtX = ZtX_batch_full
+        sumZtZ = ZtZ_batch_full
+
+
         # Delete the files as they are no longer needed.
         os.remove(os.path.join(OutDir,"tmp","XtX1.npy"))
         os.remove(os.path.join(OutDir,"tmp","XtY1.npy"))
