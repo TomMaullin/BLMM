@@ -114,9 +114,9 @@ def main(*args):
         # Fill with unique maskings
         for m in np.arange(1,maxM):
 
-            ZtZ_batch_full[uniquenessMask==m,:] = ZtZ_batch_unique[(m-1),:]
-            ZtX_batch_full[uniquenessMask==m,:] = ZtX_batch_unique[(m-1),:]
-            XtX_batch_full[uniquenessMask==m,:] = XtX_batch_unique[(m-1),:]
+            ZtZ_batch_full[np.where(uniquenessMask==m),:] = ZtZ_batch_unique[(m-1),:]
+            ZtX_batch_full[np.where(uniquenessMask==m),:] = ZtX_batch_unique[(m-1),:]
+            XtX_batch_full[np.where(uniquenessMask==m),:] = XtX_batch_unique[(m-1),:]
 
         # Delete the files as they are no longer needed.
         os.remove(os.path.join(OutDir,"tmp","XtX1.npy"))
@@ -172,9 +172,9 @@ def main(*args):
             # Fill with unique maskings
             for m in np.arange(1,maxM):
 
-                ZtZ_batch_full[uniquenessMask==m,:] = ZtZ_batch_unique[(m-1),:]
-                ZtX_batch_full[uniquenessMask==m,:] = ZtX_batch_unique[(m-1),:]
-                XtX_batch_full[uniquenessMask==m,:] = XtX_batch_unique[(m-1),:]
+                ZtZ_batch_full[np.where(uniquenessMask==m),:] = ZtZ_batch_unique[(m-1),:]
+                ZtX_batch_full[np.where(uniquenessMask==m),:] = ZtX_batch_unique[(m-1),:]
+                XtX_batch_full[np.where(uniquenessMask==m),:] = XtX_batch_unique[(m-1),:]
 
             # Add to running total
             sumXtX = sumXtX + XtX_batch_full
