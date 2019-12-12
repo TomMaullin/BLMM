@@ -208,22 +208,14 @@ def main(*args):
     # In a spatially varying design XtX has dimensions n_voxels
     # by n_parameters by n_parameters. We reshape to n_voxels by
     # n_parameters^2 so that we can save as a csv.
-    XtX_m = blkXtX(MX)
-    XtX_m = XtX_m.reshape([XtX_m.shape[0], XtX_m.shape[1]*XtX_m.shape[2]])
-
-    # We then need to unmask XtX as we now are saving XtX.
-    XtX = np.zeros([Mask.shape[0],XtX_m.shape[1]])
-    XtX[np.flatnonzero(Mask),:] = XtX_m[:]
+    XtX = blkXtX(MX)
+    XtX = XtX.reshape([XtX.shape[0], XtX.shape[1]*XtX.shape[2]])
 
     # In a spatially varying design ZtX has dimensions n_voxels
     # by n_q by n_parameters. We reshape to n_voxels by
     # n_parameters^2 so that we can save as a csv.
-    ZtX_m = blkZtX(MZ, MX)
-    ZtX_m = ZtX_m.reshape([ZtX_m.shape[0], ZtX_m.shape[1]*ZtX_m.shape[2]])
-
-    # We then need to unmask XtX as we now are saving XtX.
-    ZtX = np.zeros([Mask.shape[0],ZtX_m.shape[1]])
-    ZtX[np.flatnonzero(Mask),:] = ZtX_m[:]
+    ZtX = blkZtX(MZ, MX)
+    ZtX = ZtX.reshape([ZtX.shape[0], ZtX.shape[1]*ZtX.shape[2]])
 
     # ======================================================================
     # NEED TO THINK ABOUT SPARSE HERE
@@ -232,12 +224,8 @@ def main(*args):
     # In a spatially varying design ZtZ has dimensions n_voxels
     # by n_q by n_q. We reshape to n_voxels by n_q^2 so that we
     # can save as a csv.
-    ZtZ_m = blkXtX(MZ)
-    ZtZ_m = ZtZ_m.reshape([ZtZ_m.shape[0], ZtZ_m.shape[1]*ZtZ_m.shape[2]])
-
-    # We then need to unmask XtX as we now are saving XtX.
-    ZtZ = np.zeros([Mask.shape[0],ZtZ_m.shape[1]])
-    ZtZ[np.flatnonzero(Mask),:] = ZtZ_m[:]
+    ZtZ = blkXtX(MZ)
+    ZtZ = ZtZ.reshape([ZtZ.shape[0], ZtZ.shape[1]*ZtZ.shape[2]])
 
     # ======================================================================
 
