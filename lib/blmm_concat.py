@@ -15,10 +15,10 @@ import yaml
 import time
 import warnings
 import subprocess
-from lib.blm_eval import blm_eval
+from lib.blmm_eval import blmm_eval
 np.set_printoptions(threshold=np.nan)
 from scipy import stats
-from lib.blm_load import blm_load
+from lib.blmm_load import blmm_load
 
 # Developer notes:
 # --------------------------------------------------------------------------
@@ -51,7 +51,7 @@ def main(*args):
         with open(os.path.join(
                     os.path.dirname(os.path.realpath(__file__)),
                     '..',
-                    'blm_config.yml'), 'r') as stream:
+                    'blmm_config.yml'), 'r') as stream:
             inputs = yaml.load(stream)
     else:
         if type(args[0]) is str:
@@ -68,7 +68,7 @@ def main(*args):
     OutDir = inputs['outdir']
     
     # Get number of parameters
-    c1 = blm_eval(inputs['contrasts'][0]['c' + str(1)]['vector'])
+    c1 = blmm_eval(inputs['contrasts'][0]['c' + str(1)]['vector'])
     c1 = np.array(c1)
     n_p = c1.shape[0]
     del c1
@@ -76,7 +76,7 @@ def main(*args):
     # Read in the nifti size and work out number of voxels.
     with open(inputs['Y_files']) as a:
         nifti_path = a.readline().replace('\n', '')
-        nifti = blm_load(nifti_path)
+        nifti = blmm_load(nifti_path)
 
     NIFTIsize = nifti.shape
     n_v = int(np.prod(NIFTIsize))
@@ -87,17 +87,46 @@ def main(*args):
     if (len(args)==0) or (type(args[0]) is str):
         # Read the matrices from the first batch. Note XtY is transposed as np
         # handles lots of rows much faster than lots of columns.
-        sumXtX = np.load(os.path.join(OutDir,"tmp","XtX1.npy"))
         sumXtY = np.load(os.path.join(OutDir,"tmp","XtY1.npy")).transpose()
         sumYtY = np.load(os.path.join(OutDir,"tmp","YtY1.npy"))
-        nmapb  = blm_load(os.path.join(OutDir,"tmp", "blm_vox_n_batch1.nii"))
-        n_s_sv = nmapb.get_data()
+        sumZtY = np.load(os.path.join(OutDir,"tmp","ZtY1.npy"))
+        nmapb  = blmm_load(os.path.join(OutDir,"tmp", "blmm_vox_n_batch1.nii"))
+        n_s_sv = nmapb.get_data()# Read in uniqueness Mask file
+
+        uniquenessMask = blmm_load(os.path.join(OutDir,"tmp", 
+            "blmm_vox_uniqueM_batch1.nii")).get_data().reshape(nv)
+
+        maxM = np.amax(uniquenessMask)
+
+        # read in XtX, ZtX, ZtZ
+        ZtZ_batch_unique = np.load(
+            os.path.join(OutDir,"tmp","ZtZ1.npy"))
+        ZtX_batch_unique = np.load(
+            os.path.join(OutDir,"tmp","ZtX1.npy"))
+        XtX_batch_unique = np.load(
+            os.path.join(OutDir,"tmp","XtX1.npy"))
+
+        # Make zeros for whole nifti ZtZ, XtX, ZtX etc
+        ZtZ_batch_full = np.zeros((nv, ZtZ_batch_unique.shape[1]))
+        ZtX_batch_full = np.zeros((nv, ZtX_batch_unique.shape[1]))
+        XtX_batch_full = np.zeros((nv, XtX_batch_unique.shape[1]))
+
+        # Fill with unique maskings
+        for m in np.arange(1,maxM):
+
+            ZtZ_batch_full[uniquenessMask==m,:] = ZtZ_batch_unique[(m-1),:]
+            ZtX_batch_full[uniquenessMask==m,:] = ZtX_batch_unique[(m-1),:]
+            XtX_batch_full[uniquenessMask==m,:] = XtX_batch_unique[(m-1),:]
 
         # Delete the files as they are no longer needed.
         os.remove(os.path.join(OutDir,"tmp","XtX1.npy"))
         os.remove(os.path.join(OutDir,"tmp","XtY1.npy"))
         os.remove(os.path.join(OutDir,"tmp","YtY1.npy"))
-        os.remove(os.path.join(OutDir,"tmp","blm_vox_n_batch1.nii"))
+        os.remove(os.path.join(OutDir,"tmp","ZtX1.npy"))
+        os.remove(os.path.join(OutDir,"tmp","ZtY1.npy"))
+        os.remove(os.path.join(OutDir,"tmp","ZtZ1.npy"))
+        os.remove(os.path.join(OutDir,"tmp","blmm_vox_n_batch1.nii"))
+        os.remove(os.path.join(OutDir,"tmp","blmm_vox_uniqueM_batch1.nii"))
 
         # Work out how many files we need.
         XtX_files = glob.glob(os.path.join(OutDir,"tmp","XtX*"))
@@ -105,25 +134,62 @@ def main(*args):
         # Cycle through batches and add together results.
         for batchNo in range(2,(len(XtX_files)+2)):
 
-            # Sum the batches.
-            sumXtX = sumXtX + np.load(
-                os.path.join(OutDir,"tmp","XtX" + str(batchNo) + ".npy"))
-
             sumXtY = sumXtY + np.load(
                 os.path.join(OutDir,"tmp","XtY" + str(batchNo) + ".npy")).transpose()
 
             sumYtY = sumYtY + np.load(
                 os.path.join(OutDir,"tmp","YtY" + str(batchNo) + ".npy"))
+
+            sumZtY = sumZtY + np.load(
+                os.path.join(OutDir,"tmp","ZtY" + str(batchNo) + ".npy"))
             
             # Obtain the full nmap.
-            n_s_sv = n_s_sv + blm_load(os.path.join(OutDir,"tmp", 
-                "blm_vox_n_batch" + str(batchNo) + ".nii")).get_data()
+            n_s_sv = n_s_sv + blmm_load(os.path.join(OutDir,"tmp", 
+                "blmm_vox_n_batch" + str(batchNo) + ".nii")).get_data()
+
+
+            # UPTOHERE
+            
+            # Read in uniqueness Mask file
+            uniquenessMask = blmm_load(os.path.join(OutDir,"tmp", 
+                "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii")).get_data().reshape(nv)
+
+            maxM = np.amax(uniquenessMask)
+
+            # read in XtX, ZtX, ZtZ
+            ZtZ_batch_unique = np.load(
+                os.path.join(OutDir,"tmp","ZtZ" + str(batchNo) + ".npy"))
+            ZtX_batch_unique = np.load(
+                os.path.join(OutDir,"tmp","ZtX" + str(batchNo) + ".npy"))
+            XtX_batch_unique = np.load(
+                os.path.join(OutDir,"tmp","XtX" + str(batchNo) + ".npy"))
+
+            # Make zeros for whole nifti ZtZ, XtX, ZtX etc
+            ZtZ_batch_full = np.zeros((nv, ZtZ_batch_unique.shape[1]))
+            ZtX_batch_full = np.zeros((nv, ZtX_batch_unique.shape[1]))
+            XtX_batch_full = np.zeros((nv, XtX_batch_unique.shape[1]))
+
+            # Fill with unique maskings
+            for m in np.arange(1,maxM):
+
+                ZtZ_batch_full[uniquenessMask==m,:] = ZtZ_batch_unique[(m-1),:]
+                ZtX_batch_full[uniquenessMask==m,:] = ZtX_batch_unique[(m-1),:]
+                XtX_batch_full[uniquenessMask==m,:] = XtX_batch_unique[(m-1),:]
+
+            # Add to running total
+            sumXtX = sumXtX + XtX_batch_full
+            sumZtX = sumZtX + ZtX_batch_full
+            sumZtZ = sumZtZ + ZtZ_batch_full
             
             # Delete the files as they are no longer needed.
-            os.remove(os.path.join(OutDir, "tmp","XtX" + str(batchNo) + ".npy"))
             os.remove(os.path.join(OutDir, "tmp","XtY" + str(batchNo) + ".npy"))
             os.remove(os.path.join(OutDir, "tmp","YtY" + str(batchNo) + ".npy"))
-            os.remove(os.path.join(OutDir, "tmp", "blm_vox_n_batch" + str(batchNo) + ".nii"))
+            os.remove(os.path.join(OutDir, "tmp","ZtY" + str(batchNo) + ".npy"))
+            os.remove(os.path.join(OutDir, "tmp","XtX" + str(batchNo) + ".npy"))
+            os.remove(os.path.join(OutDir, "tmp","ZtX" + str(batchNo) + ".npy"))
+            os.remove(os.path.join(OutDir, "tmp","ZtZ" + str(batchNo) + ".npy"))
+            os.remove(os.path.join(OutDir, "tmp", "blmm_vox_n_batch" + str(batchNo) + ".nii"))
+            os.remove(os.path.join(OutDir, "tmp", "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii"))
 
     else:
         # Read in sums.
@@ -132,11 +198,13 @@ def main(*args):
         sumYtY = args[3]
         n_s_sv = args[4]
 
+
+
     # Save nmap
     nmap = nib.Nifti1Image(n_s_sv,
                            nifti.affine,
                            header=nifti.header)
-    nib.save(nmap, os.path.join(OutDir,'blm_vox_n.nii'))
+    nib.save(nmap, os.path.join(OutDir,'blmm_vox_n.nii'))
     n_s_sv = n_s_sv.reshape(n_v, 1)
     del nmap
 
@@ -152,7 +220,7 @@ def main(*args):
         sumXtY = np.array([sumXtY])
 
     # Get ns.
-    X = blm_load(inputs['X'])
+    X = blmm_load(inputs['X'])
     n_s = X.shape[0]
 
     # ----------------------------------------------------------------------
@@ -213,7 +281,7 @@ def main(*args):
         addmask_path = inputs["analysis_mask"]
         
         # Read in the mask nifti.
-        addmask = blm_load(addmask_path).get_data().reshape([n_v,1])
+        addmask = blmm_load(addmask_path).get_data().reshape([n_v,1])
         
         Mask[addmask==0]=0
 
@@ -228,7 +296,7 @@ def main(*args):
     # Remove voxels with designs without full rank.
     M_inds = np.where(Mask==1)[0]
     Mask[M_inds[np.where(
-        np.absolute(blm_det(sumXtX[M_inds,:,:])) < np.sqrt(sys.float_info.epsilon)
+        np.absolute(blmm_det(sumXtX[M_inds,:,:])) < np.sqrt(sys.float_info.epsilon)
         )]]=0
 
     # Output final mask map
@@ -239,7 +307,7 @@ def main(*args):
                                     ),
                               nifti.affine,
                               header=nifti.header)
-    nib.save(maskmap, os.path.join(OutDir,'blm_vox_mask.nii'))
+    nib.save(maskmap, os.path.join(OutDir,'blmm_vox_mask.nii'))
     del maskmap
 
     # Get indices of voxels in ring around brain where there are
@@ -276,7 +344,7 @@ def main(*args):
     dfmap = nib.Nifti1Image(df,
                             nifti.affine,
                             header=nifti.header)
-    nib.save(dfmap, os.path.join(OutDir,'blm_vox_edf.nii'))
+    nib.save(dfmap, os.path.join(OutDir,'blmm_vox_edf.nii'))
     del df, dfmap
 
     # ----------------------------------------------------------------------
@@ -339,7 +407,7 @@ def main(*args):
     betamap = nib.Nifti1Image(beta_out,
                               nifti.affine,
                               header=nifti.header)
-    nib.save(betamap, os.path.join(OutDir,'blm_vox_beta.nii'))
+    nib.save(betamap, os.path.join(OutDir,'blmm_vox_beta.nii'))
     del beta_out, betamap
 
     del sumXtY, sumXtX
@@ -435,7 +503,7 @@ def main(*args):
     msmap = nib.Nifti1Image(resms,
                             nifti.affine,
                             header=nifti.header)
-    nib.save(msmap, os.path.join(OutDir,'blm_vox_resms.nii'))
+    nib.save(msmap, os.path.join(OutDir,'blmm_vox_resms.nii'))
     del msmap, resms
 
     # ----------------------------------------------------------------------
@@ -444,9 +512,9 @@ def main(*args):
         
     # Calculate masked (x'X)^(-1) values for ring
     if n_v_r:
-        isumXtX_r = blm_inverse(sumXtX_r, ouflow=True)
+        isumXtX_r = blmm_inverse(sumXtX_r, ouflow=True)
     if n_v_i:
-        isumXtX_i = blm_inverse(sumXtX_i, ouflow=True)
+        isumXtX_i = blmm_inverse(sumXtX_i, ouflow=True)
 
     if "OutputCovB" in inputs:
         OutputCovB = inputs["OutputCovB"]
@@ -495,7 +563,7 @@ def main(*args):
                                        header=nifti.header)
         nib.save(covbetaijmap,
             os.path.join(OutDir, 
-                'blm_vox_cov.nii'))
+                'blmm_vox_cov.nii'))
         del covbetaij, covbetaijmap, vol, covbetaij_out
         if n_v_r:
             del covbetaij_r
@@ -513,7 +581,7 @@ def main(*args):
     for i in range(0,n_c):
 
         # Read in contrast vector
-        cvec = blm_eval(inputs['contrasts'][i]['c' + str(i+1)]['vector'])
+        cvec = blmm_eval(inputs['contrasts'][i]['c' + str(i+1)]['vector'])
         cvec = np.array(cvec)
 
         if cvec.ndim == 1:
@@ -539,7 +607,7 @@ def main(*args):
 
         # Read in contrast vector
         # Get number of parameters
-        cvec = blm_eval(inputs['contrasts'][i]['c' + str(i+1)]['vector'])
+        cvec = blmm_eval(inputs['contrasts'][i]['c' + str(i+1)]['vector'])
         cvec = np.array(cvec)
 
         # Calculate C\hat{\beta}}
@@ -689,7 +757,7 @@ def main(*args):
                 cbetat_r = cbeta_r.transpose(0,2,1)
 
                 # Calculate masked (c'(X'X)^(-1)c)^(-1) values for ring
-                icvectiXtXcvec_r = blm_inverse(cvectiXtXcvec_r, ouflow=True).reshape([n_v_r, q*q])
+                icvectiXtXcvec_r = blmm_inverse(cvectiXtXcvec_r, ouflow=True).reshape([n_v_r, q*q])
                 icvectiXtXcvec[R_inds,:]=icvectiXtXcvec_r
 
             if n_v_i:
@@ -703,7 +771,7 @@ def main(*args):
                 cbetat_i = cbeta_i.transpose(0,2,1)
 
                 # Calculate masked (c'(X'X)^(-1)c)^(-1) values for inner
-                icvectiXtXcvec_i = blm_inverse(cvectiXtXcvec_i, ouflow=True).reshape([1, q*q])
+                icvectiXtXcvec_i = blmm_inverse(cvectiXtXcvec_i, ouflow=True).reshape([1, q*q])
                 icvectiXtXcvec[I_inds,:]=icvectiXtXcvec_i
 
             icvectiXtXcvec = icvectiXtXcvec.reshape([n_v, q, q])
@@ -817,7 +885,7 @@ def main(*args):
                                       header=nifti.header)
         nib.save(secbetamap,
             os.path.join(OutDir, 
-                'blm_vox_conSE.nii'))
+                'blmm_vox_conSE.nii'))
         del se_t, secbetamap
 
         # Output statistic map
@@ -826,7 +894,7 @@ def main(*args):
                                     header=nifti.header)
         nib.save(tStatcmap,
             os.path.join(OutDir, 
-                'blm_vox_conT.nii'))
+                'blmm_vox_conT.nii'))
         del stat_t, tStatcmap
 
         # Output pvalue map
@@ -835,7 +903,7 @@ def main(*args):
                                 header=nifti.header)
         nib.save(pcmap,
             os.path.join(OutDir, 
-                'blm_vox_conTlp.nii'))  
+                'blmm_vox_conTlp.nii'))  
         del pcmap, p_t
 
         # Output cbeta/cope map
@@ -844,7 +912,7 @@ def main(*args):
                                    header=nifti.header)
         nib.save(cbetamap,
             os.path.join(OutDir, 
-                'blm_vox_con.nii'))
+                'blmm_vox_con.nii'))
         del cbeta, cbetamap
 
     if n_cf:
@@ -856,7 +924,7 @@ def main(*args):
                                     header=nifti.header)
         nib.save(fStatcmap,
             os.path.join(OutDir, 
-                'blm_vox_conF.nii'))
+                'blmm_vox_conF.nii'))
         del stat_f, fStatcmap
 
         # Output pvalue map
@@ -865,7 +933,7 @@ def main(*args):
                                 header=nifti.header)
         nib.save(pcmap,
             os.path.join(OutDir, 
-                'blm_vox_conFlp.nii'))  
+                'blmm_vox_conFlp.nii'))  
         del pcmap, p_f
 
         # Output statistic map
@@ -874,7 +942,7 @@ def main(*args):
                                     header=nifti.header)
         nib.save(partialR2map,
             os.path.join(OutDir, 
-                'blm_vox_conR2.nii'))
+                'blmm_vox_conR2.nii'))
         del partialR2map, r2_f
 
     # Clean up files
@@ -889,7 +957,7 @@ def main(*args):
 # special handling is used to account for over/under
 # flow. In this case, it assumes that A has non-zero
 # diagonals.
-def blm_inverse(A, ouflow=False):
+def blmm_inverse(A, ouflow=False):
 
     # Work out number of matrices and dimension of
     # matrices. I.e. if we have seven 3 by 3 matrices
@@ -930,7 +998,7 @@ def blm_inverse(A, ouflow=False):
 # This function calculates the determinant of matrix A/
 # stack of matrices A, with special handling accounting
 # for over/under flow. 
-def blm_det(A):
+def blmm_det(A):
 
 
     # Precondition A.
