@@ -94,7 +94,7 @@ def main(*args):
         n_s_sv = nmapb.get_data()# Read in uniqueness Mask file
 
         uniquenessMask = blmm_load(os.path.join(OutDir,"tmp", 
-            "blmm_vox_uniqueM_batch1.nii")).get_data().reshape(nv)
+            "blmm_vox_uniqueM_batch1.nii")).get_data().reshape(n_v)
 
         maxM = np.amax(uniquenessMask)
 
@@ -107,9 +107,9 @@ def main(*args):
             os.path.join(OutDir,"tmp","XtX1.npy"))
 
         # Make zeros for whole nifti ZtZ, XtX, ZtX etc
-        ZtZ_batch_full = np.zeros((nv, ZtZ_batch_unique.shape[1]))
-        ZtX_batch_full = np.zeros((nv, ZtX_batch_unique.shape[1]))
-        XtX_batch_full = np.zeros((nv, XtX_batch_unique.shape[1]))
+        ZtZ_batch_full = np.zeros((n_v, ZtZ_batch_unique.shape[1]))
+        ZtX_batch_full = np.zeros((n_v, ZtX_batch_unique.shape[1]))
+        XtX_batch_full = np.zeros((n_v, XtX_batch_unique.shape[1]))
 
         # Fill with unique maskings
         for m in np.arange(1,maxM):
@@ -152,7 +152,7 @@ def main(*args):
             
             # Read in uniqueness Mask file
             uniquenessMask = blmm_load(os.path.join(OutDir,"tmp", 
-                "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii")).get_data().reshape(nv)
+                "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii")).get_data().reshape(n_v)
 
             maxM = np.amax(uniquenessMask)
 
@@ -165,9 +165,9 @@ def main(*args):
                 os.path.join(OutDir,"tmp","XtX" + str(batchNo) + ".npy"))
 
             # Make zeros for whole nifti ZtZ, XtX, ZtX etc
-            ZtZ_batch_full = np.zeros((nv, ZtZ_batch_unique.shape[1]))
-            ZtX_batch_full = np.zeros((nv, ZtX_batch_unique.shape[1]))
-            XtX_batch_full = np.zeros((nv, XtX_batch_unique.shape[1]))
+            ZtZ_batch_full = np.zeros((n_v, ZtZ_batch_unique.shape[1]))
+            ZtX_batch_full = np.zeros((n_v, ZtX_batch_unique.shape[1]))
+            XtX_batch_full = np.zeros((n_v, XtX_batch_unique.shape[1]))
 
             # Fill with unique maskings
             for m in np.arange(1,maxM):
