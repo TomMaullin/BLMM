@@ -156,6 +156,12 @@ def main(*args):
     else:
         M_t = None
 
+    # Mask volumes (if they are given)
+    if 'analysis_mask' in inputs:
+        M_a = blmm_load(inputs['analysis_mask']).get_data()
+    else:
+        M_a = None
+
     # Reduce Y_files to only Y files for this block
     Y_files = Y_files[(blksize*(batchNo-1)):min((blksize*batchNo),len(Y_files))]
     
@@ -164,7 +170,7 @@ def main(*args):
 
     # Obtain Y, mask for Y and nmap. This mask is just for voxels
     # with no studies present.
-    Y, Mask, nmap, M, Mmap = obtainY(Y_files, M_files, M_t)
+    Y, Mask, nmap, M, Mmap = obtainY(Y_files, M_files, M_t, M_a)
 
     # Work out voxel specific designs
     MX = blkMX(X, Y, M)
@@ -301,7 +307,7 @@ def blkMX(X,Y,M):
 
     return MX
 
-def obtainY(Y_files, M_files, M_t):
+def obtainY(Y_files, M_files, M_t, M_a):
 
     # Load in one nifti to check NIFTI size
     Y0 = blmm_load(Y_files[0])
@@ -338,6 +344,9 @@ def obtainY(Y_files, M_files, M_t):
         # If theres an initial threshold for the data apply it.
         if M_t is not None:
             d[d<M_t]=0
+
+        if M_a is not None:
+            d[M_a==0]=0
 
         # NaN check
         d = np.nan_to_num(d)
