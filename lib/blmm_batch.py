@@ -332,11 +332,11 @@ def blkMX(X,Y):
     # Work out the mask.
     M = (Y!=0)
 
-    unique_rows = np.unique(M, axis=0)
+    unique_cols = np.unique(M, axis=1)
 
     print('Masking shape')
     print(M.shape)
-    print(unique_rows.shape)
+    print(unique_cols.shape)
 
     # Get M in a form where each voxel's mask is mutliplied
     # by X
