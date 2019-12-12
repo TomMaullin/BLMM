@@ -187,15 +187,15 @@ def main(*args):
 
     # Obtain Y, mask for Y and nmap. This mask is just for voxels
     # with no studies present.
-    Y, Mask, nmap = obtainY(Y_files, M_files, M_t)
+    Y, Mask, nmap, M, Mmap = obtainY(Y_files, M_files, M_t)
 
     print(Y.shape)
 
     # Work out voxel specific designs
-    MX = blkMX(X, Y)
+    MX = blkMX(X, Y, M)
     print('MXY ran')
     MZ = blkMX(Z, Y) # MIGHT NEED TO THINK ABOUT SPARSITY HERE LATER
-    print('MZY ran')
+    print('MZY ran', M)
     
     # Get X transpose Y, Z transpose Y and Y transpose Y.
     XtY = blkXtY(X, Y, Mask)
@@ -269,8 +269,12 @@ def main(*args):
         nmap = nib.Nifti1Image(nmap,
                                Y0.affine,
                                header=Y0.header)
-        nib.save(nmap, os.path.join(OutDir,'tmp',
-                        'blmm_vox_n_batch'+ str(batchNo) + '.nii'))
+        # Get map of number of scans at voxel.
+        Mmap = nib.Nifti1Image(Mmap,
+                               Y0.affine,
+                               header=Y0.header)
+        nib.save(Mmap, os.path.join(OutDir,'tmp',
+                        'blmm_vox_uniqueM_batch'+ str(batchNo) + '.nii'))
     else:
         # Return XtX, XtY, YtY, nB
         return(XtX, XtY, YtY, nmap)
@@ -327,16 +331,7 @@ def verifyInput(Y_files, M_files, Y0):
                                  'different affine transformation to "' +
                                  Y0 + '"')
 
-def blkMX(X,Y):
-
-    # Work out the mask.
-    M = (Y!=0)
-
-    unique_cols = np.unique(M, axis=1)
-
-    print('Masking shape')
-    print(M.shape)
-    print(unique_cols.shape)
+def blkMX(X,Y,M):
 
     # Get M in a form where each voxel's mask is mutliplied
     # by X
@@ -401,7 +396,24 @@ def obtainY(Y_files, M_files, M_t):
     
     Y = Y[:, np.where(np.count_nonzero(Y, axis=0)>0)[0]]
 
-    return Y, Mask, nmap
+    # Work out the mask.
+    M = (Y!=0)
+
+    # Get indices corresponding to the unique rows of M
+    M_df = pd.DataFrame(M.transpose())
+    M_df['id'] = M_df.groupby(M_df.columns.tolist(), sort=False).ngroup() + 1
+    unique_id_nifti = M_df['id'].values
+    Mmap = np.zeros(Mask.shape)
+    Mmap[Mask > 0] = unique_id_nifti[:]
+    Mmap = Mmap.reshape(nmap.shape)
+
+    # Get the unique columns of M
+    M = np.unique(M, axis=1)
+    print(nmap.shape)
+
+
+
+    return Y, Mask, nmap, M, Mmap
 
 # Note: this techniqcally calculates sum(Y.Y) for each voxel,
 # not Y transpose Y for all voxels
