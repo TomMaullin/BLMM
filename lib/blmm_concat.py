@@ -114,9 +114,14 @@ def main(*args):
         # Fill with unique maskings
         for m in np.arange(1,maxM):
 
+            print('check1')
+
+
             ZtZ_batch_full[np.where(uniquenessMask==m),:] = ZtZ_batch_unique[(m-1),:]
             ZtX_batch_full[np.where(uniquenessMask==m),:] = ZtX_batch_unique[(m-1),:]
             XtX_batch_full[np.where(uniquenessMask==m),:] = XtX_batch_unique[(m-1),:]
+
+            print('check2')
 
         # Delete the files as they are no longer needed.
         os.remove(os.path.join(OutDir,"tmp","XtX1.npy"))
@@ -171,6 +176,21 @@ def main(*args):
 
             # Fill with unique maskings
             for m in np.arange(1,maxM):
+
+                print('check3')
+                print('maxM ', maxM)
+                print('where: ')
+                print(np.where(uniquenessMask==m))
+                print('Uniques:')
+                print(ZtZ_batch_unique[(m-1),:])
+
+                print('ZtZ_batch_unique shape: ', ZtZ_batch_unique.shape)
+                print('ZtX_batch_unique shape: ', ZtX_batch_unique.shape)
+                print('XtX_batch_unique shape: ', XtX_batch_unique.shape)
+
+                print('ZtZ_batch_full shape: ', ZtZ_batch_full.shape)
+                print('ZtX_batch_full shape: ', ZtX_batch_full.shape)
+                print('XtX_batch_full shape: ', XtX_batch_full.shape)
 
                 ZtZ_batch_full[np.where(uniquenessMask==m),:] = ZtZ_batch_unique[(m-1),:]
                 ZtX_batch_full[np.where(uniquenessMask==m),:] = ZtX_batch_unique[(m-1),:]
