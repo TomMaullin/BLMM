@@ -82,8 +82,8 @@ def main(*args):
 
     for k in range(r):
 
-        rfxdes = blmm_load(rfxmats[k]['f' + str(k+1)]['design'])
-        rfxfac = blmm_load(rfxmats[k]['f' + str(k+1)]['factor'])
+        rfxdes = blmm_load(rfxmats[k]['f' + str(k+1)]['design']).get_data()
+        rfxfac = blmm_load(rfxmats[k]['f' + str(k+1)]['factor']).get_data()
 
         nparams = nparams + [rfxdes.shape[1]]
         nlevels = nlevels + [len(np.unique(rfxfac))]
