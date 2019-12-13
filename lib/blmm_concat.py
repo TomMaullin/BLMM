@@ -87,9 +87,10 @@ def main(*args):
         nparams = nparams + [rfxdes.shape[1]]
         nlevels = nlevels + [len(np.unique(rfxfac))]
 
-    # Make np
+    # Get number of rfx params
     nparams = np.array(nparams)
     nlevels = np.array(nlevels)
+    n_q = np.sum(nparams*nlevels)
 
     print(nparams)
     print(nlevels)
@@ -408,25 +409,31 @@ def main(*args):
     # Reshaping
     sumXtY = sumXtY.transpose()
     sumXtY = sumXtY.reshape([n_v, n_p, 1])
+    sumYtY = sumYtY.reshape([n_v, 1, 1])
+    sumZtX = sumZtX.reshape([n_v, n_q, n_p])
+    sumZtY = sumZtY.reshape([n_v, n_q, 1])
+    sumZtZ = sumZtZ.reshape([n_v, n_q, n_q])
 
     # If we have indices where only some studies are present, work out X'X and
     # X'Y for these studies.
     if n_v_r:
 
         # Calculate masked X'X for ring
-        sumXtX_r = sumXtX[R_inds,:,:]
+        XtX_r = sumXtX[R_inds,:,:]
 
         # Calculate masked X'Y for ring
-        sumXtY_r = sumXtY[R_inds,:]
+        XtY_r = sumXtY[R_inds,:]
 
-        # Calculate masked Beta for ring
-        beta_r = np.linalg.solve(sumXtX_r, sumXtY_r)
+        # Calculate Y'Y for ring
+        YtY_r = sumXtY[R_inds,:]
 
-        # Unmask Beta
-        beta = np.zeros([n_v, n_p])
-
-        # Outer ring values
-        beta[R_inds,:] = beta_r.reshape([n_v_r, n_p])
+        #================================================================================
+        # Run parameter estimation
+        #================================================================================
+        t1 = time.time()
+        paramVec = pSFS(XtX_r, XtY_r, ZtX_r, ZtY_r, ZtZ_r, XtZ_r, YtZ_r, YtY_r, YtX_r, nlevels, nparams, 1e-6,n)
+        t2 = time.time()
+        print(t2-t1)
 
 
     # If we have indices where all studies are present, work out X'X and
@@ -434,14 +441,24 @@ def main(*args):
     if n_v_i:
         
         # X'X must be 1 by np by np for broadcasting
-        sumXtX_i = sumXtX[I_inds[0],:,:]
-        sumXtX_i = sumXtX_i.reshape([1, n_p, n_p])
+        XtX_i = sumXtX[I_inds[0],:,:]
+        XtX_i = sumXtX_i.reshape([1, n_p, n_p])
 
-        sumXtY_i = sumXtY[I_inds,:]
+        XtY_i = sumXtY[I_inds,:]
 
-        # Calculate beta
-        beta_i = np.linalg.solve(sumXtX_i, sumXtY_i)
-        beta[I_inds,:] = beta_i.reshape([n_v_i,n_p])
+        # Calculate Y'Y for inner
+        YtY_i = sumXtY[I_inds,:]
+
+
+        #================================================================================
+        # Run parameter estimation
+        #================================================================================
+        t1 = time.time()
+        paramVec = pSFS(XtX_i, XtY_i, ZtX_i, ZtY_i, ZtZ_i, XtZ_i, YtZ_i, YtY_i, YtX_i, nlevels, nparams, 1e-6,n)
+        t2 = time.time()
+        print(t2-t1)
+
+
 
     beta = beta.reshape([n_v, n_p]).transpose()
 
