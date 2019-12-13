@@ -66,6 +66,33 @@ def main(*args):
     # Read basic inputs
     # ----------------------------------------------------------------------
     OutDir = inputs['outdir']
+
+    # Random factor variables.
+    rfxmats = inputs['Z']
+
+    # Number of random effects
+    r = len(rfxmats)
+
+    # Number of variables in each factor, q
+    nparams = []
+
+    # Number of levels for each factor, l
+    nlevels = []
+
+    for k in range(r):
+
+        rfxdes = rfxmats[k]['f' + str(i)]['design']
+        rfxfac = rfxmats[k]['f' + str(i)]['factor']
+
+        nparams = nparams + [rfxdes.shape[1]]
+        nlevels = nlevels + [len(np.unique(rfxfac))]
+
+    # Make np
+    nparams = np.array(nparams)
+    nlevels = np.array(nlevels)
+
+    print(nparams)
+    print(nlevels)
     
     # Get number of parameters
     c1 = blmm_eval(inputs['contrasts'][0]['c' + str(1)]['vector'])
