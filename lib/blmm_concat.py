@@ -408,7 +408,9 @@ def main(*args):
 
     # Reshaping
     sumXtY = sumXtY.transpose()
+
     sumXtY = sumXtY.reshape([n_v, n_p, 1])
+    sumXtX = sumXtX.reshape([n_v, n_p, n_p])
     sumYtY = sumYtY.reshape([n_v, 1, 1])
     sumZtX = sumZtX.reshape([n_v, n_q, n_p])
     sumZtY = sumZtY.reshape([n_v, n_q, 1])
@@ -422,10 +424,23 @@ def main(*args):
         XtX_r = sumXtX[R_inds,:,:]
 
         # Calculate masked X'Y for ring
-        XtY_r = sumXtY[R_inds,:]
+        XtY_r = sumXtY[R_inds,:,:]
 
         # Calculate Y'Y for ring
-        YtY_r = sumXtY[R_inds,:]
+        YtY_r = sumXtY[R_inds,:,:]
+
+        # Calculate masked Z'X for ring
+        ZtX_r = sumZtX[R_inds,:,:]
+
+        # Calculate masked Z'Y for ring
+        ZtY_r = sumZtY[R_inds,:,:]
+
+        # Calculate Z'Y for ring
+        ZtZ_r = sumZtZ[R_inds,:,:]
+
+        YtX_r = XtY_r.transpose((0,2,1))
+        YtZ_r = ZtY_r.transpose((0,2,1))
+        XtZ_r = ZtX_r.transpose((0,2,1))
 
         #================================================================================
         # Run parameter estimation
