@@ -278,13 +278,21 @@ def initBeta3D(XtX, XtY):
 # ============================================================================
 def initSigma23D(ete, n):
 
+  if hasattr(n, "ndim"):
+
+    if np.prod(n.shape) > 1:
+
+      n = n.reshape(ete[:,0,0].shape)
+
   # Return the OLS estimate of sigma
   return(1/n*ete[:,0,0])
 
 
 # ============================================================================
 #
-# The function below returns an initial estimate for the Random Effects Variance matrix for the $k^{th}$ grouping factor, $D_k$. The estimator used is an adaption of the suggested estimator in Demidenko (2012) and is given by:
+# The function below returns an initial estimate for the Random Effects 
+# Variance matrix for the $k^{th}$ grouping factor, $D_k$. The estimator used
+# is an adaption of the suggested estimator in Demidenko (2012) and is given by:
 #
 # vec(Dhat_k)=[sum_(j=1)^(l_k)(Z_(k,j)'Z_(k,j)) kron (Z_(k,j)'Z_(k,j))]^(-1)*
 #              vec(\sum_(j=1)^(l_k)[\sigma^(-2)Z_(k,j)'ee'Z_(k,j)-Z_(k,j)'Z_(k,j)])
@@ -454,6 +462,12 @@ def makeDnnd3D(D):
 # ============================================================================
 def llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D):
   
+  if hasattr(n, "ndim"):
+
+    if np.prod(n.shape) > 1:
+
+      n = n.reshape(sigma2.shape)
+  
   # Work out -1/2(nln(sigma^2) + ln|I+Z'ZD|)
   firstterm = -0.5*(n*np.log(sigma2) + np.log(np.linalg.det(np.eye(ZtZ.shape[1]) + ZtZ @ D))).reshape(ete.shape[0])
                     
@@ -541,6 +555,13 @@ def get_dldB3D(sigma2, Xte, XtZ, DinvIplusZtZD, Zte):
 # ============================================================================
 def get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD):
   
+  # Make sure n is correct shape
+  if hasattr(n, "ndim"):
+
+    if np.prod(n.shape) > 1:
+
+      n = n.reshape(sigma2.shape)
+
   # Get e'(I+ZDZ')^(-1)e=e'e-e'ZD(I+Z'ZD)^(-1)Z'e
   etinvIplusZtDZe = ete - forceSym3D(Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte)
   
