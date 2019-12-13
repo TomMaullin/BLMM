@@ -81,8 +81,8 @@ def main(*args):
 
     for k in range(r):
 
-        rfxdes = rfxmats[k]['f' + str(i)]['design']
-        rfxfac = rfxmats[k]['f' + str(i)]['factor']
+        rfxdes = rfxmats[k]['f' + str(k+1)]['design']
+        rfxfac = rfxmats[k]['f' + str(k+1)]['factor']
 
         nparams = nparams + [rfxdes.shape[1]]
         nlevels = nlevels + [len(np.unique(rfxfac))]
