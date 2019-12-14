@@ -505,18 +505,21 @@ def main(*args):
     print('paramvec i: ', paramVec_i.shape)
     print('paramvec r: ', paramVec_r.shape)
 
-    paramVec = np.zeros([n_v, n_p + 1 + np.sum(nparams*(nparams+1)/2)])
+    paramVec = np.zeros([n_v, n_p + 1 + np.sum(nparams*(nparams+1)//2)])
 
     # Complete parameter vector
-    paramVec[R_inds,:] = paramVec_r[:]
-    paramVec[I_inds,:] = paramVec_i[:]
+    if n_v_r:
+        paramVec[R_inds,:] = paramVec_r[:]
+        # Assign betas
+        beta_r = paramVec_r[:, 0:n_p]
+        beta[R_inds,:] = beta_r.reshape([n_v_r, n_p])
 
-    # Assign betas
-    beta_r = paramVec_r[:, 0:n_p]
-    beta[R_inds,:] = beta_r.reshape([n_v_r, n_p])
+    if n_v_i:
 
-    beta_i = paramVec_i[:, 0:n_p]
-    beta[I_inds,:] = beta_i.reshape([n_v_i, n_p])
+        paramVec[I_inds,:] = paramVec_i[:]
+
+        beta_i = paramVec_i[:, 0:n_p]
+        beta[I_inds,:] = beta_i.reshape([n_v_i, n_p])
 
     beta = beta.reshape([n_v, n_p]).transpose()
 
@@ -551,31 +554,74 @@ def main(*args):
         beta = np.array([beta])
 
     # Get the D matrices
-    FishIndsDk = np.int32(np.cumsum(nparams*(nparams+1)/2) + p + 1)
+    FishIndsDk = np.int32(np.cumsum(nparams*(nparams+1)//2) + p + 1)
     FishIndsDk = np.insert(FishIndsDk,0,p+1)
 
-    Ddict = dict()
-    # D as a dictionary
-    for k in np.arange(len(nparams)):
 
-      #Ddict[k] = makeDnnd3D(vech2mat3D(paramVec[:,FishIndsDk[k]:FishIndsDk[k+1],:]))
+    if n_v_r:
 
-      Ddict[k] = makeDnnd3D(vech2mat3D(paramVec[:,FishIndsDk[k]:FishIndsDk[k+1],:]))
-      
-    # Full version of D
-    D = getDfromDict3D(Ddict, nparams, nlevels)
+        sigma2_r = paramVec_r[:,p:(p+1),:]
 
-    # ----------------------------------------------------------------------
-    # Calculate log-likelihood
-    # ---------------------------------------------------------------------- 
+        Ddict_r = dict()
+        # D as a dictionary
+        for k in np.arange(len(nparams)):
 
-    # Variables for likelihood
-    DinvIplusZtZD = D @ np.linalg.inv(np.eye(n_q) + ZtZ @ D)
-    Zte = ZtY - (ZtX @ beta)
-    ete = ssr3D(YtX, YtY, XtX, beta)
+          #Ddict[k] = makeDnnd3D(vech2mat3D(paramVec[:,FishIndsDk[k]:FishIndsDk[k+1],:]))
 
-    # Output log likelihood
-    llh = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D)
+          Ddict_r[k] = makeDnnd3D(vech2mat3D(paramVec_r[:,FishIndsDk[k]:FishIndsDk[k+1],:]))
+          
+        # Full version of D
+        D_r = getDfromDict3D(Ddict_r, nparams, nlevels)
+
+        # ----------------------------------------------------------------------
+        # Calculate log-likelihood
+        # ---------------------------------------------------------------------- 
+
+        # Variables for likelihood
+        DinvIplusZtZD_r = D_r @ np.linalg.inv(np.eye(n_q) + ZtZ_r @ D_r)
+        Zte_r = ZtY_r - (ZtX_r @ beta_r)
+        ete_r = ssr3D(YtX_r, YtY_r, XtX_r, beta_r)
+
+        # Output log likelihood
+        llh_r = llh3D(n_s_sv_r, ZtZ_r, Zte_r, ete_r, sigma2_r, DinvIplusZtZD_r, D_r) + n_s_sv*np.log(np.pi)
+
+    if n_v_i:
+
+        sigma2_i = paramVec_i[:,p:(p+1),:]
+
+        Ddict_i = dict()
+        # D as a dictionary
+        for k in np.arange(len(nparams)):
+
+          #Ddict[k] = makeDnnd3D(vech2mat3D(paramVec[:,FishIndsDk[k]:FishIndsDk[k+1],:]))
+
+          Ddict_i[k] = makeDnnd3D(vech2mat3D(paramVec_i[:,FishIndsDk[k]:FishIndsDk[k+1],:]))
+          
+        # Full version of D
+        D_i = getDfromDict3D(Ddict_i, nparams, nlevels)
+
+        # ----------------------------------------------------------------------
+        # Calculate log-likelihood
+        # ---------------------------------------------------------------------- 
+
+        # Variables for likelihood
+        DinvIplusZtZD_i = D_i @ np.linalg.inv(np.eye(n_q) + ZtZ_i @ D_i)
+        Zte_i = ZtY_i - (ZtX_i @ beta_i)
+        ete_i = ssr3D(YtX_i, YtY_i, XtX_i, beta_i)
+
+        # Output log likelihood
+        llh_i = llh3D(n_s, ZtZ_i, Zte_i, ete_i, sigma2_i, DinvIplusZtZD_i, D_i) + n_s*np.log(np.pi)
+
+    # Unmask llh
+    llh = np.zeros([n_v,1])
+    if n_v_r:
+
+        llh[R_inds,:] = llh_r[:]
+        
+    if n_v_i:
+
+        llh[I_inds,:] = llh_i[:]
+    
 
 
     llh_out = llh.reshape(int(NIFTIsize[0]),
