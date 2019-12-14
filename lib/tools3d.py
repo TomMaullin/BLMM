@@ -640,6 +640,7 @@ def get_dldDk3D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD):
     
     # Get the first term of the derivative
     Z_kjtVinve = Z_kjte - (Z_kjtZ @ DinvIplusZtZD @ Zte)
+    print(sigma2.shape)
     firstterm = np.einsum('i,ijk->ijk',1/sigma2,forceSym3D(Z_kjtVinve @ Z_kjtVinve.transpose((0,2,1))))
     
     # Get (the kj^th columns of Z)^T multiplied by (the kj^th columns of Z)
