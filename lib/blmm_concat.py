@@ -428,7 +428,7 @@ def main(*args):
         XtY_r = sumXtY[R_inds,:,:]
 
         # Calculate Y'Y for ring
-        YtY_r = sumXtY[R_inds,:,:]
+        YtY_r = sumYtY[R_inds,:,:]
 
         # Calculate masked Z'X for ring
         ZtX_r = sumZtX[R_inds,:,:]
