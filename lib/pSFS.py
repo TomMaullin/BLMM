@@ -231,6 +231,9 @@ def pSFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     # Matrices needed later by many calculations:
     # ----------------------------------------------------------------------------
     # X transpose e and Z transpose e
+    print('XtX shape: ', XtX.shape)
+    print('XtY shape: ', XtY.shape)
+    print('beta shape: ', beta.shape)
     Xte = XtY - (XtX @ beta)
     Zte = ZtY - (ZtX @ beta)
     
