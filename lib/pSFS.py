@@ -209,7 +209,7 @@ def pSFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     ete = ete[localnotconverged, :, :]
 
     # Spatially varying design
-    if XtX.ndim > 2:
+    if XtX.shape[0] > 1:
 
       XtX = XtX[localnotconverged, :, :]
       ZtX = ZtX[localnotconverged, :, :]
@@ -217,8 +217,9 @@ def pSFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
       XtZ = XtZ[localnotconverged, :, :]
       
     if hasattr(n, "ndim"):
-
-      if np.prod(n.shape) > 1:
+      
+      # Check if n varies with voxel
+      if n.shape[0] > 1:
 
         n = n[localnotconverged, :, :]
         

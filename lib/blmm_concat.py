@@ -473,13 +473,31 @@ def main(*args):
         
         # X'X must be 1 by np by np for broadcasting
         XtX_i = sumXtX[I_inds[0],:,:]
-        XtX_i = sumXtX_i.reshape([1, n_p, n_p])
+        XtX_i = XtX_i.reshape([1, n_p, n_p])
 
         XtY_i = sumXtY[I_inds,:]
 
         # Calculate Y'Y for inner
         YtY_i = sumXtY[I_inds,:]
 
+        # Calculate Y'Y for inner
+        YtY_i = sumYtY[I_inds,:,:]
+
+        # Calculate masked Z'X for inner
+        ZtX_i = sumZtX[I_inds[0],:,:]
+        ZtX_i = ZtX_i.reshape([1, n_q, n_p])
+
+        # Calculate masked Z'Y for inner
+        ZtY_i = sumZtY[I_inds,:,:]
+
+        # Calculate Z'Y for inner
+        ZtZ_i = sumZtZ[I_inds[0],:,:]
+        ZtZ_i = ZtZ_i.reshape([1, n_q, n_q])
+
+
+        YtX_i = XtY_i.transpose((0,2,1))
+        YtZ_i = ZtY_i.transpose((0,2,1))
+        XtZ_i = ZtX_i.transpose((0,2,1))
 
         #================================================================================
         # Run parameter estimation
