@@ -551,7 +551,7 @@ def main(*args):
 
     # Get the D matrices
     FishIndsDk = np.int32(np.cumsum(nparams*(nparams+1)//2) + n_p + 1)
-    FishIndsDk = np.insert(FishIndsDk,0,p+1)
+    FishIndsDk = np.insert(FishIndsDk,0,n_p+1)
 
 
     if n_v_r:
