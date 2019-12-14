@@ -543,10 +543,6 @@ def main(*args):
     del beta_out, betamap
 
     del sumXtY, sumXtX
-    if n_v_r:
-        del sumXtY_r
-    if n_v_i:
-        del sumXtY_i
 
     if np.ndim(beta) == 0:
         beta = np.array([[beta]])
