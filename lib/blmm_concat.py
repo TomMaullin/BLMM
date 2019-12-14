@@ -556,7 +556,7 @@ def main(*args):
 
     if n_v_r:
 
-        sigma2_r = paramVec_r[:,p:(p+1),:]
+        sigma2_r = paramVec_r[:,n_p:(n_p+1),:]
 
         Ddict_r = dict()
         # D as a dictionary
@@ -583,7 +583,7 @@ def main(*args):
 
     if n_v_i:
 
-        sigma2_i = paramVec_i[:,p:(p+1),:]
+        sigma2_i = paramVec_i[:,n_p:(n_p+1),:]
 
         Ddict_i = dict()
         # D as a dictionary
