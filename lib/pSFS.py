@@ -208,7 +208,14 @@ def pSFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     YtZ = YtZ[localnotconverged, :, :]
     ete = ete[localnotconverged, :, :]
 
+    # Spatially varying design
+    if XtX.ndim > 2:
 
+      XtX = XtX[localnotconverged, :, :]
+      ZtX = ZtX[localnotconverged, :, :]
+      ZtZ = ZtZ[localnotconverged, :, :]
+      XtZ = XtZ[localnotconverged, :, :]
+      
     if hasattr(n, "ndim"):
 
       if np.prod(n.shape) > 1:
