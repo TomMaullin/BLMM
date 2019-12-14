@@ -473,7 +473,7 @@ def llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D):
   print((n*np.log(sigma2)).shape)
   
   # Work out -1/2(nln(sigma^2) + ln|I+Z'ZD|)
-  firstterm = -0.5*n*np.log(sigma2).reshape(ete.shape[0]) + np.log(np.linalg.det(np.eye(ZtZ.shape[1]) + ZtZ @ D)).reshape(ete.shape[0])
+  firstterm = -0.5*(n*np.log(sigma2)).reshape(ete.shape[0]) + np.log(np.linalg.det(np.eye(ZtZ.shape[1]) + ZtZ @ D)).reshape(ete.shape[0])
                     
   # Work out sigma^(-2)*(e'e - e'ZD(I+Z'ZD)^(-1)Z'e)
   secondterm = -0.5*np.einsum('i,ijk->ijk',(1/sigma2).reshape(ete.shape[0]),(ete - forceSym3D(Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte))).reshape(ete.shape[0])
