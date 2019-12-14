@@ -443,8 +443,20 @@ def main(*args):
         YtZ_r = ZtY_r.transpose((0,2,1))
         XtZ_r = ZtX_r.transpose((0,2,1))
 
+        print('XtX shape: ', XtX_r.shape)
+        print('XtY shape: ', XtY_r.shape)
+        print('XtZ shape: ', XtZ_r.shape)
+        print('YtX shape: ', YtX_r.shape)
+        print('YtY shape: ', YtY_r.shape)
+        print('YtZ shape: ', YtZ_r.shape)
+        print('ZtX shape: ', ZtX_r.shape)
+        print('ZtY shape: ', ZtY_r.shape)
+        print('ZtZ shape: ', ZtZ_r.shape)
+
         # Spatially varying nv for ring
         n_s_sv_r = n_s_sv[R_inds,:]
+
+        print('n_s_sv shape: ', n_s_sv_r.shape)
 
         #================================================================================
         # Run parameter estimation

@@ -126,6 +126,14 @@ def pSFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     # Update sigma^2
     ete = ssr3D(YtX, YtY, XtX, beta)
     Zte = ZtY - (ZtX @ beta)
+
+    # Make sure n is correct shape
+    if hasattr(n, "ndim"):
+
+      if np.prod(n.shape) > 1:
+
+        n = n.reshape(ete.shape)
+
     sigma2 = 1/n*(ete - Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte).reshape(nv_iter)
     
     # Update D_k
@@ -197,6 +205,14 @@ def pSFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     ZtY = ZtY[localnotconverged, :, :]
     YtZ = YtZ[localnotconverged, :, :]
     ete = ete[localnotconverged, :, :]
+
+
+    if hasattr(n, "ndim"):
+
+      if np.prod(n.shape) > 1:
+
+        n = n[localnotconverged, :, :]
+        
     DinvIplusZtZD = DinvIplusZtZD[localnotconverged, :, :]
 
     lam = lam[localnotconverged]
