@@ -420,7 +420,7 @@ def main(*args):
     # Empty vectors for parameter estimates
     beta = np.zeros([n_v, n_p])
     sigma2 = np.zeros([n_v, 1])
-    D = np.zeros([nv, n_q**2])
+    D = np.zeros([n_v, n_q**2])
 
     # If we have indices where only some studies are present, work out X'X and
     # X'Y for these studies.
@@ -447,16 +447,6 @@ def main(*args):
         YtX_r = XtY_r.transpose((0,2,1))
         YtZ_r = ZtY_r.transpose((0,2,1))
         XtZ_r = ZtX_r.transpose((0,2,1))
-
-        print('XtX shape: ', XtX_r.shape)
-        print('XtY shape: ', XtY_r.shape)
-        print('XtZ shape: ', XtZ_r.shape)
-        print('YtX shape: ', YtX_r.shape)
-        print('YtY shape: ', YtY_r.shape)
-        print('YtZ shape: ', YtZ_r.shape)
-        print('ZtX shape: ', ZtX_r.shape)
-        print('ZtY shape: ', ZtY_r.shape)
-        print('ZtZ shape: ', ZtZ_r.shape)
 
         # Spatially varying nv for ring
         n_s_sv_r = n_s_sv[R_inds,:]
