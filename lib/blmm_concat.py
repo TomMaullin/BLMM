@@ -509,14 +509,14 @@ def main(*args):
 
     # Complete parameter vector
     if n_v_r:
-        paramVec[R_inds,:] = paramVec_r[:]
+        paramVec[R_inds,:] = paramVec_r[:].reshape(paramVec[R_inds,:].shape)
         # Assign betas
         beta_r = paramVec_r[:, 0:n_p]
         beta[R_inds,:] = beta_r.reshape([n_v_r, n_p])
 
     if n_v_i:
 
-        paramVec[I_inds,:] = paramVec_i[:]
+        paramVec[I_inds,:] = paramVec_i[:].reshape(paramVec[I_inds,:].shape)
 
         beta_i = paramVec_i[:, 0:n_p]
         beta[I_inds,:] = beta_i.reshape([n_v_i, n_p])
@@ -617,7 +617,7 @@ def main(*args):
     if n_v_r:
 
         llh[R_inds,:] = llh_r[:]
-        
+
     if n_v_i:
 
         llh[I_inds,:] = llh_i[:]
