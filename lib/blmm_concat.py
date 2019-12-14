@@ -505,6 +505,12 @@ def main(*args):
     print('paramvec i: ', paramVec_i.shape)
     print('paramvec r: ', paramVec_r.shape)
 
+    paramVec = np.zeros([n_v, n_p + 1 + n_q*(n_q+1)//2])
+
+    # Complete parameter vector
+    paramVec[R_inds,:] = paramVec_r[:]
+    paramVec[I_inds,:] = paramVec_i[:]
+
     # Assign betas
     beta_r = paramVec_r[:, 0:n_p]
     beta[R_inds,:] = beta_r.reshape([n_v_r, n_p])
@@ -543,6 +549,25 @@ def main(*args):
         beta = np.array([[beta]])
     elif np.ndim(beta) == 1:
         beta = np.array([beta])
+
+    # Get the D matrices
+    FishIndsDk = np.int32(np.cumsum(nparams*(nparams+1)/2) + p + 1)
+    FishIndsDk = np.insert(FishIndsDk,0,p+1)
+
+    Ddict = dict()
+    # D as a dictionary
+    for k in np.arange(len(nparams)):
+
+      #Ddict[k] = makeDnnd3D(vech2mat3D(paramVec[:,FishIndsDk[k]:FishIndsDk[k+1],:]))
+
+      Ddict[k] = makeDnnd3D(vech2mat3D(paramVec[:,FishIndsDk[k]:FishIndsDk[k+1],:]))
+
+
+      
+    # Full version of D
+    D = getDfromDict3D(Ddict, nparams, nlevels)
+
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
 
     # ----------------------------------------------------------------------
     # Calculate residual sum of squares e'e = Y'Y - (Xb)'Xb
