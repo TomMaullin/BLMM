@@ -39,6 +39,8 @@ def pSFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
   # Initial sigma2
   sigma2 = initSigma23D(ete, n)
 
+  print('Sigma2 shape: ', sigma2.shape)
+
   Zte = ZtY - (ZtX @ beta) 
   
   # Inital D
@@ -134,7 +136,7 @@ def pSFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
 
         n = n.reshape(ete.shape)
 
-    sigma2 = 1/n*(ete - Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte).reshape(nv_iter)
+    sigma2 = (1/n*(ete - Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte)).reshape(nv_iter)
     
     # Update D_k
     counter = 0
