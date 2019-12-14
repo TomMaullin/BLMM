@@ -480,6 +480,8 @@ def llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D):
   
   # Work out the log likelihood
   llh = firstterm + secondterm
+
+  print('llh final shape: ', llh.shape)
   
   # Return result
   return(llh)
