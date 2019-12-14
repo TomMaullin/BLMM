@@ -19,6 +19,7 @@ from lib.blmm_eval import blmm_eval
 np.set_printoptions(threshold=np.nan)
 from scipy import stats
 from lib.blmm_load import blmm_load
+from lib.tools3d import *
 from lib.pSFS import pSFS
 
 # Developer notes:
