@@ -505,7 +505,7 @@ def main(*args):
     print('paramvec i: ', paramVec_i.shape)
     print('paramvec r: ', paramVec_r.shape)
 
-    paramVec = np.zeros([n_v, n_p + 1 + n_q*(n_q+1)//2])
+    paramVec = np.zeros([n_v, n_p + 1 + np.sum(nparams*(nparams+1)/2)])
 
     # Complete parameter vector
     paramVec[R_inds,:] = paramVec_r[:]
