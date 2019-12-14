@@ -443,11 +443,14 @@ def main(*args):
         YtZ_r = ZtY_r.transpose((0,2,1))
         XtZ_r = ZtX_r.transpose((0,2,1))
 
+        # Spatially varying nv for ring
+        n_s_sv_r = n_s_sv[R_inds,:]
+
         #================================================================================
         # Run parameter estimation
         #================================================================================
         t1 = time.time()
-        paramVec = pSFS(XtX_r, XtY_r, ZtX_r, ZtY_r, ZtZ_r, XtZ_r, YtZ_r, YtY_r, YtX_r, nlevels, nparams, 1e-6,n_s_sv)
+        paramVec = pSFS(XtX_r, XtY_r, ZtX_r, ZtY_r, ZtZ_r, XtZ_r, YtZ_r, YtY_r, YtX_r, nlevels, nparams, 1e-6,n_s_sv_r)
         t2 = time.time()
         print(t2-t1)
 
@@ -470,7 +473,7 @@ def main(*args):
         # Run parameter estimation
         #================================================================================
         t1 = time.time()
-        paramVec = pSFS(XtX_i, XtY_i, ZtX_i, ZtY_i, ZtZ_i, XtZ_i, YtZ_i, YtY_i, YtX_i, nlevels, nparams, 1e-6,n_s_sv)
+        paramVec = pSFS(XtX_i, XtY_i, ZtX_i, ZtY_i, ZtZ_i, XtZ_i, YtZ_i, YtY_i, YtX_i, nlevels, nparams, 1e-6,n_s)
         t2 = time.time()
         print(t2-t1)
 
