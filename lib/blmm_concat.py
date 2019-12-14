@@ -417,6 +417,11 @@ def main(*args):
     sumZtY = sumZtY.reshape([n_v, n_q, 1])
     sumZtZ = sumZtZ.reshape([n_v, n_q, n_q])
 
+    # Empty vectors for parameter estimates
+    beta = np.zeros([n_v, n_p])
+    sigma2 = np.zeros([n_v, 1])
+    D = np.zeros([nv, n_q**2])
+
     # If we have indices where only some studies are present, work out X'X and
     # X'Y for these studies.
     if n_v_r:
@@ -462,7 +467,7 @@ def main(*args):
         # Run parameter estimation
         #================================================================================
         t1 = time.time()
-        paramVec = pSFS(XtX_r, XtY_r, ZtX_r, ZtY_r, ZtZ_r, XtZ_r, YtZ_r, YtY_r, YtX_r, nlevels, nparams, 1e-6,n_s_sv_r)
+        paramVec_r = pSFS(XtX_r, XtY_r, ZtX_r, ZtY_r, ZtZ_r, XtZ_r, YtZ_r, YtY_r, YtX_r, nlevels, nparams, 1e-6,n_s_sv_r)
         t2 = time.time()
         print(t2-t1)
 
@@ -503,11 +508,19 @@ def main(*args):
         # Run parameter estimation
         #================================================================================
         t1 = time.time()
-        paramVec = pSFS(XtX_i, XtY_i, ZtX_i, ZtY_i, ZtZ_i, XtZ_i, YtZ_i, YtY_i, YtX_i, nlevels, nparams, 1e-6,n_s)
+        paramVec_i = pSFS(XtX_i, XtY_i, ZtX_i, ZtY_i, ZtZ_i, XtZ_i, YtZ_i, YtY_i, YtX_i, nlevels, nparams, 1e-6,n_s)
         t2 = time.time()
         print(t2-t1)
 
+    print('paramvec i: ', paramVec_i.shape)
+    print('paramvec r: ', paramVec_r.shape)
 
+    # Assign betas
+    beta_r = paramVec_r[:, 0:n_p]
+    beta[R_inds,:] = beta_r.reshape([n_v_r, n_p])
+
+    beta_i = paramVec_i[:, 0:n_p]
+    beta[I_inds,:] = beta_i.reshape([n_v_i, n_p])
 
     beta = beta.reshape([n_v, n_p]).transpose()
 
