@@ -462,6 +462,8 @@ def makeDnnd3D(D):
 # ============================================================================
 def llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D):
   
+  sigma2 = sigma2.reshape(ete.shape)
+
   if hasattr(n, "ndim"):
 
     if np.prod(n.shape) > 1:
