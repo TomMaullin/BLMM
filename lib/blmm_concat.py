@@ -579,6 +579,15 @@ def main(*args):
         Zte_r = ZtY_r - (ZtX_r @ beta_r)
         ete_r = ssr3D(YtX_r, YtY_r, XtX_r, beta_r)
 
+        print('_r shapes')
+        print(n_s_sv_r.shape)
+        print(ZtZ_r.shape)
+        print(Zte_r.shape)
+        print(ete_r.shape)
+        print(sigma2_r.shape)
+        print(DinvIplusZtZD_r.shape)
+        print(D_r.shape)
+
         # Output log likelihood
         llh_r = llh3D(n_s_sv_r, ZtZ_r, Zte_r, ete_r, sigma2_r, DinvIplusZtZD_r, D_r) + n_s_sv*np.log(np.pi)
 

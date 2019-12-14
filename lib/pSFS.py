@@ -39,8 +39,6 @@ def pSFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
   # Initial sigma2
   sigma2 = initSigma23D(ete, n)
 
-  print('Sigma2 shape: ', sigma2.shape)
-
   Zte = ZtY - (ZtX @ beta) 
   
   # Inital D
@@ -239,9 +237,6 @@ def pSFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     # Matrices needed later by many calculations:
     # ----------------------------------------------------------------------------
     # X transpose e and Z transpose e
-    print('XtX shape: ', XtX.shape)
-    print('XtY shape: ', XtY.shape)
-    print('beta shape: ', beta.shape)
     Xte = XtY - (XtX @ beta)
     Zte = ZtY - (ZtX @ beta)
     
