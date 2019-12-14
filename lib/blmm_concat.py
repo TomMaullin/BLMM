@@ -561,13 +561,32 @@ def main(*args):
       #Ddict[k] = makeDnnd3D(vech2mat3D(paramVec[:,FishIndsDk[k]:FishIndsDk[k+1],:]))
 
       Ddict[k] = makeDnnd3D(vech2mat3D(paramVec[:,FishIndsDk[k]:FishIndsDk[k+1],:]))
-
-
       
     # Full version of D
     D = getDfromDict3D(Ddict, nparams, nlevels)
 
-    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+    # ----------------------------------------------------------------------
+    # Calculate log-likelihood
+    # ---------------------------------------------------------------------- 
+
+    # Variables for likelihood
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(n_q) + ZtZ @ D)
+    Zte = ZtY - (ZtX @ beta)
+    ete = ssr3D(YtX, YtY, XtX, beta)
+
+    # Output log likelihood
+    llh = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D)
+
+
+    llh_out = llh.reshape(int(NIFTIsize[0]),
+                          int(NIFTIsize[1]),
+                          int(NIFTIsize[2]))
+
+    # Save beta map.
+    llhmap = nib.Nifti1Image(llh_out,
+                             nifti.affine,
+                             header=nifti.header)
+    nib.save(llhmap, os.path.join(OutDir,'blmm_vox_llh.nii'))
 
     # ----------------------------------------------------------------------
     # Calculate residual sum of squares e'e = Y'Y - (Xb)'Xb
