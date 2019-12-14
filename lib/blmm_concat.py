@@ -550,7 +550,7 @@ def main(*args):
         beta = np.array([beta])
 
     # Get the D matrices
-    FishIndsDk = np.int32(np.cumsum(nparams*(nparams+1)//2) + p + 1)
+    FishIndsDk = np.int32(np.cumsum(nparams*(nparams+1)//2) + n_p + 1)
     FishIndsDk = np.insert(FishIndsDk,0,p+1)
 
 
