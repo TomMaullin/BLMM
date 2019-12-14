@@ -479,7 +479,7 @@ def llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D):
   secondterm = -0.5*np.einsum('i,ijk->ijk',(1/sigma2).reshape(ete.shape[0]),(ete - forceSym3D(Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte))).reshape(ete.shape[0])
   
   # Work out the log likelihood
-  llh = firstterm + secondterm
+  llh = (firstterm + secondterm).reshape(ete.shape[0])
 
   print('llh final shape: ', llh.shape)
   
