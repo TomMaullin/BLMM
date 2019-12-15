@@ -670,11 +670,11 @@ def main(*args):
     # Unmask d11
     if n_v_r:
 
-        D[R_inds,:] = D_r[:].reshape(D[R_inds,:].shape)
+        D[R_inds,:] = D_r[:,0,0].reshape(D[R_inds,:].shape)
 
     if n_v_i:
 
-        D[I_inds,:] = D_i[:].reshape(D[I_inds,:].shape)
+        D[I_inds,:] = D_i[:,0,0].reshape(D[I_inds,:].shape)
 
 
 
