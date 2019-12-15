@@ -589,7 +589,7 @@ def main(*args):
         print(D_r.shape)
 
         # Output log likelihood
-        llh_r = llh3D(n_s_sv_r, ZtZ_r, Zte_r, ete_r, sigma2_r, DinvIplusZtZD_r, D_r) + (0.5*n_s_sv*np.log(2*np.pi)).reshape(ete_r.shape[0])
+        llh_r = llh3D(n_s_sv_r, ZtZ_r, Zte_r, ete_r, sigma2_r, DinvIplusZtZD_r, D_r) + (0.5*n_s_sv_r*np.log(2*np.pi)).reshape(ete_r.shape[0])
 
     if n_v_i:
 
