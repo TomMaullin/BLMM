@@ -640,6 +640,55 @@ def main(*args):
                              header=nifti.header)
     nib.save(llhmap, os.path.join(OutDir,'blmm_vox_llh.nii'))
 
+
+    # Unmask sigma2
+    if n_v_r:
+
+        sigma2[R_inds,:] = sigma2_r[:].reshape(sigma2[R_inds,:].shape)
+
+    if n_v_i:
+
+        sigma2[I_inds,:] = sigma2_i[:].reshape(sigma2[I_inds,:].shape)
+
+
+
+    sigma2_out = sigma2.reshape(int(NIFTIsize[0]),
+                                int(NIFTIsize[1]),
+                                int(NIFTIsize[2]))
+
+    # Save beta map.
+    sigma2map = nib.Nifti1Image(sigma2_out,
+                                nifti.affine,
+                                header=nifti.header)
+    nib.save(sigma2map, os.path.join(OutDir,'blmm_vox_sigma2.nii'))
+
+
+    print('D shape: ', D.shape)
+    print('D_r[:] shape: ', D_r[:].shape)
+    print('D[R_inds,:] shape: ', D[R_inds,:].shape)
+
+    # Unmask d11
+    if n_v_r:
+
+        D[R_inds,:] = D_r[:].reshape(D[R_inds,:].shape)
+
+    if n_v_i:
+
+        D[I_inds,:] = D_i[:].reshape(D[I_inds,:].shape)
+
+
+
+    D_out = D.reshape(int(NIFTIsize[0]),
+                      int(NIFTIsize[1]),
+                      int(NIFTIsize[2]))
+
+    # Save beta map.
+    Dmap = nib.Nifti1Image(D_out,
+                           nifti.affine,
+                           header=nifti.header)
+    nib.save(Dmap, os.path.join(OutDir,'blmm_vox_D.nii'))
+
+
     # ----------------------------------------------------------------------
     # Calculate residual sum of squares e'e = Y'Y - (Xb)'Xb
     # ---------------------------------------------------------------------- 
