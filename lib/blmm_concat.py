@@ -622,11 +622,11 @@ def main(*args):
     llh = np.zeros([n_v,1])
     if n_v_r:
 
-        llh[R_inds,:] = llh_r[:]
+        llh[R_inds,:] = llh_r[:].reshape(llh[R_inds,:].shape)
 
     if n_v_i:
 
-        llh[I_inds,:] = llh_i[:]
+        llh[I_inds,:] = llh_i[:].reshape(llh[I_inds,:].shape)
     
 
 
