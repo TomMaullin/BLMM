@@ -421,7 +421,7 @@ def main(*args):
     # Empty vectors for parameter estimates
     beta = np.zeros([n_v, n_p])
     sigma2 = np.zeros([n_v, 1])
-    D = np.zeros([n_v, n_q**2])
+    D = np.zeros([n_v, 1])
 
     # If we have indices where only some studies are present, work out X'X and
     # X'Y for these studies.
