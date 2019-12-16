@@ -95,9 +95,6 @@ def main(*args):
     nparams = np.array(nparams)
     nlevels = np.array(nlevels)
     n_q = np.sum(nparams*nlevels)
-
-    print(nparams)
-    print(nlevels)
     
     # Get number of parameters
     c1 = blmm_eval(inputs['contrasts'][0]['c' + str(1)]['vector'])
@@ -129,7 +126,6 @@ def main(*args):
             "blmm_vox_uniqueM_batch1.nii")).get_data().reshape(n_v)
 
         maxM = np.int32(np.amax(uniquenessMask))
-        print('maxM', maxM)
 
         # read in XtX, ZtX, ZtZ
         ZtZ_batch_unique = np.load(
@@ -147,14 +143,9 @@ def main(*args):
         # Fill with unique maskings
         for m in range(1,maxM+1):
 
-            print('check1')
-
-
             ZtZ_batch_full[np.where(uniquenessMask==m),:] = ZtZ_batch_unique[(m-1),:]
             ZtX_batch_full[np.where(uniquenessMask==m),:] = ZtX_batch_unique[(m-1),:]
             XtX_batch_full[np.where(uniquenessMask==m),:] = XtX_batch_unique[(m-1),:]
-
-            print('check2')
 
         sumXtX = XtX_batch_full
         sumZtX = ZtX_batch_full
@@ -454,8 +445,6 @@ def main(*args):
         # Spatially varying nv for ring
         n_s_sv_r = n_s_sv[R_inds,:]
 
-        print('n_s_sv shape: ', n_s_sv_r.shape)
-
         #================================================================================
         # Run parameter estimation
         #================================================================================
@@ -505,8 +494,6 @@ def main(*args):
         t2 = time.time()
         print(t2-t1)
 
-    print('paramvec i: ', paramVec_i.shape)
-    print('paramvec r: ', paramVec_r.shape)
 
     paramVec = np.zeros([n_v, n_p + 1 + np.sum(nparams*(nparams+1)//2)])
 
@@ -580,15 +567,6 @@ def main(*args):
         DinvIplusZtZD_r = D_r @ blmm_inverse(np.eye(n_q) + ZtZ_r @ D_r)
         Zte_r = ZtY_r - (ZtX_r @ beta_r)
         ete_r = ssr3D(YtX_r, YtY_r, XtX_r, beta_r)
-
-        print('_r shapes')
-        print(n_s_sv_r.shape)
-        print(ZtZ_r.shape)
-        print(Zte_r.shape)
-        print(ete_r.shape)
-        print(sigma2_r.shape)
-        print(DinvIplusZtZD_r.shape)
-        print(D_r.shape)
 
         # Output log likelihood
         llh_r = llh3D(n_s_sv_r, ZtZ_r, Zte_r, ete_r, sigma2_r, DinvIplusZtZD_r, D_r) - (0.5*n_s_sv_r*np.log(2*np.pi)).reshape(ete_r.shape[0])
@@ -664,11 +642,6 @@ def main(*args):
                                 header=nifti.header)
     nib.save(sigma2map, os.path.join(OutDir,'blmm_vox_sigma2.nii'))
 
-
-    print('D shape: ', D.shape)
-    print('D_r[:] shape: ', D_r[:].shape)
-    print('D[R_inds,:] shape: ', D[R_inds,:].shape)
-
     # Unmask d11
     if n_v_r:
 
@@ -689,6 +662,21 @@ def main(*args):
                            nifti.affine,
                            header=nifti.header)
     nib.save(Dmap, os.path.join(OutDir,'blmm_vox_D.nii'))
+
+
+
+    t2_overall = time.time()
+    print('TIME: ', t2_overall-t1_overall)
+
+
+
+
+
+
+
+
+
+
 
 
     # ----------------------------------------------------------------------

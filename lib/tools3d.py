@@ -467,10 +467,6 @@ def llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D):
     if np.prod(n.shape) > 1:
 
       n = n.reshape(sigma2.shape)
-
-  print('llh shapes')
-  print(np.log(np.linalg.det(np.eye(ZtZ.shape[1]) + ZtZ @ D)).shape)
-  print((n*np.log(sigma2)).shape)
   
   # Work out -1/2(nln(sigma^2) + ln|I+Z'ZD|)
   firstterm = -0.5*(n*np.log(sigma2)).reshape(ete.shape[0]) + np.log(np.linalg.det(np.eye(ZtZ.shape[1]) + ZtZ @ D)).reshape(ete.shape[0])
@@ -480,8 +476,6 @@ def llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D):
   
   # Work out the log likelihood
   llh = (firstterm + secondterm).reshape(ete.shape[0])
-
-  print('llh final shape: ', llh.shape)
   
   # Return result
   return(llh)

@@ -20,6 +20,8 @@ import pandas as pd
 
 def main(*args):
 
+    t1_overall = time.time()
+
     # Change to blm directory
     os.chdir(os.path.dirname(os.path.realpath(__file__)))    
 
@@ -242,6 +244,10 @@ def main(*args):
         # Return XtX, XtY, YtY, nB
         return(XtX, XtY, YtY, nmap)
     w.resetwarnings()
+
+    t2_overall = time.time()
+    print('TIME: ', t2_overall-t1_overall)
+
 
 def verifyInput(Y_files, M_files, Y0):
 

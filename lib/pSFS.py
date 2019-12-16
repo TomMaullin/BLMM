@@ -172,10 +172,10 @@ def pSFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
         counter = counter + 1
       
       #D = getDfromDict3D(Ddict,nparams,nlevels)
-      
-      # Inverse of (I+Z'ZD) multiplied by D
-      IplusZtZD = np.eye(q) + (ZtZ @ D)
-      DinvIplusZtZD = forceSym3D(D @ np.linalg.inv(IplusZtZD)) 
+    
+    # Inverse of (I+Z'ZD) multiplied by D
+    IplusZtZD = np.eye(q) + (ZtZ @ D)
+    DinvIplusZtZD = forceSym3D(D @ np.linalg.inv(IplusZtZD)) 
     
     # Update the step size
     llhcurr = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D)
