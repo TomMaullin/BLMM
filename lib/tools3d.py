@@ -483,7 +483,7 @@ def llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,reml=False, XtX=0, XtZ=0, Zt
   llh = (firstterm + secondterm).reshape(ete.shape[0])
 
   if reml:
-    llh = llh - 0.5*np.log(np.det(XtX - XtZ @ DinvIplusZtZD @ ZtX))
+    llh = llh - 0.5*np.log(np.linalg.det(XtX - XtZ @ DinvIplusZtZD @ ZtX))
   
   # Return result
   return(llh)
