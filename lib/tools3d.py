@@ -668,7 +668,7 @@ def get_dldDk3D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD,reml=False,
     
   if reml==True:
 
-    invXtinvVX = np.linalg.inv(XtX - XtZ @ DinvIplusZtZD @ ZtX)
+    invXtinvVX = np.linalg.inv(XtX - ZtX.transpose((0,2,1)) @ DinvIplusZtZD @ ZtX)
 
     # For each level j we need to add a term
     for j in np.arange(nlevels[k]):
