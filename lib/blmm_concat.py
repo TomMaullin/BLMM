@@ -45,6 +45,8 @@ from lib.pSFS import pSFS
 
 def main(*args):
 
+    t1_overall = time.time()
+
     # ----------------------------------------------------------------------
     # Check inputs
     # ----------------------------------------------------------------------
@@ -575,7 +577,7 @@ def main(*args):
         # ---------------------------------------------------------------------- 
 
         # Variables for likelihood
-        DinvIplusZtZD_r = D_r @ np.linalg.inv(np.eye(n_q) + ZtZ_r @ D_r)
+        DinvIplusZtZD_r = D_r @ blmm_inverse(np.eye(n_q) + ZtZ_r @ D_r)
         Zte_r = ZtY_r - (ZtX_r @ beta_r)
         ete_r = ssr3D(YtX_r, YtY_r, XtX_r, beta_r)
 
