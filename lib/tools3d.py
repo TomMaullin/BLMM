@@ -470,10 +470,10 @@ def llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,reml=False, XtX=0, XtZ=0, Zt
   
   # Work out -1/2(nln(sigma^2) + ln|I+Z'ZD|)
   if reml==False:
-    firstterm = -0.5*(n*np.log(sigma2)).reshape(ete.shape[0]) + np.log(np.linalg.det(np.eye(ZtZ.shape[1]) + ZtZ @ D)).reshape(ete.shape[0])
+    firstterm = -0.5*(n*np.log(sigma2)).reshape(ete.shape[0]) - 0.5*np.log(np.linalg.det(np.eye(ZtZ.shape[1]) + ZtZ @ D)).reshape(ete.shape[0])
   else:
     p = XtX.shape[1]
-    firstterm = -0.5*((n-p)*np.log(sigma2)).reshape(ete.shape[0]) + np.log(np.linalg.det(np.eye(ZtZ.shape[1]) + ZtZ @ D)).reshape(ete.shape[0])
+    firstterm = -0.5*((n-p)*np.log(sigma2)).reshape(ete.shape[0]) -0.5*np.log(np.linalg.det(np.eye(ZtZ.shape[1]) + ZtZ @ D)).reshape(ete.shape[0])
 
 
   # Work out sigma^(-2)*(e'e - e'ZD(I+Z'ZD)^(-1)Z'e)
