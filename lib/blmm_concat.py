@@ -569,7 +569,7 @@ def main(*args):
         ete_r = ssr3D(YtX_r, YtY_r, XtX_r, beta_r)
 
         # Output log likelihood
-        llh_r = llh3D(n_s_sv_r, ZtZ_r, Zte_r, ete_r, sigma2_r, DinvIplusZtZD_r, D_r) - (0.5*n_s_sv_r*np.log(2*np.pi)).reshape(ete_r.shape[0])
+        llh_r = llh3D(n_s_sv_r, ZtZ_r, Zte_r, ete_r, sigma2_r, DinvIplusZtZD_r, D_r, True, XtX_r, XtZ_r, ZtX_r) - (0.5*(n_s_sv_r-n_p)*np.log(2*np.pi)).reshape(ete_r.shape[0])
 
     if n_v_i:
 
@@ -596,7 +596,7 @@ def main(*args):
         ete_i = ssr3D(YtX_i, YtY_i, XtX_i, beta_i)
 
         # Output log likelihood
-        llh_i = llh3D(n_s, ZtZ_i, Zte_i, ete_i, sigma2_i, DinvIplusZtZD_i, D_i) - 0.5*n_s*np.log(2*np.pi)
+        llh_i = llh3D(n_s, ZtZ_i, Zte_i, ete_i, sigma2_i, DinvIplusZtZD_i, D_i, True, XtX_i, XtZ_i, ZtX_i) - 0.5*(n_s-n_p)*np.log(2*np.pi)
 
     # Unmask llh
     llh = np.zeros([n_v,1])
