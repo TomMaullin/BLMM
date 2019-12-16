@@ -460,7 +460,7 @@ def makeDnnd3D(D):
 #          the above notation).
 #
 # ============================================================================
-def llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D):
+def llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,reml=False, XtX=0, XtZ=0, ZtX=0):
   
   if hasattr(n, "ndim"):
 
@@ -469,13 +469,21 @@ def llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D):
       n = n.reshape(sigma2.shape)
   
   # Work out -1/2(nln(sigma^2) + ln|I+Z'ZD|)
-  firstterm = -0.5*(n*np.log(sigma2)).reshape(ete.shape[0]) + np.log(np.linalg.det(np.eye(ZtZ.shape[1]) + ZtZ @ D)).reshape(ete.shape[0])
-                    
+  if reml==False:
+    firstterm = -0.5*(n*np.log(sigma2)).reshape(ete.shape[0]) + np.log(np.linalg.det(np.eye(ZtZ.shape[1]) + ZtZ @ D)).reshape(ete.shape[0])
+  else:
+    p = XtX.shape[1]
+    firstterm = -0.5*((n-p)*np.log(sigma2)).reshape(ete.shape[0]) + np.log(np.linalg.det(np.eye(ZtZ.shape[1]) + ZtZ @ D)).reshape(ete.shape[0])
+
+
   # Work out sigma^(-2)*(e'e - e'ZD(I+Z'ZD)^(-1)Z'e)
   secondterm = -0.5*np.einsum('i,ijk->ijk',(1/sigma2).reshape(ete.shape[0]),(ete - forceSym3D(Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte))).reshape(ete.shape[0])
   
   # Work out the log likelihood
   llh = (firstterm + secondterm).reshape(ete.shape[0])
+
+  if reml:
+    llh = llh - 0.5*np.log(np.det(XtX - XtZ @ DinvIplusZtZD @ ZtX))
   
   # Return result
   return(llh)
@@ -620,7 +628,9 @@ def get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD):
 # - `dldDk`: The derivative of l with respect to D_k.
 #
 # ============================================================================
-def get_dldDk3D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD):
+def get_dldDk3D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD,reml=False, ZtX=0):
+
+  print('reml: ', reml)
 
   # Number of voxels
   nv = Zte.shape[0]
@@ -656,6 +666,23 @@ def get_dldDk3D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD):
       # Add these to the running sum
       dldDk = dldDk + firstterm - secondterm
     
+  if reml==True:
+
+    invXtinvVX = np.linalg.inv(XtX - XtZ @ DinvIplusZtZD @ ZtX)
+
+    # For each level j we need to add a term
+    for j in np.arange(nlevels[k]):
+
+      # Get the indices for the kth factor jth level
+      Ikj = faclev_indices2D(k, j, nlevels, nparams)
+
+      Z_kjtZ = ZtZ[:,Ikj,:]
+      Z_kjtX = ZtX[:,Ikj,:]
+
+      Z_kjtinvVX = Z_kjtX - Z_kjtZ @ DinvIplusZtZD @ ZtX
+
+      dldDk = dldDk + 0.5*Z_kjtinvVX @ invXtinvVX @ Z_kjtinvVX.transpose((0,2,1))
+
   # Halve the sum (the coefficient of a half was not included in the above)
   dldDk = forceSym3D(dldDk/2)
 
@@ -952,10 +979,13 @@ def get_mat_covdlDk(k, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict):
   # Return the result
   return(forceSym3D(RkRtSum))
 
-def get_vec_2dlDk(k, nlevels, nparams, sigma2, ZtZ, Zte, DinvIplusZtZD):
+def get_vec_2dlDk(k, nlevels, nparams, sigma2, ZtZ, Zte, DinvIplusZtZD, reml=False, ZtX=0):
+
+  
+  print('reml: ', reml)
       
   # Convert it to vector
-  vecOfInterest = 2*mat2vec3D(get_dldDk3D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD))
+  vecOfInterest = 2*mat2vec3D(get_dldDk3D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD,reml, ZtX))
   
   # Return it
   return(vecOfInterest)

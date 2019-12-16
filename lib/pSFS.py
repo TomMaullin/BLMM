@@ -5,7 +5,10 @@ import scipy
 from lib.tools3d import *
 from lib.tools2d import *
 
-def pSFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
+def pSFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n, reml=False):
+
+  
+  print('reml: ', reml)
   
   t1_total = time.time()
   t1 = time.time()
@@ -134,8 +137,12 @@ def pSFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
 
         n = n.reshape(ete.shape)
 
-    sigma2 = (1/n*(ete - Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte)).reshape(nv_iter)
+    if reml == False:
+      sigma2 = (1/n*(ete - Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte)).reshape(nv_iter)
+    else:
+      sigma2 = (1/(n-p)*(ete - Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte)).reshape(nv_iter)
     
+
     # Update D_k
     counter = 0
     for k in np.arange(len(nparams)):
@@ -152,7 +159,7 @@ def pSFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
       #print('1==2',update_k[1,:,:]-update_k2[1,:,:])
       
       
-      update_p = forceSym3D(np.linalg.inv(get_mat_covdlDk(k, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict))) @ get_vec_2dlDk(k, nlevels, nparams, sigma2, ZtZ, Zte, DinvIplusZtZD)
+      update_p = forceSym3D(np.linalg.inv(get_mat_covdlDk(k, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict))) @ get_vec_2dlDk(k, nlevels, nparams, sigma2, ZtZ, Zte, DinvIplusZtZD, reml, ZtX)
       #print(update_p.shape)
 
       #print('3==2',update_k3[1,:,:]-update_k2[1,:,:])
@@ -178,7 +185,7 @@ def pSFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     DinvIplusZtZD = forceSym3D(D @ np.linalg.inv(IplusZtZD)) 
     
     # Update the step size
-    llhcurr = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D)
+    llhcurr = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,reml, XtX, XtZ, ZtX)
     lam[llhprev>llhcurr] = lam[llhprev>llhcurr]/2
     
     # Work out which voxels converged

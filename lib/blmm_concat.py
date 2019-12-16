@@ -449,7 +449,7 @@ def main(*args):
         # Run parameter estimation
         #================================================================================
         t1 = time.time()
-        paramVec_r = pSFS(XtX_r, XtY_r, ZtX_r, ZtY_r, ZtZ_r, XtZ_r, YtZ_r, YtY_r, YtX_r, nlevels, nparams, 1e-14,n_s_sv_r)
+        paramVec_r = pSFS(XtX_r, XtY_r, ZtX_r, ZtY_r, ZtZ_r, XtZ_r, YtZ_r, YtY_r, YtX_r, nlevels, nparams, 1e-14,n_s_sv_r,reml=True)
         t2 = time.time()
         print(t2-t1)
 
