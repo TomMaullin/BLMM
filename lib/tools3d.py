@@ -628,7 +628,7 @@ def get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD):
 # - `dldDk`: The derivative of l with respect to D_k.
 #
 # ============================================================================
-def get_dldDk3D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD,reml=False, ZtX=0):
+def get_dldDk3D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD,reml=False, ZtX=0, XtX=0):
 
   print('reml: ', reml)
 
@@ -979,13 +979,13 @@ def get_mat_covdlDk(k, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict):
   # Return the result
   return(forceSym3D(RkRtSum))
 
-def get_vec_2dlDk(k, nlevels, nparams, sigma2, ZtZ, Zte, DinvIplusZtZD, reml=False, ZtX=0):
+def get_vec_2dlDk(k, nlevels, nparams, sigma2, ZtZ, Zte, DinvIplusZtZD, reml=False, ZtX=0,XtX=0):
 
-  
+
   print('reml: ', reml)
       
   # Convert it to vector
-  vecOfInterest = 2*mat2vec3D(get_dldDk3D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD,reml, ZtX))
+  vecOfInterest = 2*mat2vec3D(get_dldDk3D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD,reml, ZtX,XtX))
   
   # Return it
   return(vecOfInterest)

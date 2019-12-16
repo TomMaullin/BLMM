@@ -7,7 +7,7 @@ from lib.tools2d import *
 
 def pSFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n, reml=False):
 
-  
+
   print('reml: ', reml)
   
   t1_total = time.time()
@@ -159,7 +159,7 @@ def pSFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n, r
       #print('1==2',update_k[1,:,:]-update_k2[1,:,:])
       
       
-      update_p = forceSym3D(np.linalg.inv(get_mat_covdlDk(k, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict))) @ get_vec_2dlDk(k, nlevels, nparams, sigma2, ZtZ, Zte, DinvIplusZtZD, reml, ZtX)
+      update_p = forceSym3D(np.linalg.inv(get_mat_covdlDk(k, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict))) @ get_vec_2dlDk(k, nlevels, nparams, sigma2, ZtZ, Zte, DinvIplusZtZD, reml, ZtX, XtX)
       #print(update_p.shape)
 
       #print('3==2',update_k3[1,:,:]-update_k2[1,:,:])
