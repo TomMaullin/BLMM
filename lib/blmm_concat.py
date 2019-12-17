@@ -416,7 +416,7 @@ def main(*args):
     sigma2 = np.zeros([n_v, 1])
     D = np.zeros([n_v, 1])
 
-    REML = True
+    REML = False
 
     # If we have indices where only some studies are present, work out X'X and
     # X'Y for these studies.
