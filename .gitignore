@@ -1,0 +1,11 @@
+build/*
+log/*
+dist/*
+BLM_py.egg-info/*
+__pycache__/*
+test/cfg/*_copy*
+test/__pycache__/*
+test/cfgids/*
+__pycache__/*
+lib/__pycache__/*
+blm_config.yml
