@@ -243,7 +243,7 @@ def dS2deta(nparams, nlevels, L, XtX, XtZ, ZtZ, ZtX, D, sigma2):
             ZkjtX = ZtX[:,Ikj,:]
 
             # Work out Z_(k,j)'V^{-1}X
-            ZkjtiVX = ZkjtX - ZkjtZ @ np.linalg.inv(I + D @ ZtZ) @ D @ ZtX
+            ZkjtiVX = ZkjtX - ZkjtZ @ np.linalg.inv(np.eye(D.shape[1]) + D @ ZtZ) @ D @ ZtX
 
             # Work out the term to put into the kronecker product
             # K = Z_(k,j)'V^{-1}X(X'V^{-1})^{-1}L'
