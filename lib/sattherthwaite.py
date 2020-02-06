@@ -3,6 +3,7 @@ import scipy.sparse
 import cvxopt
 from cvxopt import cholmod, umfpack, amd, matrix, spmatrix, lapack
 from lib.tools2d import faclev_indices2D
+from lib.tools3d import kron3D, mat2vech3D
 import numdifftools as nd
 
 
@@ -33,9 +34,26 @@ import numdifftools as nd
 # ============================================================================
 def SattherthwaiteDoF(statType,estType,L,XtX,XtY,XtZ,YtX,YtY,YtZ):
 
+	# T contrast
+	if statType=='T':
+
+		# Use lmerTest method
+		if estType=='lmerTest':
+
+			# Get estimated degrees of freedom
+			df = SW_lmerTest()
+
+		# Use BLMM method
+		else:
+			
+			# Get estimated degrees of freedom
+			df = SW_BLMM()
+			
+	else:
+
 	pass
 
-def SW_lmerTest(theta3D,tinds,rinds,cinds):
+def SW_lmerTest(theta3D,tinds,rinds,cinds):# TODO inputs
 
 	# Get the sigma^2 and D estimates.
 	for i in np.arange(theta3D.shape[0]):
@@ -63,34 +81,74 @@ def SW_lmerTest(theta3D,tinds,rinds,cinds):
         #NTS CURRENTLY FOR SPARSE CHOL, NOT (\sigma,SPCHOL(D))
         #ALSO MIGHT HAVE PROBLEMS WITH CVXOPT CONVERSION
 
-        # How to get the log likelihood
-        def llhPLS(t, ZtX=ZtX_current, ZtY=ZtY_current, XtX=XtX_current, ZtZ=ZtZ_current, XtY=XtY_current, 
+        # Convert to gamma form
+        gamma = theta2gamma(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)
+
+        # How to get the log likelihood from gammma
+        def llhgamma(g, ZtX=ZtX_current, ZtY=ZtY_current, XtX=XtX_current, ZtZ=ZtZ_current, XtY=XtY_current, 
         		   YtX=YtX_current, YtZ=YtZ_current, XtZ=XtZ_current, YtY=YtY_current, n=n, P=P, I=I, 
         		   tinds=tinds, rinds=rinds, cinds=cinds): 
+
+        	t = gamma2theta(g)
         	return PLS2D(t, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
 
         # Estimate hessian
-        H = nd.Hessian(llhPLS)(theta)
+        H = nd.Hessian(llhgamma)(gamma)
+
+        # How to get S^2 from gamma
+        def S2gamma(g, L=L, ZtX=ZtX_current, ZtY=ZtY_current, XtX=XtX_current, ZtZ=ZtZ_current, XtY=XtY_current, 
+        	      YtX=YtX_current, YtZ=YtZ_current, XtZ=XtZ_current, YtY=YtY_current, n=n, P=P, I=I,
+        	      tinds=tinds, rinds=rinds, cinds=cinds):
+        	return(S2(g, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds))
 
         # Estimate Jacobian
+        J = nd.Jacobian(S2gamma)(gamma)
 
+
+def SW_BLMM(): # TODO inputs
+
+	pass
 
 
 
 ### NTS CHANGE THETA TO GAMMA TO SHOW DIFF BETWEEN LMER AND LMERTEST THETA
-def gamma2theta():
+def gamma2theta(gamma):
 
-	pass
+	# Obtain sigma
+	sigma = gamma[0]
 
-def theta2gamma():
+	# Multiply remainder of gamma by sigma
+	theta = gamma[1:]*sigma
 
-	pass
+	# Return theta
+	return(theta)
 
 
-def S2():#TODO inputs
+def theta2gamma(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds):
 
-	# Get the mapping from the lower cholesky decomposition to the full D matrix.
-	#tinds,rinds,cinds=get_mapping2D(nlevels, nparams)
+	# Obtain sigma^2 estimate
+    sigma2 = PLS2D_getSigma2(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+    
+    # We need sigma
+    sigma = np.sqrt(sigma2)
+
+    # Obtain gamma
+	gamma = np.concatenate(sigma, theta/sigma)
+
+	# Return gamma
+	return(gamma)
+
+
+def S2(gamma, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds):
+
+	# Get theta from gamma
+	theta = gamma2theta(gamma)
+
+	# Obtain sigma^2 estimate
+    sigma2 = PLS2D_getSigma2(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+
+    # Obtain D estimate
+    D = np.array(matrix(PLS2D_getD(theta, tinds, rinds, cinds, sigma2)))
 
 	# Calculate X'V^{-1}X=X'(I+ZDZ')^{-1}X=X'X-X'Z(I+DZ'Z)^{-1}DZ'X
 	XtiVX = XtX - XtZ @ np.linalg.inv(I + D @ ZtZ) @ D @ ZtX
@@ -101,35 +159,60 @@ def S2():#TODO inputs
 	return(S2)
 
 
-def dS2dgamma(): # TODO inputs
+def dS2dgamma(nparams, nlevels, nv, L, I, XtX, XtZ, ZtZ, ZtX, D, sigma2):
 
 	# Calculate X'V^{-1}X=X'(I+ZDZ')^{-1}X=X'X-X'Z(I+DZ'Z)^{-1}DZ'X
 	XtiVX = XtX - XtZ @ np.linalg.inv(I + D @ ZtZ) @ D @ ZtX
 
 	# New empty array for differentiating S^2 wrt gamma.
-	dS2dgamma = np.array([])
+	dS2dgamma = np.zeros((nv, 1+np.int32(np.sum(nparams*(nparams+1)/2)),1))
 
-	# Work of derivative wrt to sigma^2 
-	dS2dsigma2 = 
+	# Work out indices for each start of each component of vector 
+	# i.e. [dS2/dsigm2, dS2/vechD1,...dS2/vechDr]
+    DerivInds = np.int32(np.cumsum(nparams*(nparams+1)/2) + 1)
+    DerivInds = np.insert(DerivInds,0,1)
 
-	# Add to 
+	# Work of derivative wrt to sigma^2
+	dS2dsigma2 = L @ np.linalg.inv(XtiVX) @ L.transpose()
 
+	# Add to dS2dgamma
+	dS2dgamma[:,0:1] = dS2dsigma2.reshape(dS2dgamma[:,0:1].shape)
+
+	# Now we need to work out ds2dVech(Dk)
 	for k in np.arange(len(nparams)):
 
-		dS2dVechDk = np.zeros#...
+		# Initialize an empty zeros matrix
+		dS2dVechDk = np.zeros((np.int32(nparams[k]*(nparams[k]+1)/2),1))#...
 
     	for j in np.arange(nlevels[k]):
 
     		# Get the indices for this level and factor.
     		Ikj = faclev_indices2D(k, j, nlevels, nparams)
 				    
-		    # Work out Z_(k,j)'e
-		    ZkjtZ = ZtZ[:, Ikj,:]
+		    # Work out Z_(k,j)'Z
+		    ZkjtZ = ZtZ[:,Ikj,:]
+
+		    # Work out Z_(k,j)'X
+		    ZkjtX = ZtX[:,Ikj,:]
 
 		    # Work out Z_(k,j)'V^{-1}X
-		    Z
+		    ZkjtiVX = ZkjtX - ZkjtZ @ np.linalg.inv(I + D @ ZtZ) @ D @ ZtX
 
-			dS2dvechDk = dS2dvechDk + mat2vech2D#(BLAH)
+		    # Work out the term to put into the kronecker product
+		    # K = Z_(k,j)'V^{-1}X(X'V^{-1})^{-1}L'
+		    K = ZkjtiVX @ np.linalg.inv(XtiVX) @ L.transpose()
+		    
+		    # Sum terms
+			dS2dvechDk = dS2dvechDk + mat2vech3D(kron3D(K,K.transpose(0,2,1)))
+
+		# Multiply by sigma^2
+		dS2dvechDk = sigma2*dS2dvechDk
+
+		# Add to dS2dgamma
+		dS2dgamma[:,DerivInds[k]:DerivInds[k+1]] = dS2dVechDk.reshape(dS2dgamma[:,DerivInds[k]:DerivInds[k+1]].shape)
+
+	return(dS2dgamma)
+
 
 
 
