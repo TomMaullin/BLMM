@@ -12,6 +12,7 @@ from lib.FS import FS
 from lib.SFS import SFS
 from lib.pFS import pFS
 from lib.pSFS import pSFS
+from lib.sattherthwaite import *
 
 # Random Field based simulation
 def main():
