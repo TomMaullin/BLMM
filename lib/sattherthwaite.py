@@ -120,8 +120,14 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
     # Get Fisher information matrix
     InfoMat = InfoMat_eta(D, sigma2, n, nlevels, nparams, ZtZ)#...
 
+    print("S2 shape: ", S2.shape)
+    print("I shape: ",InfoMat.shape)
+    print("dS2 shape: ", dS2.shape)
+
     # Calculate df estimator
     df = 2*(S2**2)/(dS2.transpose(0,2,1) @ np.linalg.inv(InfoMat) @ dS2)
+
+    print('df shape ', df.shape)
 
     # Return df
     return(df)
