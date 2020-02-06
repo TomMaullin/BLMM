@@ -260,7 +260,7 @@ def main():
 
 	# Get L contrast
 	L = np.zeros((1,p))
-	L[3] = 1
+	L[0,3] = 1
 
 	df = SattherthwaiteDoF('T','BLMM',D,sigma2,L,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n,nlevels,nparams)
 
