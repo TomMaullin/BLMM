@@ -258,6 +258,7 @@ def main():
 
 	print('up to SattherthwaiteDoF')
 	print('time elapsed prior: ', time.time()-t1)
+	t2 = time.time()
 
 	# Get L contrast
 	L = np.zeros((1,p))
@@ -268,3 +269,6 @@ def main():
 	print('df results')
 	print(df.shape)
 	print(np.mean(df))
+
+	print('SattherthwaiteDoF done')
+	print('elapsed time: ', time.time()-t2)
