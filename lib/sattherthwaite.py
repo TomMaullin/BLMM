@@ -196,7 +196,7 @@ def S2_eta(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY):
     XtiVX = XtX - XtZ @ np.linalg.inv(np.eye(D.shape[1]) + D @ ZtZ) @ D @ ZtX
 
     # Calculate S^2 = sigma^2L(X'V^{-1}X)L'
-    S2 = sigma2*L @ np.linalg.inv(XtiVX) @ L.transpose()
+    S2 = sigma2*(L @ np.linalg.inv(XtiVX) @ L.transpose())
 
     return(S2)
 
