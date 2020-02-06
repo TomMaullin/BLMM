@@ -256,7 +256,7 @@ def dS2deta(nparams, nlevels, L, XtX, XtZ, ZtZ, ZtX, D, sigma2):
         dS2dvechDk = sigma2*dS2dvechDk
 
         # Add to dS2deta
-        dS2deta[:,DerivInds[k]:DerivInds[k+1]] = dS2dVechDk.reshape(dS2deta[:,DerivInds[k]:DerivInds[k+1]].shape)
+        dS2deta[:,DerivInds[k]:DerivInds[k+1]] = dS2dvechDk.reshape(dS2deta[:,DerivInds[k]:DerivInds[k+1]].shape)
 
     return(dS2deta)
 
