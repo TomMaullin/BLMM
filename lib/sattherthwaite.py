@@ -229,7 +229,7 @@ def dS2deta(nparams, nlevels, L, XtX, XtZ, ZtZ, ZtX, D, sigma2):
     for k in np.arange(len(nparams)):
 
         # Initialize an empty zeros matrix
-        dS2dVechDk = np.zeros((np.int32(nparams[k]*(nparams[k]+1)/2),1))#...
+        dS2dvechDk = np.zeros((np.int32(nparams[k]*(nparams[k]+1)/2),1))#...
 
         for j in np.arange(nlevels[k]):
 
