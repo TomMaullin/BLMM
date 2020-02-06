@@ -253,7 +253,7 @@ def dS2deta(nparams, nlevels, L, XtX, XtZ, ZtZ, ZtX, D, sigma2):
             dS2dvechDk = dS2dvechDk + mat2vech3D(kron3D(K,K.transpose(0,2,1)))
 
         # Multiply by sigma^2
-        dS2dvechDk = sigma2*dS2dvechDk
+        dS2dvechDk = np.einsum('i,ijk->ijk',sigma2,dS2dvechDk)
 
         # Add to dS2deta
         dS2deta[:,DerivInds[k]:DerivInds[k+1]] = dS2dvechDk.reshape(dS2deta[:,DerivInds[k]:DerivInds[k+1]].shape)
