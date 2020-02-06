@@ -115,7 +115,7 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
     S2 = S2_eta(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY)
     
     # Get derivative of S^2 with respect to gamma evaluated at eta.
-    dS2seta = dS2deta(nparams, nlevels, L, XtX, XtZ, ZtZ, ZtX, D, sigma2)
+    dS2deta = dS2deta(nparams, nlevels, L, XtX, XtZ, ZtZ, ZtX, D, sigma2)
 
     # Get Fisher information matrix
     InfoMat = InfoMat_eta(D, sigma2, n, nlevels, nparams, ZtZ)#...
