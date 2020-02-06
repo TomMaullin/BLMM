@@ -270,5 +270,9 @@ def main():
 	print(df.shape)
 	print(np.mean(df))
 
+	print(np.max(df))
+
+	print(np.min(df))
+
 	print('SattherthwaiteDoF done')
 	print('elapsed time: ', time.time()-t2)

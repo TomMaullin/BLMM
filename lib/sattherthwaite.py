@@ -189,7 +189,7 @@ def S2_gamma(gamma, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tin
     XtiVX = XtX - XtZ @ np.linalg.inv(I + D @ ZtZ) @ D @ ZtX
 
     # Calculate S^2 = sigma^2L(X'V^{-1}X)L'
-    S2 = sigma2*L @ np.linalg.inv(XtiVX) @ L.transpose()
+    S2 = np.einsum('i,ijk->ijk',sigma2,L @ np.linalg.inv(XtiVX) @ L.transpose())
 
     return(S2)
 
