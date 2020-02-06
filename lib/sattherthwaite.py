@@ -32,7 +32,7 @@ import numdifftools as nd
 # - `ete`: The sum of square residuals (e'e in the above notation).
 #
 # ============================================================================
-def SattherthwaiteDoF(statType,estType,L,XtX,XtY,XtZ,YtX,YtY,YtZ):
+def SattherthwaiteDoF(statType,estType,D,sigma2,L,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n,nlevels,nparams):
 
 	# T contrast
 	if statType=='T':
@@ -47,11 +47,13 @@ def SattherthwaiteDoF(statType,estType,L,XtX,XtY,XtZ,YtX,YtY,YtZ):
 		else:
 			
 			# Get estimated degrees of freedom
-			df = SW_BLMM()
+			df = SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevels, nparams)
 			
 	else:
 
-	pass
+		pass
+
+	return(df)
 
 def SW_lmerTest(theta3D,tinds,rinds,cinds):# TODO inputs
 
@@ -99,15 +101,40 @@ def SW_lmerTest(theta3D,tinds,rinds,cinds):# TODO inputs
         def S2gamma(g, L=L, ZtX=ZtX_current, ZtY=ZtY_current, XtX=XtX_current, ZtZ=ZtZ_current, XtY=XtY_current, 
         	      YtX=YtX_current, YtZ=YtZ_current, XtZ=XtZ_current, YtY=YtY_current, n=n, P=P, I=I,
         	      tinds=tinds, rinds=rinds, cinds=cinds):
-        	return(S2(g, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds))
+        	return(S2_gamma(g, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds))
 
         # Estimate Jacobian
         J = nd.Jacobian(S2gamma)(gamma)
 
 
-def SW_BLMM(): # TODO inputs
+def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevels, nparams): 
 
-	pass
+	# Get S^2 of eta
+	S2 = S2_eta(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY).
+	
+	# Get derivative of S^2 with respect to gamma evaluated at eta.
+	dS2seta = dS2deta(nparams, nlevels, L, XtX, XtZ, ZtZ, ZtX, D, sigma2)
+
+	# Get Fisher information matrix
+	InfoMat = InfoMat_eta(D, sigma2, n, nlevels, nparams, ZtZ)#...
+
+	# Calculate df estimator
+	df = 2*(S2**2)/(dS2deta.transpose(0,2,1) @ np.linalg.inv(InfoMat) @ dS2deta)
+
+	# Return df
+	return(df)
+
+# Parameter formulations used by different softwares:
+#
+# theta:
+#	- used by lmer
+# 	- has the form (vech(spChol(sigma^2*D_1)),...,vech(spChol(sigma^2*D_r)))
+# gamma:
+#	- used by lmerTest
+#	- has the form (sigma, vech(spChol(D_1)),... vech(spChol(D_r)))
+# eta:
+#   - used by PLS
+#   - has the form (sigma^2, vech(D_1),...vech(D_r))
 
 
 
@@ -139,7 +166,7 @@ def theta2gamma(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tin
 	return(gamma)
 
 
-def S2(gamma, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds):
+def S2_gamma(gamma, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds):
 
 	# Get theta from gamma
 	theta = gamma2theta(gamma)
@@ -159,13 +186,27 @@ def S2(gamma, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, ri
 	return(S2)
 
 
-def dS2dgamma(nparams, nlevels, nv, L, I, XtX, XtZ, ZtZ, ZtX, D, sigma2):
+def S2_eta(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY):
 
 	# Calculate X'V^{-1}X=X'(I+ZDZ')^{-1}X=X'X-X'Z(I+DZ'Z)^{-1}DZ'X
-	XtiVX = XtX - XtZ @ np.linalg.inv(I + D @ ZtZ) @ D @ ZtX
+	XtiVX = XtX - XtZ @ np.linalg.inv(np.eye(D.shape[1]) + D @ ZtZ) @ D @ ZtX
+
+	# Calculate S^2 = sigma^2L(X'V^{-1}X)L'
+	S2 = sigma2*L @ np.linalg.inv(XtiVX) @ L.transpose()
+
+	return(S2)
+
+
+def dS2deta(nparams, nlevels, L, XtX, XtZ, ZtZ, ZtX, D, sigma2):
+
+	# Number of voxels
+	nv = D.shape[0]
+
+	# Calculate X'V^{-1}X=X'(I+ZDZ')^{-1}X=X'X-X'Z(I+DZ'Z)^{-1}DZ'X
+	XtiVX = XtX - XtZ @ np.linalg.inv(np.eye(D.shape[1]) + D @ ZtZ) @ D @ ZtX
 
 	# New empty array for differentiating S^2 wrt gamma.
-	dS2dgamma = np.zeros((nv, 1+np.int32(np.sum(nparams*(nparams+1)/2)),1))
+	dS2deta = np.zeros((nv, 1+np.int32(np.sum(nparams*(nparams+1)/2)),1))
 
 	# Work out indices for each start of each component of vector 
 	# i.e. [dS2/dsigm2, dS2/vechD1,...dS2/vechDr]
@@ -175,8 +216,8 @@ def dS2dgamma(nparams, nlevels, nv, L, I, XtX, XtZ, ZtZ, ZtX, D, sigma2):
 	# Work of derivative wrt to sigma^2
 	dS2dsigma2 = L @ np.linalg.inv(XtiVX) @ L.transpose()
 
-	# Add to dS2dgamma
-	dS2dgamma[:,0:1] = dS2dsigma2.reshape(dS2dgamma[:,0:1].shape)
+	# Add to dS2deta
+	dS2deta[:,0:1] = dS2dsigma2.reshape(dS2deta[:,0:1].shape)
 
 	# Now we need to work out ds2dVech(Dk)
 	for k in np.arange(len(nparams)):
@@ -208,11 +249,74 @@ def dS2dgamma(nparams, nlevels, nv, L, I, XtX, XtZ, ZtZ, ZtX, D, sigma2):
 		# Multiply by sigma^2
 		dS2dvechDk = sigma2*dS2dvechDk
 
-		# Add to dS2dgamma
-		dS2dgamma[:,DerivInds[k]:DerivInds[k+1]] = dS2dVechDk.reshape(dS2dgamma[:,DerivInds[k]:DerivInds[k+1]].shape)
+		# Add to dS2deta
+		dS2deta[:,DerivInds[k]:DerivInds[k+1]] = dS2dVechDk.reshape(dS2deta[:,DerivInds[k]:DerivInds[k+1]].shape)
 
-	return(dS2dgamma)
+	return(dS2deta)
+
+def InfoMat_eta(D, sigma2, n, nlevels, nparams, ZtZ):
+
+	# Number of random effects, q
+	q = np.sum(np.dot(nparams,nlevels))
+
+	# Number of voxels 
+	nv = sigma2.shape[0]
+
+  	# Duplication matrices
+  	# ------------------------------------------------------------------------------
+  	invDupMatdict = dict()
+  	for i in np.arange(len(nparams)):
+
+    	invDupMatdict[i] = np.asarray(invDupMat2D(nparams[i]).todense())
+
+  	# Index variables
+  	# ------------------------------------------------------------------------------
+  	# Work out the total number of paramateres
+  	tnp = np.int32(1 + np.sum(nparams*(nparams+1)/2))
+
+  	# Indices for submatrics corresponding to Dks
+  	FishIndsDk = np.int32(np.cumsum(nparams*(nparams+1)/2) + 1)
+  	FishIndsDk = np.insert(FishIndsDk,0,1)
+
+	# Inverse of (I+Z'ZD) multiplied by D
+    IplusZtZD = np.eye(q) + ZtZ @ D
+    DinvIplusZtZD =  forceSym3D(D @ np.linalg.inv(IplusZtZD)) 
+
+    # Initialize FIsher Information matrix
+	FisherInfoMat = np.zeros((nv,tnp,tnp))
+    
+    # Covariance of dl/dsigma2
+    covdldsigma2 = n/(2*(sigma2**2))
+    
+    # Add dl/dsigma2 covariance
+    FisherInfoMat[:,0,0] = covdldsigma2
+
+    
+    # Add dl/dsigma2 dl/dD covariance
+    for k in np.arange(len(nparams)):
+
+		# Get covariance of dldsigma and dldD      
+		covdldsigmadD = get_covdldDkdsigma23D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict).reshape(nv,FishIndsDk[k+1]-FishIndsDk[k])
+
+		# Assign to the relevant block
+		FisherInfoMat[:,p, FishIndsDk[k]:FishIndsDk[k+1]] = covdldsigmadD
+		FisherInfoMat[:,FishIndsDk[k]:FishIndsDk[k+1],0:1] = FisherInfoMat[:,0:1, FishIndsDk[k]:FishIndsDk[k+1]].transpose((0,2,1))
+      
+    # Add dl/dD covariance
+    for k1 in np.arange(len(nparams)):
+
+		for k2 in np.arange(k1+1):
+
+			IndsDk1 = np.arange(FishIndsDk[k1],FishIndsDk[k1+1])
+			IndsDk2 = np.arange(FishIndsDk[k2],FishIndsDk[k2+1])
+
+			# Get covariance between D_k1 and D_k2 
+			covdldDk1dDk2 = get_covdldDk1Dk23D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict)
+
+			# Add to FImat
+			FisherInfoMat[np.ix_(np.arange(nv), IndsDk1, IndsDk2)] = covdldDk1dDk2
+			FisherInfoMat[np.ix_(np.arange(nv), IndsDk2, IndsDk1)] = FisherInfoMat[np.ix_(np.arange(nv), IndsDk1, IndsDk2)].transpose((0,2,1))
 
 
-
-
+	# Return result
+	return(FisherInfoMat)

@@ -252,3 +252,13 @@ def main():
 	b_est = (DinvIplusZtZD @ Zte).reshape(dimv[0],dimv[1],dimv[2],q)
 	b_true = b.reshape(dimv[0],dimv[1],dimv[2],q)
 	print(np.mean(np.mean(np.mean(np.abs(b_true-b_est)))))
+
+	# Get L contrast
+	L = np.zeros((1,p.shape[0]))
+	L[3] = 1
+
+	df = SattherthwaiteDoF('T','BLMM',D,sigma2,L,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n,nlevels,nparams)
+
+	print('df results')
+	print(df.shape)
+	print(np.mean(df))
