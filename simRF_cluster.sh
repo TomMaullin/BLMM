@@ -7,7 +7,7 @@ RealPath() {
 BLM_PATH=$(dirname $(RealPath "${BASH_SOURCE[0]}"))
 
 i=1
-n=100
+n=1
 while [ "$i" -le "$n" ]; do
 
   # Submit n simulations 
