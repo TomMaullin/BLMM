@@ -109,6 +109,8 @@ def SW_lmerTest(theta3D,tinds,rinds,cinds):# TODO inputs
 
 def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevels, nparams): 
 
+    print('SW_BLMM running')
+
     # Get S^2 of eta
     S2 = S2_eta(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY).
     
@@ -188,6 +190,8 @@ def S2_gamma(gamma, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tin
 
 def S2_eta(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY):
 
+    print('S2_eta running')
+
     # Calculate X'V^{-1}X=X'(I+ZDZ')^{-1}X=X'X-X'Z(I+DZ'Z)^{-1}DZ'X
     XtiVX = XtX - XtZ @ np.linalg.inv(np.eye(D.shape[1]) + D @ ZtZ) @ D @ ZtX
 
@@ -198,6 +202,8 @@ def S2_eta(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY):
 
 
 def dS2deta(nparams, nlevels, L, XtX, XtZ, ZtZ, ZtX, D, sigma2):
+
+    print('dS2deta running')
 
     # Number of voxels
     nv = D.shape[0]
@@ -255,6 +261,9 @@ def dS2deta(nparams, nlevels, L, XtX, XtZ, ZtZ, ZtX, D, sigma2):
     return(dS2deta)
 
 def InfoMat_eta(D, sigma2, n, nlevels, nparams, ZtZ):
+
+
+    print('InfoMat_eta running')
 
     # Number of random effects, q
     q = np.sum(np.dot(nparams,nlevels))
