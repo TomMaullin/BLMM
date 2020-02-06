@@ -259,7 +259,7 @@ def main():
 	print('time elapsed prior: ', time.time()-t1)
 
 	# Get L contrast
-	L = np.zeros((1,p.shape[0]))
+	L = np.zeros((1,p))
 	L[3] = 1
 
 	df = SattherthwaiteDoF('T','BLMM',D,sigma2,L,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n,nlevels,nparams)
