@@ -308,7 +308,7 @@ def InfoMat_eta(D, sigma2, n, nlevels, nparams, ZtZ):
         covdldsigmadD = get_covdldDkdsigma23D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict).reshape(nv,FishIndsDk[k+1]-FishIndsDk[k])
 
         # Assign to the relevant block
-        FisherInfoMat[:,p, FishIndsDk[k]:FishIndsDk[k+1]] = covdldsigmadD
+        FisherInfoMat[:,0, FishIndsDk[k]:FishIndsDk[k+1]] = covdldsigmadD
         FisherInfoMat[:,FishIndsDk[k]:FishIndsDk[k+1],0:1] = FisherInfoMat[:,0:1, FishIndsDk[k]:FishIndsDk[k+1]].transpose((0,2,1))
       
     # Add dl/dD covariance
