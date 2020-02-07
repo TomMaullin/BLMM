@@ -283,7 +283,7 @@ def main():
 		betai = beta[i,:]
 
 		# Compose theta vector
-		thetai = np.concatenate((betai,np.sqrt(sigma2i),mat2vech2d(Lami)), axis=None)
+		thetai = np.concatenate((betai,np.sqrt(sigma2i),mat2vech2D(Lami)), axis=None)
 
 		# Add theta vector to array
 		theta[i,:] = thetai.reshape(theta[i,:].shape)
