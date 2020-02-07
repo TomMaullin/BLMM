@@ -41,7 +41,7 @@ def SattherthwaiteDoF(statType,estType,D,sigma2,L,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,Xt
         if estType=='lmerTest':
 
             # Get estimated degrees of freedom
-            df = SW_lmerTest(theta,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n):
+            df = SW_lmerTest(theta,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
 
         # Use BLMM method
         else:
