@@ -273,7 +273,7 @@ def main():
 		Di = cvxopt.sparse(matrix(D[i,:,:]))
 
 		# Perform sparse cholesky on D.
-		chol_dict = sparse_chol2D(D, retF=False, retP=False, retL=True)
+		chol_dict = sparse_chol2D(Di, retF=False, retP=False, retL=True)
 		Lami = chol_dict['L']
 
 		# Look at individual sigma2
