@@ -7,6 +7,7 @@ import sys
 import nibabel as nib
 import nilearn
 from lib.tools3d import *
+from lib.tools2d import *
 import sparse
 from lib.FS import FS
 from lib.SFS import SFS
