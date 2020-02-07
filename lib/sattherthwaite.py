@@ -32,7 +32,7 @@ import numdifftools as nd
 # - `ete`: The sum of square residuals (e'e in the above notation).
 #
 # ============================================================================
-def SattherthwaiteDoF(statType,estType,D,sigma2,L,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n,nlevels,nparams):
+def SattherthwaiteDoF(statType,estType,D,sigma2,L,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n,nlevels,nparams,theta):
 
     # T contrast
     if statType=='T':
@@ -41,7 +41,7 @@ def SattherthwaiteDoF(statType,estType,D,sigma2,L,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,Xt
         if estType=='lmerTest':
 
             # Get estimated degrees of freedom
-            df = SW_lmerTest()
+            df = SW_lmerTest(theta,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n):
 
         # Use BLMM method
         else:
@@ -55,7 +55,37 @@ def SattherthwaiteDoF(statType,estType,D,sigma2,L,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,Xt
 
     return(df)
 
-def SW_lmerTest(theta3D,tinds,rinds,cinds):# TODO inputs
+def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n):# TODO inputs
+
+    #================================================================================
+    # Initial theta
+    #================================================================================
+    theta0 = np.array([])
+    r = np.amax(nlevels.shape)
+    for i in np.arange(r):
+      theta0 = np.hstack((theta0, mat2vech2D(np.eye(nparams[i])).reshape(np.int64(nparams[i]*(nparams[i]+1)/2))))
+  
+    #================================================================================
+    # Sparse Permutation, P
+    #================================================================================
+    tinds,rinds,cinds=get_mapping2D(nlevels, nparams)
+    Lam=mapping2D(np.random.randn(theta0.shape[0]),tinds,rinds,cinds)
+
+    # Obtain Lambda'Z'ZLambda
+    LamtZtZLam = spmatrix.trans(Lam)*cvxopt.sparse(matrix(ZtZ[0,:,:]))*Lam
+
+    # Obtaining permutation for PLS
+    cholmod.options['supernodal']=2
+    P=amd.order(LamtZtZLam)
+
+    # Identity
+    I = spmatrix(1.0, range(Lam.size[0]), range(Lam.size[0]))
+
+    # These are not spatially varying
+    XtX_current = cvxopt.matrix(XtX[0,:,:])
+    XtZ_current = cvxopt.matrix(XtZ[0,:,:])
+    ZtX_current = cvxopt.matrix(ZtX[0,:,:])
+    ZtZ_current = cvxopt.sparse(cvxopt.matrix(ZtZ[0,:,:]))
 
     # Get the sigma^2 and D estimates.
     for i in np.arange(theta3D.shape[0]):
@@ -70,14 +100,14 @@ def SW_lmerTest(theta3D,tinds,rinds,cinds):# TODO inputs
         YtZ_current = cvxopt.matrix(YtZ[i,:,:])
         ZtY_current = cvxopt.matrix(ZtY[i,:,:])
 
-        # Obtain beta estimate
-        beta = np.array(PLS2D_getBeta(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, tinds, rinds, cinds))
+        # # Obtain beta estimate
+        # beta = np.array(PLS2D_getBeta(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, tinds, rinds, cinds))
 
-        # Obtain sigma^2 estimate
-        sigma2 = PLS2D_getSigma2(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)
+        # # Obtain sigma^2 estimate
+        # sigma2 = PLS2D_getSigma2(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)
         
-        # Obtain D estimate
-        D = np.array(matrix(PLS2D_getD(theta, tinds, rinds, cinds, sigma2)))
+        # # Obtain D estimate
+        # D = np.array(matrix(PLS2D_getD(theta, tinds, rinds, cinds, sigma2)))
 
 
         #NTS CURRENTLY FOR SPARSE CHOL, NOT (\sigma,SPCHOL(D))
@@ -97,6 +127,9 @@ def SW_lmerTest(theta3D,tinds,rinds,cinds):# TODO inputs
         # Estimate hessian
         H = nd.Hessian(llhgamma)(gamma)
 
+        print('H shape')
+        print(H.shape)
+
         # How to get S^2 from gamma
         def S2gamma(g, L=L, ZtX=ZtX_current, ZtY=ZtY_current, XtX=XtX_current, ZtZ=ZtZ_current, XtY=XtY_current, 
                   YtX=YtX_current, YtZ=YtZ_current, XtZ=XtZ_current, YtY=YtY_current, n=n, P=P, I=I,
@@ -105,6 +138,10 @@ def SW_lmerTest(theta3D,tinds,rinds,cinds):# TODO inputs
 
         # Estimate Jacobian
         J = nd.Jacobian(S2gamma)(gamma)
+
+        print('J shape')
+        print(J.shape)
+
 
 
 def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevels, nparams): 

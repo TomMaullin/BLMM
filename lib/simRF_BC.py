@@ -13,6 +13,7 @@ from lib.SFS import SFS
 from lib.pFS import pFS
 from lib.pSFS import pSFS
 from lib.sattherthwaite import *
+import cvxopt
 
 # Random Field based simulation
 def main():
@@ -256,7 +257,43 @@ def main():
 	b_true = b.reshape(dimv[0],dimv[1],dimv[2],q)
 	print(np.mean(np.mean(np.mean(np.abs(b_true-b_est)))))
 
-	print('up to SattherthwaiteDoF')
+
+	#================================================================================
+	# Theta representation of D, sigma^2 and beta
+	#================================================================================
+
+	# Initiate empty theta
+	theta = np.zeros((D.shape[0], np.int32(np.sum(nparams*(nparams+1)/2) + p + 1)))
+
+	# Get 3D theta representation
+	for i in np.arange(D.shape[0]):
+
+		# Look at individual D
+		Di = cvxopt.sparse(matrix(D[i,:,:]))
+
+		# Perform sparse cholesky on D.
+		chol_dict = sparse_chol2D(D, retF=False, retP=False, retL=True)
+		Lami = chol_dict['L']
+
+		# Look at individual sigma2
+		sigma2i = sigma2[i]
+		
+		# Look at individual beta
+		betai = beta[i,:]
+
+		# Compose theta vector
+		thetai = np.concatenate((betai,np.sqrt(sigma2i),mat2vech2d(Lami)), axis=None)
+
+		# Add theta vector to array
+		theta[i,:] = thetai.reshape(theta[i,:].shape)
+
+	print(theta.shape)
+
+	#================================================================================
+	# Sattherthwaite degrees of freedom (BLMM version)
+	#================================================================================
+
+	print('up to SattherthwaiteDoF BLMM method')
 	print('time elapsed prior: ', time.time()-t1)
 	t2 = time.time()
 
@@ -264,7 +301,32 @@ def main():
 	L = np.zeros((1,p))
 	L[0,3] = 1
 
-	df = SattherthwaiteDoF('T','BLMM',D,sigma2,L,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n,nlevels,nparams)
+	df = SattherthwaiteDoF('T','BLMM',D,sigma2,L,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n,nlevels,nparams,theta)
+
+	print('df results')
+	print(df.shape)
+	print(np.mean(df))
+
+	print(np.max(df))
+
+	print(np.min(df))
+
+	print('SattherthwaiteDoF (BLMM) done')
+	print('elapsed time: ', time.time()-t2)
+
+	#================================================================================
+	# Sattherthwaite degrees of freedom (lmertest version)
+	#================================================================================
+
+	print('up to SattherthwaiteDoF lmertest method')
+	print('time elapsed prior: ', time.time()-t1)
+	t2 = time.time()
+
+	# Get L contrast
+	L = np.zeros((1,p))
+	L[0,3] = 1
+
+	df = SattherthwaiteDoF('T','lmerTest',D,sigma2,L,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n,nlevels,nparams,theta)
 
 	print('df results')
 	print(df.shape)
@@ -276,3 +338,6 @@ def main():
 
 	print('SattherthwaiteDoF done')
 	print('elapsed time: ', time.time()-t2)
+
+
+	print('up to SattherthwaiteDoF lmertest method')
