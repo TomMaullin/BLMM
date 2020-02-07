@@ -2,8 +2,8 @@ import numpy as np
 import scipy.sparse
 
 # MOVE THESE
-#import cvxopt
-#from cvxopt import cholmod, umfpack, amd, matrix, spmatrix, lapack
+import cvxopt
+from cvxopt import cholmod, umfpack, amd, matrix, spmatrix, lapack
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
