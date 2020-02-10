@@ -307,7 +307,7 @@ def main():
 			try:
 				chol_dict = sparse_chol2D(Dij, perm=None, retF=True, retP=False, retL=True)
 			except:
-				numpy.set_printoptions(threshold=sys.maxsize)
+				np.set_printoptions(threshold=sys.maxsize)
 				print('D')
 				print(D[i,:,:])
 				chol_dict = sparse_chol2D(Dij, perm=None, retF=True, retP=False, retL=True)
