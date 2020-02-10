@@ -282,6 +282,14 @@ def main():
 		# Look at individual beta
 		betai = beta[i,:]
 
+		print('marker')
+
+		print(np.array(Lami).shape)
+
+		print(type(np.array(Lami)))
+
+		print(mat2vech2D(np.array(Lami)))
+
 		# Compose theta vector
 		thetai = np.concatenate((betai,np.sqrt(sigma2i),mat2vech2D(np.array(Lami))), axis=None)
 
