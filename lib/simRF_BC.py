@@ -268,6 +268,9 @@ def main():
 	# Indices for D/lambda submatrices
 	Dinds = np.insert(np.cumsum(nlevels*nparams),0,0)
 
+	# Change cholmod default
+	cholmod.options['supernodal']=2
+
 	# Get 3D theta representation
 	for i in np.arange(D.shape[0]):
 
