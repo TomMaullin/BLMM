@@ -304,7 +304,13 @@ def main():
 
 			print(Ddict[j][i,:,:])
 
-			Lamij = np.linalg.cholesky(Dij)
+			try:
+				Lamij = np.linalg.cholesky(Dij)
+			except:
+				L, D, ~ = la.ldl(Dij)
+				Lamij = np.matmul(L, np.sqrt(D))
+				print(Lamij)
+
 
 			print('Lamij')
 			print(Lamij)
