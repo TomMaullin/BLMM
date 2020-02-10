@@ -281,7 +281,14 @@ def main():
 		Di = cvxopt.sparse(matrix(D[i,:,:]))
 
 		# Perform sparse cholesky on D.
-		chol_dict = sparse_chol2D(Di, perm=None, retF=True, retP=False, retL=True)
+		try:
+			chol_dict = sparse_chol2D(Di, perm=None, retF=True, retP=False, retL=True)
+		except:
+			print('catch active')
+			print(type(Di))
+			print(Di.shape)
+			print(Di)
+
 		Lami = chol_dict['L']
 		Lami = np.array(matrix(Lami))
 
