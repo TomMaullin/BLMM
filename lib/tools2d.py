@@ -942,7 +942,11 @@ def sparse_chol2D(M, perm=None, retF=False, retP=True, retL=True):
 
         # Calculate the factorisation again (buggy if returning L for
         # some reason)
-        F2=cholmod.symbolic(M,p=perm)
+        if not perm is None:
+          F2=cholmod.symbolic(M,p=perm)
+        else:
+          F2=cholmod.symbolic(M)
+          
         cholmod.numeric(M, F2)
 
         # If we want to return the F object, add it to the dictionary
