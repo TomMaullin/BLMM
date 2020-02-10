@@ -268,6 +268,9 @@ def main():
 	# Indices for D/lambda submatrices
 	Dinds = np.insert(np.cumsum(nlevels*nparams),0,0)
 
+	print('dinds')
+	print(Dinds)
+
 	# Change cholmod default
 	cholmod.options['supernodal']=2
 
@@ -287,14 +290,19 @@ def main():
 
 		for j in np.arange(len(nparams)):
 
+			print('lami shape')
+			print(Lami.shape)
+
 			# Get individual block of lambda
-			Lamij = Lami[Dinds[j]:Dinds[j+1],Dinds[j]:Dinds[j+1]]
+			Lamij = Lami[Dinds[j]:(Dinds[j]+nparams[j]),Dinds[j]:(Dinds[j]+nparams[j])]
 
 			# Convert it to vec(h) format
 			vecuLamij = mat2vech2D(Lamij)
 
 			# Add it to running element list
 			vecuLami = np.concatenate((vecuLami, vecuLamij), axis=None)
+
+
 
 			print(vecuLami.shape)
 
