@@ -286,7 +286,7 @@ def main():
 		except:
 			print('catch active')
 			print(type(Di))
-			print(Di.shape)
+			print(Di.size)
 			print(Di)
 
 		Lami = chol_dict['L']
