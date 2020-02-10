@@ -277,31 +277,41 @@ def main():
 	# Get 3D theta representation
 	for i in np.arange(D.shape[0]):
 
-		# Look at individual D
-		Di = cvxopt.sparse(matrix(D[i,:,:]))
+		# # Look at individual D
+		# Di = cvxopt.sparse(matrix(D[i,:,:]))
 
-		# Perform sparse cholesky on D.
-		try:
-			chol_dict = sparse_chol2D(Di, perm=None, retF=True, retP=False, retL=True)
-		except:
-			print('catch active')
-			print(type(Di))
-			print(Di.size)
-			print(Di)
+		# # Perform sparse cholesky on D.
+		# try:
+		# 	chol_dict = sparse_chol2D(Di, perm=None, retF=True, retP=False, retL=True)
+		# except:
+		# 	print('catch active')
+		# 	print(type(Di))
+		# 	print(Di.size)
+		# 	print(Di)
 
-		Lami = chol_dict['L']
-		Lami = np.array(matrix(Lami))
+		# Lami = chol_dict['L']
+		# Lami = np.array(matrix(Lami))
 
 		# Unique elements of lambda
 		vecuLami = np.array([])
 
 		for j in np.arange(len(nparams)):
 
-			print('lami shape')
-			print(Lami.shape)
+			Dij = cvxopt.sparse(matrix(D[i,Dinds[j]:(Dinds[j]+nparams[j]),Dinds[j]:(Dinds[j]+nparams[j])]))
+
+			print('Dij')
+			print(Dij)
+
+			chol_dict = sparse_chol2D(Dij, perm=None, retF=True, retP=False, retL=True)
+
+			Lamij = chol_dict['L']
+			Lamij = np.array(matrix(Lami))
+
+			print('Lamij')
+			print(Lamij)
 
 			# Get individual block of lambda
-			Lamij = Lami[Dinds[j]:(Dinds[j]+nparams[j]),Dinds[j]:(Dinds[j]+nparams[j])]
+			#Lamij = Lami[Dinds[j]:(Dinds[j]+nparams[j]),Dinds[j]:(Dinds[j]+nparams[j])]
 
 			# Convert it to vec(h) format
 			vecuLamij = mat2vech2D(Lamij)
