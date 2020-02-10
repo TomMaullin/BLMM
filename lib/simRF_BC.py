@@ -281,7 +281,7 @@ def main():
 		Di = cvxopt.sparse(matrix(D[i,:,:]))
 
 		# Perform sparse cholesky on D.
-		chol_dict = sparse_chol2D(Di, retF=False, retP=False, retL=True)
+		chol_dict = sparse_chol2D(Di, retF=True, retP=False, retL=True)
 		Lami = chol_dict['L']
 		Lami = np.array(matrix(Lami))
 
