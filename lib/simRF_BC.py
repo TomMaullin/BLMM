@@ -284,14 +284,14 @@ def main():
 
 		print('marker')
 
-		print(np.array(Lami).shape)
+		print(np.array(matrix(Lami)).shape)
 
-		print(type(np.array(Lami)))
+		print(type(np.array(matrix(Lami))))
 
-		print(mat2vech2D(np.array(Lami)))
+		print(mat2vech2D(np.array(matrix(Lami))))
 
 		# Compose theta vector
-		thetai = np.concatenate((betai,np.sqrt(sigma2i),mat2vech2D(np.array(Lami))), axis=None)
+		thetai = np.concatenate((betai,np.sqrt(sigma2i),mat2vech2D(np.array(matrix(Lami)))), axis=None)
 
 		# Add theta vector to array
 		theta[i,:] = thetai.reshape(theta[i,:].shape)
