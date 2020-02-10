@@ -302,18 +302,19 @@ def main():
 			print('Dij')
 			print(Dij)
 
-			print(Ddict[k][i,:,:])
+			print(Ddict[j][i,:,:])
 
 			try:
 				chol_dict = sparse_chol2D(Dij, perm=None, retF=True, retP=False, retL=True)
-			except:
-				np.set_printoptions(threshold=sys.maxsize)
-				print('D')
-				print(D[i,:,:])
-				chol_dict = sparse_chol2D(Dij, perm=None, retF=True, retP=False, retL=True)
 
-			Lamij = chol_dict['L']
-			Lamij = np.array(matrix(Lamij))
+				Lamij = chol_dict['L']
+				Lamij = np.array(matrix(Lamij))
+
+			except:
+				if np.prod(Dij.shape)==1:
+					Lamij = np.sqrt(Dij)
+				else:
+					chol_dict = sparse_chol2D(Dij, perm=None, retF=True, retP=False, retL=True)
 
 			print('Lamij')
 			print(Lamij)
