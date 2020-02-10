@@ -244,7 +244,6 @@ def main():
 
 	  Ddict[k] = makeDnnd3D(vech2mat3D(paramVec[:,FishIndsDk[k]:FishIndsDk[k+1],:]))
 
-
 	  
 	# Full version of D
 	D = getDfromDict3D(Ddict, nparams, nlevels)
@@ -266,6 +265,9 @@ def main():
 	# Initiate empty theta
 	theta = np.zeros((D.shape[0], np.int32(np.sum(nparams*(nparams+1)/2) + p + 1)))
 
+	# Indices for D/lambda submatrices
+	Dinds = np.insert(np.cumsum(nlevels*nparams),0,0)
+
 	# Get 3D theta representation
 	for i in np.arange(D.shape[0]):
 
@@ -275,6 +277,23 @@ def main():
 		# Perform sparse cholesky on D.
 		chol_dict = sparse_chol2D(Di, retF=False, retP=False, retL=True)
 		Lami = chol_dict['L']
+		Lami = np.array(matrix(Lami))
+
+		# Unique elements of lambda
+		vecuLami = np.array([])
+
+		for j in np.arange(len(nparams)):
+
+			# Get individual block of lambda
+			Lamij = Lami[Dinds[j]:Dinds[j+1],Dinds[j]:Dinds[j+1]]
+
+			# Convert it to vec(h) format
+			vecuLamij = mat2vech(Lamij)
+
+			# Add it to running element list
+			vecuLami = np.concatenate((vecuLami, vecuLamij), axis=None)
+
+			print(vecuLami.shape)
 
 		# Look at individual sigma2
 		sigma2i = sigma2[i]
@@ -282,16 +301,8 @@ def main():
 		# Look at individual beta
 		betai = beta[i,:]
 
-		print('marker')
-
-		print(np.array(matrix(Lami)).shape)
-
-		print(type(np.array(matrix(Lami))))
-
-		print(mat2vech2D(np.array(matrix(Lami))))
-
 		# Compose theta vector
-		thetai = np.concatenate((betai,np.sqrt(sigma2i),mat2vech2D(np.array(matrix(Lami)))), axis=None)
+		thetai = np.concatenate((betai,np.sqrt(sigma2i),vecuLami), axis=None)
 
 		# Add theta vector to array
 		theta[i,:] = thetai.reshape(theta[i,:].shape)
