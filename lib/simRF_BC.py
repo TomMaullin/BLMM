@@ -297,24 +297,14 @@ def main():
 
 		for j in np.arange(len(nparams)):
 
-			Dij = cvxopt.sparse(matrix(D[i,Dinds[j]:(Dinds[j]+nparams[j]),Dinds[j]:(Dinds[j]+nparams[j])]))
+			Dij = D[i,Dinds[j]:(Dinds[j]+nparams[j]),Dinds[j]:(Dinds[j]+nparams[j])]
 
 			print('Dij')
 			print(Dij)
 
 			print(Ddict[j][i,:,:])
 
-			try:
-				chol_dict = sparse_chol2D(Dij, perm=None, retF=True, retP=False, retL=True)
-
-				Lamij = chol_dict['L']
-				Lamij = np.array(matrix(Lamij))
-
-			except:
-				if np.prod(Dij.shape)==1:
-					Lamij = np.sqrt(Dij)
-				else:
-					chol_dict = sparse_chol2D(Dij, perm=None, retF=True, retP=False, retL=True)
+			Lamij = np.linalg.cholesky(Dij)
 
 			print('Lamij')
 			print(Lamij)
