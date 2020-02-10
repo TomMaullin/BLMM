@@ -288,7 +288,7 @@ def main():
 			Lamij = Lami[Dinds[j]:Dinds[j+1],Dinds[j]:Dinds[j+1]]
 
 			# Convert it to vec(h) format
-			vecuLamij = mat2vech(Lamij)
+			vecuLamij = mat2vech2D(Lamij)
 
 			# Add it to running element list
 			vecuLami = np.concatenate((vecuLami, vecuLamij), axis=None)
