@@ -276,6 +276,15 @@ def main():
 		chol_dict = sparse_chol2D(Di, retF=False, retP=False, retL=True)
 		Lami = chol_dict['L']
 
+		print('lam')
+		print(Lami)
+		print('lamtype')
+		print(type(Lami))
+		print('lam (np)')
+		print(np.array(Lami))
+		print('lam (np) type')
+		print(type(Lami))
+
 		# Look at individual sigma2
 		sigma2i = sigma2[i]
 		
