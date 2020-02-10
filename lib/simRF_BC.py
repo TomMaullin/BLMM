@@ -305,7 +305,7 @@ def main():
 			chol_dict = sparse_chol2D(Dij, perm=None, retF=True, retP=False, retL=True)
 
 			Lamij = chol_dict['L']
-			Lamij = np.array(matrix(Lami))
+			Lamij = np.array(matrix(Lamij))
 
 			print('Lamij')
 			print(Lamij)
