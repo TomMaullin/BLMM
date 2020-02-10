@@ -307,7 +307,7 @@ def main():
 			try:
 				Lamij = np.linalg.cholesky(Dij)
 			except:
-				L, D, perm = la.ldl(Dij)
+				L, D, perm = scipy.linalg.ldl(Dij)
 				Lamij = np.matmul(L, np.sqrt(D))
 				print(Lamij)
 
