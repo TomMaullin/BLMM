@@ -276,15 +276,6 @@ def main():
 		chol_dict = sparse_chol2D(Di, retF=False, retP=False, retL=True)
 		Lami = chol_dict['L']
 
-		print('lam')
-		print(Lami)
-		print('lamtype')
-		print(type(Lami))
-		print('lam (np)')
-		print(np.array(Lami))
-		print('lam (np) type')
-		print(type(Lami))
-
 		# Look at individual sigma2
 		sigma2i = sigma2[i]
 		
@@ -292,7 +283,7 @@ def main():
 		betai = beta[i,:]
 
 		# Compose theta vector
-		thetai = np.concatenate((betai,np.sqrt(sigma2i),mat2vech2D(Lami)), axis=None)
+		thetai = np.concatenate((betai,np.sqrt(sigma2i),mat2vech2D(np.array(Lami))), axis=None)
 
 		# Add theta vector to array
 		theta[i,:] = thetai.reshape(theta[i,:].shape)
