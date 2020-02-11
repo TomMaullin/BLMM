@@ -223,6 +223,13 @@ def S2_gamma(gamma, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tin
     # Obtain D estimate
     D = np.array(matrix(PLS2D_getD(theta, tinds, rinds, cinds, sigma2)))
 
+    print('shape')
+    print(XtX.shape)
+    print(XtZ.shape)
+    print(I.shape)
+    print(D.shape)
+    print(ZtX.shape)
+
     # Calculate X'V^{-1}X=X'(I+ZDZ')^{-1}X=X'X-X'Z(I+DZ'Z)^{-1}DZ'X
     XtiVX = XtX - XtZ @ np.linalg.inv(I + D @ ZtZ) @ D @ ZtX
 
