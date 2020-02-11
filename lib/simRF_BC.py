@@ -303,6 +303,7 @@ def main():
 
 			try:
 				Lamij = np.linalg.cholesky(Dij)
+			except:
 				L, Dvals, perm = scipy.linalg.ldl(Dij)
 				Lamij = np.real(np.matmul(L[perm,:], np.sqrt(Dvals+0J)))
 				# print('L')
