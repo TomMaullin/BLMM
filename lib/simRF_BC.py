@@ -308,15 +308,17 @@ def main():
 				Lamij = np.linalg.cholesky(Dij)
 			except:
 				L, Dvals, perm = scipy.linalg.ldl(Dij)
-				Lamij = np.matmul(L, np.sqrt(Dvals+0J))
+				Lamij = np.matmul(L[perm,:], np.sqrt(Dvals+0J))
 				print('L')
-				print(L)
+				print(L[perm,:])
 				print('Dvals')
 				print(Dvals)
 				print('Lam')
 				print(Lamij)
 				print('Lam real')
 				print(np.real(Lamij))
+				print('difference')
+				print(Lamij @ Lamij.transpose() - Dij)
 
 			# Get individual block of lambda
 			#Lamij = Lami[Dinds[j]:(Dinds[j]+nparams[j]),Dinds[j]:(Dinds[j]+nparams[j])]
