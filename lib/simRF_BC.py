@@ -309,11 +309,12 @@ def main():
 			except:
 				L, Dvals, perm = scipy.linalg.ldl(Dij)
 				Lamij = np.matmul(L, np.sqrt(Dvals))
+				print('L')
+				print(L)
+				print('Dvals')
+				print(Dvals)
+				print('Lam')
 				print(Lamij)
-
-
-			print('Lamij')
-			print(Lamij)
 
 			# Get individual block of lambda
 			#Lamij = Lami[Dinds[j]:(Dinds[j]+nparams[j]),Dinds[j]:(Dinds[j]+nparams[j])]
