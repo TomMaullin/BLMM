@@ -259,7 +259,7 @@ def main():
 
 
 	#================================================================================
-	# Theta representation of D, sigma^2 and beta
+	# Theta representation of D, sigma^2 and beta - NTS MAKE SEPERATE FN
 	#================================================================================
 
 	# Initiate empty theta
@@ -270,9 +270,6 @@ def main():
 
 	print('dinds')
 	print(Dinds)
-
-	# Change cholmod default
-	cholmod.options['supernodal']=2
 
 	# Get 3D theta representation
 	for i in np.arange(D.shape[0]):

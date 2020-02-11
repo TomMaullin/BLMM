@@ -2,7 +2,7 @@ import numpy as np
 import scipy.sparse
 import cvxopt
 from cvxopt import cholmod, umfpack, amd, matrix, spmatrix, lapack
-from lib.tools2d import faclev_indices2D, invDupMat2D
+from lib.tools2d import faclev_indices2D, invDupMat2D, mat2vech2D
 from lib.tools3d import kron3D, mat2vech3D, get_covdldDkdsigma23D, get_covdldDk1Dk23D, forceSym3D
 import numdifftools as nd
 
