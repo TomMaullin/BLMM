@@ -206,7 +206,7 @@ def theta2gamma(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tin
     sigma = np.sqrt(sigma2)
 
     # Obtain gamma
-    gamma = np.concatenate(sigma, theta/sigma)
+    gamma = np.concatenate((sigma, theta/sigma),axis=None)
 
     # Return gamma
     return(gamma)
