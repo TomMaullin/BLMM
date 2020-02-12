@@ -88,6 +88,8 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
     ZtX_current = cvxopt.matrix(ZtX[0,:,:])
     ZtZ_current = cvxopt.sparse(cvxopt.matrix(ZtZ[0,:,:]))
 
+    df = np.zeros(YtY.shape[0])
+
     # Get the sigma^2 and D estimates.
     for i in np.arange(theta3D.shape[0]):
 
@@ -137,17 +139,13 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
         print('J shape')
         print(J.shape)
 
-        # Obtain sigma^2 estimate
-        sigma2 = PLS2D_getSigma2(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)
-        
-        # Obtain D estimate
-        D = np.array(matrix(PLS2D_getD(theta, tinds, rinds, cinds, sigma2)))
+        # Calulcate S^2
+        S2 = S2_gamma(gamma, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
 
-        # Get S^2 of eta (as exact form doesnt matter if calculated using eta or gamma
-        S2 = S2_eta(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY)
+        # Calculate the degrees of freedom
+        df[i] = 2*(S2**2)/(J @ np.linalg.inv(H) @ J.transpose())
 
-
-
+    return(df)
 
 
 def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevels, nparams): 
@@ -225,30 +223,30 @@ def S2_gamma(gamma, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tin
     # Obtain sigma^2 estimate
     sigma2 = np.array(PLS2D_getSigma2(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds))[0,0]
 
-    print('theta')
-    print(theta)
-    print('theta shape')
-    print(theta.shape)
-    print('sigma2')
-    print(sigma2)
-    print('sigma2 shape')
-    print(sigma2.shape)
-    tmp = np.array(matrix(PLS2D_getD(theta, tinds, rinds, cinds, sigma2)))
-    print('get D result')
-    print(tmp)
-    print('get D result (type)')
-    print(type(tmp))
+    # print('theta')
+    # print(theta)
+    # print('theta shape')
+    # print(theta.shape)
+    # print('sigma2')
+    # print(sigma2)
+    # print('sigma2 shape')
+    # print(sigma2.shape)
+    # tmp = np.array(matrix(PLS2D_getD(theta, tinds, rinds, cinds, sigma2)))
+    # print('get D result')
+    # print(tmp)
+    # print('get D result (type)')
+    # print(type(tmp))
 
     # Obtain D estimate
     D = np.array(matrix(PLS2D_getD(theta, tinds, rinds, cinds, sigma2)))
 
-    print('in multiplication')
-    print(D.shape)
-    print(np.array(matrix(I)).shape)
-    print(np.array(XtX).shape)
-    print(np.array(ZtX).shape)
-    print(np.array(XtZ).shape)
-    print(np.array(matrix(ZtZ)).shape)
+    # print('in multiplication')
+    # print(D.shape)
+    # print(np.array(matrix(I)).shape)
+    # print(np.array(XtX).shape)
+    # print(np.array(ZtX).shape)
+    # print(np.array(XtZ).shape)
+    # print(np.array(matrix(ZtZ)).shape)
 
     # Calculate X'V^{-1}X=X'(I+ZDZ')^{-1}X=X'X-X'Z(I+DZ'Z)^{-1}DZ'X
     XtiVX = np.array(XtX) - np.array(XtZ) @ np.linalg.inv(np.array(matrix(I)) + D @ np.array(matrix(ZtZ))) @ D @ np.array(ZtX)
