@@ -119,15 +119,19 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
                    tinds=tinds, rinds=rinds, cinds=cinds): 
 
             t = gamma2theta(g)
+            print('gamma')
+            print(g)
+            print('theta')
+            print(t)
             return PLS2D(t, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
 
         # Estimate hessian
         H = nd.Hessian(llhgamma)(gamma)
 
-        print('H shape')
-        print(H.shape)
-        print('H')
-        print(H)
+        # print('H shape')
+        # print(H.shape)
+        # print('H')
+        # print(H)
 
         # How to get S^2 from gamma
         def S2gamma(g, L=L, ZtX=ZtX_current, ZtY=ZtY_current, XtX=XtX_current, ZtZ=ZtZ_current, XtY=XtY_current, 
@@ -138,8 +142,8 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
         # Estimate Jacobian
         J = nd.Jacobian(S2gamma)(gamma)
 
-        print('J shape')
-        print(J.shape)
+        # print('J shape')
+        # print(J.shape)
 
         # Calulcate S^2
         S2 = S2_gamma(gamma, L, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, 
