@@ -259,8 +259,19 @@ def PLS2D_getSigma2(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I,
 
 def PLS2D_getD(theta, tinds, rinds, cinds, sigma2):
 
+    print('theta')
+    print(theta)
+    print('theta (type)')
+    print(type(theta))
+
+
     # Obtain Lambda
     Lambda = mapping2D(theta, tinds, rinds, cinds)
+
+    print('Lambda')
+    print(Lambda)
+    print('Lambda (type)')
+    print(type(Lambda))
     
     # Obtain Lambda'
     Lambdat = spmatrix.trans(Lambda)

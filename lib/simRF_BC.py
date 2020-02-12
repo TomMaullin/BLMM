@@ -316,10 +316,6 @@ def main():
 			# Add it to running element list
 			vecuLami = np.concatenate((vecuLami, vecuLamij), axis=None)
 
-
-
-			print(vecuLami.shape)
-
 		# Look at individual sigma2
 		sigma2i = sigma2[i]
 		
