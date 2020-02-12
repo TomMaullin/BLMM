@@ -104,12 +104,6 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
         # # Obtain beta estimate
         # beta = np.array(PLS2D_getBeta(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, tinds, rinds, cinds))
 
-        # # Obtain sigma^2 estimate
-        # sigma2 = PLS2D_getSigma2(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)
-        
-        # # Obtain D estimate
-        # D = np.array(matrix(PLS2D_getD(theta, tinds, rinds, cinds, sigma2)))
-
 
         #NTS CURRENTLY FOR SPARSE CHOL, NOT (\sigma,SPCHOL(D))
         #ALSO MIGHT HAVE PROBLEMS WITH CVXOPT CONVERSION
@@ -142,6 +136,17 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
 
         print('J shape')
         print(J.shape)
+
+        # Obtain sigma^2 estimate
+        sigma2 = PLS2D_getSigma2(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)
+        
+        # Obtain D estimate
+        D = np.array(matrix(PLS2D_getD(theta, tinds, rinds, cinds, sigma2)))
+
+        # Get S^2 of eta (as exact form doesnt matter if calculated using eta or gamma
+        S2 = S2_eta(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY)
+
+
 
 
 
@@ -246,7 +251,7 @@ def S2_gamma(gamma, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tin
     print(np.array(matrix(ZtZ)).shape)
 
     # Calculate X'V^{-1}X=X'(I+ZDZ')^{-1}X=X'X-X'Z(I+DZ'Z)^{-1}DZ'X
-    XtiVX = np.array(XtX) - np.array(XtZ) @ np.linalg.inv(I + D @ np.array(matrix(ZtZ))) @ D @ np.array(ZtX)
+    XtiVX = np.array(XtX) - np.array(XtZ) @ np.linalg.inv(np.array(matrix(I)) + D @ np.array(matrix(ZtZ))) @ D @ np.array(ZtX)
 
     # Calculate S^2 = sigma^2L(X'V^{-1}X)L'
     S2 = sigma2*L @ np.linalg.inv(XtiVX) @ L.transpose()
