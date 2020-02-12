@@ -221,7 +221,7 @@ def S2_gamma(gamma, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tin
     sigma2 = np.array(PLS2D_getSigma2(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds))
 
     # Obtain D estimate
-    D = np.array(matrix(PLS2D_getD(theta, tinds, rinds, cinds, sigma2).astype(np.double)))
+    D = np.array(matrix(PLS2D_getD(theta, tinds, rinds, cinds, sigma2)).astype(np.double))
 
     print('shape')
     print(XtZ.shape)
