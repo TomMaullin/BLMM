@@ -172,7 +172,6 @@ def PLS2D_getSigma2(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I,
     Lambda = mapping2D(theta, tinds, rinds, cinds)
     #t2 = time.time()
     #print(t2-t1)#3.170967102050781e-05   9
-
     
     # Obtain Lambda'
     #t1 = time.time()
@@ -194,25 +193,8 @@ def PLS2D_getSigma2(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I,
     #print(t2-t1)#3.790855407714844e-05   2
     
     #t1 = time.time()
-    try:
-        chol_dict = sparse_chol2D(LambdatZtZLambda+I, perm=P, retF=True, retP=False, retL=False)
-        F = chol_dict['F']
-    except:
-        print('bug')
-        print('Lambda (type)')
-        print(type(Lambda))
-        print('Lambda')
-        print(Lambda)
-        print('LambdatZtZLambda (type)')
-        print(type(LambdatZtZLambda))
-        print('LambdatZtZLambda')
-        print(LambdatZtZLambda)
-        print('I (type)')
-        print(type(I))
-        chol_dict = sparse_chol2D(LambdatZtZLambda+I, perm=P, retF=True, retP=False, retL=False)
-        F = chol_dict['F']
-
-
+    chol_dict = sparse_chol2D(LambdatZtZLambda+I, perm=P, retF=True, retP=False, retL=False)
+    F = chol_dict['F']
     #t2 = time.time()
     #print(t2-t1)#0.0001342296600341797   1
 
