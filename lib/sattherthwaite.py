@@ -220,6 +220,19 @@ def S2_gamma(gamma, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tin
     # Obtain sigma^2 estimate
     sigma2 = np.array(PLS2D_getSigma2(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds))
 
+    print('theta')
+    print(theta)
+    print('theta shape')
+    print(theta.shape)
+    print('sigma2')
+    print(sigma2)
+    print('sigma2 shape')
+    print(sigma2.shape)
+    print('get D result')
+    print(PLS2D_getD(theta, tinds, rinds, cinds, sigma2))
+    print('get D result (type)')
+    print(type(PLS2D_getD(theta, tinds, rinds, cinds, sigma2)))
+
     # Obtain D estimate
     D = np.array(matrix(PLS2D_getD(theta, tinds, rinds, cinds, sigma2)).astype(np.double))
 

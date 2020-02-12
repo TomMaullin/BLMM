@@ -268,9 +268,6 @@ def main():
 	# Indices for D/lambda submatrices
 	Dinds = np.insert(np.cumsum(nlevels*nparams),0,0)
 
-	print('dinds')
-	print(Dinds)
-
 	# Get 3D theta representation
 	for i in np.arange(D.shape[0]):
 
@@ -295,11 +292,6 @@ def main():
 		for j in np.arange(len(nparams)):
 
 			Dij = D[i,Dinds[j]:(Dinds[j]+nparams[j]),Dinds[j]:(Dinds[j]+nparams[j])]
-
-			print('Dij')
-			print(Dij)
-
-			print(Ddict[j][i,:,:])
 
 			try:
 				Lamij = np.linalg.cholesky(Dij)
