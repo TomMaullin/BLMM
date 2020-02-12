@@ -140,7 +140,8 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
         print(J.shape)
 
         # Calulcate S^2
-        S2 = S2_gamma(gamma, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+        S2 = S2_gamma(gamma, L, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, 
+                      YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)
 
         # Calculate the degrees of freedom
         df[i] = 2*(S2**2)/(J @ np.linalg.inv(H) @ J.transpose())
