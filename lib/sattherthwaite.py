@@ -237,8 +237,16 @@ def S2_gamma(gamma, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tin
     # Obtain D estimate
     D = np.array(matrix(PLS2D_getD(theta, tinds, rinds, cinds, sigma2)))
 
+    print('in multiplication')
+    print(D.shape)
+    print(I.shape)
+    print(np.array(XtX).shape)
+    print(np.array(ZtX).shape)
+    print(np.array(XtZ).shape)
+    print(np.array(matrix(ZtZ)).shape)
+
     # Calculate X'V^{-1}X=X'(I+ZDZ')^{-1}X=X'X-X'Z(I+DZ'Z)^{-1}DZ'X
-    XtiVX = np.array(XtX) - np.array(XtZ) @ np.linalg.inv(I + D @ np.array(ZtZ)) @ D @ np.array(ZtX)
+    XtiVX = np.array(XtX) - np.array(XtZ) @ np.linalg.inv(I + D @ np.array(matrix(ZtZ))) @ D @ np.array(ZtX)
 
     # Calculate S^2 = sigma^2L(X'V^{-1}X)L'
     S2 = sigma2*L @ np.linalg.inv(XtiVX) @ L.transpose()
