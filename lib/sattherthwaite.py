@@ -244,7 +244,7 @@ def S2_gamma(gamma, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tin
 
     print('in multiplication')
     print(D.shape)
-    print(I.shape)
+    print(np.array(matrix(I)).shape)
     print(np.array(XtX).shape)
     print(np.array(ZtX).shape)
     print(np.array(XtZ).shape)
