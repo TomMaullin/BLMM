@@ -272,6 +272,10 @@ def S2_gamma(gamma, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tin
         print(theta)
         print('XtX')
         print(XtX)
+        print('D')
+        print(D)
+        print('Sigma2')
+        print(sigma2)
 
     return(S2)
 
