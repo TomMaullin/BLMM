@@ -6,7 +6,7 @@ from lib.tools2d import faclev_indices2D, invDupMat2D, mat2vech2D, get_mapping2D
 from lib.PLS import PLS2D_getSigma2, PLS2D_getD, PLS2D_getBeta, PLS2D
 from lib.tools3d import kron3D, mat2vech3D, get_covdldDkdsigma23D, get_covdldDk1Dk23D, forceSym3D
 import numdifftools as nd
-
+import sys
 
 # ============================================================================
 #
@@ -286,6 +286,7 @@ def S2_gamma(gamma, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tin
         print(theta)
         print('XtX')
         print(XtX)
+        np.set_printoptions(threshold=sys.maxsize)
         print('D')
         print(D)
         print('Sigma2')
