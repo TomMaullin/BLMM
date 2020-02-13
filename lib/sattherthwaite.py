@@ -272,7 +272,7 @@ def S2_gamma(gamma, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tin
     # Calculate S^2 = sigma^2L(X'V^{-1}X)L'
     S2 = sigma2*L @ np.linalg.inv(XtiVX) @ L.transpose()
 
-    if np.random.uniform(0,1,1)<0:
+    if np.random.uniform(0,1,1)<0.01:
 
         print('S2')
         print(S2)

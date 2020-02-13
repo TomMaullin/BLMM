@@ -320,7 +320,7 @@ def main():
 		sigma2i = sigma2[i]
 
 		# Compose theta vector
-		thetai = vecuLami/sigma2i
+		thetai = vecuLami*np.sqrt(sigma2i)
 
 		# Add theta vector to array
 		theta[i,:] = thetai.reshape(theta[i,:].shape)
