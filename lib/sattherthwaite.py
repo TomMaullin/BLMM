@@ -189,7 +189,7 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
             print(theta)
 
         # Calculate the degrees of freedom
-        df[i] = 2*(S2**2)/(J @ np.linalg.pinv(H2) @ J.transpose())
+        df[i] = 2*(S2**2)/(J @ np.linalg.pinv(H) @ J.transpose())
 
     return(df)
 
