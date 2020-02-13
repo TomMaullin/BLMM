@@ -158,7 +158,7 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
             print('denominator')
             print((J @ np.linalg.pinv(H) @ J.transpose()))
             print('Infomat')
-            print(np.linalg.pinv(H))
+            print(H)
             print('dS2')
             print(J.transpose())
 
