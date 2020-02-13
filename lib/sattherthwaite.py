@@ -151,7 +151,7 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
                       YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)
 
 
-        if i==10:
+        if i==3:
 
             print('numerator')
             print(2*(S2**2))
@@ -192,13 +192,13 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
 
 
     print('numerator')
-    print(2*(S2[10,:,:]**2))
+    print(2*(S2[3,:,:]**2))
     print('denominator')
-    print((dS2.transpose(0,2,1) @ np.linalg.inv(InfoMat) @ dS2)[10,:,:])
+    print((dS2.transpose(0,2,1) @ np.linalg.inv(InfoMat) @ dS2)[3,:,:])
     print('Infomat')
-    print(InfoMat[10,:,:])
+    print(InfoMat[3,:,:])
     print('dS2')
-    print(dS2[10,:,:])
+    print(dS2[3,:,:])
     
     # Return df
     return(df)
