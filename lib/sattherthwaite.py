@@ -149,7 +149,7 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
 
         # Estimate hessian
         H = nd.Hessian(llhgamma,method='complex')(gamma)
-        H2 = nd.Hessian(llhgamma2,method='complex')(gamma)
+        #H2 = nd.Hessian(llhgamma2,method='complex')(gamma)
 
         # print('H shape')
         # print(H.shape)
@@ -181,11 +181,12 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
             print((J @ np.linalg.pinv(H) @ J.transpose()))
             print('Infomat')
             print(H)
-            print(H2)
-            print('diff')
-            print(H/H2)
             print('dS2')
             print(J.transpose())
+            print('gamma')
+            print(gamma)
+            print('theta')
+            print(theta)
 
         # Calculate the degrees of freedom
         df[i] = 2*(S2**2)/(J @ np.linalg.pinv(H2) @ J.transpose())
