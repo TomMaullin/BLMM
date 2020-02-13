@@ -141,14 +141,10 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
             beta = np.array(PLS2D_getBeta(t, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, tinds, rinds, cinds))
             D = np.array(matrix(PLS2D_getD(t, tinds, rinds, cinds, sigma2)))
 
-            print(D)
-            print('I type')
-            print(type(I))
-
             # Make matrices for llh
             Zte = ZtY - ZtX @ beta
             ete = YtY - 2*YtX @ beta + beta.transpose() @ XtX @ beta
-            DinvIplusZtZD = D @ np.linalg.inv(I + ZtZ @ D)
+            DinvIplusZtZD = D @ np.linalg.inv(np.eye(ZtZ.shape) + ZtZ @ D)
 
             return llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D)
 
