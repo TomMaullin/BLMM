@@ -151,25 +151,6 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
         # print('theta')
         # print(gamma2theta(gamma))
 
-        if i == 3:
-
-            # Get parameters
-            sigma2 = np.array(PLS2D_getSigma2(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds))[0,0]
-            beta = np.array(PLS2D_getBeta(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, tinds, rinds, cinds))
-            D = np.array(matrix(PLS2D_getD(theta, tinds, rinds, cinds, sigma2)))
-
-            # Make matrices for llh
-            Zte = np.array(ZtY) - np.array(ZtX) @ beta
-            ete = np.array(YtY) - 2*np.array(YtX) @ beta + beta.transpose() @ np.array(XtX) @ beta
-            DinvIplusZtZD = D @ np.linalg.inv(np.eye(D.shape[0]) + np.array(matrix(ZtZ)) @ D)
-
-            print('llh eta')
-            print(-llh2D(n, np.array(matrix(ZtZ)), Zte, ete, sigma2, DinvIplusZtZD,D))
-
-            print('llh theta')
-            print(PLS2D(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds))
-
-
         # Estimate hessian
         H = nd.Hessian(llhgamma,method='complex')(gamma)
         #H2 = nd.Hessian(llhgamma2,method='complex')(gamma)
@@ -210,6 +191,22 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
             print(gamma)
             print('theta')
             print(theta)
+
+            # Get parameters
+            sigma2 = np.array(PLS2D_getSigma2(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds))[0,0]
+            beta = np.array(PLS2D_getBeta(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, tinds, rinds, cinds))
+            D = np.array(matrix(PLS2D_getD(theta, tinds, rinds, cinds, sigma2)))
+
+            # Make matrices for llh
+            Zte = np.array(ZtY) - np.array(ZtX) @ beta
+            ete = np.array(YtY) - 2*np.array(YtX) @ beta + beta.transpose() @ np.array(XtX) @ beta
+            DinvIplusZtZD = D @ np.linalg.inv(np.eye(D.shape[0]) + np.array(matrix(ZtZ)) @ D)
+
+            print('llh eta')
+            print(-llh2D(n, np.array(matrix(ZtZ)), Zte, ete, sigma2, DinvIplusZtZD,D))
+
+            print('llh theta')
+            print(PLS2D(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds))
 
         # Calculate the degrees of freedom
         df[i] = 2*(S2**2)/(J @ np.linalg.pinv(H) @ J.transpose())
