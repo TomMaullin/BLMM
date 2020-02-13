@@ -143,6 +143,7 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
             # Make matrices for llh
             Zte = ZtY - ZtX @ beta
             ete = YtY - 2*YtX @ beta + beta.transpose() @ XtX @ beta
+            DinvIplusZtZD = D @ np.linalg.inv(I + ZtZ @ D)
 
             return llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D)
 
