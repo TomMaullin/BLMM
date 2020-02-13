@@ -151,14 +151,12 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
                       YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)
 
 
-        if np.random.uniform(0,1,1)<0.1:
+        if i==10:
 
-            print('S2')
-            print(S2)
-            print('H')
-            print(H)
-            print('J')
-            print(J)
+            print('numerator')
+            print(2*(S2**2))
+            print('denominator')
+            print((J @ np.linalg.pinv(H) @ J.transpose()))
 
         # Calculate the degrees of freedom
         df[i] = 2*(S2**2)/(J @ np.linalg.pinv(H) @ J.transpose())
@@ -187,6 +185,12 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
     df = 2*(S2**2)/(dS2.transpose(0,2,1) @ np.linalg.inv(InfoMat) @ dS2)
 
     print('df shape ', df.shape)
+
+
+    print('numerator')
+    print(2*(S2[10,:,:]**2))
+    print('denominator')
+    print((dS2.transpose(0,2,1) @ np.linalg.inv(InfoMat) @ dS2)[10,:,:])
 
     # Return df
     return(df)
