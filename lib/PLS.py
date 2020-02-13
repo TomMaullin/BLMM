@@ -23,7 +23,9 @@ def PLS2D(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, ri
     #print(t2-t1)#3.170967102050781e-05   9
 
 
-    if np.random.uniform(0,1,1)<0.1:
+    if np.random.uniform(0,1,1)<0.01:
+
+        np.set_printoptions(threshold=np.inf)
 
         print('theta')
         print(theta)
@@ -100,10 +102,12 @@ def PLS2D(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, ri
     #print(t2-t1)#1.2874603271484375e-05   8
     
 
-    if np.random.uniform(0,1,1)<0.1:
+    if np.random.uniform(0,1,1)<0.01:
 
         print('uhat')
         print(uhat)
+        print('cholmod.diag(F)')
+        print(cholmod.diag(F))
 
     # Obtain b estimates
     #t1 = time.time()
