@@ -73,6 +73,7 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
     tmp = np.random.randn(theta0.shape[0])
     Lam=mapping2D(tmp,tinds,rinds,cinds)
     print(tmp)
+    np.set_printoptions(threshold=sys.maxsize)
     print(Lam)
 
     # Obtain Lambda'Z'ZLambda
