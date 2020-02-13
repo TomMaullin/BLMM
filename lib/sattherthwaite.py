@@ -148,8 +148,8 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
         # print(gamma2theta(gamma))
 
         # Estimate hessian
-        H = nd.Hessian(llhgamma)(gamma)
-        H2 = nd.Hessian(llhgamma2)(gamma)
+        H = nd.Hessian(llhgamma,method='complex')(gamma)
+        H2 = nd.Hessian(llhgamma2,method='complex')(gamma)
 
         # print('H shape')
         # print(H.shape)
@@ -163,7 +163,7 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
             return(S2_gamma(g, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds))
 
         # Estimate Jacobian
-        J = nd.Jacobian(S2gamma)(gamma)
+        J = nd.Jacobian(S2gamma,method='complex')(gamma)
 
         # print('J shape')
         # print(J.shape)
