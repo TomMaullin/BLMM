@@ -263,7 +263,7 @@ def main():
 	#================================================================================
 
 	# Initiate empty theta
-	theta = np.zeros((D.shape[0], np.int32(np.sum(nparams*(nparams+1)/2) + p + 1)))
+	theta = np.zeros((D.shape[0], np.int32(np.sum(nparams*(nparams+1)/2))))
 
 	# Indices for D/lambda submatrices
 	Dinds = np.insert(np.cumsum(nlevels*nparams),0,0)
@@ -318,12 +318,9 @@ def main():
 
 		# Look at individual sigma2
 		sigma2i = sigma2[i]
-		
-		# Look at individual beta
-		betai = beta[i,:]
 
 		# Compose theta vector
-		thetai = np.concatenate((betai,np.sqrt(sigma2i),vecuLami), axis=None)
+		thetai = vecuLami/sigma2i
 
 		# Add theta vector to array
 		theta[i,:] = thetai.reshape(theta[i,:].shape)
