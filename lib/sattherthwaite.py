@@ -119,11 +119,12 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
                    tinds=tinds, rinds=rinds, cinds=cinds): 
 
             t = gamma2theta(g)
-            print('gamma')
-            print(g)
-            print('theta')
-            print(t)
             return PLS2D(t, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+
+        print('gamma')
+        print(gamma)
+        print('theta')
+        print(gamma2theta(gamma))
 
         # Estimate hessian
         H = nd.Hessian(llhgamma)(gamma)
