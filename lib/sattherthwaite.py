@@ -116,8 +116,8 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
         if np.random.uniform(0,1,1)<0.1:
 
             print('circular testing')
-            print(gamma2theta(theta2gamma(theta))-theta)
-            print(theta2gamma(gamma2theta(gamma))-gamma)
+            print(gamma2theta(theta2gamma(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds))-theta)
+            print(theta2gamma(gamma2theta(gamma), ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)-gamma)
 
         # How to get the log likelihood from gammma
         def llhgamma(g, ZtX=ZtX_current, ZtY=ZtY_current, XtX=XtX_current, ZtZ=ZtZ_current, XtY=XtY_current, 
