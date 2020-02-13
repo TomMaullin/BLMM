@@ -113,12 +113,6 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
         # Convert to gamma form
         gamma = theta2gamma(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)
 
-        if np.random.uniform(0,1,1)<0.1:
-
-            print('circular testing')
-            print(gamma2theta(theta2gamma(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds))-theta)
-            print(theta2gamma(gamma2theta(gamma), ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)-gamma)
-
         # How to get the log likelihood from gammma
         def llhgamma(g, ZtX=ZtX_current, ZtY=ZtY_current, XtX=XtX_current, ZtZ=ZtZ_current, XtY=XtY_current, 
                    YtX=YtX_current, YtZ=YtZ_current, XtZ=XtZ_current, YtY=YtY_current, n=n, P=P, I=I, 
@@ -185,10 +179,11 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
             print(2*(S2**2))
             print('denominator')
             print((J @ np.linalg.pinv(H) @ J.transpose()))
-            print((J @ np.linalg.pinv(H2) @ J.transpose()))
             print('Infomat')
             print(H)
             print(H2)
+            print('diff')
+            print(H/H2)
             print('dS2')
             print(J.transpose())
 
