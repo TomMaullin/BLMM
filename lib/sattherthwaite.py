@@ -113,6 +113,12 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
         # Convert to gamma form
         gamma = theta2gamma(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)
 
+        if np.random.uniform(0,1,1)<0.01:
+
+            print('circular testing')
+            print(gamma2theta(theta2gamma(theta))-theta)
+            print(theta2gamma(gamma2theta(gamma))-gamma)
+
         # How to get the log likelihood from gammma
         def llhgamma(g, ZtX=ZtX_current, ZtY=ZtY_current, XtX=XtX_current, ZtZ=ZtZ_current, XtY=XtY_current, 
                    YtX=YtX_current, YtZ=YtZ_current, XtZ=XtZ_current, YtY=YtY_current, n=n, P=P, I=I, 
@@ -120,6 +126,25 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
 
             t = gamma2theta(g)
             return PLS2D(t, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+
+
+        # How to get the log likelihood from gammma
+        def llhgamma2(g, ZtX=ZtX_current, ZtY=ZtY_current, XtX=XtX_current, ZtZ=ZtZ_current, XtY=XtY_current, 
+                   YtX=YtX_current, YtZ=YtZ_current, XtZ=XtZ_current, YtY=YtY_current, n=n, P=P, I=I, 
+                   tinds=tinds, rinds=rinds, cinds=cinds): 
+
+            # Get theta
+            t = gamma2theta(g)
+
+            # Get parameters
+            sigma2 = PLS2D_getSigma2(t, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+            beta = np.array(PLS2D_getBeta(t, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, tinds, rinds, cinds))
+
+            # Make matrices for llh
+            Zte = ZtY - ZtX @ beta
+            ete = YtY - 2*YtX @ beta + beta.transpose() @ XtX @ beta
+
+            return llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D)
 
         # print('gamma')
         # print(gamma)
@@ -207,10 +232,10 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
 #
 # theta:
 #   - used by lmer
-#   - has the form (vech(spChol(sigma^2*D_1)),...,vech(spChol(sigma^2*D_r)))
+#   - has the form (vech(spChol(D_1/sigma^2)),...,vech(spChol(D_r/sigma^2))) = (vech(Lambda_1),...,vech(Lambda_r))
 # gamma:
 #   - used by lmerTest
-#   - has the form (sigma, vech(spChol(D_1)),... vech(spChol(D_r)))
+#   - has the form (sigma, vech(spChol(D_1)),... vech(spChol(D_r))) = (sigma, sigma*vech(Lambda_1),... sigma*vech(Lambda_r)))
 # eta:
 #   - used by PLS
 #   - has the form (sigma^2, vech(D_1),...vech(D_r))
@@ -224,7 +249,7 @@ def gamma2theta(gamma):
     sigma = gamma[0]
 
     # Multiply remainder of gamma by sigma
-    theta = gamma[1:]*sigma
+    theta = gamma[1:]/sigma
 
     # Return theta
     return(theta)
@@ -239,7 +264,7 @@ def theta2gamma(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tin
     sigma = np.sqrt(sigma2)
 
     # Obtain gamma
-    gamma = np.concatenate((sigma, theta/sigma),axis=None)
+    gamma = np.concatenate((sigma, theta*sigma),axis=None)
 
     # Return gamma
     return(gamma)
