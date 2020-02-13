@@ -157,6 +157,10 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
             print(2*(S2**2))
             print('denominator')
             print((J @ np.linalg.pinv(H) @ J.transpose()))
+            print('Infomat')
+            print(np.linalg.pinv(H))
+            print('dS2')
+            print(J.transpose())
 
         # Calculate the degrees of freedom
         df[i] = 2*(S2**2)/(J @ np.linalg.pinv(H) @ J.transpose())
@@ -191,7 +195,11 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
     print(2*(S2[10,:,:]**2))
     print('denominator')
     print((dS2.transpose(0,2,1) @ np.linalg.inv(InfoMat) @ dS2)[10,:,:])
-
+    print('Infomat')
+    print(InfoMat[10,:,:])
+    print('dS2')
+    print(dS2[10,:,:])
+    
     # Return df
     return(df)
 
@@ -275,22 +283,6 @@ def S2_gamma(gamma, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tin
 
     # Calculate S^2 = sigma^2L(X'V^{-1}X)L'
     S2 = sigma2*L @ np.linalg.inv(XtiVX) @ L.transpose()
-
-    if np.random.uniform(0,1,1)<0.01:
-
-        print('S2')
-        print(S2)
-        print('XtiVX')
-        print(XtiVX)
-        print('theta')
-        print(theta)
-        print('XtX')
-        print(XtX)
-        np.set_printoptions(threshold=sys.maxsize)
-        print('D')
-        print(D)
-        print('Sigma2')
-        print(sigma2)
 
     return(S2)
 
