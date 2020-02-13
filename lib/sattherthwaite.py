@@ -74,7 +74,7 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
     Lam=mapping2D(tmp,tinds,rinds,cinds)
     print(tmp)
     np.set_printoptions(threshold=sys.maxsize)
-    print(Lam)
+    print(np.array(matrix(Lam)))
 
     # Obtain Lambda'Z'ZLambda
     LamtZtZLam = spmatrix.trans(Lam)*cvxopt.sparse(matrix(ZtZ[0,:,:]))*Lam
