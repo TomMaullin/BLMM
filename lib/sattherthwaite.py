@@ -113,7 +113,7 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
         # Convert to gamma form
         gamma = theta2gamma(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)
 
-        if np.random.uniform(0,1,1)<0.01:
+        if np.random.uniform(0,1,1)<0.1:
 
             print('circular testing')
             print(gamma2theta(theta2gamma(theta))-theta)
@@ -154,6 +154,7 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
 
         # Estimate hessian
         H = nd.Hessian(llhgamma)(gamma)
+        H2 = nd.Hessian(llhgamma2)(gamma)
 
         # print('H shape')
         # print(H.shape)
