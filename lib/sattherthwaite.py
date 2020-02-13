@@ -150,6 +150,16 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
         S2 = S2_gamma(gamma, L, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, 
                       YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)
 
+
+        if np.random.uniform(0,1,1)<0.1:
+
+            print('S2')
+            print(S2)
+            print('H')
+            print(H)
+            print('J')
+            print(J)
+
         # Calculate the degrees of freedom
         df[i] = 2*(S2**2)/(J @ np.linalg.pinv(H) @ J.transpose())
 
@@ -262,7 +272,7 @@ def S2_gamma(gamma, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tin
     # Calculate S^2 = sigma^2L(X'V^{-1}X)L'
     S2 = sigma2*L @ np.linalg.inv(XtiVX) @ L.transpose()
 
-    if np.random.uniform(0,1,1)<0.02:
+    if np.random.uniform(0,1,1)<0:
 
         print('S2')
         print(S2)
@@ -278,7 +288,6 @@ def S2_gamma(gamma, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tin
         print(sigma2)
 
     return(S2)
-
 
 def S2_eta(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY):
 
