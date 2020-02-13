@@ -30,7 +30,7 @@ def PLS2D(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, ri
         print('theta')
         print(theta)
         print('Lambda')
-        print(Lambda)
+        print(np.array(matrix(Lambda)))
         print('Lambda (type)')
         print(type(Lambda))
         print('P')
