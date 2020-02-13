@@ -146,7 +146,7 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
             ete = np.array(YtY) - 2*np.array(YtX) @ beta + beta.transpose() @ np.array(XtX) @ beta
             DinvIplusZtZD = D @ np.linalg.inv(np.eye(D.shape[0]) + np.array(matrix(ZtZ)) @ D)
 
-            return llh2D(n, np.array(matrix(ZtZ)), Zte, ete, sigma2, DinvIplusZtZD,D)
+            return -llh2D(n, np.array(matrix(ZtZ)), Zte, ete, sigma2, DinvIplusZtZD,D)
 
         # print('gamma')
         # print(gamma)
@@ -193,7 +193,7 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
             print(J.transpose())
 
         # Calculate the degrees of freedom
-        df[i] = 2*(S2**2)/(J @ np.linalg.pinv(H) @ J.transpose())
+        df[i] = 2*(S2**2)/(J @ np.linalg.pinv(H2) @ J.transpose())
 
     return(df)
 
