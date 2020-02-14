@@ -204,7 +204,7 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
 
             print('llh eta')
             print(-llh2D(n, np.array(matrix(ZtZ_current)), Zte, ete, sigma2, DinvIplusZtZD,D))# - (n/2)*np.log(2*np.pi))
-            print(-llh2D(n, np.array(matrix(ZtZ_current)), Zte, ete, sigma2, DinvIplusZtZD,D) - (n/2)*np.log(2*np.pi))
+            print(-(llh2D(n, np.array(matrix(ZtZ_current)), Zte, ete, sigma2, DinvIplusZtZD,D) - (n/2)*np.log(2*np.pi)))
 
             print('llh theta')
             print(PLS2D(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds))
