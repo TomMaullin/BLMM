@@ -274,7 +274,7 @@ def gamma2theta(gamma):
     theta = gamma[1:]/sigma
 
     # Return theta
-    return(theta)
+    return(np.real(theta))
 
 
 def theta2gamma(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds):
@@ -289,7 +289,7 @@ def theta2gamma(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tin
     gamma = np.concatenate((sigma, theta*sigma),axis=None)
 
     # Return gamma
-    return(gamma)
+    return(np.real(gamma))
 
 
 def S2_gamma(gamma, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds):
