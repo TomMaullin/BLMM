@@ -203,7 +203,6 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
             DinvIplusZtZD = D @ np.linalg.inv(np.eye(D.shape[0]) + np.array(matrix(ZtZ_current)) @ D)
 
             print('llh eta')
-            print(-llh2D(n, np.array(matrix(ZtZ_current)), Zte, ete, sigma2, DinvIplusZtZD,D))# - (n/2)*np.log(2*np.pi))
             print(-(llh2D(n, np.array(matrix(ZtZ_current)), Zte, ete, sigma2, DinvIplusZtZD,D) - (n/2)*np.log(2*np.pi)))
 
             print('llh theta')
