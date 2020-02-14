@@ -300,12 +300,6 @@ def S2_gamma(gamma, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tin
     # Obtain sigma^2 estimate
     sigma2 = np.array(PLS2D_getSigma2(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds))[0,0]
 
-    if np.random.uniform(0,1,1)<0.01:
-
-        print('sigma')
-        print(sigma2)
-        print(gamma[0]**2)
-
     # print('theta')
     # print(theta)
     # print('theta shape')
