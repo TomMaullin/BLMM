@@ -285,9 +285,16 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
     IndsDk = np.int32(np.cumsum(nparams*(nparams+1)/2))
     IndsDk = np.insert(IndsDk,0,0)
 
+    print('Di')
+    print(Di)
+
     for k in np.arange(len(nparams)):
 
         eta = np.concatenate((eta, mat2vech2D(D[i,IndsDk[k]:IndsDk[k+1],IndsDk[k]:IndsDk[k+1]])),axis=None)
+
+        print('inds')
+        print(IndsDk[k])
+        print(IndsDk[k+1])
 
         print('mat2vech2D')
         print(mat2vech2D(D[i,IndsDk[k]:IndsDk[k+1],IndsDk[k]:IndsDk[k+1]]))
