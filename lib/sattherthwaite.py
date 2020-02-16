@@ -266,7 +266,7 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
 
     i = 2
     Di = D[i,:,:]
-    sigma2i = sigma2[i,:,:]
+    sigma2i = sigma2[i]
 
     eta = sigma2i
 
