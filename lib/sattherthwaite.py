@@ -277,7 +277,7 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
 
         eta = np.concatenate((eta, mat2vech2D(D[i,IndsDk[k]:IndsDk[k+1],IndsDk[k]:IndsDk[k+1]])),axis=None)
 
-    dS2i = np.Jacobian(S2_etavec)(eta, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nparams, nlevels)
+    dS2i = nd.Jacobian(S2_etavec)(eta, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nparams, nlevels)
 
     print('worked')
     print(dS2i)
