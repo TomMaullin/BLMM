@@ -252,7 +252,7 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
         IndsEta = np.int32(np.cumsum(nparams*(nparams+1)/2) + 1)
         IndsEta = np.insert(IndsEta,0,1)
 
-        D = np.zeros(((eta.shape[0]-1),(eta.shape[0]-1)))
+        D = np.zeros((np.sum(nlevels*nparams),np.sum(nlevels*nparams)))
 
         IndsDk = np.int32(np.cumsum(nparams))
         IndsDk = np.insert(IndsDk,0,0)
@@ -261,7 +261,16 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
         for k in np.arange(len(nparams)):
 
             D[IndsDk[k]:IndsDk[k+1],IndsDk[k]:IndsDk[k+1]] = makeDnnd2D(vech2mat2D(eta[IndsEta[k]:IndsEta[k+1]]))
-                  
+
+        # Left hand top corner
+        lhtc = 0
+        for k in np.arange(len(nparams)):
+           
+            for l in np.arange(nlevels[k]):
+
+                D[lhtc:(lhtc+nparams[k]),lhtc:(lhtc+nparams[k])] = makeDnnd2D(vech2mat2D(eta[IndsEta[k]:IndsEta[k+1]]))
+                lhtc = lhtc + nparams[k]
+
 
         S2 = S2_eta2D(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY)
 
