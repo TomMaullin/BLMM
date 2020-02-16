@@ -325,7 +325,7 @@ def S2_gamma(gamma, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tin
     # print(np.array(matrix(ZtZ)).shape)
 
     # Calculate X'V^{-1}X=X'(I+ZDZ')^{-1}X=X'X-X'Z(I+DZ'Z)^{-1}DZ'X
-    XtiVX = np.array(XtX) - np.array(XtZ) @ np.linalg.inv(np.array(matrix(I)) + D @ np.array(matrix(ZtZ))) @ D @ np.array(ZtX)
+    XtiVX = np.array(XtX) - np.array(XtZ) @ np.linalg.inv(np.eye(D.shape[1]) + D @ np.array(matrix(ZtZ))) @ D @ np.array(ZtX)
 
     # Calculate S^2 = sigma^2L(X'V^{-1}X)L'
     S2 = sigma2*L @ np.linalg.inv(XtiVX) @ L.transpose()
