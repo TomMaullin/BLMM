@@ -249,15 +249,18 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
         Ddict = dict()
 
         # Indices for submatrics corresponding to Dks
-        IndsDk = np.int32(np.cumsum(nparams*(nparams+1)/2) + 1)
-        IndsDk = np.insert(IndsDk,0,1)
+        IndsEta = np.int32(np.cumsum(nparams*(nparams+1)/2) + 1)
+        IndsEta = np.insert(IndsEta,0,1)
 
         D = np.zeros(((eta.shape[0]-1),(eta.shape[0]-1)))
+
+        IndsDk = np.int32(np.cumsum(nparams))
+        IndsDk = np.insert(IndsDk,0,0)
 
         # D as a dictionary
         for k in np.arange(len(nparams)):
 
-            D[(IndsDk[k]-1):(IndsDk[k+1]-1),(IndsDk[k]-1):(IndsDk[k+1]-1)] = makeDnnd2D(vech2mat2D(eta[IndsDk[k]:IndsDk[k+1]]))
+            D[IndsDk[k]:IndsDk[k+1],IndsDk[k]:IndsDk[k+1]] = makeDnnd2D(vech2mat2D(eta[IndsEta[k]:IndsEta[k+1]]))
                   
 
         S2 = S2_eta(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY)
