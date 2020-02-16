@@ -263,7 +263,7 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
             D[IndsDk[k]:IndsDk[k+1],IndsDk[k]:IndsDk[k+1]] = makeDnnd2D(vech2mat2D(eta[IndsEta[k]:IndsEta[k+1]]))
                   
 
-        S2 = S2_eta(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY)
+        S2 = S2_eta2D(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY)
 
         return(S2)
 
@@ -280,7 +280,7 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
 
         eta = np.concatenate((eta, mat2vech2D(D[i,IndsDk[k]:IndsDk[k+1],IndsDk[k]:IndsDk[k+1]])),axis=None)
 
-    dS2i = nd.Jacobian(S2_etavec)(eta, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nparams, nlevels)
+    dS2i = nd.Jacobian(S2_etavec)(eta, L, ZtX[i,:,:], ZtY[i,:,:], XtX[i,:,:], ZtZ[i,:,:], XtY[i,:,:], YtX[i,:,:], YtZ[i,:,:], XtZ[i,:,:], YtY[i,:,:], nparams, nlevels)
 
     print('worked')
     print(dS2i)
