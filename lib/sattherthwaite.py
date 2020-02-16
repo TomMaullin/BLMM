@@ -172,6 +172,13 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
         # Estimate Jacobian
         J = nd.Jacobian(S2gamma)(gamma)
 
+        J2 = nd.Jacobian(S2gamma)(gamma, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+
+        if np.random.uniform(0,1,1)<0.01:
+
+            print('Hessian diff')
+            print(J-J2)
+
         # print('J shape')
         # print(J.shape)
 
