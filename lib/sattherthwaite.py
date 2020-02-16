@@ -8,6 +8,8 @@ from lib.tools3d import kron3D, mat2vech3D, get_covdldDkdsigma23D, get_covdldDk1
 import numdifftools as nd
 import sys
 
+np.set_printoptions(threshold=sys.maxsize)
+
 # ============================================================================
 #
 # The function below is a wrapper function for all Sattherthwaite degrees of 
