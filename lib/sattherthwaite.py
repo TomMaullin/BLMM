@@ -284,15 +284,19 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
 
     eta = sigma2i
 
-    IndsDk = np.int32(np.cumsum(nparams*(nparams+1)/2))
-    IndsDk = np.insert(IndsDk,0,0)
-
     print('Di')
     print(Di)
 
+    lhtc = 0
+
     for k in np.arange(len(nparams)):
 
-        eta = np.concatenate((eta, mat2vech2D(D[i,IndsDk[k]:IndsDk[k+1],IndsDk[k]:IndsDk[k+1]])),axis=None)
+        for l in np.arange(nlevels):
+
+            if l == 0:
+                eta = np.concatenate((eta, mat2vech2D(D[i,lhtc:(lhtc+nparams[k]),lhtc:(lhtc+nparams[k])])),axis=None)
+
+            lhtc = lhtc + nparams[k]
 
         print('inds')
         print(IndsDk[k])
