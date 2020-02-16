@@ -221,6 +221,8 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
 
             print('S2 gamma')
             print(S2)
+            print('S2 gamma (second)')
+            print(S2gamma(gamma))
 
 
         # Calculate the degrees of freedom
