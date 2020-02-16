@@ -413,7 +413,15 @@ def S2_eta2D(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY):
     print('S2_eta2D running')
 
     # Calculate X'V^{-1}X=X'(I+ZDZ')^{-1}X=X'X-X'Z(I+DZ'Z)^{-1}DZ'X
-    XtiVX = XtX - XtZ @ np.linalg.inv(np.eye(D.shape[1]) + D @ ZtZ) @ D @ ZtX
+    try:
+        XtiVX = XtX - XtZ @ np.linalg.inv(np.eye(D.shape[1]) + D @ ZtZ) @ D @ ZtX
+    except:
+        print(XtX.shape)
+        print(XtZ.shape)
+        print(D.shape)
+        print(XtX.shape)
+        XtiVX = XtX - XtZ @ np.linalg.inv(np.eye(D.shape[1]) + D @ ZtZ) @ D @ ZtX
+    
 
     # Calculate S^2 = sigma^2L(X'V^{-1}X)L'
     S2 = sigma2*(L @ np.linalg.inv(XtiVX) @ L.transpose())
