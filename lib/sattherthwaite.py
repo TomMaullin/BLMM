@@ -224,8 +224,11 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
 
         # Calculate the degrees of freedom
         df[i] = 2*(S2**2)/(J @ np.linalg.pinv(H) @ J.transpose())
+        print('new check')
         try:
             print(2*(S2**2)/(J @ np.linalg.pinv(H) @ J.transpose())-2*(S2**2)/(J @ np.linalg.inv(H) @ J.transpose()))
+            print(2*(S2**2)/(J @ np.linalg.inv(H) @ J.transpose()))
+            print(2*(S2**2)/(J @ np.linalg.pinv(H) @ J.transpose()))
         except:
             print('invert failed')
 
