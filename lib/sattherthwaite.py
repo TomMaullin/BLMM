@@ -228,7 +228,7 @@ def llh_gamma(g, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, ri
 
     t = gamma2theta(g)
 
-    return -PLS2D(t, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+    return PLS2D(t, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
 
 def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevels, nparams): 
 
@@ -239,6 +239,51 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
     
     # Get derivative of S^2 with respect to gamma evaluated at eta.
     dS2 = dS2deta(nparams, nlevels, L, XtX, XtZ, ZtZ, ZtX, D, sigma2)
+
+    #===================================================================================================================
+
+
+    def S2_etavec(eta, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nparams, nlevels):
+
+        sigma2 = eta[0]
+        Ddict = dict()
+
+        # Indices for submatrics corresponding to Dks
+        IndsDk = np.int32(np.cumsum(nparams*(nparams+1)/2) + 1)
+        IndsDk = np.insert(IndsDk,0,1)
+
+        # D as a dictionary
+        for k in np.arange(len(nparams)):
+
+            Ddict[k] = makeDnnd2D(vech2mat2D(eta[IndsDk[k]:IndsDk[k+1]]))
+                  
+            # Full version of D
+            D = getDfromDict3D(Ddict, nparams, nlevels)
+
+        S2 = S2_eta(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY)
+
+        return(S2)
+
+    i = 2
+    Di = D[i,:,:]
+    sigma2i = sigma2[i,:,:]
+
+    eta = sigma2i
+
+    IndsDk = np.int32(np.cumsum(nparams*(nparams+1)/2))
+    IndsDk = np.insert(IndsDk,0,0)
+
+    for k in np.arange(len(nparams)):
+
+        eta = np.concatenate((eta, mat2vech2D(D[i,IndsDk[k]:IndsDk[k+1],IndsDk[k]:IndsDk[k+1]])),axis=None)
+
+    dS2i = np.Jacobian(S2_etavec)(eta, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nparams, nlevels)
+
+    print('worked')
+    print(dS2i)
+    print(dS2[i,:,:])
+
+    #===================================================================================================================
 
     # Get Fisher information matrix
     InfoMat = InfoMat_eta(D, sigma2, n, nlevels, nparams, ZtZ)#...
