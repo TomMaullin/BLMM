@@ -2,7 +2,7 @@ import numpy as np
 import scipy.sparse
 import cvxopt
 from cvxopt import cholmod, umfpack, amd, matrix, spmatrix, lapack
-from lib.tools2d import faclev_indices2D, invDupMat2D, mat2vech2D, get_mapping2D, mapping2D, llh2D, makeDnnd2D, vech2mat2D
+from lib.tools2d import faclev_indices2D, invDupMat2D, mat2vech2D, get_mapping2D, mapping2D, llh2D, makeDnnd2D, vech2mat2D, getDfromDict2D
 from lib.PLS import PLS2D_getSigma2, PLS2D_getD, PLS2D_getBeta, PLS2D
 from lib.tools3d import kron3D, mat2vech3D, get_covdldDkdsigma23D, get_covdldDk1Dk23D, forceSym3D
 import numdifftools as nd
@@ -258,7 +258,7 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
             Ddict[k] = makeDnnd2D(vech2mat2D(eta[IndsDk[k]:IndsDk[k+1]]))
                   
             # Full version of D
-            D = getDfromDict3D(Ddict, nparams, nlevels)
+            D = getDfromDict2D(Ddict, nparams, nlevels)
 
         S2 = S2_eta(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY)
 
