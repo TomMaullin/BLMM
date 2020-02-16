@@ -349,6 +349,9 @@ def main():
 
 	print(np.min(df))
 
+	print('df[0]')
+	print(df[0])
+
 	print('SattherthwaiteDoF (BLMM) done')
 	print('elapsed time: ', time.time()-t2)
 
@@ -374,5 +377,8 @@ def main():
 
 	print(np.min(df))
 
+	print('df[0]')
+	print(df[0])
+	
 	print('SattherthwaiteDoF done')
 	print('elapsed time: ', time.time()-t2)

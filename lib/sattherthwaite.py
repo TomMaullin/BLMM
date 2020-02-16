@@ -72,9 +72,6 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
     tinds,rinds,cinds=get_mapping2D(nlevels, nparams)
     tmp = np.random.randn(theta0.shape[0])
     Lam=mapping2D(tmp,tinds,rinds,cinds)
-    print(tmp)
-    np.set_printoptions(threshold=sys.maxsize)
-    print(np.array(matrix(Lam)))
 
     # Obtain Lambda'Z'ZLambda
     LamtZtZLam = spmatrix.trans(Lam)*cvxopt.sparse(matrix(ZtZ[0,:,:]))*Lam
@@ -164,10 +161,23 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
         def S2gamma(g, L=L, ZtX=ZtX_current, ZtY=ZtY_current, XtX=XtX_current, ZtZ=ZtZ_current, XtY=XtY_current, 
                   YtX=YtX_current, YtZ=YtZ_current, XtZ=XtZ_current, YtY=YtY_current, n=n, P=P, I=I,
                   tinds=tinds, rinds=rinds, cinds=cinds): 
+
+            if np.random.uniform(0,1,1)<0.01:
+                print('check matrices correct')
+                print(ZtX.size)
+                print(YtY.size)
+                
             return(S2_gamma(g, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds))
 
         # Estimate Jacobian
         J = nd.Jacobian(S2gamma)(gamma)
+
+        J2 = nd.Jacobian(S2gamma)(gamma, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+
+        if np.random.uniform(0,1,1)<0.01:
+
+            print('Hessian diff')
+            print(J-J2)
 
         # print('J shape')
         # print(J.shape)
@@ -208,8 +218,26 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
             print('llh theta')
             print(PLS2D(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds))
 
+
+            print('S2 eta')
+            S2_2 = S2_eta2D(D, sigma2, L, np.array(ZtX_current), np.array(ZtY_current), np.array(XtX_current), np.array(matrix(ZtZ_current)), np.array(XtY_current), np.array(YtX_current), np.array(YtZ_current), np.array(XtZ_current), np.array(YtY_current))
+            print(S2_2)
+
+            print('S2 gamma')
+            print(S2)
+            print('S2 gamma (second)')
+            print(S2gamma(gamma))
+
+
         # Calculate the degrees of freedom
         df[i] = 2*(S2**2)/(J @ np.linalg.pinv(H) @ J.transpose())
+        print('new check')
+        try:
+            print(2*(S2**2)/(J @ np.linalg.pinv(H) @ J.transpose())-2*(S2**2)/(J @ np.linalg.inv(H) @ J.transpose()))
+            print(2*(S2**2)/(J @ np.linalg.inv(H) @ J.transpose()))
+            print(2*(S2**2)/(J @ np.linalg.pinv(H) @ J.transpose()))
+        except:
+            print('invert failed')
 
     return(df)
 
@@ -344,6 +372,17 @@ def S2_eta(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY):
 
     return(S2)
 
+def S2_eta2D(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY):
+
+    print('S2_eta2D running')
+
+    # Calculate X'V^{-1}X=X'(I+ZDZ')^{-1}X=X'X-X'Z(I+DZ'Z)^{-1}DZ'X
+    XtiVX = XtX - XtZ @ np.linalg.inv(np.eye(D.shape[1]) + D @ ZtZ) @ D @ ZtX
+
+    # Calculate S^2 = sigma^2L(X'V^{-1}X)L'
+    S2 = sigma2*(L @ np.linalg.inv(XtiVX) @ L.transpose())
+
+    return(S2)
 
 def dS2deta(nparams, nlevels, L, XtX, XtZ, ZtZ, ZtX, D, sigma2):
 
