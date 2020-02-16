@@ -291,7 +291,7 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
 
     for k in np.arange(len(nparams)):
 
-        for l in np.arange(nlevels):
+        for l in np.arange(len(nlevels)):
 
             if l == 0:
                 eta = np.concatenate((eta, mat2vech2D(D[i,lhtc:(lhtc+nparams[k]),lhtc:(lhtc+nparams[k])])),axis=None)
