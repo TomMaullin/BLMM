@@ -298,10 +298,6 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
 
             lhtc = lhtc + nparams[k]
 
-        print('inds')
-        print(IndsDk[k])
-        print(IndsDk[k+1])
-
         print('mat2vech2D')
         print(mat2vech2D(D[i,IndsDk[k]:IndsDk[k+1],IndsDk[k]:IndsDk[k+1]]))
 
