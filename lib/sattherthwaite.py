@@ -2,7 +2,7 @@ import numpy as np
 import scipy.sparse
 import cvxopt
 from cvxopt import cholmod, umfpack, amd, matrix, spmatrix, lapack
-from lib.tools2d import faclev_indices2D, invDupMat2D, mat2vech2D, get_mapping2D, mapping2D
+from lib.tools2d import faclev_indices2D, invDupMat2D, mat2vech2D, get_mapping2D, mapping2D, llh2D
 from lib.PLS import PLS2D_getSigma2, PLS2D_getD, PLS2D_getBeta, PLS2D
 from lib.tools3d import kron3D, mat2vech3D, get_covdldDkdsigma23D, get_covdldDk1Dk23D, forceSym3D
 import numdifftools as nd
@@ -70,7 +70,11 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
     # Sparse Permutation, P
     #================================================================================
     tinds,rinds,cinds=get_mapping2D(nlevels, nparams)
-    Lam=mapping2D(np.random.randn(theta0.shape[0]),tinds,rinds,cinds)
+    tmp = np.random.randn(theta0.shape[0])
+    Lam=mapping2D(tmp,tinds,rinds,cinds)
+    print(tmp)
+    np.set_printoptions(threshold=sys.maxsize)
+    print(np.array(matrix(Lam)))
 
     # Obtain Lambda'Z'ZLambda
     LamtZtZLam = spmatrix.trans(Lam)*cvxopt.sparse(matrix(ZtZ[0,:,:]))*Lam
@@ -121,6 +125,27 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
             t = gamma2theta(g)
             return PLS2D(t, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
 
+
+        # How to get the log likelihood from gammma
+        def llhgamma2(g, ZtX=ZtX_current, ZtY=ZtY_current, XtX=XtX_current, ZtZ=ZtZ_current, XtY=XtY_current, 
+                   YtX=YtX_current, YtZ=YtZ_current, XtZ=XtZ_current, YtY=YtY_current, n=n, P=P, I=I, 
+                   tinds=tinds, rinds=rinds, cinds=cinds): 
+
+            # Get theta
+            t = gamma2theta(g)
+
+            # Get parameters
+            sigma2 = np.array(PLS2D_getSigma2(t, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds))[0,0]
+            beta = np.array(PLS2D_getBeta(t, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, tinds, rinds, cinds))
+            D = np.array(matrix(PLS2D_getD(t, tinds, rinds, cinds, sigma2)))
+
+            # Make matrices for llh
+            Zte = np.array(ZtY) - np.array(ZtX) @ beta
+            ete = np.array(YtY) - 2*np.array(YtX) @ beta + beta.transpose() @ np.array(XtX) @ beta
+            DinvIplusZtZD = D @ np.linalg.inv(np.eye(D.shape[0]) + np.array(matrix(ZtZ)) @ D)
+
+            return -llh2D(n, np.array(matrix(ZtZ)), Zte, ete, sigma2, DinvIplusZtZD,D)
+
         # print('gamma')
         # print(gamma)
         # print('theta')
@@ -128,6 +153,7 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
 
         # Estimate hessian
         H = nd.Hessian(llhgamma)(gamma)
+        #H2 = nd.Hessian(llhgamma2,method='complex')(gamma)
 
         # print('H shape')
         # print(H.shape)
@@ -137,7 +163,7 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
         # How to get S^2 from gamma
         def S2gamma(g, L=L, ZtX=ZtX_current, ZtY=ZtY_current, XtX=XtX_current, ZtZ=ZtZ_current, XtY=XtY_current, 
                   YtX=YtX_current, YtZ=YtZ_current, XtZ=XtZ_current, YtY=YtY_current, n=n, P=P, I=I,
-                  tinds=tinds, rinds=rinds, cinds=cinds):
+                  tinds=tinds, rinds=rinds, cinds=cinds): 
             return(S2_gamma(g, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds))
 
         # Estimate Jacobian
@@ -151,7 +177,7 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
                       YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)
 
 
-        if i==10:
+        if i==3:
 
             print('numerator')
             print(2*(S2**2))
@@ -161,6 +187,26 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
             print(H)
             print('dS2')
             print(J.transpose())
+            print('gamma')
+            print(gamma)
+            print('theta')
+            print(theta)
+
+            # Get parameters
+            sigma2 = np.array(PLS2D_getSigma2(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds))[0,0]
+            beta = np.array(PLS2D_getBeta(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, tinds, rinds, cinds))
+            D = np.array(matrix(PLS2D_getD(theta, tinds, rinds, cinds, sigma2)))
+
+            # Make matrices for llh
+            Zte = np.array(ZtY_current) - np.array(ZtX_current) @ beta
+            ete = np.array(YtY_current) - 2*np.array(YtX_current) @ beta + beta.transpose() @ np.array(XtX_current) @ beta
+            DinvIplusZtZD = D @ np.linalg.inv(np.eye(D.shape[0]) + np.array(matrix(ZtZ_current)) @ D)
+
+            print('llh eta')
+            print(-(llh2D(n, np.array(matrix(ZtZ_current)), Zte, ete, sigma2, DinvIplusZtZD,D) - (n/2)*np.log(2*np.pi)))
+
+            print('llh theta')
+            print(PLS2D(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds))
 
         # Calculate the degrees of freedom
         df[i] = 2*(S2**2)/(J @ np.linalg.pinv(H) @ J.transpose())
@@ -192,13 +238,13 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
 
 
     print('numerator')
-    print(2*(S2[10,:,:]**2))
+    print(2*(S2[3,:,:]**2))
     print('denominator')
-    print((dS2.transpose(0,2,1) @ np.linalg.inv(InfoMat) @ dS2)[10,:,:])
+    print((dS2.transpose(0,2,1) @ np.linalg.inv(InfoMat) @ dS2)[3,:,:])
     print('Infomat')
-    print(InfoMat[10,:,:])
+    print(InfoMat[3,:,:])
     print('dS2')
-    print(dS2[10,:,:])
+    print(dS2[3,:,:])
     
     # Return df
     return(df)
@@ -207,10 +253,10 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
 #
 # theta:
 #   - used by lmer
-#   - has the form (vech(spChol(sigma^2*D_1)),...,vech(spChol(sigma^2*D_r)))
+#   - has the form (vech(spChol(D_1/sigma^2)),...,vech(spChol(D_r/sigma^2))) = (vech(Lambda_1),...,vech(Lambda_r))
 # gamma:
 #   - used by lmerTest
-#   - has the form (sigma, vech(spChol(D_1)),... vech(spChol(D_r)))
+#   - has the form (sigma, vech(spChol(D_1)),... vech(spChol(D_r))) = (sigma, sigma*vech(Lambda_1),... sigma*vech(Lambda_r)))
 # eta:
 #   - used by PLS
 #   - has the form (sigma^2, vech(D_1),...vech(D_r))
@@ -224,10 +270,10 @@ def gamma2theta(gamma):
     sigma = gamma[0]
 
     # Multiply remainder of gamma by sigma
-    theta = gamma[1:]*sigma
+    theta = gamma[1:]/sigma
 
     # Return theta
-    return(theta)
+    return(np.real(theta))
 
 
 def theta2gamma(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds):
@@ -239,10 +285,10 @@ def theta2gamma(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tin
     sigma = np.sqrt(sigma2)
 
     # Obtain gamma
-    gamma = np.concatenate((sigma, theta/sigma),axis=None)
+    gamma = np.concatenate((sigma, theta*sigma),axis=None)
 
     # Return gamma
-    return(gamma)
+    return(np.real(gamma))
 
 
 def S2_gamma(gamma, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds):

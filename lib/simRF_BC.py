@@ -382,6 +382,3 @@ def main():
 	
 	print('SattherthwaiteDoF done')
 	print('elapsed time: ', time.time()-t2)
-
-
-	print('up to SattherthwaiteDoF lmertest method')
