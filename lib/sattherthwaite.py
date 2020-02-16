@@ -114,34 +114,25 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
         # Convert to gamma form
         gamma = theta2gamma(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)
 
-        # How to get the log likelihood from gammma
-        def llhgamma(g, ZtX=ZtX_current, ZtY=ZtY_current, XtX=XtX_current, ZtZ=ZtZ_current, XtY=XtY_current, 
-                   YtX=YtX_current, YtZ=YtZ_current, XtZ=XtZ_current, YtY=YtY_current, n=n, P=P, I=I, 
-                   tinds=tinds, rinds=rinds, cinds=cinds): 
+        # # How to get the log likelihood from gammma
+        # def llhgamma2(g, ZtX=ZtX_current, ZtY=ZtY_current, XtX=XtX_current, ZtZ=ZtZ_current, XtY=XtY_current, 
+        #            YtX=YtX_current, YtZ=YtZ_current, XtZ=XtZ_current, YtY=YtY_current, n=n, P=P, I=I, 
+        #            tinds=tinds, rinds=rinds, cinds=cinds): 
 
-            t = gamma2theta(g)
-            return PLS2D(t, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+        #     # Get theta
+        #     t = gamma2theta(g)
 
+        #     # Get parameters
+        #     sigma2 = np.array(PLS2D_getSigma2(t, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds))[0,0]
+        #     beta = np.array(PLS2D_getBeta(t, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, tinds, rinds, cinds))
+        #     D = np.array(matrix(PLS2D_getD(t, tinds, rinds, cinds, sigma2)))
 
-        # How to get the log likelihood from gammma
-        def llhgamma2(g, ZtX=ZtX_current, ZtY=ZtY_current, XtX=XtX_current, ZtZ=ZtZ_current, XtY=XtY_current, 
-                   YtX=YtX_current, YtZ=YtZ_current, XtZ=XtZ_current, YtY=YtY_current, n=n, P=P, I=I, 
-                   tinds=tinds, rinds=rinds, cinds=cinds): 
+        #     # Make matrices for llh
+        #     Zte = np.array(ZtY) - np.array(ZtX) @ beta
+        #     ete = np.array(YtY) - 2*np.array(YtX) @ beta + beta.transpose() @ np.array(XtX) @ beta
+        #     DinvIplusZtZD = D @ np.linalg.inv(np.eye(D.shape[0]) + np.array(matrix(ZtZ)) @ D)
 
-            # Get theta
-            t = gamma2theta(g)
-
-            # Get parameters
-            sigma2 = np.array(PLS2D_getSigma2(t, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds))[0,0]
-            beta = np.array(PLS2D_getBeta(t, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, tinds, rinds, cinds))
-            D = np.array(matrix(PLS2D_getD(t, tinds, rinds, cinds, sigma2)))
-
-            # Make matrices for llh
-            Zte = np.array(ZtY) - np.array(ZtX) @ beta
-            ete = np.array(YtY) - 2*np.array(YtX) @ beta + beta.transpose() @ np.array(XtX) @ beta
-            DinvIplusZtZD = D @ np.linalg.inv(np.eye(D.shape[0]) + np.array(matrix(ZtZ)) @ D)
-
-            return -llh2D(n, np.array(matrix(ZtZ)), Zte, ete, sigma2, DinvIplusZtZD,D)
+        #     return -llh2D(n, np.array(matrix(ZtZ)), Zte, ete, sigma2, DinvIplusZtZD,D)
 
         # print('gamma')
         # print(gamma)
@@ -149,7 +140,7 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
         # print(gamma2theta(gamma))
 
         # Estimate hessian
-        H = nd.Hessian(llhgamma)(gamma)
+        H = nd.Hessian(llh_gamma)(gamma, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)
         #H2 = nd.Hessian(llhgamma2,method='complex')(gamma)
 
         # print('H shape')
@@ -157,27 +148,20 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
         # print('H')
         # print(H)
 
-        # How to get S^2 from gamma
-        def S2gamma(g, L=L, ZtX=ZtX_current, ZtY=ZtY_current, XtX=XtX_current, ZtZ=ZtZ_current, XtY=XtY_current, 
-                  YtX=YtX_current, YtZ=YtZ_current, XtZ=XtZ_current, YtY=YtY_current, n=n, P=P, I=I,
-                  tinds=tinds, rinds=rinds, cinds=cinds): 
+        # # How to get S^2 from gamma
+        # def S2gamma(g, L=L, ZtX=ZtX_current, ZtY=ZtY_current, XtX=XtX_current, ZtZ=ZtZ_current, XtY=XtY_current, 
+        #           YtX=YtX_current, YtZ=YtZ_current, XtZ=XtZ_current, YtY=YtY_current, n=n, P=P, I=I,
+        #           tinds=tinds, rinds=rinds, cinds=cinds): 
 
-            if np.random.uniform(0,1,1)<0.01:
-                print('check matrices correct')
-                print(ZtX.size)
-                print(YtY.size)
+        #     if np.random.uniform(0,1,1)<0.01:
+        #         print('check matrices correct')
+        #         print(ZtX.size)
+        #         print(YtY.size)
                 
-            return(S2_gamma(g, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds))
+        #     return(S2_gamma(g, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds))
 
         # Estimate Jacobian
-        J = nd.Jacobian(S2gamma)(gamma)
-
-        J2 = nd.Jacobian(S2_gamma)(gamma, L, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)
-
-        if np.random.uniform(0,1,1)<0.01:
-
-            print('Hessian diff')
-            print(J-J2)
+        J = nd.Jacobian(S2_gamma)(gamma, L, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)
 
         # print('J shape')
         # print(J.shape)
@@ -241,6 +225,12 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
 
     return(df)
 
+# How to get the log likelihood from gammma
+def llh_gamma(g, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds): 
+
+    t = gamma2theta(g)
+
+    return PLS2D(t, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
 
 def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevels, nparams): 
 
