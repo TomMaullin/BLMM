@@ -218,6 +218,10 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
             print(J)
             print('gamma')
             print(gamma)
+            print('sigma2i')
+            print(sigma2i)
+            print('Di')
+            print(D)
 
 
         # Calculate the degrees of freedom
@@ -379,6 +383,10 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
     print(dS2i_gamma)
     print('gamma')
     print(gamma)
+    print('sigma2i')
+    print(sigma2i)
+    print('Di')
+    print(Di)
 
     #===================================================================================================================
 
