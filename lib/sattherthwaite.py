@@ -353,8 +353,8 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
         try:
             Lamij = np.linalg.cholesky(Dij)
         except:
-            L, Dvals, perm = scipy.linalg.ldl(Dij)
-            Lamij = np.real(np.matmul(L[perm,:], np.sqrt(Dvals+0J)))
+            Lmat, Dvals, perm = scipy.linalg.ldl(Dij)
+            Lamij = np.real(np.matmul(Lmat[perm,:], np.sqrt(Dvals+0J)))
             # print('L')
             # print(L[perm,:])
             # print('Dvals')
@@ -597,7 +597,7 @@ def S2_eta2D(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY):
         print(L.shape)
         print(type(sigma2))
         S2 = sigma2*(L @ np.linalg.inv(XtiVX) @ L.transpose())
-        
+
 
     return(S2)
 
