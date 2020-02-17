@@ -298,14 +298,7 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
 
             lhtc = lhtc + nparams[k]
 
-            print('(l,k)')
-            print(l,k)
-            print('lhtc')
-            print(lhtc)
-
-        print('mat2vech')
-        print(mat2vech2D(D[i,lhtc:(lhtc+nparams[k]),lhtc:(lhtc+nparams[k])]))
-
+    print(eta)
     dS2i = nd.Jacobian(S2_etavec)(eta, L, ZtX[0,:,:], ZtY[i,:,:], XtX[0,:,:], ZtZ[0,:,:], XtY[i,:,:], YtX[i,:,:], YtZ[i,:,:], XtZ[0,:,:], YtY[i,:,:], nparams, nlevels)
 
     print('worked')
