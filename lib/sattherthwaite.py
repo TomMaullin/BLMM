@@ -266,7 +266,7 @@ def llh_gamma(gamma, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, npara
 
     # Inverse of (I+Z'ZD) multiplied by D
     IplusZtZD = np.eye(ZtZ.shape[1]) + ZtZ @ D
-    DinvIplusZtZD =  forceSym3D(D @ np.linalg.inv(IplusZtZD))
+    DinvIplusZtZD =  forceSym2D(D @ np.linalg.inv(IplusZtZD))
 
     return(-(llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D) - (n/2)*np.log(2*np.pi)))
 
@@ -675,7 +675,7 @@ def InfoMat_eta(D, sigma2, n, nlevels, nparams, ZtZ):
 
     # Inverse of (I+Z'ZD) multiplied by D
     IplusZtZD = np.eye(q) + ZtZ @ D
-    DinvIplusZtZD =  forceSym2D(D @ np.linalg.inv(IplusZtZD)) 
+    DinvIplusZtZD =  forceSym3D(D @ np.linalg.inv(IplusZtZD)) 
 
     # Initialize FIsher Information matrix
     FisherInfoMat = np.zeros((nv,tnp,tnp))
