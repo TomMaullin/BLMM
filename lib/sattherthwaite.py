@@ -675,7 +675,7 @@ def InfoMat_eta(D, sigma2, n, nlevels, nparams, ZtZ):
 
     # Inverse of (I+Z'ZD) multiplied by D
     IplusZtZD = np.eye(q) + ZtZ @ D
-    DinvIplusZtZD =  forceSym3D(D @ np.linalg.inv(IplusZtZD)) 
+    DinvIplusZtZD =  forceSym2D(D @ np.linalg.inv(IplusZtZD)) 
 
     # Initialize FIsher Information matrix
     FisherInfoMat = np.zeros((nv,tnp,tnp))
