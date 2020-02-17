@@ -142,7 +142,7 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
         # print(gamma2theta(gamma))
 
         # Estimate hessian
-        H = nd.Hessian(llh_gamma)(gamma, np.array(ZtX_current), np.array(ZtY_current), np.array(XtX_current), np.array(matrix(ZtZ_current)), np.array(XtY_current), np.array(YtX_current), np.array(YtZ_current), np.array(XtZ_current), np.array(YtY_current), nlevels, nparams, n)#, n, P, I, tinds, rinds, cinds)
+        H = nd.Hessian(llh_gamma)(gamma, np.array(ZtX_current), np.array(ZtY_current), np.array(XtX_current), np.array(matrix(ZtZ_current)), np.array(XtY_current), np.array(YtX_current), np.array(YtZ_current), np.array(XtZ_current), np.array(YtY_current), nlevels, nparams, n, P, tinds, rinds, cinds)
         #H2 = nd.Hessian(llhgamma2,method='complex')(gamma)
 
         # print('H shape')
@@ -237,11 +237,13 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
     return(df)
 
 # How to get the log likelihood from gammma
-def llh_gamma(gamma, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n):#n, P, I, tinds, rinds, cinds): 
+def llh_gamma(gamma, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, P, tinds, rinds, cinds): 
 
     theta = gamma2theta(gamma)
 
     sigma2 = gamma[0]**2
+
+    beta = np.array(PLS2D_getBeta(theta, matrix(ZtX), matrix(ZtY), matrix(XtX), cvxopt.sparse(matrix(ZtZ)), matrix(XtY), matrix(YtX), matrix(YtZ), matrix(XtZ), matrix(YtY), n, P, tinds, rinds, cinds))
 
     Ddict = dict()
 
@@ -267,6 +269,9 @@ def llh_gamma(gamma, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, npara
     # Inverse of (I+Z'ZD) multiplied by D
     IplusZtZD = np.eye(ZtZ.shape[1]) + ZtZ @ D
     DinvIplusZtZD =  forceSym2D(D @ np.linalg.inv(IplusZtZD))
+
+    Zte = ZtY - ZtX @ beta
+    ete = YtY - 2*YtX @ beta + beta.transpose() @ XtX @ beta  
 
     return(-(llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D) - (n/2)*np.log(2*np.pi)))
 
