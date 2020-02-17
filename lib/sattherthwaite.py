@@ -237,11 +237,35 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
     return(df)
 
 # How to get the log likelihood from gammma
-def llh_gamma(g, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds): 
+def llh_gamma(gamma, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds): 
 
-    t = gamma2theta(g)
+    theta = gamma2theta(gamma)
 
-    return PLS2D(t, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
+    sigma2 = gamma[0]**2
+
+    Ddict = dict()
+
+    # Indices for submatrics corresponding to Dks
+    IndsGamma = np.int32(np.cumsum(nparams*(nparams+1)/2) + 1)
+    IndsGamma = np.insert(IndsGamma,0,1)
+
+    D = np.zeros((np.sum(nlevels*nparams),np.sum(nlevels*nparams)))
+
+    # Left hand top corner
+    lhtc = 0
+    for k in np.arange(len(nparams)):
+
+        lamk =  vech2mat2D(gamma[IndsGamma[k]:IndsGamma[k+1]])
+        Dk = makeDnnd2D(lamk @ lamk.transpose())
+       
+        for l in np.arange(nlevels[k]):
+
+            D[lhtc:(lhtc+nparams[k]),lhtc:(lhtc+nparams[k])] = Dk
+            lhtc = lhtc + nparams[k]
+
+    return(-(llh2D(n, np.array(matrix(ZtZ_current)), Zte, ete, sigma2, DinvIplusZtZD,D) - (n/2)*np.log(2*np.pi)))
+
+#    return PLS2D(t, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
 
 def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevels, nparams): 
 
@@ -424,7 +448,7 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
 #   - used by lmerTest
 #   - has the form (sigma, vech(spChol(D_1)),... vech(spChol(D_r))) = (sigma, sigma*vech(Lambda_1),... sigma*vech(Lambda_r)))
 # eta:
-#   - used by PLS
+#   - used by FS
 #   - has the form (sigma^2, vech(D_1),...vech(D_r))
 
 
