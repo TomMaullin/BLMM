@@ -373,12 +373,12 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
     cholmod.options['supernodal']=2
     P=amd.order(LamtZtZLam)
 
-    
+
     # Identity
     I = spmatrix(1.0, range(Lam.size[0]), range(Lam.size[0]))
 
     # Get gamma
-    gamma = theta2gamma(theta, ZtX[0,:,:], ZtY[i,:,:], XtX[0,:,:], ZtZ[0,:,:], XtY[i,:,:], YtX[i,:,:], YtZ[i,:,:], XtZ[0,:,:], YtY[i,:,:], n, P, I, tinds, rinds, cinds)
+    gamma = theta2gamma(theta, matrix(ZtX[0,:,:]), matrix(ZtY[i,:,:]), matrix(XtX[0,:,:]), cvxopt.sparse(matrix(ZtZ[0,:,:])), matrix(XtY[i,:,:]), matrix(YtX[i,:,:]), matrix(YtZ[i,:,:]), matrix(XtZ[0,:,:]), matrix(YtY[i,:,:]), n, P, I, tinds, rinds, cinds)
 
 
     dS2i_gamma = nd.Jacobian(S2_gammavec)(gamma, L, ZtX[0,:,:], ZtY[i,:,:], XtX[0,:,:], ZtZ[0,:,:], XtY[i,:,:], YtX[i,:,:], YtZ[i,:,:], XtZ[0,:,:], YtY[i,:,:], nparams, nlevels)
