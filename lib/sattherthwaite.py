@@ -173,7 +173,7 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
                       YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)
 
 
-        if i==3:
+        if i==2:
 
             print('numerator')
             print(2*(S2**2))
