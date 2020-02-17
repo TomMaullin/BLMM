@@ -369,7 +369,7 @@ def main():
 	L = np.zeros((1,p))
 	L[0,3] = 1
 
-	df = SattherthwaiteDoF('T','lmerTest',D,sigma2,L,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n,nlevels,nparams,theta)
+	df = SattherthwaiteDoF('T','lmerTest',D,sigma2,L,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n,nlevels,nparams,theta,beta)
 
 	print('df results')
 	print(df.shape)

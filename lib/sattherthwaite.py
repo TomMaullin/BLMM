@@ -35,7 +35,7 @@ np.set_printoptions(threshold=sys.maxsize)
 # - `ete`: The sum of square residuals (e'e in the above notation).
 #
 # ============================================================================
-def SattherthwaiteDoF(statType,estType,D,sigma2,L,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n,nlevels,nparams,theta):
+def SattherthwaiteDoF(statType,estType,D,sigma2,L,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n,nlevels,nparams,theta,beta):
 
     # T contrast
     if statType=='T':
@@ -44,7 +44,7 @@ def SattherthwaiteDoF(statType,estType,D,sigma2,L,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,Xt
         if estType=='lmerTest':
 
             # Get estimated degrees of freedom
-            df = SW_lmerTest(theta,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
+            df = SW_lmerTest(theta,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n,beta)
 
         # Use BLMM method
         else:
@@ -58,7 +58,7 @@ def SattherthwaiteDoF(statType,estType,D,sigma2,L,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,Xt
 
     return(df)
 
-def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n):# TODO inputs
+def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n,beta):# TODO inputs
 
     #================================================================================
     # Initial theta
@@ -142,7 +142,7 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
         # print(gamma2theta(gamma))
 
         # Estimate hessian
-        H = nd.Hessian(llh_gamma)(gamma, np.array(ZtX_current), np.array(ZtY_current), np.array(XtX_current), np.array(matrix(ZtZ_current)), np.array(XtY_current), np.array(YtX_current), np.array(YtZ_current), np.array(XtZ_current), np.array(YtY_current), nlevels, nparams, n, P, tinds, rinds, cinds)
+        H = nd.Hessian(llh_gamma)(gamma, beta[i,:,:], np.array(ZtX_current), np.array(ZtY_current), np.array(XtX_current), np.array(matrix(ZtZ_current)), np.array(XtY_current), np.array(YtX_current), np.array(YtZ_current), np.array(XtZ_current), np.array(YtY_current), nlevels, nparams, n, P, tinds, rinds, cinds)
         #H2 = nd.Hessian(llhgamma2,method='complex')(gamma)
 
         # print('H shape')
@@ -237,13 +237,13 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
     return(df)
 
 # How to get the log likelihood from gammma
-def llh_gamma(gamma, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, P, tinds, rinds, cinds): 
+def llh_gamma(gamma, beta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n, P, tinds, rinds, cinds): 
 
     theta = gamma2theta(gamma)
 
     sigma2 = gamma[0]**2
 
-    beta = np.array(PLS2D_getBeta(theta, matrix(ZtX), matrix(ZtY), matrix(XtX), cvxopt.sparse(matrix(ZtZ)), matrix(XtY), matrix(YtX), matrix(YtZ), matrix(XtZ), matrix(YtY), n, P, tinds, rinds, cinds))
+    # beta = np.array(PLS2D_getBeta(theta, matrix(ZtX), matrix(ZtY), matrix(XtX), cvxopt.sparse(matrix(ZtZ)), matrix(XtY), matrix(YtX), matrix(YtZ), matrix(XtZ), matrix(YtY), n, P, tinds, rinds, cinds))
 
     Ddict = dict()
 
