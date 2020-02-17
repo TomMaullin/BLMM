@@ -334,7 +334,7 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
         Dij = Di[Dinds[j]:(Dinds[j]+nparams[j]),Dinds[j]:(Dinds[j]+nparams[j])]
 
         try:
-            Lamj = np.linalg.cholesky(Dij)
+            Lamij = np.linalg.cholesky(Dij)
         except:
             L, Dvals, perm = scipy.linalg.ldl(Dij)
             Lamij = np.real(np.matmul(L[perm,:], np.sqrt(Dvals+0J)))
