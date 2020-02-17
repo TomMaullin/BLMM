@@ -213,6 +213,13 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
             print(S2)
 
 
+            print('checkpoint')
+            print('deriv')
+            print(J)
+            print('gamma')
+            print(gamma)
+
+
         # Calculate the degrees of freedom
         df[i] = 2*(S2**2)/(J @ np.linalg.pinv(H) @ J.transpose())
         print('new check')
@@ -394,6 +401,12 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
     print(dS2[i,:,:])
     print(dS2i)
     print(dS2i_gamma)
+
+    print('checkpoint')
+    print('deriv')
+    print(dS2i_gamma)
+    print('gamma')
+    print(gamma)
 
     #===================================================================================================================
 
