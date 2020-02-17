@@ -278,7 +278,7 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
 
         # Indices for submatrics corresponding to Dks
         IndsGamma = np.int32(np.cumsum(nparams*(nparams+1)/2) + 1)
-        IndsGamma = np.insert(IndsEta,0,1)
+        IndsGamma = np.insert(IndsGamma,0,1)
 
         D = np.zeros((np.sum(nlevels*nparams),np.sum(nlevels*nparams)))
 
