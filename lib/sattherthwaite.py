@@ -106,63 +106,11 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n,
         YtZ_current = cvxopt.matrix(YtZ[i,:,:])
         ZtY_current = cvxopt.matrix(ZtY[i,:,:])
 
-        # # Obtain beta estimate
-        # beta = np.array(PLS2D_getBeta(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, tinds, rinds, cinds))
-
-
-        #NTS CURRENTLY FOR SPARSE CHOL, NOT (\sigma,SPCHOL(D))
-        #ALSO MIGHT HAVE PROBLEMS WITH CVXOPT CONVERSION
-
         # Convert to gamma form
         gamma = theta2gamma(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)
 
-        # # How to get the log likelihood from gammma
-        # def llhgamma2(g, ZtX=ZtX_current, ZtY=ZtY_current, XtX=XtX_current, ZtZ=ZtZ_current, XtY=XtY_current, 
-        #            YtX=YtX_current, YtZ=YtZ_current, XtZ=XtZ_current, YtY=YtY_current, n=n, P=P, I=I, 
-        #            tinds=tinds, rinds=rinds, cinds=cinds): 
-
-        #     # Get theta
-        #     t = gamma2theta(g)
-
-        #     # Get parameters
-        #     sigma2 = np.array(PLS2D_getSigma2(t, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds))[0,0]
-        #     beta = np.array(PLS2D_getBeta(t, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, tinds, rinds, cinds))
-        #     D = np.array(matrix(PLS2D_getD(t, tinds, rinds, cinds, sigma2)))
-
-        #     # Make matrices for llh
-        #     Zte = np.array(ZtY) - np.array(ZtX) @ beta
-        #     ete = np.array(YtY) - 2*np.array(YtX) @ beta + beta.transpose() @ np.array(XtX) @ beta
-        #     DinvIplusZtZD = D @ np.linalg.inv(np.eye(D.shape[0]) + np.array(matrix(ZtZ)) @ D)
-
-        #     return -llh2D(n, np.array(matrix(ZtZ)), Zte, ete, sigma2, DinvIplusZtZD,D)
-
-        # print('gamma')
-        # print(gamma)
-        # print('theta')
-        # print(gamma2theta(gamma))
-
         # Estimate hessian
-        print('beta shape')
-        print(beta.shape)
         H = nd.Hessian(llh_gamma)(gamma, beta[i,:,:], np.array(ZtX_current), np.array(ZtY_current), np.array(XtX_current), np.array(matrix(ZtZ_current)), np.array(XtY_current), np.array(YtX_current), np.array(YtZ_current), np.array(XtZ_current), np.array(YtY_current), nlevels, nparams, n, P, tinds, rinds, cinds)
-        #H2 = nd.Hessian(llhgamma2,method='complex')(gamma)
-
-        # print('H shape')
-        # print(H.shape)
-        # print('H')
-        # print(H)
-
-        # # How to get S^2 from gamma
-        # def S2gamma(g, L=L, ZtX=ZtX_current, ZtY=ZtY_current, XtX=XtX_current, ZtZ=ZtZ_current, XtY=XtY_current, 
-        #           YtX=YtX_current, YtZ=YtZ_current, XtZ=XtZ_current, YtY=YtY_current, n=n, P=P, I=I,
-        #           tinds=tinds, rinds=rinds, cinds=cinds): 
-
-        #     if np.random.uniform(0,1,1)<0.01:
-        #         print('check matrices correct')
-        #         print(ZtX.size)
-        #         print(YtY.size)
-                
-        #     return(S2_gamma(g, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds))
 
         # Estimate Jacobian
         J = nd.Jacobian(S2_gammavec)(gamma, L, np.array(ZtX_current), np.array(ZtY_current), np.array(XtX_current), np.array(matrix(ZtZ_current)), np.array(XtY_current), np.array(YtX_current), np.array(YtZ_current), np.array(XtZ_current), np.array(YtY_current), nparams, nlevels)
@@ -174,67 +122,8 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n,
         S2 = S2_gamma(gamma, L, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, 
                       YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)
 
-
-        if i==2:
-
-            print('numerator')
-            print(2*(S2**2))
-            print('denominator')
-            print((J @ np.linalg.pinv(H) @ J.transpose()))
-            print('Infomat')
-            print(H)
-            print('dS2')
-            print(J.transpose())
-            print('gamma')
-            print(gamma)
-            print('theta')
-            print(theta)
-
-            # Get parameters
-            sigma2 = np.array(PLS2D_getSigma2(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds))[0,0]
-            betatmp = np.array(PLS2D_getBeta(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, tinds, rinds, cinds))
-            D = np.array(matrix(PLS2D_getD(theta, tinds, rinds, cinds, sigma2)))
-
-            # Make matrices for llh
-            Zte = np.array(ZtY_current) - np.array(ZtX_current) @ betatmp
-            ete = np.array(YtY_current) - 2*np.array(YtX_current) @ betatmp + betatmp.transpose() @ np.array(XtX_current) @ betatmp
-            DinvIplusZtZD = D @ np.linalg.inv(np.eye(D.shape[0]) + np.array(matrix(ZtZ_current)) @ D)
-
-            print('llh eta')
-            print(-(llh2D(n, np.array(matrix(ZtZ_current)), Zte, ete, sigma2, DinvIplusZtZD,D) - (n/2)*np.log(2*np.pi)))
-
-            print('llh theta')
-            print(PLS2D(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds))
-
-
-            print('S2 eta')
-            S2_2 = S2_eta2D(D, sigma2, L, np.array(ZtX_current), np.array(ZtY_current), np.array(XtX_current), np.array(matrix(ZtZ_current)), np.array(XtY_current), np.array(YtX_current), np.array(YtZ_current), np.array(XtZ_current), np.array(YtY_current))
-            print(S2_2)
-
-            print('S2 gamma')
-            print(S2)
-
-
-            print('checkpoint')
-            print('deriv')
-            print(J)
-            print('gamma')
-            print(gamma)
-            print('sigma2i')
-            print(sigma2)
-            print('Di')
-            print(D)
-
-
         # Calculate the degrees of freedom
         df[i] = 2*(S2**2)/(J @ np.linalg.pinv(H) @ J.transpose())
-        print('new check')
-        try:
-            print(2*(S2**2)/(J @ np.linalg.pinv(H) @ J.transpose())-2*(S2**2)/(J @ np.linalg.inv(H) @ J.transpose()))
-            print(2*(S2**2)/(J @ np.linalg.inv(H) @ J.transpose()))
-            print(2*(S2**2)/(J @ np.linalg.pinv(H) @ J.transpose()))
-        except:
-            print('invert failed')
 
     return(df)
 
@@ -281,7 +170,7 @@ def llh_gamma(gamma, beta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels,
 
 def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevels, nparams): 
 
-    print('SW_BLMM running')
+    #print('SW_BLMM running')
 
     # Get S^2 of eta
     S2 = S2_eta(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY)
@@ -289,118 +178,115 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
     # Get derivative of S^2 with respect to gamma evaluated at eta.
     dS2 = dS2deta(nparams, nlevels, L, XtX, XtZ, ZtZ, ZtX, D, sigma2)
 
-    #===================================================================================================================
+#     #===================================================================================================================
 
 
-    def S2_etavec(eta, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nparams, nlevels):
+#     def S2_etavec(eta, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nparams, nlevels):
 
-        sigma2 = eta[0]
-        Ddict = dict()
+#         sigma2 = eta[0]
+#         Ddict = dict()
 
-        # Indices for submatrics corresponding to Dks
-        IndsEta = np.int32(np.cumsum(nparams*(nparams+1)/2) + 1)
-        IndsEta = np.insert(IndsEta,0,1)
+#         # Indices for submatrics corresponding to Dks
+#         IndsEta = np.int32(np.cumsum(nparams*(nparams+1)/2) + 1)
+#         IndsEta = np.insert(IndsEta,0,1)
 
-        D = np.zeros((np.sum(nlevels*nparams),np.sum(nlevels*nparams)))
+#         D = np.zeros((np.sum(nlevels*nparams),np.sum(nlevels*nparams)))
 
-        # Left hand top corner
-        lhtc = 0
-        for k in np.arange(len(nparams)):
+#         # Left hand top corner
+#         lhtc = 0
+#         for k in np.arange(len(nparams)):
            
-            for l in np.arange(nlevels[k]):
+#             for l in np.arange(nlevels[k]):
 
-                D[lhtc:(lhtc+nparams[k]),lhtc:(lhtc+nparams[k])] = makeDnnd2D(vech2mat2D(eta[IndsEta[k]:IndsEta[k+1]]))
-                lhtc = lhtc + nparams[k]
+#                 D[lhtc:(lhtc+nparams[k]),lhtc:(lhtc+nparams[k])] = makeDnnd2D(vech2mat2D(eta[IndsEta[k]:IndsEta[k+1]]))
+#                 lhtc = lhtc + nparams[k]
 
 
-        S2 = S2_eta2D(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY)
+#         S2 = S2_eta2D(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY)
 
-        return(S2)
+#         return(S2)
 
-    i = 2
-    Di = D[i,:,:]
-    sigma2i = sigma2[i]
+#     i = 2
+#     Di = D[i,:,:]
+#     sigma2i = sigma2[i]
 
-    eta = sigma2i
+#     eta = sigma2i
 
-    print('Di')
-    print(Di)
+#     lhtc = 0
 
-    lhtc = 0
+#     for k in np.arange(len(nparams)):
 
-    for k in np.arange(len(nparams)):
+#         for l in np.arange(nlevels[k]):
 
-        for l in np.arange(nlevels[k]):
+#             if l == 0:
+#                 eta = np.concatenate((eta, mat2vech2D(D[i,lhtc:(lhtc+nparams[k]),lhtc:(lhtc+nparams[k])])),axis=None)
 
-            if l == 0:
-                eta = np.concatenate((eta, mat2vech2D(D[i,lhtc:(lhtc+nparams[k]),lhtc:(lhtc+nparams[k])])),axis=None)
+#             lhtc = lhtc + nparams[k]
 
-            lhtc = lhtc + nparams[k]
-
-    print(eta)
-    dS2i = nd.Jacobian(S2_etavec)(eta, L, ZtX[0,:,:], ZtY[i,:,:], XtX[0,:,:], ZtZ[0,:,:], XtY[i,:,:], YtX[i,:,:], YtZ[i,:,:], XtZ[0,:,:], YtY[i,:,:], nparams, nlevels)
+# #    print(eta)
+#     dS2i = nd.Jacobian(S2_etavec)(eta, L, ZtX[0,:,:], ZtY[i,:,:], XtX[0,:,:], ZtZ[0,:,:], XtY[i,:,:], YtX[i,:,:], YtZ[i,:,:], XtZ[0,:,:], YtY[i,:,:], nparams, nlevels)
 
 
 
-    # Indices for D/lambda submatrices
-    Dinds = np.insert(np.cumsum(nlevels*nparams),0,0)
+#     # Indices for D/lambda submatrices
+#     Dinds = np.insert(np.cumsum(nlevels*nparams),0,0)
 
-    # Unique elements of lambda
-    vecuLami = np.array([])
+#     # Unique elements of lambda
+#     vecuLami = np.array([])
 
-    for j in np.arange(len(nparams)):
+#     for j in np.arange(len(nparams)):
 
-        Dij = Di[Dinds[j]:(Dinds[j]+nparams[j]),Dinds[j]:(Dinds[j]+nparams[j])]
+#         Dij = Di[Dinds[j]:(Dinds[j]+nparams[j]),Dinds[j]:(Dinds[j]+nparams[j])]
 
-        try:
-            Lamij = np.linalg.cholesky(Dij)
-        except:
-            Lmat, Dvals, perm = scipy.linalg.ldl(Dij)
-            Lamij = np.real(np.matmul(Lmat[perm,:], np.sqrt(Dvals+0J)))
-            # print('L')
-            # print(L[perm,:])
-            # print('Dvals')
-            # print(Dvals)
-            # print('Lam')
-            # print(Lamij)
-            # print('difference')
-            # print(Lamij @ Lamij.transpose() - Dij)
+#         try:
+#             Lamij = np.linalg.cholesky(Dij)
+#         except:
+#             Lmat, Dvals, perm = scipy.linalg.ldl(Dij)
+#             Lamij = np.real(np.matmul(Lmat[perm,:], np.sqrt(Dvals+0J)))
+#             # print('L')
+#             # print(L[perm,:])
+#             # print('Dvals')
+#             # print(Dvals)
+#             # print('Lam')
+#             # print(Lamij)
+#             # print('difference')
+#             # print(Lamij @ Lamij.transpose() - Dij)
 
-        # Get individual block of lambda
-        #Lamij = Lami[Dinds[j]:(Dinds[j]+nparams[j]),Dinds[j]:(Dinds[j]+nparams[j])]
+#         # Get individual block of lambda
+#         #Lamij = Lami[Dinds[j]:(Dinds[j]+nparams[j]),Dinds[j]:(Dinds[j]+nparams[j])]
 
-        # Convert it to vec(h) format
-        vecuLamij = mat2vech2D(Lamij)
+#         # Convert it to vec(h) format
+#         vecuLamij = mat2vech2D(Lamij)
 
-        # Add it to running element list
-        vecuLami = np.concatenate((vecuLami, vecuLamij), axis=None)
+#         # Add it to running element list
+#         vecuLami = np.concatenate((vecuLami, vecuLamij), axis=None)
 
-    # Compose theta vector
-    theta = vecuLami/np.sqrt(sigma2i)
+#     # Compose theta vector
+#     theta = vecuLami/np.sqrt(sigma2i)
 
-    #================================================================================
-    # Sparse Permutation, P
-    #================================================================================
-    tinds,rinds,cinds=get_mapping2D(nlevels, nparams)
-    tmp = np.random.randn(theta.shape[0])
-    Lam=mapping2D(tmp,tinds,rinds,cinds)
+#     #================================================================================
+#     # Sparse Permutation, P
+#     #================================================================================
+#     tinds,rinds,cinds=get_mapping2D(nlevels, nparams)
+#     tmp = np.random.randn(theta.shape[0])
+#     Lam=mapping2D(tmp,tinds,rinds,cinds)
 
-    # Obtain Lambda'Z'ZLambda
-    LamtZtZLam = spmatrix.trans(Lam)*cvxopt.sparse(matrix(ZtZ[0,:,:]))*Lam
+#     # Obtain Lambda'Z'ZLambda
+#     LamtZtZLam = spmatrix.trans(Lam)*cvxopt.sparse(matrix(ZtZ[0,:,:]))*Lam
 
-    # Obtaining permutation for PLS
-    cholmod.options['supernodal']=2
-    P=amd.order(LamtZtZLam)
-
-
-    # Identity
-    I = spmatrix(1.0, range(Lam.size[0]), range(Lam.size[0]))
-
-    # Get gamma
-    gamma = theta2gamma(theta, matrix(ZtX[0,:,:]), matrix(ZtY[i,:,:]), matrix(XtX[0,:,:]), cvxopt.sparse(matrix(ZtZ[0,:,:])), matrix(XtY[i,:,:]), matrix(YtX[i,:,:]), matrix(YtZ[i,:,:]), matrix(XtZ[0,:,:]), matrix(YtY[i,:,:]), n, P, I, tinds, rinds, cinds)
+#     # Obtaining permutation for PLS
+#     cholmod.options['supernodal']=2
+#     P=amd.order(LamtZtZLam)
 
 
-    dS2i_gamma = nd.Jacobian(S2_gammavec)(gamma, L, ZtX[0,:,:], ZtY[i,:,:], XtX[0,:,:], ZtZ[0,:,:], XtY[i,:,:], YtX[i,:,:], YtZ[i,:,:], XtZ[0,:,:], YtY[i,:,:], nparams, nlevels)
+#     # Identity
+#     I = spmatrix(1.0, range(Lam.size[0]), range(Lam.size[0]))
+
+#     # Get gamma
+#     gamma = theta2gamma(theta, matrix(ZtX[0,:,:]), matrix(ZtY[i,:,:]), matrix(XtX[0,:,:]), cvxopt.sparse(matrix(ZtZ[0,:,:])), matrix(XtY[i,:,:]), matrix(YtX[i,:,:]), matrix(YtZ[i,:,:]), matrix(XtZ[0,:,:]), matrix(YtY[i,:,:]), n, P, I, tinds, rinds, cinds)
+
+
+#     dS2i_gamma = nd.Jacobian(S2_gammavec)(gamma, L, ZtX[0,:,:], ZtY[i,:,:], XtX[0,:,:], ZtZ[0,:,:], XtY[i,:,:], YtX[i,:,:], YtZ[i,:,:], XtZ[0,:,:], YtY[i,:,:], nparams, nlevels)
 
 
 
@@ -409,44 +295,44 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
 
 
 
-    print('worked')
-    print(dS2[i,:,:])
-    print(dS2i)
-    print(dS2i_gamma)
+#     print('worked')
+#     print(dS2[i,:,:])
+#     print(dS2i)
+#     print(dS2i_gamma)
 
-    print('checkpoint')
-    print('deriv')
-    print(dS2i_gamma)
-    print('gamma')
-    print(gamma)
-    print('sigma2i')
-    print(sigma2i)
-    print('Di')
-    print(Di)
+#     print('checkpoint')
+#     print('deriv')
+#     print(dS2i_gamma)
+#     print('gamma')
+#     print(gamma)
+#     print('sigma2i')
+#     print(sigma2i)
+#     print('Di')
+#     print(Di)
 
-    #===================================================================================================================
+#     #===================================================================================================================
 
     # Get Fisher information matrix
     InfoMat = InfoMat_eta(D, sigma2, n, nlevels, nparams, ZtZ)#...
 
-    print("S2 shape: ", S2.shape)
-    print("I shape: ",InfoMat.shape)
-    print("dS2 shape: ", dS2.shape)
+    # print("S2 shape: ", S2.shape)
+    # print("I shape: ",InfoMat.shape)
+    # print("dS2 shape: ", dS2.shape)
 
     # Calculate df estimator
     df = 2*(S2**2)/(dS2.transpose(0,2,1) @ np.linalg.inv(InfoMat) @ dS2)
 
-    print('df shape ', df.shape)
+    # print('df shape ', df.shape)
 
 
-    print('numerator')
-    print(2*(S2[3,:,:]**2))
-    print('denominator')
-    print((dS2.transpose(0,2,1) @ np.linalg.inv(InfoMat) @ dS2)[3,:,:])
-    print('Infomat')
-    print(InfoMat[3,:,:])
-    print('dS2')
-    print(dS2[3,:,:])
+    # print('numerator')
+    # print(2*(S2[3,:,:]**2))
+    # print('denominator')
+    # print((dS2.transpose(0,2,1) @ np.linalg.inv(InfoMat) @ dS2)[3,:,:])
+    # print('Infomat')
+    # print(InfoMat[3,:,:])
+    # print('dS2')
+    # print(dS2[3,:,:])
     
     # Return df
     return(df)
@@ -564,7 +450,7 @@ def S2_gamma(gamma, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tin
 
 def S2_eta(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY):
 
-    print('S2_eta running')
+    #print('S2_eta running')
 
     # Calculate X'V^{-1}X=X'(I+ZDZ')^{-1}X=X'X-X'Z(I+DZ'Z)^{-1}DZ'X
     XtiVX = XtX - XtZ @ np.linalg.inv(np.eye(D.shape[1]) + D @ ZtZ) @ D @ ZtX
@@ -576,36 +462,18 @@ def S2_eta(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY):
 
 def S2_eta2D(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY):
 
-    print('S2_eta2D running')
+    #print('S2_eta2D running')
 
     # Calculate X'V^{-1}X=X'(I+ZDZ')^{-1}X=X'X-X'Z(I+DZ'Z)^{-1}DZ'X
-    try:
-        XtiVX = XtX - XtZ @ np.linalg.inv(np.eye(D.shape[1]) + D @ ZtZ) @ D @ ZtX
-    except:
-        print(XtX.shape)
-        print(XtZ.shape)
-        print(D.shape)
-        print(XtX.shape)
-        XtiVX = XtX - XtZ @ np.linalg.inv(np.eye(D.shape[1]) + D @ ZtZ) @ D @ ZtX
+    XtiVX = XtX - XtZ @ np.linalg.inv(np.eye(D.shape[1]) + D @ ZtZ) @ D @ ZtX
     
 
     # Calculate S^2 = sigma^2L(X'V^{-1}X)L'
-    try:
-        S2 = sigma2*(L @ np.linalg.inv(XtiVX) @ L.transpose())
-    except:
-        print('errorred')
-        print(sigma2)
-        print(XtiVX.shape)
-        print(L.shape)
-        print(type(sigma2))
-        S2 = sigma2*(L @ np.linalg.inv(XtiVX) @ L.transpose())
-
+    S2 = sigma2*(L @ np.linalg.inv(XtiVX) @ L.transpose())
 
     return(S2)
 
 def dS2deta(nparams, nlevels, L, XtX, XtZ, ZtZ, ZtX, D, sigma2):
-
-    print('dS2deta running')
 
     # Number of voxels
     nv = D.shape[0]
@@ -663,9 +531,6 @@ def dS2deta(nparams, nlevels, L, XtX, XtZ, ZtZ, ZtX, D, sigma2):
     return(dS2deta)
 
 def InfoMat_eta(D, sigma2, n, nlevels, nparams, ZtZ):
-
-
-    print('InfoMat_eta running')
 
     # Number of random effects, q
     q = np.sum(np.dot(nparams,nlevels))
