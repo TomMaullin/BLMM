@@ -163,7 +163,7 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
         #     return(S2_gamma(g, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds))
 
         # Estimate Jacobian
-        J = nd.Jacobian(S2_gamma)(gamma, L, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)
+        J = nd.Jacobian(S2_gammavec)(gamma, L, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)
 
         # print('J shape')
         # print(J.shape)
@@ -272,34 +272,6 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
                 D[lhtc:(lhtc+nparams[k]),lhtc:(lhtc+nparams[k])] = makeDnnd2D(vech2mat2D(eta[IndsEta[k]:IndsEta[k+1]]))
                 lhtc = lhtc + nparams[k]
 
-
-        S2 = S2_eta2D(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY)
-
-        return(S2)
-
-    def S2_gammavec(gamma, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nparams, nlevels):
-
-        sigma2 = gamma[0]**2
-
-        Ddict = dict()
-
-        # Indices for submatrics corresponding to Dks
-        IndsGamma = np.int32(np.cumsum(nparams*(nparams+1)/2) + 1)
-        IndsGamma = np.insert(IndsGamma,0,1)
-
-        D = np.zeros((np.sum(nlevels*nparams),np.sum(nlevels*nparams)))
-
-        # Left hand top corner
-        lhtc = 0
-        for k in np.arange(len(nparams)):
-
-            lamk =  vech2mat2D(gamma[IndsGamma[k]:IndsGamma[k+1]])
-            Dk = makeDnnd2D(lamk @ lamk.transpose())
-           
-            for l in np.arange(nlevels[k]):
-
-                D[lhtc:(lhtc+nparams[k]),lhtc:(lhtc+nparams[k])] = Dk
-                lhtc = lhtc + nparams[k]
 
         S2 = S2_eta2D(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY)
 
@@ -476,6 +448,34 @@ def theta2gamma(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tin
     # Return gamma
     return(np.real(gamma))
 
+
+def S2_gammavec(gamma, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nparams, nlevels):
+
+    sigma2 = gamma[0]**2
+
+    Ddict = dict()
+
+    # Indices for submatrics corresponding to Dks
+    IndsGamma = np.int32(np.cumsum(nparams*(nparams+1)/2) + 1)
+    IndsGamma = np.insert(IndsGamma,0,1)
+
+    D = np.zeros((np.sum(nlevels*nparams),np.sum(nlevels*nparams)))
+
+    # Left hand top corner
+    lhtc = 0
+    for k in np.arange(len(nparams)):
+
+        lamk =  vech2mat2D(gamma[IndsGamma[k]:IndsGamma[k+1]])
+        Dk = makeDnnd2D(lamk @ lamk.transpose())
+       
+        for l in np.arange(nlevels[k]):
+
+            D[lhtc:(lhtc+nparams[k]),lhtc:(lhtc+nparams[k])] = Dk
+            lhtc = lhtc + nparams[k]
+
+    S2 = S2_eta2D(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY)
+
+    return(S2)
 
 def S2_gamma(gamma, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds):
 
