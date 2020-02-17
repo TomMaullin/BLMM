@@ -349,6 +349,8 @@ def main():
 
 	print(np.min(df))
 
+	np.save('df_blmm.csv', df)
+
 	print('df[0]')
 	print(df[0])
 
@@ -376,6 +378,8 @@ def main():
 	print(np.max(df))
 
 	print(np.min(df))
+
+	np.save('df_lmertest.csv', df)
 
 	print('df[0]')
 	print(df[0])
