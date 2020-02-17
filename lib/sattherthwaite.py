@@ -144,7 +144,7 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n,
         # Estimate hessian
         print('beta shape')
         print(beta.shape)
-        H = nd.Hessian(llh_gamma)(gamma, beta[i,:], np.array(ZtX_current), np.array(ZtY_current), np.array(XtX_current), np.array(matrix(ZtZ_current)), np.array(XtY_current), np.array(YtX_current), np.array(YtZ_current), np.array(XtZ_current), np.array(YtY_current), nlevels, nparams, n, P, tinds, rinds, cinds)
+        H = nd.Hessian(llh_gamma)(gamma, beta[i,:,:], np.array(ZtX_current), np.array(ZtY_current), np.array(XtX_current), np.array(matrix(ZtZ_current)), np.array(XtY_current), np.array(YtX_current), np.array(YtZ_current), np.array(XtZ_current), np.array(YtY_current), nlevels, nparams, n, P, tinds, rinds, cinds)
         #H2 = nd.Hessian(llhgamma2,method='complex')(gamma)
 
         # print('H shape')
@@ -192,12 +192,12 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n,
 
             # Get parameters
             sigma2 = np.array(PLS2D_getSigma2(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds))[0,0]
-            beta = np.array(PLS2D_getBeta(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, tinds, rinds, cinds))
+            betatmp = np.array(PLS2D_getBeta(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, tinds, rinds, cinds))
             D = np.array(matrix(PLS2D_getD(theta, tinds, rinds, cinds, sigma2)))
 
             # Make matrices for llh
-            Zte = np.array(ZtY_current) - np.array(ZtX_current) @ beta
-            ete = np.array(YtY_current) - 2*np.array(YtX_current) @ beta + beta.transpose() @ np.array(XtX_current) @ beta
+            Zte = np.array(ZtY_current) - np.array(ZtX_current) @ betatmp
+            ete = np.array(YtY_current) - 2*np.array(YtX_current) @ betatmp + betatmp.transpose() @ np.array(XtX_current) @ betatmp
             DinvIplusZtZD = D @ np.linalg.inv(np.eye(D.shape[0]) + np.array(matrix(ZtZ_current)) @ D)
 
             print('llh eta')
