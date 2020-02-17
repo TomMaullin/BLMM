@@ -588,7 +588,16 @@ def S2_eta2D(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY):
     
 
     # Calculate S^2 = sigma^2L(X'V^{-1}X)L'
-    S2 = sigma2*(L @ np.linalg.inv(XtiVX) @ L.transpose())
+    try:
+        S2 = sigma2*(L @ np.linalg.inv(XtiVX) @ L.transpose())
+    except:
+        print('errorred')
+        print(sigma2)
+        print(XtiVX.shape)
+        print(L.shape)
+        print(type(sigma2))
+        S2 = sigma2*(L @ np.linalg.inv(XtiVX) @ L.transpose())
+        
 
     return(S2)
 
