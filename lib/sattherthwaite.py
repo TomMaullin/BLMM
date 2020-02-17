@@ -219,7 +219,7 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
             print('gamma')
             print(gamma)
             print('sigma2i')
-            print(sigma2i)
+            print(sigma2)
             print('Di')
             print(D)
 
