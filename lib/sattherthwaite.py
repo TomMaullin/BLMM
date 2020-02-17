@@ -263,7 +263,12 @@ def llh_gamma(gamma, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, npara
             D[lhtc:(lhtc+nparams[k]),lhtc:(lhtc+nparams[k])] = Dk
             lhtc = lhtc + nparams[k]
 
-    return(-(llh2D(n, np.array(matrix(ZtZ_current)), Zte, ete, sigma2, DinvIplusZtZD,D) - (n/2)*np.log(2*np.pi)))
+
+    # Inverse of (I+Z'ZD) multiplied by D
+    IplusZtZD = np.eye(ZtZ.shape[1]) + ZtZ @ D
+    DinvIplusZtZD =  forceSym3D(D @ np.linalg.inv(IplusZtZD))
+
+    return(-(llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D) - (n/2)*np.log(2*np.pi)))
 
 #    return PLS2D(t, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds)
 
