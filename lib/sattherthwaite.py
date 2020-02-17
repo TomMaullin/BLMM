@@ -323,6 +323,8 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
 
 
 
+    # Indices for D/lambda submatrices
+    Dinds = np.insert(np.cumsum(nlevels*nparams),0,0)
 
     # Unique elements of lambda
     vecuLami = np.array([])
