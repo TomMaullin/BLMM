@@ -286,7 +286,7 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
         lhtc = 0
         for k in np.arange(len(nparams)):
 
-            lamk =  vech2mat2D(gamma[IndsEta[k]:IndsEta[k+1]])
+            lamk =  vech2mat2D(gamma[IndsGamma[k]:IndsGamma[k+1]])
             Dk = makeDnnd2D(lamk @ lamk.transpose())
            
             for l in np.arange(nlevels[k]):
