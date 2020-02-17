@@ -316,20 +316,11 @@ def main():
 			# Add it to running element list
 			vecuLami = np.concatenate((vecuLami, vecuLamij), axis=None)
 
-			if np.random.uniform(0,1,1)<0.01:
-				print('vec-check')
-				print(vecuLamij)
-				print(Lamij)
-
 		# Look at individual sigma2
 		sigma2i = sigma2[i]
 
-		if np.random.uniform(0,1,1)<0.01:
-			print('vecLami')
-			print(vecuLami)
-
 		# Compose theta vector
-		thetai = vecuLami*np.sqrt(sigma2i)
+		thetai = vecuLami/np.sqrt(sigma2i)
 
 		# Add theta vector to array
 		theta[i,:] = thetai.reshape(theta[i,:].shape)
