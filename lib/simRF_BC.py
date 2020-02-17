@@ -14,6 +14,7 @@ from lib.SFS import SFS
 from lib.pFS import pFS
 from lib.pSFS import pSFS
 from lib.sattherthwaite import *
+from lib.blmm_load import blmm_load
 import cvxopt
 
 # Random Field based simulation
@@ -345,9 +346,7 @@ def main():
 	Y0 = blmm_load('/well/win/software/packages/fsl/5.0.11/data/standard/MNI152_T1_2mm_brain_mask.nii.gz')
 
     # Save as nifti.
-    dfmap = nib.Nifti1Image(df,
-                           Y0.affine,
-                           header=Y0.header)
+    dfmap = nib.Nifti1Image(df, Y0.affine, header=Y0.header)
     nib.save(dfmap, 'df_blmm.nii')
 
 	print('df results')
@@ -381,9 +380,7 @@ def main():
 	df = SattherthwaiteDoF('T','lmerTest',D,sigma2,L,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n,nlevels,nparams,theta,beta).reshape(dimv[0],dimv[1],dimv[2])
 
     # Save as nifti.
-    dfmap = nib.Nifti1Image(df,
-                           Y0.affine,
-                           header=Y0.header)
+    dfmap = nib.Nifti1Image(df, Y0.affine, header=Y0.header)
     nib.save(dfmap, 'df_lmertest.nii')
 
 	print('df results')
