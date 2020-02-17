@@ -359,6 +359,24 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
     # Compose theta vector
     theta = vecuLami/np.sqrt(sigma2i)
 
+    #================================================================================
+    # Sparse Permutation, P
+    #================================================================================
+    tinds,rinds,cinds=get_mapping2D(nlevels, nparams)
+    tmp = np.random.randn(theta.shape[0])
+    Lam=mapping2D(tmp,tinds,rinds,cinds)
+
+    # Obtain Lambda'Z'ZLambda
+    LamtZtZLam = spmatrix.trans(Lam)*cvxopt.sparse(matrix(ZtZ[0,:,:]))*Lam
+
+    # Obtaining permutation for PLS
+    cholmod.options['supernodal']=2
+    P=amd.order(LamtZtZLam)
+
+    
+    # Identity
+    I = spmatrix(1.0, range(Lam.size[0]), range(Lam.size[0]))
+
     # Get gamma
     gamma = theta2gamma(theta, ZtX[0,:,:], ZtY[i,:,:], XtX[0,:,:], ZtZ[0,:,:], XtY[i,:,:], YtX[i,:,:], YtZ[i,:,:], XtZ[0,:,:], YtY[i,:,:], n, P, I, tinds, rinds, cinds)
 
