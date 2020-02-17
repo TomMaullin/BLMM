@@ -142,7 +142,7 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
         # print(gamma2theta(gamma))
 
         # Estimate hessian
-        H = nd.Hessian(llh_gamma)(gamma, np.array(ZtX_current), np.array(ZtY_current), np.array(XtX_current), np.array(matrix(ZtZ_current)), np.array(XtY_current), np.array(YtX_current), np.array(YtZ_current), np.array(XtZ_current), np.array(YtY_current), nlevels, nparams)#, n, P, I, tinds, rinds, cinds)
+        H = nd.Hessian(llh_gamma)(gamma, np.array(ZtX_current), np.array(ZtY_current), np.array(XtX_current), np.array(matrix(ZtZ_current)), np.array(XtY_current), np.array(YtX_current), np.array(YtZ_current), np.array(XtZ_current), np.array(YtY_current), nlevels, nparams, n)#, n, P, I, tinds, rinds, cinds)
         #H2 = nd.Hessian(llhgamma2,method='complex')(gamma)
 
         # print('H shape')
@@ -237,7 +237,7 @@ def SW_lmerTest(theta3D,L,nlevels,nparams,ZtX,ZtY,XtX,ZtZ,XtY,YtX,YtZ,XtZ,YtY,n)
     return(df)
 
 # How to get the log likelihood from gammma
-def llh_gamma(gamma, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams):#n, P, I, tinds, rinds, cinds): 
+def llh_gamma(gamma, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, nlevels, nparams, n):#n, P, I, tinds, rinds, cinds): 
 
     theta = gamma2theta(gamma)
 
