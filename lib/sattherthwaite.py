@@ -256,9 +256,6 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
 
         D = np.zeros((np.sum(nlevels*nparams),np.sum(nlevels*nparams)))
 
-        IndsDk = np.int32(np.cumsum(nparams))
-        IndsDk = np.insert(IndsDk,0,0)
-
         # Left hand top corner
         lhtc = 0
         for k in np.arange(len(nparams)):
@@ -277,7 +274,27 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
 
         sigma2 = gamma[0]**2
 
-        S2 = 0#TODO
+        Ddict = dict()
+
+        # Indices for submatrics corresponding to Dks
+        IndsGamma = np.int32(np.cumsum(nparams*(nparams+1)/2) + 1)
+        IndsGamma = np.insert(IndsEta,0,1)
+
+        D = np.zeros((np.sum(nlevels*nparams),np.sum(nlevels*nparams)))
+
+        # Left hand top corner
+        lhtc = 0
+        for k in np.arange(len(nparams)):
+
+            lamk =  vech2mat2D(gamma[IndsEta[k]:IndsEta[k+1]])
+            Dk = makeDnnd2D(lamk @ lamk.transpose())
+           
+            for l in np.arange(nlevels[k]):
+
+                D[lhtc:(lhtc+nparams[k]),lhtc:(lhtc+nparams[k])] = Dk
+                lhtc = lhtc + nparams[k]
+
+        S2 = S2_eta2D(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY)
 
         return(S2)
 
@@ -304,9 +321,59 @@ def SW_BLMM(D, sigma2, L, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevel
     print(eta)
     dS2i = nd.Jacobian(S2_etavec)(eta, L, ZtX[0,:,:], ZtY[i,:,:], XtX[0,:,:], ZtZ[0,:,:], XtY[i,:,:], YtX[i,:,:], YtZ[i,:,:], XtZ[0,:,:], YtY[i,:,:], nparams, nlevels)
 
+
+
+
+    # Unique elements of lambda
+    vecuLami = np.array([])
+
+    for j in np.arange(len(nparams)):
+
+        Dij = Di[Dinds[j]:(Dinds[j]+nparams[j]),Dinds[j]:(Dinds[j]+nparams[j])]
+
+        try:
+            Lamj = np.linalg.cholesky(Dij)
+        except:
+            L, Dvals, perm = scipy.linalg.ldl(Dij)
+            Lamij = np.real(np.matmul(L[perm,:], np.sqrt(Dvals+0J)))
+            # print('L')
+            # print(L[perm,:])
+            # print('Dvals')
+            # print(Dvals)
+            # print('Lam')
+            # print(Lamij)
+            # print('difference')
+            # print(Lamij @ Lamij.transpose() - Dij)
+
+        # Get individual block of lambda
+        #Lamij = Lami[Dinds[j]:(Dinds[j]+nparams[j]),Dinds[j]:(Dinds[j]+nparams[j])]
+
+        # Convert it to vec(h) format
+        vecuLamij = mat2vech2D(Lamij)
+
+        # Add it to running element list
+        vecuLami = np.concatenate((vecuLami, vecuLamij), axis=None)
+
+    # Compose theta vector
+    theta = vecuLami/np.sqrt(sigma2i)
+
+    # Get gamma
+    gamma = theta2gamma(theta, ZtX[0,:,:], ZtY[i,:,:], XtX[0,:,:], ZtZ[0,:,:], XtY[i,:,:], YtX[i,:,:], YtZ[i,:,:], XtZ[0,:,:], YtY[i,:,:], n, P, I, tinds, rinds, cinds)
+
+
+    dS2i_gamma = nd.Jacobian(S2_gammavec)(gamma, L, ZtX[0,:,:], ZtY[i,:,:], XtX[0,:,:], ZtZ[0,:,:], XtY[i,:,:], YtX[i,:,:], YtZ[i,:,:], XtZ[0,:,:], YtY[i,:,:], nparams, nlevels)
+
+
+
+
+
+
+
+
     print('worked')
-    print(dS2i)
     print(dS2[i,:,:])
+    print(dS2i)
+    print(dS2i_gamma)
 
     #===================================================================================================================
 
