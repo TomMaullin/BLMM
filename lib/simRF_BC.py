@@ -76,6 +76,8 @@ def main():
     # Rest of the columns we will make random noise 
     X[:,1:] = np.random.randn(n*(p-1)).reshape((n,(p-1)))
 
+    np.save('X', X)
+
     #================================================================================
     # Random Effects Design matrix
     #================================================================================
@@ -177,13 +179,15 @@ def main():
     # it could probably be made quicker but this is only for one simulation at current)
     Ztmp = Z.toarray().reshape(1, Z.shape[0], Z.shape[1])
 
+    np.save('Z', Z.toarray().reshape(Z.shape[0], Z.shape[1]))
+
     # Reshape b
     b = b.reshape(b.shape[0]*b.shape[1]*b.shape[2],b.shape[3],1)
 
     # Generate Y
     Y = np.matmul(X,beta)+np.matmul(Ztmp,b) + np.random.randn(n,1)
 
-
+    np.save('Y', Y.reshape(Y.shape[0],Y.shape[1]))
 
     #================================================================================
     # Transpose products
