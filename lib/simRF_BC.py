@@ -113,6 +113,12 @@ def main():
             # The factor is randomly arranged across subjects
             factorVec = np.random.randint(0,nlevels[i],size=n) 
 
+        tmp = pd.DataFrame(factorVec)
+        tmp.to_csv('Z'+str(i)+'_factor.csv',index=False)
+
+        tmp = pd.DataFrame(Zdata_factor)
+        tmp.to_csv('Z'+str(i)+'_data.csv',index=False)
+
         # Build a matrix showing where the elements of Z should be
         indicatorMatrix_factor = np.zeros((n,nlevels[i]))
         indicatorMatrix_factor[np.arange(n),factorVec] = 1
