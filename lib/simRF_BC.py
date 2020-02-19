@@ -191,6 +191,11 @@ def main():
     # Generate Y
     Y = np.matmul(X,beta)+np.matmul(Ztmp,b) + np.random.randn(n,1)
 
+    print('Y.shape')
+    print(Y.shape)
+
+    print(1/0)
+
     tmp = pd.DataFrame(Y.reshape(Y.shape[0],Y.shape[1]))
     tmp.to_csv('Y.csv',index=False)
 
