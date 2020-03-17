@@ -180,28 +180,6 @@ bash ./verify_test_cases.sh $GTDIR
 
 (Where `$GTDIR` is a directory containing ground truth data from a previous run, i.e. inside `$GTDIR` are the folders `test_cfg01.yml`, `test_cfg02.yml`, ... ect).
 
-### In parallel, against FSL
-
-To generate test cases:
-
-```
-bash ./generate_test_cases_fsl.sh $outdir $datadir
-```
-
-(Where `$datadir` is a data directory containg all data needed for designs `fsltest_cfg01.yml`, `fsltest_cfg02.yml` and `fsltest_cfg03.yml` and `$outdir` is the desired output directory)
-
-To check the logs:
-
-```
-bash ./check_logs.sh
-```
-
-To verify the test cases against ground truth:
-
-```
-bash ./verify_test_cases_against_fsl.sh
-```
-
 ### In serial
 
 To test in serial, first run the parallel testing suite, and then afterwards simply run the following 3 test cases from the main `BLM-py` folder:
