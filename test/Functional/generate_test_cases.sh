@@ -1,6 +1,6 @@
-# Work out BLM dir
-BLMdir=$(realpath ../)
-cd $BLMdir
+# Work out BLMM dir
+BLMMdir=$(realpath ../)
+cd $BLMMdir
 
 # Read the test and data directories
 testdir=$1
@@ -36,8 +36,8 @@ do
   echo "Now running testcase: $cfgname"
   cfgfile=$(realpath $cfg)
 
-  # Run blm for test configuration and save the ids
-  bash ./blm_cluster.sh $cfgfile IDs > ./test/cfgids/testIDs$(printf "%.2d" $i)tmp
+  # Run blmm for test configuration and save the ids
+  bash ./blmm_cluster.sh $cfgfile IDs > ./test/cfgids/testIDs$(printf "%.2d" $i)tmp
 
   # Remove any commas from testIDs
   sed 's/,/ /g' ./test/cfgids/testIDs$(printf "%.2d" $i)tmp > ./test/cfgids/testIDs$(printf "%.2d" $i)
