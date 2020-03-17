@@ -16,6 +16,7 @@ from lib.pSFS import pSFS
 from lib.sattherthwaite import *
 from lib.blmm_load import blmm_load
 import cvxopt
+import pandas as pd
 
 # Random Field based simulation
 def main():
@@ -59,7 +60,7 @@ def main():
     #print(n)
 
     # Voxel dimensions
-    dimv = [25,25,25]
+    dimv = [10,10,10]
     nv = np.prod(dimv)
     #print("Number of voxels:")
     #print(nv)
@@ -75,6 +76,9 @@ def main():
 
     # Rest of the columns we will make random noise 
     X[:,1:] = np.random.randn(n*(p-1)).reshape((n,(p-1)))
+
+    tmp = pd.DataFrame(X)
+    tmp.to_csv('X.csv',index=False)
 
     #================================================================================
     # Random Effects Design matrix
@@ -108,6 +112,12 @@ def main():
 
             # The factor is randomly arranged across subjects
             factorVec = np.random.randint(0,nlevels[i],size=n) 
+
+        tmp = pd.DataFrame(factorVec)
+        tmp.to_csv('Z'+str(i)+'_factor.csv',index=False)
+
+        tmp = pd.DataFrame(Zdata_factor)
+        tmp.to_csv('Z'+str(i)+'_data.csv',index=False)
 
         # Build a matrix showing where the elements of Z should be
         indicatorMatrix_factor = np.zeros((n,nlevels[i]))
@@ -177,13 +187,18 @@ def main():
     # it could probably be made quicker but this is only for one simulation at current)
     Ztmp = Z.toarray().reshape(1, Z.shape[0], Z.shape[1])
 
+    tmp = pd.DataFrame(Z.toarray().reshape(Z.shape[0], Z.shape[1]))
+    tmp.to_csv('Z.csv',index=False)
+
+
     # Reshape b
     b = b.reshape(b.shape[0]*b.shape[1]*b.shape[2],b.shape[3],1)
 
     # Generate Y
     Y = np.matmul(X,beta)+np.matmul(Ztmp,b) + np.random.randn(n,1)
 
-
+    tmp = pd.DataFrame(Y.reshape(Y.shape[0],Y.shape[1]))
+    tmp.to_csv('Y.csv',index=False)
 
     #================================================================================
     # Transpose products
