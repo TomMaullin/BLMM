@@ -170,6 +170,330 @@ def invDupMat2D(n):
   return(D)
 
 
+
+# ============================================================================
+# 
+# This function returns the commutation matrix of dimensions a times b.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes as input;
+#
+# ----------------------------------------------------------------------------
+#
+#  - a: A postive integer.
+#  - b: A postive integer.
+#
+# ----------------------------------------------------------------------------
+#
+# And returns:
+#
+# ----------------------------------------------------------------------------
+#
+#  - K: The commutation matrix (in sparse format) which maps vec(A) to vec(A')
+#       for an arbitrary matrix A of dimensions (a,b), i.e. K is the unique
+#       matrix which satisfies, for all A;
+#
+#                 Kvec(A) = vec(A')
+# ============================================================================
+def comMat2D(a, b):
+
+  # Get row indices
+  row  = np.arange(a*b)
+
+  # Get column indices
+  col  = row.reshape((a, b), order='F').ravel()
+
+  # Ones to put in the matrix
+  data = np.ones(a*b, dtype=np.int8)
+
+  # Sparse it
+  K = scipy.sparse.csr_matrix((data, (row, col)), shape=(a*b, a*b))
+  
+  # Return K
+  return(K)
+
+
+# ============================================================================
+# 
+# The below function calculates the permutation vector corresponding to 
+# multiplying a matrix, A, by the matrix I_{k1} kron K_{n1,k2} kron I_{n2},
+# where I_{j} is the (jxj) identity matrix and K_{i,j} is the (i,j) 
+# commutation matrix (see comMat2D).
+#
+# ----------------------------------------------------------------------------
+#
+# The below function takes as inputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - k1: A positive integer.
+#  - k2: A positive integer.
+#  - n1: A positive integer.
+#  - n2: A positive integer.
+#
+# ----------------------------------------------------------------------------
+#
+# And returns the permutation vector p such that for any matrix A of 
+# appropriate dimensions.
+#
+# (I_{k1} kron K_{n1,k2} kron I_{n2}) A = A_p
+#
+# Where A_p is the matrix A with p applied to it's rows and K_{n1,k2} is the 
+# (n1,k2), commutation matrix.
+#
+# ============================================================================
+def permOfIkKkI2D(k1,k2,n1,n2):
+
+  # First we need the permutation represented by matrix K in vector format
+  permP = np.arange(n1*k2).reshape((n1, k2), order='F').ravel()
+
+  # Now we work out the permutation obtained by the first kronecker product (i.e. I kron K)
+  permKron1 = np.repeat(np.arange(k1),n1*k2)*n1*k2+np.tile(permP,k1)
+
+  # Now we work out the final permutation by appplying the second kronecker product (i.e. I kron K kron I)
+  p = np.repeat(permKron1,n2)*n2+np.tile(np.arange(n2),n1*k1*k2)
+
+  # Return the permutation
+  return(p)
+
+
+# ============================================================================
+# 
+# This function converts a matrix partitioned into blocks into a matrix 
+# consisting of each block stacked on top of one another. I.e. it maps matrix
+# A to matrix A_s like so:
+#
+#                                                      |   A_{1,1}   |
+#                                                      |   A_{1,2}   |
+#     | A_{1,1}    A_{1,2}  ...  A_{1,l_2}  |          |    ...      |
+#     | A_{2,1}    A_{2,2}  ...  A_{2,l_2}  |          |  A_{1,l_2}  |
+# A = |  ...         ...    ...      ...    | -> A_s = |   A_{2,1}   |
+#     | A_{l_1,1} A_{l_1,2} ... A_{l_1,l_2} |          |    ...      |
+#                                                      |    ...      |
+#                                                      | A_{l_1,l_2} |
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes as inputs:
+# 
+# ----------------------------------------------------------------------------
+#
+#  - A: A 2D matrix of dimension (m1 by m2).
+#  - pA: The size of the block partitions of A, e.g. if A_{i,j} is of dimension
+#        (n1 by n2) then pA=[n1, n2].
+# 
+# ----------------------------------------------------------------------------
+#
+# And returns as output:
+#
+# ----------------------------------------------------------------------------
+#
+#  - As: The matrix A reshaped to have all blocks A_{i,j} on top of one 
+#        another. I.e. the above mapping has been performed.
+#
+# ============================================================================
+def block2stacked2D(A, pA):
+
+  # Work out shape of A
+  m1 = A.shape[0]
+  m2 = A.shape[1]
+
+  # Work out shape of As
+  n1 = pA[0]
+  n2 = pA[1]
+  
+  # Change A to stacked form
+  As = A.reshape((m1//n1,n1,m2//n2,n2)).transpose(0,2,1,3).reshape(m1*m2//n2,n2)
+
+  return(As)
+
+
+# ============================================================================
+# 
+# This function converts a matrix partitioned into blocks into a matrix 
+# consisting of each block converted to a vector and stacked on top of one
+# another. I.e. it maps matrix A to matrix vecb(A) (``vec-block" of A) like so:
+#
+#                                                          |   vec'(A_{1,1})   |
+#                                                          |   vec'(A_{1,2})   |
+#     | A_{1,1}    A_{1,2}  ...  A_{1,l_2}  |              |        ...        |
+#     | A_{2,1}    A_{2,2}  ...  A_{2,l_2}  |              |  vec'(A_{1,l_2})  |
+# A = |  ...         ...    ...      ...    | -> vecb(A) = |   vec'(A_{2,1})   |
+#     | A_{l_1,1} A_{l_1,2} ... A_{l_1,l_2} |              |        ...        |
+#                                                          |        ...        |
+#                                                          | vec'(A_{l_1,l_2}) |
+#
+# ----------------------------------------------------------------------------
+#
+# The below function takes the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - mat: An abritary matrix whose dimensions are multiples of p[0] and p[1]
+#         respectively.
+#  - p: The size of the blocks we are partitioning mat into.
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following outputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - vecb: A matrix composed of each block of mat, converted to row vectors, 
+#          stacked on top of one another. I.e. for an arbitrary matrix A of 
+#          appropriate dimensions, vecb(A) is the result of the above mapping,
+#          where A_{i,j} has dimensions (p[0] by p[1]) for all i and j.
+#
+# ============================================================================
+def mat2vecb2D(mat,p):
+
+  # Change to stacked block format, if necessary
+  if p[1]!=mat.shape[1]:
+    mat = block2stacked2D(mat,p)
+
+  # Get height of block.
+  n = p[0]
+  
+  # Work out shape of matrix.
+  m = mat.shape[0]
+  k = mat.shape[1]
+
+  # Convert to stacked vector format
+  vecb = mat.reshape(m//n, n, k).transpose((1, 0, 2)).reshape(n, m*k//n).transpose().reshape(m//n,n*k)
+
+  #Return vecb
+  return(vecb)
+
+
+# ============================================================================
+#
+# The below function computes, given two matrices A and B the below sum:
+#
+#                 S = Sum_i Sum_j (A_{i,j}B_{i,j}')
+# 
+# where the matrices A and B are block partitioned like so:
+#
+#     |   A_{1,1}  ...  A_{1,l2}  |      |   B_{1,1}  ...  B_{1,l2}  | 
+# A = |    ...     ...     ...    |  B = |    ...     ...     ...    | 
+#     |  A_{l1,1}  ...  A_{l1,l2} |      |  B_{l1,1}  ...  B_{l1,l2} | 
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - A: A 2D matrix of dimension (m1 by m2).
+#  - B: A 2D matrix of dimension (m1' by m2).
+#  - pA: The size of the block partitions of A, e.g. if A_{i,j} is of 
+#        dimension (n1 by n2) then pA=[n1, n2].
+#  - pB: The size of the block partitions of B, e.g. if B_{i,j} is of 
+#        dimension (n1' by n2) the pB=[n1', n2].
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+#  - S: The sum of the partitions of $A$ multiplied by the transpose of the 
+#       partitions of B.
+# 
+# ----------------------------------------------------------------------------
+#
+# Developer note: Note that the above implies that l1 must equal m1/n1=m1'/n1'
+#                 and l2=m2/n2.
+#
+# ============================================================================
+def sumAijBijt2D(A, B, pA, pB):
+  
+  # Work out second (the common) dimension of the reshaped A and B
+  nA = pA[0]
+  nB = pB[0]
+
+  # Work out the first (the common) dimension of reshaped A and B
+  mA = A.shape[0]*A.shape[1]//nA
+  mB = B.shape[0]*B.shape[1]//nB
+
+  # Check mA equals mB
+  if mA != mB:
+    raise Exception('Matrix dimensions incompatible.')
+
+  # Convert both matrices to stacked block format.
+  A = block2stacked2D(A,pA)
+  B = block2stacked2D(B,pB)
+
+  # Work out the sum
+  S = A.transpose().reshape((mA,nA)).transpose() @ B.transpose().reshape((mB,nB))
+
+  # Return result
+  return(S)
+
+
+# ============================================================================
+#
+# The below function computes, given two matrices A and B the below sum:
+#
+#                 S = Sum_i Sum_j (A_{i,j} kron B_{i,j})
+# 
+# where the matrices A and B are block partitioned like so:
+#
+#     |   A_{1,1}  ...  A_{1,l2}  |      |   B_{1,1}  ...  B_{1,l2}  | 
+# A = |    ...     ...     ...    |  B = |    ...     ...     ...    | 
+#     |  A_{l1,1}  ...  A_{l1,l2} |      |  B_{l1,1}  ...  B_{l1,l2} | 
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - `A`: A 2D matrix of dimension (m1 by m2).
+#  - `B`: A 2D matrix of dimension (m1 by m2).
+#  - `p`: The size of the block partitions of A and B, e.g. if A_{i,j} and 
+#         B_{i,j} are of dimension (n1 by n2) then pA=[n1, n2].
+#  - `perm` (optional): The permutation vector representing the matrix kronecker
+#                       product I_{n2} kron K_{n2,n1} kron I_{n1}.
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `S`: The sum of the partitions of A multiplied by the transpose of the 
+#        partitions of B; i.e. the sum given above.
+# - `perm`: The permutation (same as input) used for calculation (useful for 
+#           later computation).
+#
+# ============================================================================
+def sumAijKronBij2D(A, B, p, perm=None):
+
+  # Check dim A and B and pA and pB all same
+  n1 = p[0]
+  n2 = p[1]
+
+  # This matrix only needs be calculated once
+  if perm is None:
+    perm = permOfIkKkI2D(n2,n1,n2,n1) 
+
+  # Convert to vecb format
+  atilde = mat2vecb2D(A,p)
+  btilde = mat2vecb2D(B,p)
+
+  # Multiply and convert to vector
+  vecba = mat2vec2D(btilde.transpose() @ atilde)
+
+  # Permute
+  S_noreshape = vecba[perm,:] 
+
+  # Reshape to correct shape
+  S = S_noreshape.reshape(n2**2,n1**2).transpose()
+
+  return(S,perm)
+
+
 # ============================================================================
 #
 # This function takes in a matrix X and returns (X+X')/2 (forces it to be
@@ -215,6 +539,50 @@ def ssr2D(YtX, YtY, XtX, beta):
   # Return the sum of squared residuals
   return(YtY - 2*YtX @ beta + beta.transpose() @ XtX @ beta)
 
+
+
+# ============================================================================
+#
+# This function gives the indices of the columns of the Z matrix which 
+# correspond to factor k.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `k`: The grouping factor we need the columns of.*
+# - `nlevels`: A vector containing the number of levels for each factor,
+#              e.g. `nlevels=[3,4]` would mean the first factor has 3
+#              levels and the second factor has 4 levels.
+# - `nparams`: A vector containing the number of parameters for each
+#              factor, e.g. `nlevels=[2,1]` would mean the first factor
+#              has 2 parameters and the second factor has 1 parameter.
+#
+# ---------------------------------------------------------------------------- 
+#
+# It returns as outputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `Ik`: The indices of the columns of Z corresponding to factor k.
+#
+# *(k is zero indexed)
+#
+# ============================================================================
+def fac_indices2D(k, nlevels, nparams):
+  
+  # Get indices for all factors
+  allInds = np.insert(np.cumsum(nlevels*nparams),0,0)
+
+  # Work out the first index
+  start = allInds[k]
+
+  # Work out the last index
+  end = allInds[k+1]
+
+  return(np.arange(start,end))
 
 # ============================================================================
 #
