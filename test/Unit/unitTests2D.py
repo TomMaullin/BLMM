@@ -793,6 +793,227 @@ def test_initBeta2D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
+def test_initSigma22D():
+
+    # Generate some test data
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData()
+    n = X.shape[0]
+
+    # Get the product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats(Y,Z,X)
+
+    # Get the initial beta value
+    betahat = initBeta2D(XtX,XtY)
+
+    # Calculate OLS estimate using test data.
+    expected = (Y - X @ betahat).transpose() @ (Y - X @ betahat)/n
+
+    # Get ete
+    ete = ssr2D(YtX, YtY, XtX, betahat)
+
+    # Get the initial beta value
+    sigma2hat = initSigma22D(ete,n)
+
+    # Check if the function gives as expected
+    testVal = np.allclose(sigma2hat,expected)
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: initSigma22D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+
+def test_makeDnnd2D():
+
+    # Examples usecase
+    test = np.eye(5)
+    test[3,3]=-1
+
+    # Expected outcome
+    expected = np.eye(5)
+    expected[3,3]=0
+
+    # Check if the function gives as expected
+    testVal = np.allclose(makeDnnd2D(test),expected)
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: makeDnnd2D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+
+def test_llh2D():
+
+    # Generate some test data
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData()
+    n = X.shape[0]
+    q = np.sum(nlevels*nparams)
+
+    # Get the product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats(Y,Z,X)
+
+    # Obtain Z'e and e'e
+    Zte = ZtY - ZtX @ beta
+    ete = ssr2D(YtX, YtY, XtX, beta)
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+
+    # Obtain log likelihood for testing
+    loglh_test = llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D)
+
+    # (Niave) Expected log likelihood
+    V = np.eye(n)+(Z @ D @ Z.transpose())
+    e = Y - X @ beta
+    expected = -0.5*(n*np.log(sigma2)+np.log(np.linalg.det(V))+(1/sigma2)*e.transpose() @ np.linalg.inv(V) @ e)
+
+    # Check if the function gives as expected
+    testVal = np.allclose(loglh_test,expected)
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: logllh2D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+
+def test_get_dldB2D():
+
+    # Generate some test data
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData()
+    n = X.shape[0]
+    q = np.sum(nlevels*nparams)
+
+    # Get the product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats(Y,Z,X)
+
+    # Obtain Z'e and X'e
+    Zte = ZtY - ZtX @ beta
+    Xte = XtY - XtX @ beta
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+
+    # Get derivative with respect to beta for testing
+    test = get_dldB2D(sigma2, Xte, XtZ, DinvIplusZtZD, Zte)
+
+    # Get expected result via (niave) direct computation
+    V = np.eye(n) + Z @ D @ Z.transpose()
+    expected = (sigma2)**(-1)*(X.transpose() @ np.linalg.inv(V) @ (Y - X @ beta))
+
+    # Check if the function gives as expected
+    testVal = np.allclose(test,expected)
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: get_dldB2D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+
+
+def test_get_dldsigma22D():
+
+    # Generate some test data
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData()
+    n = X.shape[0]
+    q = np.sum(nlevels*nparams)
+
+    # Get the product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats(Y,Z,X)
+
+    # Obtain Z'e and X'e
+    Zte = ZtY - ZtX @ beta
+    ete = ssr2D(YtX, YtY, XtX, beta)
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+
+    # Get derivative with respect to sigma2 for testing
+    test = get_dldsigma22D(n, ete, Zte, sigma2, DinvIplusZtZD)
+
+    # Get expected result via (niave) direct computation
+    V = np.eye(n) + Z @ D @ Z.transpose()
+    e = Y - (X @ beta)
+    expected = -n/(2*sigma2) + 1/(2*sigma2**2)*e.transpose() @ np.linalg.inv(V) @ e
+    
+    # Check if the function gives as expected
+    testVal = np.allclose(test,expected)
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: get_dldsigma22D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+
+
+
+def test_get_dldDk2D():
+
+
+    # (Niave) calculation of dl/dDk
+    sqrtinvIplusZDZt = forceSym2D(scipy.linalg.sqrtm(np.eye(n) - Z @ DinvIplusZtZD @ Z.transpose()))
+    for j in np.arange(nlevels[k]):
+
+      # Indices for factor and level
+      Ikj = faclev_indices(k, j, nlevels, nparams)
+
+      # Work out Z_(k,j)'
+      Z_kjt = Z[:,Ikj].transpose()
+
+      # Work out T_(k,j)=Z_(k,j) @ sqrt((I+ZDZ')^(-1))
+      Tkj = Z_kjt @ sqrtinvIplusZDZt
+
+      # Work out u = sigma^(-2)*sqrt((I+ZDZ')^(-1))*(Y-X\beta)
+      u = 1/np.sqrt(sigma2)*sqrtinvIplusZDZt @ (Y - X @ beta)
+
+      # Work out T_(k,j)u
+      Tkju = Tkj @ u
+
+      # Work out T_(k,j)uu'T_(k,j)'
+      TkjuTkjut = Tkju @ Tkju.transpose()
+
+      # Work out T_(k,j)T_(k,j)'
+      TkjTkjt = Tkj @ Tkj.transpose()
+
+      # Work out the sum of T_(k,j)uu'T_(k,j)' and T_(k,j)T_(k,j)' 
+      if j == 0:
+        
+        sum1 = TkjuTkjut
+        sum2 = TkjTkjt
+        
+      else:
+        
+        sum1 = sum1 + TkjuTkjut
+        sum2 = sum2 + TkjTkjt
+        
+    # Work out expected derivative.
+    dldDk_expected = 0.5*(sum1-sum2)
+
+
 
 test_mat2vec2D()
 test_mat2vech2D()
@@ -811,5 +1032,10 @@ test_forceSym2D()
 test_fac_indices2D()
 test_faclev_indices2D()
 test_initBeta2D()
+test_initSigma22D()
+test_makeDnnd2D()
+test_llh2D()
+test_get_dldB2D()
+test_get_dldsigma22D()
 
 print('=============================================================')
