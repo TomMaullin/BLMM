@@ -30,6 +30,13 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
   FishIndsDk = np.insert(FishIndsDk,0,p+1)
   #print('inds',FishIndsDk)
 
+  # Duplication matrices
+  # ------------------------------------------------------------------------------
+  invDupMatdict = dict()
+  for i in np.arange(len(nparams)):
+
+    invDupMatdict[i] = invDupMat2D(nparams[i])
+    
   # Initial estimates
   # ------------------------------------------------------------------------------
 
@@ -69,13 +76,13 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
     sigma2 = initSigma22D(ete, n)
 
     Zte = ZtY - (ZtX @ beta)
-
+      
     # Inital D
     # Dictionary version
     Ddict = dict()
     for k in np.arange(len(nparams)):
 
-      Ddict[k] = makeDnnd2D(initDk2D(k, nlevels[k], ZtZ, Zte, sigma2, nparams, nlevels))
+      Ddict[k] = makeDnnd2D(initDk2D(k, nlevels[k], ZtZ, Zte, sigma2, nparams, nlevels, invDupMatdict))
       
     # Matrix version
     D = np.array([])
@@ -90,13 +97,6 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
         else:
 
           D = scipy.linalg.block_diag(D, Ddict[i])
-
-  # Duplication matrices
-  # ------------------------------------------------------------------------------
-  invDupMatdict = dict()
-  for i in np.arange(len(nparams)):
-
-    invDupMatdict[i] = invDupMat2D(nparams[i])
 
   Zte = ZtY - (ZtX @ beta)
 

@@ -722,6 +722,8 @@ def initSigma22D(ete, n):
 # - `Zte`: The Z matrix transposed and then multiplied by the OLS residuals
 #          (Z'e=Z'(Y-X\beta) in the above notation).
 # - `sigma2`: The OLS estimate of \sigma^2 (\sigma^2 in the above notation).
+# - `invDupMatdict`: A dictionary of inverse duplication matrices such that 
+#                   `invDupMatdict[k]` = DupMat_k^+.
 #
 # ----------------------------------------------------------------------------
 #
@@ -732,12 +734,12 @@ def initSigma22D(ete, n):
 # - `Dkest`: The inital estimate of D_k (Dhat_k in the above notation).
 #
 # ============================================================================
-def initDk2D(k, lk, ZtZ, Zte, sigma2, nparams, nlevels):
+def initDk2D(k, lk, ZtZ, Zte, sigma2, nparams, nlevels, invDupMatdict):
   
   # Initalize D to zeros
   invSig2ZteetZminusZtZ = np.zeros((nparams[k],nparams[k]))
   
-  # For each level j we need to add a term
+  # First we work out the derivative we require.
   for j in np.arange(nlevels[k]):
     
     Ikj = faclev_indices2D(k, j, nlevels, nparams)
@@ -750,22 +752,40 @@ def initDk2D(k, lk, ZtZ, Zte, sigma2, nparams, nlevels):
     
     if j==0:
       
-      # Add first Z_(k,j)'Z_(k,j) kron Z_(k,j)'Z_(k,j)
-      ZtZkronZtZ = np.kron(ZkjtZkj,ZkjtZkj.transpose())
-      
       # Add first \sigma^{-2}Z'ee'Z - Z_(k,j)'Z_(k,j)
       invSig2ZteetZminusZtZ = 1/sigma2*(Zkjte @ Zkjte.transpose()) - ZkjtZkj
       
     else:
       
-      # Add next Z_(k,j)'Z_(k,j) kron Z_(k,j)'Z_(k,j)
-      ZtZkronZtZ = ZtZkronZtZ + np.kron(ZkjtZkj,ZkjtZkj.transpose())
-      
       # Add next \sigma^{-2}Z'ee'Z - Z_(k,j)'Z_(k,j)
       invSig2ZteetZminusZtZ = invSig2ZteetZminusZtZ + 1/sigma2*(Zkjte @ Zkjte.transpose()) - ZkjtZkj
   
+  # Second we need to work out the double sum of Z_(k,j)'Z_(k,j)
+  for j in np.arange(nlevels[k]):
+
+    for i in np.arange(nlevels[k]):
+      
+      Iki = faclev_indices2D(k, i, nlevels, nparams)
+      Ikj = faclev_indices2D(k, j, nlevels, nparams)
+
+      # Work out Z_(k, j)'Z_(k, j)
+      ZkitZkj = ZtZ[np.ix_(Iki,Ikj)]
+      
+      if j==0 and i==0:
+        
+        # Add first Z_(k,j)'Z_(k,j) kron Z_(k,j)'Z_(k,j)
+        ZtZkronZtZ = np.kron(ZkitZkj,ZkitZkj.transpose())
+        
+      else:
+        
+        # Add next Z_(k,j)'Z_(k,j) kron Z_(k,j)'Z_(k,j)
+        ZtZkronZtZ = ZtZkronZtZ + np.kron(ZkitZkj,ZkitZkj.transpose())
+
+  # Work out information matrix
+  infoMat = invDupMatdict[k] @ ZtZkronZtZ @ invDupMatdict[k].transpose()
+
   # Work out the final term.
-  Dkest = vec2mat2D(np.linalg.inv(ZtZkronZtZ) @ mat2vec2D(invSig2ZteetZminusZtZ)) 
+  Dkest = vech2mat2D(np.linalg.inv(infoMat) @ mat2vech2D(invSig2ZteetZminusZtZ)) 
   
   return(Dkest)
 

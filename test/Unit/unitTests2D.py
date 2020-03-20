@@ -24,7 +24,7 @@ from lib.tools2d import *
 # file.
 #
 # Author: Tom Maullin
-# Last edited: 17/03/2020
+# Last edited: 20/03/2020
 #
 # =============================================================================
 
@@ -184,6 +184,9 @@ def genTestData(n=None, p=None, nlevels=None, nparams=None):
             Z = Zfactor
         else:
             Z = scipy.sparse.hstack((Z, Zfactor))
+
+    # Convert Z to dense
+    Z = Z.toarray()
 
     # Make random beta
     beta = np.random.randint(-5,5,p).reshape(p,1)
@@ -714,6 +717,37 @@ def test_forceSym2D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
+def test_ssr2D():
+
+    # Generate some test data
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData()
+    n = X.shape[0]
+
+    # Get the product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats(Y,Z,X)
+
+    # Work out the sum of squared residuals we would expect
+    ssr_expected = (Y - X @ beta).transpose() @ (Y - X @ beta)
+
+    # Work out the ssr the test gives
+    ssr_test = ssr2D(YtX, YtY, XtX, beta)
+
+    # Check if the function gives as expected
+    testVal = np.allclose(ssr_test,ssr_expected)
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: ssr2D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+
+
+
 
 def test_fac_indices2D():
 
@@ -811,7 +845,7 @@ def test_initSigma22D():
     # Get ete
     ete = ssr2D(YtX, YtY, XtX, betahat)
 
-    # Get the initial beta value
+    # Get the initial sigma2 value
     sigma2hat = initSigma22D(ete,n)
 
     # Check if the function gives as expected
@@ -827,6 +861,94 @@ def test_initSigma22D():
     print('Unit test for: initSigma22D')
     print('-------------------------------------------------------------')
     print('Result: ', result)
+
+def test_initDk2D():
+
+    # Generate some test data
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData()
+    n = X.shape[0]
+
+    # Get the product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats(Y,Z,X)
+
+    # Get the initial beta value
+    betahat = initBeta2D(XtX,XtY)
+
+    # Get ete
+    ete = ssr2D(YtX, YtY, XtX, betahat)
+
+    # Get the initial sigma2 value
+    sigma2hat = initSigma22D(ete,n)
+
+    # Residuals
+    e = Y - X @ betahat
+
+    # Decide on a random factor
+    k = np.random.randint(0,nparams.shape[0])
+
+    # Work out derivative term (niave calculation):
+    deriv = np.zeros((nparams[k]*(nparams[k]+1)//2,1))
+    for j in np.arange(nlevels[k]):
+
+        # Get indices for factor k level j
+        Ikj = faclev_indices2D(k, j, nlevels, nparams)
+
+        # Get Z_(k,j)'ee'Z_(k,j)
+        ZkjteetZkj = Z[:,Ikj].transpose() @ e @ e.transpose() @ Z[:,Ikj]
+
+        # Get Z_(k,j)'Z_(k,j)
+        ZkjtZkj = Z[:,Ikj].transpose() @ Z[:,Ikj]
+
+        # Work out running sum for derivative
+        deriv = deriv + mat2vech2D(1/sigma2hat*ZkjteetZkj - ZkjtZkj)
+
+    # Work out Fisher information matrix (niave calculation)
+    fishInfo = np.zeros((nparams[k]*(nparams[k]+1)//2,nparams[k]*(nparams[k]+1)//2))
+    iDupMat = invDupMat2D(nparams[k])
+    for j in np.arange(nlevels[k]):
+
+        for i in np.arange(nlevels[k]):
+
+            # Get indices for factor k level j
+            Ikj = faclev_indices2D(k, j, nlevels, nparams)
+
+            # Get indices for factor k level i
+            Iki = faclev_indices2D(k, i, nlevels, nparams)
+
+            # Get Z_(k,i)'Z_(k,j)
+            ZkitZkj = Z[:,Iki].transpose() @ Z[:,Ikj]
+
+            fishInfo = fishInfo + iDupMat @ np.kron(ZkitZkj, ZkitZkj) @ iDupMat.transpose()
+
+    # This is the value we are testing against
+    vecInitDk_expected = vech2mat2D(np.linalg.inv(fishInfo) @ deriv)
+
+    # Work out the inverse duplication matrices we need.
+    invDupMatdict = dict()
+    for i in np.arange(len(nparams)):
+      
+      invDupMatdict[i] = invDupMat2D(nparams[i])
+
+    # Obtain Z'e and e'e
+    Zte = ZtY - ZtX @ betahat
+
+    # Now try to obtain the same using the function
+    vecInitDk_test = initDk2D(k, nlevels[k], ZtZ, Zte, sigma2hat, nparams, nlevels, invDupMatdict)
+
+    # Check if the function gives as expected
+    testVal = np.allclose(vecInitDk_test,vecInitDk_expected)
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: initDk2D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+
 
 def test_makeDnnd2D():
 
@@ -973,46 +1095,393 @@ def test_get_dldsigma22D():
 
 def test_get_dldDk2D():
 
+    # Generate some test data
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData()
+    n = X.shape[0]
+    q = np.sum(nlevels*nparams)
+
+    # Get the product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats(Y,Z,X)
+
+    # Obtain Z'e
+    Zte = ZtY - ZtX @ beta
+
+    # Decide on a random factor
+    k = np.random.randint(0,nparams.shape[0])
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+    
+    # Obtain dldDk
+    dldDk_test = get_dldDk2D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD)
 
     # (Niave) calculation of dl/dDk
     sqrtinvIplusZDZt = forceSym2D(scipy.linalg.sqrtm(np.eye(n) - Z @ DinvIplusZtZD @ Z.transpose()))
     for j in np.arange(nlevels[k]):
 
-      # Indices for factor and level
-      Ikj = faclev_indices(k, j, nlevels, nparams)
+        # Indices for factor and level
+        Ikj = faclev_indices2D(k, j, nlevels, nparams)
 
-      # Work out Z_(k,j)'
-      Z_kjt = Z[:,Ikj].transpose()
+        # Work out Z_(k,j)'
+        Z_kjt = Z[:,Ikj].transpose()
 
-      # Work out T_(k,j)=Z_(k,j) @ sqrt((I+ZDZ')^(-1))
-      Tkj = Z_kjt @ sqrtinvIplusZDZt
+        # Work out T_(k,j)=Z_(k,j) @ sqrt((I+ZDZ')^(-1))
+        Tkj = Z_kjt @ sqrtinvIplusZDZt
 
-      # Work out u = sigma^(-2)*sqrt((I+ZDZ')^(-1))*(Y-X\beta)
-      u = 1/np.sqrt(sigma2)*sqrtinvIplusZDZt @ (Y - X @ beta)
+        # Work out u = sigma^(-2)*sqrt((I+ZDZ')^(-1))*(Y-X\beta)
+        u = 1/np.sqrt(sigma2)*sqrtinvIplusZDZt @ (Y - X @ beta)
 
-      # Work out T_(k,j)u
-      Tkju = Tkj @ u
+        # Work out T_(k,j)u
+        Tkju = Tkj @ u
 
-      # Work out T_(k,j)uu'T_(k,j)'
-      TkjuTkjut = Tkju @ Tkju.transpose()
+        # Work out T_(k,j)uu'T_(k,j)'
+        TkjuTkjut = Tkju @ Tkju.transpose()
 
-      # Work out T_(k,j)T_(k,j)'
-      TkjTkjt = Tkj @ Tkj.transpose()
+        # Work out T_(k,j)T_(k,j)'
+        TkjTkjt = Tkj @ Tkj.transpose()
 
-      # Work out the sum of T_(k,j)uu'T_(k,j)' and T_(k,j)T_(k,j)' 
-      if j == 0:
-        
-        sum1 = TkjuTkjut
-        sum2 = TkjTkjt
-        
-      else:
-        
-        sum1 = sum1 + TkjuTkjut
-        sum2 = sum2 + TkjTkjt
+        # Work out the sum of T_(k,j)uu'T_(k,j)' and T_(k,j)T_(k,j)' 
+        if j == 0:
+
+            sum1 = TkjuTkjut
+            sum2 = TkjTkjt
+
+        else:
+
+            sum1 = sum1 + TkjuTkjut
+            sum2 = sum2 + TkjTkjt
         
     # Work out expected derivative.
     dldDk_expected = 0.5*(sum1-sum2)
 
+    # Check if the function gives as expected
+    testVal = np.allclose(dldDk_test,dldDk_expected)
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: get_dldDk2D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+
+
+
+def test_get_covdldbeta2D():
+
+    # Generate some test data
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData()
+    n = X.shape[0]
+    q = np.sum(nlevels*nparams)
+
+    # Get the product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats(Y,Z,X)
+
+    # Obtain Z'e
+    Zte = ZtY - ZtX @ beta
+
+    # Calculate covariance of dl/dbeta (niavely)
+    V = np.eye(n) + Z @ D @ Z.transpose()
+    covdldbeta_expected = sigma2**(-1) * (X.transpose() @ np.linalg.inv(V) @ X)
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+
+    # Get the covariance of dl/dbeta from the function.
+    covdldbeta_test = get_covdldbeta2D(XtZ, XtX, ZtZ, DinvIplusZtZD, sigma2)
+
+    # Check if the function gives as expected
+    testVal = np.allclose(covdldbeta_test,covdldbeta_expected)
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: get_covdldbeta2D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+
+
+def test_get_covdldDkdsigma22D():
+
+    # Generate some test data
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData()
+    n = X.shape[0]
+    q = np.sum(nlevels*nparams)
+
+    # Get the product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats(Y,Z,X)
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+
+    # Work out the inverse duplication matrices we need.
+    invDupMatdict = dict()
+    for i in np.arange(len(nparams)):
+      
+      invDupMatdict[i] = invDupMat2D(nparams[i])
+
+    # Decide on a random factor
+    k = np.random.randint(0,nparams.shape[0])
+
+    # (Niave) computation of the covariance 
+    sqrtinvIplusZDZt = forceSym2D(scipy.linalg.sqrtm(np.eye(n) - Z @ DinvIplusZtZD @ Z.transpose()))
+    for j in np.arange(nlevels[k]):
+
+        # Indices for factor and level
+        Ikj = faclev_indices2D(k, j, nlevels, nparams)
+
+        # Work out Z_(k,j)'
+        Z_kjt = Z[:,Ikj].transpose()
+
+        # Work out T_(k,j)=Z_(k,j) @ sqrt((I+ZDZ')^(-1))
+        Tkj = Z_kjt @ sqrtinvIplusZDZt
+
+        # Work out T_(k,j)T_(k,j)'
+        TkjTkjt = Tkj @ Tkj.transpose()
+
+        # Work out the sum of T_(k,j)T_(k,j)' 
+        if j == 0:
+
+            sumTTt = TkjTkjt
+
+        else:
+
+            sumTTt = sumTTt + TkjTkjt
+
+    # Final niave computation
+    covdldDkdsigma2_expected = 1/(2*sigma2)*(invDupMatdict[k] @ mat2vec2D(sumTTt))
+
+    # Computation using the function
+    covdldDkdsigma2_test = get_covdldDkdsigma22D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False)
+  
+    # Check if the function gives as expected
+    testVal = np.allclose(covdldDkdsigma2_test,covdldDkdsigma2_expected)
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: get_covdldDkdsigma22D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+
+
+def test_get_covdldDk1Dk22D():
+    
+    # Generate some test data
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData()
+    n = X.shape[0]
+    q = np.sum(nlevels*nparams)
+
+    # Get the product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats(Y,Z,X)
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+
+    # Obtain (I+ZDZ')^(-1/2), for niave computation
+    IplusZDZt = np.eye(n) + Z @ D @ Z.transpose()
+    invIplusZDZt = np.linalg.inv(IplusZDZt)
+    invhalfIplusZDZt = scipy.linalg.sqrtm(np.linalg.inv(IplusZDZt))
+
+    # Decide on a random factor
+    k1 = np.random.randint(0,nparams.shape[0])
+
+    # Decide on another random factor
+    k2 = np.random.randint(0,nparams.shape[0])
+
+    # Work out the inverse duplication matrices we need.
+    invDupMatdict = dict()
+    for i in np.arange(len(nparams)):
+      
+      invDupMatdict[i] = invDupMat2D(nparams[i])
+
+    # Test the function
+    covdldDk1Dk2_test = get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict)
+
+    # Perform the same calculation niavely
+    for j in np.arange(nlevels[k1]):
+
+        # Obtain indices for factor k level j
+        Ikj = faclev_indices2D(k1, j, nlevels, nparams)
+
+        # Work out T_(k,j) = Z_(k,j)(I+ZDZ')^(-1/2)
+        Tkj = Z[:,Ikj].transpose() @ invhalfIplusZDZt 
+
+        # Sum T_(k,j) kron T_(k,j)
+        if j == 0:
+
+            sumTkT = np.kron(Tkj,Tkj)
+
+        else:
+
+            sumTkT = np.kron(Tkj,Tkj) + sumTkT
+
+    # Do the same again but for the second factor
+    for j in np.arange(nlevels[k2]):
+
+        # Obtain indices for factor k level j
+        Ikj = faclev_indices2D(k2, j, nlevels, nparams)
+
+        # Work out T_(k,j) = Z_(k,j)(I+ZDZ')^(-1/2)
+        Tkj = Z[:,Ikj].transpose() @ invhalfIplusZDZt 
+
+        # Transpose T_(k,j)
+        Tkjt = Tkj.transpose()
+
+        # Sum T_(k,j)' kron T_(k,j)'
+        if j == 0:
+
+            sumTtkTt = np.kron(Tkjt,Tkjt)
+
+        else:
+
+            sumTtkTt = np.kron(Tkjt,Tkjt) + sumTtkTt
+
+    # Expected result from the function
+    covdldDk1Dk2_expected = 1/2 * invDupMatdict[k1] @ sumTkT @ sumTtkTt @ invDupMatdict[k2].transpose()
+
+    # Check if the function gives as expected
+    testVal = np.allclose(covdldDk1Dk2_test,covdldDk1Dk2_expected)
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: get_covdldDk1Dk22D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+
+
+def test_mapping2D():
+
+    # Theta values to put in the array
+    theta = np.array([1,2,3,4])
+
+    # Theta indices
+    theta_inds = np.array([0,1,2,0,1,2,0,1,2,3,3,3])
+
+    # Row and column indices
+    r_inds = np.array([0,1,1,2,3,3,4,5,5,6,7,8])
+    c_inds = np.array([0,0,1,2,2,3,4,4,5,6,7,8])
+
+    # Matrix we expect
+    expected = np.array([[1,0,0,0,0,0,0,0,0],
+                         [2,3,0,0,0,0,0,0,0],
+                         [0,0,1,0,0,0,0,0,0],
+                         [0,0,2,3,0,0,0,0,0],
+                         [0,0,0,0,1,0,0,0,0],
+                         [0,0,0,0,2,3,0,0,0],
+                         [0,0,0,0,0,0,4,0,0],
+                         [0,0,0,0,0,0,0,4,0],
+                         [0,0,0,0,0,0,0,0,4]])
+
+    # Test result
+    test = np.array(cvxopt.matrix(mapping2D(theta, theta_inds, r_inds, c_inds)))
+
+    # Check if the function gives as expected
+    testVal = np.allclose(test,expected)
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: mapping2D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+
+def test_sparse_chol2D():
+
+    # We need to set the cholmod options to 2
+    cholmod.options['supernodal']=2
+
+    # Random matrix dimensions
+    n = np.random.randint(5,20)
+
+    # Random sparse positive definite matrix
+    M = np.random.randn(n,n)
+    M = M @ M.transpose() + np.eye(n)*0.05
+    M[M<0]=0
+
+    # Convert M to cvxopt
+    M = cvxopt.sparse(cvxopt.matrix(M))
+    
+    # Obtain cholesky factorization
+    cholObject = sparse_chol2D(M, perm=None, retF=False, retP=True, retL=True)
+
+    # Lower cholesky
+    L = cholObject['L']
+
+    # Permutation
+    P = cholObject['P']
+
+    # Estimated M given sparse cholesky
+    M_est = L*L.trans()
+    M_est = np.array(cvxopt.matrix(M_est))
+
+    # Permuted M 
+    M_permuted = np.array(cvxopt.matrix(M[P,P]))
+
+    # Check if the function give a valid sparse cholesky decomposition
+    testVal = np.allclose(M_est,M_permuted)
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: sparse_chol2D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+
+
+def test_get_mapping2D():
+
+    # Example nlevels and nparams
+    nlevels = np.array([3,3])
+    nparams = np.array([2,1])
+
+    # Expected theta indices
+    t_inds_expected = np.array([0,1,2,0,1,2,0,1,2,3,3,3])
+
+    # Expected row and column indices
+    r_inds_expected = np.array([0,1,1,2,3,3,4,5,5,6,7,8])
+    c_inds_expected = np.array([0,0,1,2,2,3,4,4,5,6,7,8])
+
+    # Get the functions output
+    t_inds_test, r_inds_test, c_inds_test =get_mapping2D(nlevels, nparams)
+
+    # Check if the function gives as expected
+    testVal = np.allclose(t_inds_test,t_inds_expected) and np.allclose(r_inds_test,r_inds_expected) and np.allclose(c_inds_test,c_inds_expected)
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: get_mapping2D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
 
 
 test_mat2vec2D()
@@ -1029,13 +1498,22 @@ test_mat2vecb2D()
 test_sumAijBijt2D()
 test_sumAijKronBij2D()
 test_forceSym2D()
+test_ssr2D()
 test_fac_indices2D()
 test_faclev_indices2D()
 test_initBeta2D()
 test_initSigma22D()
+test_initDk2D()
 test_makeDnnd2D()
 test_llh2D()
 test_get_dldB2D()
 test_get_dldsigma22D()
+test_get_dldDk2D()
+test_get_covdldbeta2D()
+test_get_covdldDkdsigma22D()
+test_get_covdldDk1Dk22D()
+test_mapping2D()
+test_sparse_chol2D()
+test_get_mapping2D()
 
 print('=============================================================')
