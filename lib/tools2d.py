@@ -126,6 +126,162 @@ def vech2mat2D(vech):
   # Return vectorised half-matrix
   return(matrix)
 
+
+# ============================================================================
+# 
+# The below function inverts a block diagonal matrix with square diagonal 
+# blocks by inverting each block individually.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - `matrix`: The (scipy sparse) block diagonal matrix to be inverted.
+#  - `blockSize`: The size of the blocks on the diagonal. I.e. if block-size 
+#                 equals 5 then all blocks on the diagonal are 5 by 5 in size.
+#
+# ----------------------------------------------------------------------------
+#
+# This function gives as outputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - `invMatrix`: The inverse of `matrix`, in (scipy) sparse format.
+#
+# ----------------------------------------------------------------------------
+#
+# Developers note: Whilst this function, in principle, makes a lot of sense, 
+# in practice it does not outperform numpy and, unless Z'Z is so ridiculously
+# large it cannot be read into memory, I do not think there will ever be 
+# reason to use it. I have left it here just incase it can be useful in future
+# applications. (It does outperform scipy though!)
+#
+# ============================================================================
+def blockInverse2D(matrix, blockSize):
+
+  # Work out the number of blocks
+  numBlocks = matrix.shape[0]//blockSize
+
+  # For each level, invert the corresponding block on the diagonal
+  for i in range(numBlocks):
+    
+    # The block is nparams by nparams
+    blockInds = np.ix_(np.arange(i*blockSize,(i+1)*blockSize),np.arange(i*blockSize,(i+1)*blockSize))
+    
+    # Get the block
+    block = matrix[blockInds].toarray()
+    
+    # Replace it with it's inverse
+    if i==0:
+
+      invMatrix=np.linalg.inv(block)
+
+    else:
+
+      invMatrix=scipy.sparse.block_diag((invMatrix, np.linalg.inv(block)))
+    
+  return(invMatrix)
+
+
+# ============================================================================
+# 
+# The below function inverts symmetric matrices with the same structure as Z'Z 
+# efficiently by recursively using the schur complement and noting that the 
+# only submatrices that need to be inverted are block diagonal.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - `M`: The symmetric matrix, with structure similar to Z'Z, to be inverted.
+#  - `nparams`: A vector containing the number of parameters for each
+#               factor, e.g. `nlevels=[2,1]` would mean the first factor
+#               has 2 parameters and the second factor has 1 parameter.
+#  - `nlevels`: A vector containing the number of levels for each factor,
+#               e.g. `nlevels=[3,4]` would mean the first factor has 3
+#               levels and the second factor has 4 levels.
+#
+# ----------------------------------------------------------------------------
+#
+# This function gives as outputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - `Minv`: The inverse of `M`, in (scipy) sparse format.
+#
+# ----------------------------------------------------------------------------
+#
+# Developers note: Again, whilst this function, in principle, makes a lot of 
+# sense, in practice it was slow and is left here only for future reference.
+#
+# ============================================================================
+def recursiveInverse2D(M, nparams, nlevels):
+  
+  # Check if we have a matrix we can partition into more than 1 block
+  if len(nparams) > 1:
+  
+    # Work out qc (current q)
+    qc = nparams[-1]*nlevels[-1]
+    # Make q
+    q = M.shape[0]
+
+    # Get A, B and C where M=[[A,B],[B',C]]
+    # A
+    A_inds = np.ix_(np.arange(0,(q-qc)),np.arange(0,(q-qc)))
+    A = M[A_inds]
+
+    # B
+    B_inds = np.ix_(np.arange(0,(q-qc)),np.arange((q-qc),q))
+    B = M[B_inds].toarray() # B is dense
+
+    # C
+    C_inds = np.ix_(np.arange((q-qc),q),np.arange((q-qc),q))
+    C = M[C_inds].toarray() # C is small and now only involved in dense mutliplys
+
+    # Recursive inverse A
+    if nparams[:-1].shape[0] > 1:
+
+      Ainv = scipy.sparse.csr_matrix(recursiveInverse2D(A, nparams[:-1], nlevels[:-1])).toarray()
+
+    else:
+
+      #Ainv = blockInverse(A, nparams[0], nlevels[0]) - much slower
+      Ainv = scipy.sparse.csr_matrix(scipy.sparse.linalg.inv(scipy.sparse.csc_matrix(A))).toarray()
+
+    # Schur complement
+    S = C - B.transpose() @ Ainv @ B
+    Sinv = np.linalg.inv(S)
+
+    # Top Left Hand Side of inverse
+    TLHS = Ainv + Ainv @ B @ Sinv @ B.transpose() @ Ainv
+
+
+    # Top Right Hand Side of inverse
+    TRHS = - Ainv @ B @ Sinv
+
+
+    # Bottom Right Hand Side of inverse
+    BRHS = Sinv
+
+    # Join together
+    top = np.hstack((TLHS,TRHS))
+    bottom = np.hstack((TRHS.transpose(), BRHS))
+
+    # Make Minv
+    Minv = np.vstack((top, bottom))
+    
+  else:
+    
+    # If we have only one block; invert it
+    Minv = scipy.sparse.linalg.inv(scipy.sparse.csc_matrix(M)).toarray() 
+  
+  return(Minv)
+
+
 # ============================================================================
 #
 # This function generates a duplication matrix of size n^2 by n(n+1)/2,

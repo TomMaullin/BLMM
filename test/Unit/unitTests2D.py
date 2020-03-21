@@ -242,6 +242,38 @@ def genTestData(n=None, p=None, nlevels=None, nparams=None):
     # Return values
     return(Y,X,Z,nlevels,nparams,beta,sigma2,b,D)
 
+
+# =============================================================================
+#
+# The below function generates the product matrices from matrices X, Y and Z.
+#
+# -----------------------------------------------------------------------------
+#
+# It takes as inputs:
+#
+# -----------------------------------------------------------------------------
+#
+#  - `X`: The design matrix of dimension n times p.
+#  - `Y`: The response vector of dimension n times 1.
+#  - `Z`: The random effects design matrix of dimension n times q.
+#
+# -----------------------------------------------------------------------------
+#
+# It returns as outputs:
+#
+# -----------------------------------------------------------------------------
+#
+#  - `XtX`: X transposed multiplied by X.
+#  - `XtY`: X transposed multiplied by Y.
+#  - `XtZ`: X transposed multiplied by Z.
+#  - `YtX`: Y transposed multiplied by X.
+#  - `YtY`: Y transposed multiplied by Y.
+#  - `YtZ`: Y transposed multiplied by Z.
+#  - `ZtX`: Z transposed multiplied by X.
+#  - `ZtY`: Z transposed multiplied by Y.
+#  - `ZtZ`: Z transposed multiplied by Z.
+#
+# =============================================================================
 def prodMats(Y,Z,X):
 
     # Work out the product matrices
@@ -259,6 +291,12 @@ def prodMats(Y,Z,X):
     return(XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ)
 
 
+# =============================================================================
+#
+# The below function tests the function `mat2vec2D`. It does this by checking 
+# the function against a predefined example.
+#
+# =============================================================================
 def test_mat2vec2D():
 
     # Example matrix
@@ -283,6 +321,13 @@ def test_mat2vec2D():
 
     return(result)
 
+
+# =============================================================================
+#
+# The below function tests the function `mat2vech2D`. It does this by checking 
+# the function against a predefined example.
+#
+# =============================================================================
 def test_mat2vech2D():
 
     # Example matrix (must be symmetric)
@@ -308,6 +353,13 @@ def test_mat2vech2D():
 
     return(result)
 
+
+# =============================================================================
+#
+# The below function tests the function `vec2mat2D`. It does this by checking 
+# the function against a predefined example.
+#
+# =============================================================================
 def test_vec2mat2D():
 
     # Generate vector
@@ -330,6 +382,15 @@ def test_vec2mat2D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
+    return(result)
+
+
+# =============================================================================
+#
+# The below function tests the function `vech2mat2D`. It does this by checking 
+# the function against a predefined example.
+#
+# =============================================================================
 def test_vech2mat2D():
 
     # Generate vector
@@ -352,7 +413,16 @@ def test_vech2mat2D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
+    return(result)
 
+
+
+# =============================================================================
+#
+# The below function tests the function `vec2vech2D`. It does this by checking 
+# the function against a predefined example.
+#
+# =============================================================================
 def test_vec2vech2D():
 
     # Generate vector
@@ -375,7 +445,16 @@ def test_vec2vech2D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
+    return(result)
 
+
+
+# =============================================================================
+#
+# The below function tests the function `vech2vec2D`. It does this by checking 
+# the function against a predefined example.
+#
+# =============================================================================
 def test_vech2vec2D():
 
     # Generate vector
@@ -398,7 +477,114 @@ def test_vech2vec2D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
+    return(result)
 
+
+
+# =============================================================================
+#
+# The below function tests the function `blockInverse2D`. It does this by  
+# generating a random block matrix input and checking against numpy.
+#
+# =============================================================================
+def test_blockInverse2D():
+
+    # Random number of blocks
+    numBlocks = np.random.randint(700,1000)
+
+    # Random block size
+    blockSize = np.random.randint(2,6)
+
+    # Generate a random block matrix
+    for i in np.arange(numBlocks):
+
+        # Generate random current block
+        currentBlock = np.random.randn(blockSize,blockSize)
+
+        # Stack the blocks diagonally
+        if i==0:
+
+            blockMat = currentBlock
+
+        else:
+
+            blockMat = scipy.linalg.block_diag(blockMat, currentBlock)
+
+    # Make it sparse.
+    blockMat_sp = scipy.sparse.csc_matrix(blockMat)
+
+    # Test the function
+    invBlockMat_test = blockInverse2D(blockMat_sp,blockSize).toarray()
+    
+    # Expected result
+    invBlockMat_expected = np.linalg.inv(blockMat)
+    
+    # Test
+    testVal = np.allclose(invBlockMat_test, invBlockMat_expected)
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: blockInverse2D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+
+    return(result)
+
+
+# =============================================================================
+#
+# The below function tests the function `recursiveInverse2D`. It does this by
+# simulating some test data and checking performance against numpy.
+#
+# =============================================================================
+def test_recursiveInverse2D():
+
+    # Generate some test data
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData()
+
+    # Work out q
+    q = np.sum(nlevels*nparams)
+
+    # Work out I+Z'ZD
+    ZtZ = Z.transpose() @ Z 
+
+    # Sparse version
+    ZtZ_sp = scipy.sparse.csr_matrix(ZtZ)
+
+    # Recursive inverse
+    ZtZinv_test = recursiveInverse2D(ZtZ_sp, nparams, nlevels)
+
+    # Regular inverse
+    ZtZinv_expected = np.linalg.inv(ZtZ)
+    
+     # Test
+    testVal = np.allclose(ZtZinv_test, ZtZinv_expected)
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: recursiveInverse2D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+
+    return(result)
+
+
+# =============================================================================
+#
+# The below function tests the function `dupMat2D`. It does this by checking 
+# the function against a predefined example.
+#
+# =============================================================================
 def test_dupMat2D():
 
     # Expected duplication matrix for 3 by 3 matrices
@@ -426,8 +612,15 @@ def test_dupMat2D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
+    return(result)
 
 
+# =============================================================================
+#
+# The below function tests the function `invDupMat2D`. It does this by checking 
+# the function against a predefined example.
+#
+# =============================================================================
 def test_invDupMat2D():
 
     # Expected inverse duplication matrix for 3 by 3 matrices
@@ -455,7 +648,16 @@ def test_invDupMat2D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
+    return(result)
 
+
+# =============================================================================
+#
+# The below function tests the function `comMat2D`. It does this by generating
+# random matrices and checking the commutation matrix has the desired effect on
+# said matrices.
+#
+# =============================================================================
 def test_comMat2D():
 
     # Generate 2 random dimensions
@@ -482,7 +684,17 @@ def test_comMat2D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
+    return(result)
 
+
+
+# =============================================================================
+#
+# The below function tests the function `permOfIkKkI2D`. It does this by 
+# generating a random example and checking the permutation vector gives the
+# same as  what we would expect if we had used the permutation matrices.
+#
+# =============================================================================
 def test_permOfIkKkI2D():
 
     # First generate random matrix sizes
@@ -519,7 +731,15 @@ def test_permOfIkKkI2D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
+    return(result)
 
+
+# =============================================================================
+#
+# The below function tests the function `block2stacked2D`. It does this by 
+# checking the function against a predefined example.
+#
+# =============================================================================
 def test_block2stacked2D():
 
     # Example test case
@@ -552,7 +772,15 @@ def test_block2stacked2D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
+    return(result)
 
+
+# =============================================================================
+#
+# The below function tests the function `mat2vecb`. It does this by checking 
+# the function against a predefined example.
+#
+# =============================================================================
 def test_mat2vecb2D():
 
     # Example test case
@@ -581,7 +809,16 @@ def test_mat2vecb2D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
+    return(result)
 
+
+# =============================================================================
+#
+# The below function tests the function `sumAijBijt2D`. It does this by 
+# generating random matrices and checks that the function behaves the same as 
+# niave calculation of the same quantity.
+#
+# =============================================================================
 def test_sumAijBijt2D():
 
     # Random number of blocks
@@ -637,7 +874,16 @@ def test_sumAijBijt2D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
+    return(result)
 
+
+# =============================================================================
+#
+# The below function tests the function `sumAijKronBij2D`. It does this by 
+# generating random matrices and checks that the function behaves the same as 
+# niave calculation of the same quantity.
+#
+# =============================================================================
 def test_sumAijKronBij2D():
 
     # Random block sizes
@@ -690,7 +936,15 @@ def test_sumAijKronBij2D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
+    return(result)
 
+
+# =============================================================================
+#
+# The below function tests the function `forceSym2D`. It does this by checking 
+# the function against a predefined example.
+#
+# =============================================================================
 def test_forceSym2D():
 
     # Test example
@@ -717,6 +971,16 @@ def test_forceSym2D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
+    return(result)
+
+
+# =============================================================================
+#
+# The below function tests the function `ssr2D`.  It does this by simulating
+# data and checks that the function behaves the same as niave calculation of
+# the same quantity.
+#
+# =============================================================================
 def test_ssr2D():
 
     # Generate some test data
@@ -746,9 +1010,15 @@ def test_ssr2D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
+    return(result)
 
 
-
+# =============================================================================
+#
+# The below function tests the function `fac_indices2D`. It does this by
+# checking the function against a predefined example.
+#
+# =============================================================================
 def test_fac_indices2D():
 
     # Test nlevels, nparams,k
@@ -773,7 +1043,15 @@ def test_fac_indices2D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
+    return(result)
 
+
+# =============================================================================
+#
+# The below function tests the function `faclev_indices2D`. It does this by
+# checking the function against a predefined example.
+#
+# =============================================================================
 def test_faclev_indices2D():
 
     # Test nlevels, nparams,k
@@ -799,6 +1077,16 @@ def test_faclev_indices2D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
+    return(result)
+
+
+# =============================================================================
+#
+# The below function tests the function `initBeta2D`. It does this by 
+# simulating data and checks that the function behaves the same as niave
+# calculation of the same quantity.
+#
+# =============================================================================
 def test_initBeta2D():
 
     # Generate some test data
@@ -827,6 +1115,16 @@ def test_initBeta2D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
+    return(result)
+
+
+# =============================================================================
+#
+# The below function tests the function `initSigma22D`. It does this by 
+# simulating data and checks that the function behaves the same as niave
+# calculation of the same quantity.
+#
+# =============================================================================
 def test_initSigma22D():
 
     # Generate some test data
@@ -862,6 +1160,16 @@ def test_initSigma22D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
+    return(result)
+
+
+# =============================================================================
+#
+# The below function tests the function `initDk2D`. It does this by 
+# simulating data and checks that the function behaves the same as niave
+# calculation of the same quantity.
+#
+# =============================================================================
 def test_initDk2D():
 
     # Generate some test data
@@ -949,7 +1257,15 @@ def test_initDk2D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
+    return(result)
 
+
+# =============================================================================
+#
+# The below function tests the function `makeDnnd2D`. It does this by
+# checking the function against a predefined example.
+#
+# =============================================================================
 def test_makeDnnd2D():
 
     # Examples usecase
@@ -974,6 +1290,23 @@ def test_makeDnnd2D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
+    return(result)
+
+
+# =============================================================================
+#
+# The below function tests the function `llh2D`. It does this by simulating 
+# data and checks that the function behaves the same as niave calculation of 
+# the same quantity.
+#
+# -----------------------------------------------------------------------------
+#
+# Developers note: Occassionally, with this function, a `det` overflow error is
+# given. This occurs because, in this case, the niave calculation we are
+# testing against is a particularly bad way of calculating the llh. It is not a 
+# flaw with the function `llh2D` though and is safe to ignore.
+#
+# =============================================================================
 def test_llh2D():
 
     # Generate some test data
@@ -1013,6 +1346,16 @@ def test_llh2D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
+    return(result)
+
+
+# =============================================================================
+#
+# The below function tests the function `get_dldB2D`. It does this by 
+# simulating data and checks that the function behaves the same as niave
+# calculation of the same quantity.
+#
+# =============================================================================
 def test_get_dldB2D():
 
     # Generate some test data
@@ -1051,7 +1394,16 @@ def test_get_dldB2D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
+    return(result)
 
+
+# =============================================================================
+#
+# The below function tests the function `get_dldsigma22D`. It does this by 
+# simulating data and checks that the function behaves the same as niave
+# calculation of the same quantity.
+#
+# =============================================================================
 def test_get_dldsigma22D():
 
     # Generate some test data
@@ -1091,8 +1443,16 @@ def test_get_dldsigma22D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
+    return(result)
 
 
+# =============================================================================
+#
+# The below function tests the function `get_dldDk2D`. It does this by 
+# simulating data and checks that the function behaves the same as niave
+# calculation of the same quantity.
+#
+# =============================================================================
 def test_get_dldDk2D():
 
     # Generate some test data
@@ -1168,8 +1528,16 @@ def test_get_dldDk2D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
+    return(result)
 
 
+# =============================================================================
+#
+# The below function tests the function `get_covdldbeta2D`. It does this by 
+# simulating data and checks that the function behaves the same as niave
+# calculation of the same quantity.
+#
+# =============================================================================
 def test_get_covdldbeta2D():
 
     # Generate some test data
@@ -1207,7 +1575,16 @@ def test_get_covdldbeta2D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
+    return(result)
 
+
+# =============================================================================
+#
+# The below function tests the function `get_covdldDksigma22D`. It does this by 
+# simulating data and checks that the function behaves the same as niave
+# calculation of the same quantity.
+#
+# =============================================================================
 def test_get_covdldDkdsigma22D():
 
     # Generate some test data
@@ -1275,7 +1652,16 @@ def test_get_covdldDkdsigma22D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
+    return(result)
 
+
+# =============================================================================
+#
+# The below function tests the function `get_covdldDk1Dk22D`. It does this by 
+# simulating data and checks that the function behaves the same as niave
+# calculation of the same quantity.
+#
+# =============================================================================
 def test_get_covdldDk1Dk22D():
     
     # Generate some test data
@@ -1365,7 +1751,16 @@ def test_get_covdldDk1Dk22D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
+    return(result)
 
+
+
+# =============================================================================
+#
+# The below function tests the function `mapping2D`. It does this by checking
+# the function against a predefined example.
+#
+# =============================================================================
 def test_mapping2D():
 
     # Theta values to put in the array
@@ -1406,6 +1801,16 @@ def test_mapping2D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
+    return(result)
+
+
+# =============================================================================
+#
+# The below function tests the function `sparse_chol2D`. It does this by 
+# generating random matrices and checking the output has the correct
+# properties.
+#
+# =============================================================================
 def test_sparse_chol2D():
 
     # We need to set the cholmod options to 2
@@ -1452,7 +1857,15 @@ def test_sparse_chol2D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
+    return(result)
 
+
+# =============================================================================
+#
+# The below function tests the function `get_mapping2D`. It does this by
+# checking the function against a predefined example.
+#
+# =============================================================================
 def test_get_mapping2D():
 
     # Example nlevels and nparams
@@ -1483,37 +1896,352 @@ def test_get_mapping2D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
+    return(result)
 
-test_mat2vec2D()
-test_mat2vech2D()
-test_vec2mat2D()
-test_vech2mat2D()
-test_vec2vech2D()
-test_dupMat2D()
-test_invDupMat2D()
-test_comMat2D()
-test_permOfIkKkI2D()
-test_block2stacked2D()
-test_mat2vecb2D()
-test_sumAijBijt2D()
-test_sumAijKronBij2D()
-test_forceSym2D()
-test_ssr2D()
-test_fac_indices2D()
-test_faclev_indices2D()
-test_initBeta2D()
-test_initSigma22D()
-test_initDk2D()
-test_makeDnnd2D()
-test_llh2D()
-test_get_dldB2D()
-test_get_dldsigma22D()
-test_get_dldDk2D()
-test_get_covdldbeta2D()
-test_get_covdldDkdsigma22D()
-test_get_covdldDk1Dk22D()
-test_mapping2D()
-test_sparse_chol2D()
-test_get_mapping2D()
 
-print('=============================================================')
+
+def run_all():
+
+    # Record passed and failed tests.
+    passedTests = np.array([])
+    failedTests = np.array([])
+
+
+    # Test mat2vec2D
+    name = 'mat2vec2D'
+    result = test_mat2vec2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test mat2vech2D
+    name = 'mat2vech2D'
+    result = test_mat2vech2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test vec2mat2D
+    name = 'vec2mat2D'
+    result = test_vec2mat2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test vech2mat2D
+    name = 'vech2mat2D'
+    result = test_vech2mat2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test vec2vech2D
+    name = 'vec2vech2D'
+    result = test_vec2vech2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test blockInverse2D
+    name = 'blockInverse2D'
+    result = test_blockInverse2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test recursiveInverse2D
+    name = 'recursiveInverse2D'
+    result = test_recursiveInverse2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test dupMat2D
+    name = 'dupMat2D'
+    result = test_dupMat2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test invDupMat2D
+    name = 'invDupMat2D'
+    result = test_invDupMat2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test comMat2D
+    name = 'comMat2D'
+    result = test_comMat2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test permOfIkKkI2D
+    name = 'permOfIkKkI2D'
+    result = test_permOfIkKkI2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test block2stacked2D
+    name = 'block2stacked2D'
+    result = test_block2stacked2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test mat2vecb2D
+    name = 'mat2vecb2D'
+    result = test_mat2vecb2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test sumAijBijt2D
+    name = 'sumAijBijt2D'
+    result = test_sumAijBijt2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test sumAijKronBij2D
+    name = 'sumAijKronBij2D'
+    result = test_sumAijKronBij2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test forceSym2D
+    name = 'forceSym2D'
+    result = test_forceSym2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test ssr2D
+    name = 'ssr2D'
+    result = test_ssr2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test fac_indices2D
+    name = 'fac_indices2D'
+    result = test_fac_indices2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test faclev_indices2D
+    name = 'faclev_indices2D'
+    result = test_faclev_indices2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test initBeta2D
+    name = 'initBeta2D'
+    result = test_initBeta2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test initSigma22D
+    name = 'initSigma22D'
+    result = test_initSigma22D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test initDk2D
+    name = 'initDk2D'
+    result = test_initDk2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test makeDnnd2D
+    name = 'makeDnnd2D'
+    result = test_makeDnnd2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test llh2D
+    name = 'llh2D'
+    result = test_llh2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test get_dldB2D
+    name = 'get_dldB2D'
+    result = test_get_dldB2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test get_dldsigma22D
+    name = 'get_dldsigma22D'
+    result = test_get_dldsigma22D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test get_dldDk2D
+    name = 'get_dldDk2D'
+    result = test_get_dldDk2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test get_covdldbeta2D
+    name = 'get_covdldbeta2D'
+    result = test_get_covdldbeta2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test get_covdldDkdsigma22D
+    name = 'get_covdldDkdsigma22D'
+    result = test_get_covdldDkdsigma22D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test get_covdldDk1Dk22D
+    name = 'get_covdldDk1Dk22D'
+    result = test_get_covdldDk1Dk22D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test mapping2D
+    name = 'mapping2D'
+    result = test_mapping2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test sparse_chol2D
+    name = 'sparse_chol2D'
+    result = test_sparse_chol2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test get_mapping2D
+    name = 'get_mapping2D'
+    result = test_get_mapping2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    print('=============================================================')
+
+    print('Tests completed')
+    print('-------------------------------------------------------------')
+    print('Summary:')
+    print('Passed Tests: ', passedTests)
+    print('Failed Tests: ', failedTests)
