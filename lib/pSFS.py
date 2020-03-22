@@ -44,16 +44,6 @@ def pSFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n, r
 
   Zte = ZtY - (ZtX @ beta) 
   
-  # Inital D
-  # Dictionary version
-  Ddict = dict()
-  for k in np.arange(len(nparams)):
-
-    Ddict[k] = makeDnnd3D(initDk3D(k, ZtZ, Zte, sigma2, nlevels, nparams))
-  
-  # Full version of D
-  D = getDfromDict3D(Ddict, nparams, nlevels)
-  
   # Duplication matrices
   # ------------------------------------------------------------------------------
   invDupMatdict = dict()
@@ -64,6 +54,16 @@ def pSFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n, r
     invDupMatdict[i] = np.asarray(invDupMat2D(nparams[i]).todense())
     #dupInvDupMatdict[i] = np.asarray(dupMat(nparams[i]).todense()) @ invDupMatdict[i]
     #dupDuptMatdict[i] = np.asarray(dupMat(nparams[i]).todense()) @ np.asarray(dupMat(nparams[i]).todense()).transpose()
+  
+  # Inital D
+  # Dictionary version
+  Ddict = dict()
+  for k in np.arange(len(nparams)):
+
+    Ddict[k] = makeDnnd3D(initDk3D(k, ZtZ, Zte, sigma2, nlevels, nparams, invDupMatdict))
+  
+  # Full version of D
+  D = getDfromDict3D(Ddict, nparams, nlevels)
   
   # Index variables
   # ------------------------------------------------------------------------------

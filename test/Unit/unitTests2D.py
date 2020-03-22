@@ -7,11 +7,7 @@ import os
 import time
 import scipy.sparse
 import scipy.sparse.linalg
-import matplotlib.pyplot as plt
-from matplotlib.pyplot import imshow
 import sys
-import nibabel as nib
-import nilearn
 
 np.set_printoptions(threshold=sys.maxsize)
 
@@ -24,7 +20,7 @@ from lib.tools2d import *
 # file.
 #
 # Author: Tom Maullin
-# Last edited: 20/03/2020
+# Last edited: 21/03/2020
 #
 # =============================================================================
 
@@ -1241,7 +1237,7 @@ def test_initDk2D():
     Zte = ZtY - ZtX @ betahat
 
     # Now try to obtain the same using the function
-    vecInitDk_test = initDk2D(k, nlevels[k], ZtZ, Zte, sigma2hat, nparams, nlevels, invDupMatdict)
+    vecInitDk_test = initDk2D(k, ZtZ, Zte, sigma2hat, nlevels, nparams, invDupMatdict)
 
     # Check if the function gives as expected
     testVal = np.allclose(vecInitDk_test,vecInitDk_expected)
@@ -1899,8 +1895,12 @@ def test_get_mapping2D():
     return(result)
 
 
-
-def run_all():
+# =============================================================================
+#
+# The below function runs all unit tests and outputs the results.
+#
+# =============================================================================
+def run_all2D():
 
     # Record passed and failed tests.
     passedTests = np.array([])

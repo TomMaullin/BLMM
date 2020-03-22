@@ -29,14 +29,22 @@ from lib.tools2d import faclev_indices2D
 #
 # This function performs a broadcasted kronecker product.
 # 
-# The code was taken from:
+# The code was adapted from:
 #   https://stackoverflow.com/questions/57259557/kronecker-product-of-matrix-array
 #
 # ============================================================================
 def kron3D(A,B):
-  i,j,k = A.shape
-  i,l,m = B.shape
-  return(np.einsum("ijk,ilm->ijlkm",A,B).reshape(i,j*l,k*m))
+
+  i1,j,k = A.shape
+  i2,l,m = B.shape
+
+  if i1==i2:
+    return(np.einsum("ijk,ilm->ijlkm",A,B).reshape(i1,j*l,k*m))
+  elif i1==1 or i2==1:
+    return(np.einsum("ijk,nlm->injlkm",A,B).reshape(i1*i2,j*l,k*m))
+  else:
+    raise ValueError('Incompatible dimensions in kron3D.')
+
 
 # ============================================================================
 #
@@ -317,6 +325,8 @@ def initSigma23D(ete, n):
 # - `Zte`: The Z matrix transposed and then multiplied by the OLS residuals
 #          (Z'e=Z'(Y-X\beta) in the above notation).
 # - `sigma2`: The OLS estimate of \sigma^2 (\sigma^2$ in the above notation).
+# - `invDupMatdict`: A dictionary of inverse duplication matrices such that 
+#                   `invDupMatdict[k]` = DupMat_k^+.
 #
 # ----------------------------------------------------------------------------
 #
@@ -327,40 +337,63 @@ def initSigma23D(ete, n):
 # - `Dkest`: The inital estimate of D_k (Dhat_k in the above notation).
 #
 # ============================================================================
-def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nparams):
+def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nparams, invDupMatdict):
   
+  # Small check on sigma2
+  if len(sigma2.shape) > 1:
+
+    sigma2 = sigma2.reshape(sigma2.shape[0])
+
   # Initalize D to zeros
   invSig2ZteetZminusZtZ = np.zeros((Zte.shape[0],nparams[k],nparams[k]))
-  
-  # For each level j we need to add a term
+
+  # First we work out the derivative we require.
   for j in np.arange(nlevels[k]):
     
     Ikj = faclev_indices2D(k, j, nlevels, nparams)
 
     # Work out Z_(k, j)'Z_(k, j)
     ZkjtZkj = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ikj,Ikj)]
-    
+
     # Work out Z_(k,j)'e
     Zkjte = Zte[:, Ikj,:]
-    
+
     if j==0:
-      
-      # Add first Z_(k,j)'Z_(k,j) kron Z_(k,j)'Z_(k,j)
-      ZtZkronZtZ = kron3D(ZkjtZkj,ZkjtZkj.transpose(0,2,1))
       
       # Add first \sigma^{-2}Z'ee'Z - Z_(k,j)'Z_(k,j)
       invSig2ZteetZminusZtZ = np.einsum('i,ijk->ijk',1/sigma2,(Zkjte @ Zkjte.transpose(0,2,1))) - ZkjtZkj
       
     else:
       
-      # Add next Z_(k,j)'Z_(k,j) kron Z_(k,j)'Z_(k,j)
-      ZtZkronZtZ = ZtZkronZtZ + kron3D(ZkjtZkj,ZkjtZkj.transpose(0,2,1))
-      
       # Add next \sigma^{-2}Z'ee'Z - Z_(k,j)'Z_(k,j)
       invSig2ZteetZminusZtZ = invSig2ZteetZminusZtZ + np.einsum('i,ijk->ijk',1/sigma2,(Zkjte @ Zkjte.transpose(0,2,1))) - ZkjtZkj
+
+  # Second we need to work out the double sum of Z_(k,j)'Z_(k,j)
+  for j in np.arange(nlevels[k]):
+
+    for i in np.arange(nlevels[k]):
       
+      Iki = faclev_indices2D(k, i, nlevels, nparams)
+      Ikj = faclev_indices2D(k, j, nlevels, nparams)
+
+      # Work out Z_(k, j)'Z_(k, j)
+      ZkitZkj = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Iki,Ikj)]
+      
+      if j==0 and i==0:
+        
+        # Add first Z_(k,j)'Z_(k,j) kron Z_(k,j)'Z_(k,j)
+        ZtZkronZtZ = kron3D(ZkitZkj,ZkitZkj.transpose(0,2,1))
+     
+      else:
+        
+        # Add next Z_(k,j)'Z_(k,j) kron Z_(k,j)'Z_(k,j)
+        ZtZkronZtZ = ZtZkronZtZ + kron3D(ZkitZkj,ZkitZkj.transpose(0,2,1))
+
+  # Work out information matrix
+  infoMat = invDupMatdict[k].toarray() @ ZtZkronZtZ @ invDupMatdict[k].toarray().transpose()
+
   # Work out the final term.
-  Dkest = vec2mat3D(np.linalg.inv(ZtZkronZtZ) @ mat2vec3D(invSig2ZteetZminusZtZ)) 
+  Dkest = vech2mat3D(np.linalg.inv(infoMat) @ mat2vech3D(invSig2ZteetZminusZtZ)) 
   
   
   return(Dkest)
@@ -521,7 +554,7 @@ def llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,reml=False, XtX=0, XtZ=0, Zt
 #
 # ============================================================================
 def get_dldB3D(sigma2, Xte, XtZ, DinvIplusZtZD, Zte):
-  
+
   # Work out the derivative (Note: we leave everything as 3D for ease of future computation)
   deriv = np.einsum('i,ijk->ijk',1/sigma2, (Xte - (XtZ @ DinvIplusZtZD @ Zte)))
                     
@@ -629,8 +662,6 @@ def get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD):
 #
 # ============================================================================
 def get_dldDk3D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD,reml=False, ZtX=0, XtX=0):
-
-  print('reml: ', reml)
 
   # Number of voxels
   nv = Zte.shape[0]
@@ -892,11 +923,12 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdi
 #
 # ----------------------------------------------------------------------------
 #
-# - `convergedBeforeIt`: The indices of all voxels which had converged before
-#                        the iteration, relative to the full list of voxels. 
-# - `convergedDuringIt`: The indices of all voxels which converged during the
-#                        iteration, relative to the list of voxels considered
-#                        during the iteration.
+# - `convergedBeforeIt`: Boolean array of all voxels which had converged
+#                        before the iteration, relative to the full list of 
+#                        voxels. 
+# - `convergedDuringIt`: Boolean array of all voxels which converged during
+#                        the iteration, relative to the list of voxels
+#                        considered during the iteration.
 #
 # ----------------------------------------------------------------------------
 #

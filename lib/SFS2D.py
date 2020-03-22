@@ -82,7 +82,7 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
     Ddict = dict()
     for k in np.arange(len(nparams)):
 
-      Ddict[k] = makeDnnd2D(initDk2D(k, nlevels[k], ZtZ, Zte, sigma2, nparams, nlevels, invDupMatdict))
+      Ddict[k] = makeDnnd2D(initDk2D(k, ZtZ, Zte, sigma2, nlevels, nparams, invDupMatdict))
       
     # Matrix version
     D = np.array([])

@@ -41,22 +41,22 @@ def pFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
 
   Zte = ZtY - (ZtX @ beta) 
   
-  # Inital D
-  # Dictionary version
-  Ddict = dict()
-  for k in np.arange(len(nparams)):
-
-    Ddict[k] = makeDnnd3D(initDk3D(k, ZtZ, Zte, sigma2, nlevels, nparams))
-  
-  # Full version of D
-  D = getDfromDict3D(Ddict, nparams, nlevels)
-  
   # Duplication matrices
   # ------------------------------------------------------------------------------
   invDupMatdict = dict()
   for i in np.arange(len(nparams)):
 
     invDupMatdict[i] = np.asarray(invDupMat2D(nparams[i]).todense())
+
+  # Inital D
+  # Dictionary version
+  Ddict = dict()
+  for k in np.arange(len(nparams)):
+
+    Ddict[k] = makeDnnd3D(initDk3D(k, ZtZ, Zte, sigma2, nlevels, nparams, invDupMatdict))
+  
+  # Full version of D
+  D = getDfromDict3D(Ddict, nparams, nlevels)
   
   # Index variables
   # ------------------------------------------------------------------------------

@@ -1,7 +1,5 @@
 import numpy as np
 import scipy.sparse
-
-# MOVE THESE
 import cvxopt
 from cvxopt import cholmod, umfpack, amd, matrix, spmatrix, lapack
 
@@ -871,8 +869,6 @@ def initSigma22D(ete, n):
 #
 # - `k`: The grouping factor we wish to estimate D for (k in the above
 #        notation)
-# - `lk`: The number of levels belonging to grouping factor k (l_k in the
-#         above notation).
 # - `ZtZ`: The Z matrix transposed and then multiplied by itself (Z'Z in the
 #          above notation).
 # - `Zte`: The Z matrix transposed and then multiplied by the OLS residuals
@@ -890,7 +886,7 @@ def initSigma22D(ete, n):
 # - `Dkest`: The inital estimate of D_k (Dhat_k in the above notation).
 #
 # ============================================================================
-def initDk2D(k, lk, ZtZ, Zte, sigma2, nparams, nlevels, invDupMatdict):
+def initDk2D(k, ZtZ, Zte, sigma2, nlevels, nparams, invDupMatdict):
   
   # Initalize D to zeros
   invSig2ZteetZminusZtZ = np.zeros((nparams[k],nparams[k]))
