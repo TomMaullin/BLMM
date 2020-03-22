@@ -986,6 +986,57 @@ def getConvergedIndices(convergedBeforeIt, convergedDuringIt):
   return(indices_ConAfterIt, indices_notConAfterIt, indices_conDuringIt, local_converged, local_notconverged)
 
 
+# ============================================================================
+# 
+# This function converts a matrix 3D partitioned into blocks into a matrix 
+# consisting of each block stacked on top of one another. I.e. for each matrix
+# Ai=A[i,:,:], it maps A to matrix A_s like so:
+#
+#                                                           |   Ai_{1,1}   |
+#                                                           |   Ai_{1,2}   |
+#      | Ai_{1,1}    Ai_{1,2}  ...  Ai_{1,l_2}  |           |     ...      |
+#      | Ai_{2,1}    Ai_{2,2}  ...  Ai_{2,l_2}  |           |  Ai_{1,l_2}  |
+# Ai = |    ...        ...     ...       ...    | -> Ai_s = |   Ai_{2,1}   |
+#      | Ai_{l_1,1} Ai_{l_1,2} ... Ai_{l_1,l_2} |           |     ...      |
+#                                                           |     ...      |
+#                                                           | Ai_{l_1,l_2} |
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes as inputs:
+# 
+# ----------------------------------------------------------------------------
+#
+#  - A: A 3D matrix of dimension (v by m1 by m2).
+#  - pA: The size of the block partitions of the Ai, e.g. if A_{i,j} is of 
+#        dimension (n1 by n2) then pA=[n1, n2].
+# 
+# ----------------------------------------------------------------------------
+#
+# And returns as output:
+#
+# ----------------------------------------------------------------------------
+#
+#  - As: The matrix A reshaped to have for each i all blocks Ai_{i,j} on top
+#        of one another. I.e. the above mapping has been performed.
+#
+# ============================================================================
+def block2stacked3D(A, pA):
+
+  # Work out shape of A
+  v = A.shape[0] # (Number of voxels)
+  m1 = A.shape[1]
+  m2 = A.shape[2]
+
+  # Work out shape of As
+  n1 = pA[0]
+  n2 = pA[1]
+  
+  # Change A to stacked form
+  As = A.reshape((v,m1//n1,n1,m2//n2,n2)).transpose(0,1,3,2,4).reshape(v,m1*m2//n2,n2)
+
+  return(As)
+
 
 # TO DOCUMENT
 

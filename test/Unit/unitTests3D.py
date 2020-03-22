@@ -1383,7 +1383,49 @@ def test_getCovergedIndices():
     
     return(result)
 
+# =============================================================================
+#
+# The below function tests the function `block2stacked3D`. It does this by
+# generating a random example and testing against it's 2D counterpart from
+# tools2d.py.
+#
+# =============================================================================
+def test_block2stacked3D():
 
+    # Generate random matrix dimensions
+    v = np.random.randint(40,140)
+    n1 = np.random.randint(10,20)
+    n2 = np.random.randint(10,20)
+    l1 = np.random.randint(50,100)
+    l2 = np.random.randint(50,100)
+
+    # Work out m1 and m2
+    m1 = n1*l1
+    m2 = n2*l2
+
+    # Generate random A
+    A = np.random.randn(v,m1,m2)
+
+    # Save partition
+    pA = np.array([n1,n2])
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Check against 2D counterpart
+    testVal = np.allclose(block2stacked3D(A,pA)[testv,:,:],block2stacked2D(A[testv,:,:],pA))
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: block2stacked3D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+    return(result)
 
 # =============================================================================
 #
@@ -1576,6 +1618,14 @@ def run_all3D():
     if result=='Failed':
         failedTests = np.append(failedTests, name)
 
+    # Test block2stacked3D
+    name = 'block2stacked3D'
+    result = test_block2stacked3D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
 
     print('=============================================================')
 
