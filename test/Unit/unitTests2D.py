@@ -1295,13 +1295,6 @@ def test_makeDnnd2D():
 # data and checks that the function behaves the same as niave calculation of 
 # the same quantity.
 #
-# -----------------------------------------------------------------------------
-#
-# Developers note: Occassionally, with this function, a `det` overflow error is
-# given. This occurs because, in this case, the niave calculation we are
-# testing against is a particularly bad way of calculating the llh. It is not a 
-# flaw with the function `llh2D` though and is safe to ignore.
-#
 # =============================================================================
 def test_llh2D():
 

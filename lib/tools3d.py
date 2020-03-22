@@ -950,6 +950,11 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdi
 #                        iteration, relative to the list of voxels considered
 #                        during the iteration.
 #
+# ----------------------------------------------------------------------------
+#
+# Developer note: If this documentation seems confusing, see the example in 
+# `unitTests3D.py`. It might help shed some light on what's going on here.
+#
 # ============================================================================
 def getConvergedIndices(convergedBeforeIt, convergedDuringIt):
   

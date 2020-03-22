@@ -22,7 +22,7 @@ from lib.tools3d import *
 # file.
 #
 # Author: Tom Maullin
-# Last edited: 21/03/2020
+# Last edited: 22/03/2020
 #
 # =============================================================================
 
@@ -399,7 +399,7 @@ def test_kron3D():
     print('Unit test for: kron3D')
     print('-------------------------------------------------------------')
     print('Result: ', result)
-
+    
     return(result)
 
 
@@ -435,6 +435,8 @@ def test_mat2vec3D():
     print('Unit test for: mat2vec3D')
     print('-------------------------------------------------------------')
     print('Result: ', result)
+    
+    return(result)
 
 
 # =============================================================================
@@ -469,6 +471,8 @@ def test_mat2vech3D():
     print('Unit test for: mat2vech3D')
     print('-------------------------------------------------------------')
     print('Result: ', result)
+    
+    return(result)
 
 
 # =============================================================================
@@ -503,6 +507,8 @@ def test_vec2mat3D():
     print('Unit test for: vec2mat3D')
     print('-------------------------------------------------------------')
     print('Result: ', result)
+    
+    return(result)
 
 
 # =============================================================================
@@ -537,6 +543,8 @@ def test_vech2mat3D():
     print('Unit test for: vech2mat3D')
     print('-------------------------------------------------------------')
     print('Result: ', result)
+    
+    return(result)
 
 
 # =============================================================================
@@ -571,6 +579,8 @@ def test_forceSym3D():
     print('Unit test for: forceSym3D')
     print('-------------------------------------------------------------')
     print('Result: ', result)
+    
+    return(result)
 
 
 # =============================================================================
@@ -618,6 +628,8 @@ def test_ssr3D():
     print('Unit test for: ssr3D')
     print('-------------------------------------------------------------')
     print('Result: ', result)
+    
+    return(result)
 
 
 # =============================================================================
@@ -661,6 +673,8 @@ def test_getDfromDict3D():
     print('Unit test for: getDfromDict3D')
     print('-------------------------------------------------------------')
     print('Result: ', result)
+    
+    return(result)
 
 # =============================================================================
 #
@@ -708,6 +722,8 @@ def test_initBeta3D():
     print('Unit test for: initBeta3D')
     print('-------------------------------------------------------------')
     print('Result: ', result)
+    
+    return(result)
 
 # =============================================================================
 #
@@ -762,6 +778,8 @@ def test_initSigma23D():
     print('Unit test for: initSigma23D')
     print('-------------------------------------------------------------')
     print('Result: ', result)
+    
+    return(result)
 
 
 # =============================================================================
@@ -823,6 +841,8 @@ def test_initDk3D():
     print('Unit test for: initDk3D')
     print('-------------------------------------------------------------')
     print('Result: ', result)
+    
+    return(result)
 
 
 # =============================================================================
@@ -860,6 +880,8 @@ def test_makeDnnd3D():
     print('Unit test for: makeDnnd3D')
     print('-------------------------------------------------------------')
     print('Result: ', result)
+    
+    return(result)
 
 
 # =============================================================================
@@ -920,6 +942,8 @@ def test_llh3D():
     print('Unit test for: llh3D')
     print('-------------------------------------------------------------')
     print('Result: ', result)
+    
+    return(result)
 
 
 # =============================================================================
@@ -982,6 +1006,8 @@ def test_get_dldB3D():
     print('Unit test for: get_dldB3D')
     print('-------------------------------------------------------------')
     print('Result: ', result)
+    
+    return(result)
 
 
 # =============================================================================
@@ -1044,6 +1070,8 @@ def test_get_dldsigma23D():
     print('Unit test for: get_dldsigma23D')
     print('-------------------------------------------------------------')
     print('Result: ', result)
+    
+    return(result)
 
 
 # =============================================================================
@@ -1105,6 +1133,8 @@ def test_get_dldDk3D():
     print('Unit test for: get_dldDk3D')
     print('-------------------------------------------------------------')
     print('Result: ', result)
+    
+    return(result)
 
 
 # =============================================================================
@@ -1158,6 +1188,8 @@ def test_get_covdldbeta3D():
     print('Unit test for: get_covdldbeta3D')
     print('-------------------------------------------------------------')
     print('Result: ', result)
+    
+    return(result)
 
 
 # =============================================================================
@@ -1220,6 +1252,8 @@ def test_get_covdldDkdsigma23D():
     print('Unit test for: get_covdldDkdsigma23D')
     print('-------------------------------------------------------------')
     print('Result: ', result)
+    
+    return(result)
 
 
 # =============================================================================
@@ -1283,11 +1317,14 @@ def test_get_covdldDk1Dk23D():
     print('Unit test for: get_covdldDk1Dk23D')
     print('-------------------------------------------------------------')
     print('Result: ', result)
+    
+    return(result)
 
 
 # =============================================================================
 #
-# The below function tests the function `getCovergedIndices`. 
+# The below function tests the function `getCovergedIndices`. It does this by
+# testing against a predefined example.
 #
 # =============================================================================
 def test_getCovergedIndices():
@@ -1343,28 +1380,207 @@ def test_getCovergedIndices():
     print('Unit test for: getCovergedIndices')
     print('-------------------------------------------------------------')
     print('Result: ', result)
+    
+    return(result)
 
 
 
-test_kron3D()
-test_mat2vec3D()
-test_mat2vech3D()
-test_vec2mat3D()
-test_vech2mat3D()
-test_forceSym3D()
-test_ssr3D()
-test_getDfromDict3D()
-test_initBeta3D()
-test_initSigma23D()
-test_initDk3D()
-test_makeDnnd3D()
-test_llh3D()
-test_get_dldB3D()
-test_get_dldsigma23D()
-test_get_dldDk3D()
-test_get_covdldbeta3D()
-test_get_covdldDkdsigma23D()
-test_get_covdldDk1Dk23D()
-test_getCovergedIndices()
+# =============================================================================
+#
+# The below function runs all unit tests and outputs the results.
+#
+# =============================================================================
+def run_all3D():
 
-print('=============================================================')
+    # Record passed and failed tests.
+    passedTests = np.array([])
+    failedTests = np.array([])
+
+    # Test kron3D
+    name = 'kron3D'
+    result = test_kron3D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+    # Test mat2vec3D
+    name = 'mat2vec3D'
+    result = test_mat2vec3D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+    # Test mat2vech3D
+    name = 'mat2vech3D'
+    result = test_mat2vech3D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+    # Test vec2mat3D
+    name = 'vec2mat3D'
+    result = test_vec2mat3D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+    # Test vech2mat3D
+    name = 'vech2mat3D'
+    result = test_vech2mat3D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+    # Test forceSym3D
+    name = 'forceSym3D'
+    result = test_forceSym3D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+    # Test ssr3D
+    name = 'ssr3D'
+    result = test_ssr3D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+    # Test getDfromDict3D
+    name = 'getDfromDict3D'
+    result = test_getDfromDict3D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+    # Test initBeta3D
+    name = 'initBeta3D'
+    result = test_initBeta3D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+    # Test initSigma23D
+    name = 'initSigma23D'
+    result = test_initSigma23D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+    # Test initDk3D
+    name = 'initDk3D'
+    result = test_initDk3D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+    # Test makeDnnd3D
+    name = 'makeDnnd3D'
+    result = test_makeDnnd3D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+    # Test llh3D
+    name = 'llh3D'
+    result = test_llh3D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+    # Test get_dldB3D
+    name = 'get_dldB3D'
+    result = test_get_dldB3D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+    # Test get_dldsigma23D
+    name = 'get_dldsigma23D'
+    result = test_get_dldsigma23D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+    # Test get_dldDk3D
+    name = 'get_dldDk3D'
+    result = test_get_dldDk3D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+    # Test get_covdldbeta3D
+    name = 'get_covdldbeta3D'
+    result = test_get_covdldbeta3D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+    # Test get_covdldDkdsigma23D
+    name = 'get_covdldDkdsigma23D'
+    result = test_get_covdldDkdsigma23D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+    # Test get_covdldDk1Dk23D
+    name = 'get_covdldDk1Dk23D'
+    result = test_get_covdldDk1Dk23D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+    # Test getCovergedIndices
+    name = 'getCovergedIndices'
+    result = test_getCovergedIndices()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    print('=============================================================')
+
+    print('Tests completed')
+    print('-------------------------------------------------------------')
+    print('Summary:')
+    print('Passed Tests: ', passedTests)
+    print('Failed Tests: ', failedTests)
