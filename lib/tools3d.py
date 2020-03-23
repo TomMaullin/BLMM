@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.sparse
-from lib.tools2d import faclev_indices2D
+from lib.tools2d import faclev_indices2D, permOfIkKkI2D
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
@@ -29,14 +29,22 @@ from lib.tools2d import faclev_indices2D
 #
 # This function performs a broadcasted kronecker product.
 # 
-# The code was taken from:
+# The code was adapted from:
 #   https://stackoverflow.com/questions/57259557/kronecker-product-of-matrix-array
 #
 # ============================================================================
 def kron3D(A,B):
-  i,j,k = A.shape
-  i,l,m = B.shape
-  return(np.einsum("ijk,ilm->ijlkm",A,B).reshape(i,j*l,k*m))
+
+  i1,j,k = A.shape
+  i2,l,m = B.shape
+
+  if i1==i2:
+    return(np.einsum("ijk,ilm->ijlkm",A,B).reshape(i1,j*l,k*m))
+  elif i1==1 or i2==1:
+    return(np.einsum("ijk,nlm->injlkm",A,B).reshape(i1*i2,j*l,k*m))
+  else:
+    raise ValueError('Incompatible dimensions in kron3D.')
+
 
 # ============================================================================
 #
@@ -317,6 +325,8 @@ def initSigma23D(ete, n):
 # - `Zte`: The Z matrix transposed and then multiplied by the OLS residuals
 #          (Z'e=Z'(Y-X\beta) in the above notation).
 # - `sigma2`: The OLS estimate of \sigma^2 (\sigma^2$ in the above notation).
+# - `invDupMatdict`: A dictionary of inverse duplication matrices such that 
+#                   `invDupMatdict[k]` = DupMat_k^+.
 #
 # ----------------------------------------------------------------------------
 #
@@ -327,40 +337,63 @@ def initSigma23D(ete, n):
 # - `Dkest`: The inital estimate of D_k (Dhat_k in the above notation).
 #
 # ============================================================================
-def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nparams):
+def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nparams, invDupMatdict):
   
+  # Small check on sigma2
+  if len(sigma2.shape) > 1:
+
+    sigma2 = sigma2.reshape(sigma2.shape[0])
+
   # Initalize D to zeros
   invSig2ZteetZminusZtZ = np.zeros((Zte.shape[0],nparams[k],nparams[k]))
-  
-  # For each level j we need to add a term
+
+  # First we work out the derivative we require.
   for j in np.arange(nlevels[k]):
     
     Ikj = faclev_indices2D(k, j, nlevels, nparams)
 
     # Work out Z_(k, j)'Z_(k, j)
     ZkjtZkj = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ikj,Ikj)]
-    
+
     # Work out Z_(k,j)'e
     Zkjte = Zte[:, Ikj,:]
-    
+
     if j==0:
-      
-      # Add first Z_(k,j)'Z_(k,j) kron Z_(k,j)'Z_(k,j)
-      ZtZkronZtZ = kron3D(ZkjtZkj,ZkjtZkj.transpose(0,2,1))
       
       # Add first \sigma^{-2}Z'ee'Z - Z_(k,j)'Z_(k,j)
       invSig2ZteetZminusZtZ = np.einsum('i,ijk->ijk',1/sigma2,(Zkjte @ Zkjte.transpose(0,2,1))) - ZkjtZkj
       
     else:
       
-      # Add next Z_(k,j)'Z_(k,j) kron Z_(k,j)'Z_(k,j)
-      ZtZkronZtZ = ZtZkronZtZ + kron3D(ZkjtZkj,ZkjtZkj.transpose(0,2,1))
-      
       # Add next \sigma^{-2}Z'ee'Z - Z_(k,j)'Z_(k,j)
       invSig2ZteetZminusZtZ = invSig2ZteetZminusZtZ + np.einsum('i,ijk->ijk',1/sigma2,(Zkjte @ Zkjte.transpose(0,2,1))) - ZkjtZkj
+
+  # Second we need to work out the double sum of Z_(k,j)'Z_(k,j)
+  for j in np.arange(nlevels[k]):
+
+    for i in np.arange(nlevels[k]):
       
+      Iki = faclev_indices2D(k, i, nlevels, nparams)
+      Ikj = faclev_indices2D(k, j, nlevels, nparams)
+
+      # Work out Z_(k, j)'Z_(k, j)
+      ZkitZkj = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Iki,Ikj)]
+      
+      if j==0 and i==0:
+        
+        # Add first Z_(k,j)'Z_(k,j) kron Z_(k,j)'Z_(k,j)
+        ZtZkronZtZ = kron3D(ZkitZkj,ZkitZkj.transpose(0,2,1))
+     
+      else:
+        
+        # Add next Z_(k,j)'Z_(k,j) kron Z_(k,j)'Z_(k,j)
+        ZtZkronZtZ = ZtZkronZtZ + kron3D(ZkitZkj,ZkitZkj.transpose(0,2,1))
+
+  # Work out information matrix
+  infoMat = invDupMatdict[k].toarray() @ ZtZkronZtZ @ invDupMatdict[k].toarray().transpose()
+
   # Work out the final term.
-  Dkest = vec2mat3D(np.linalg.inv(ZtZkronZtZ) @ mat2vec3D(invSig2ZteetZminusZtZ)) 
+  Dkest = vech2mat3D(np.linalg.inv(infoMat) @ mat2vech3D(invSig2ZteetZminusZtZ)) 
   
   
   return(Dkest)
@@ -521,7 +554,7 @@ def llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,reml=False, XtX=0, XtZ=0, Zt
 #
 # ============================================================================
 def get_dldB3D(sigma2, Xte, XtZ, DinvIplusZtZD, Zte):
-  
+
   # Work out the derivative (Note: we leave everything as 3D for ease of future computation)
   deriv = np.einsum('i,ijk->ijk',1/sigma2, (Xte - (XtZ @ DinvIplusZtZD @ Zte)))
                     
@@ -629,8 +662,6 @@ def get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD):
 #
 # ============================================================================
 def get_dldDk3D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD,reml=False, ZtX=0, XtX=0):
-
-  print('reml: ', reml)
 
   # Number of voxels
   nv = Zte.shape[0]
@@ -892,11 +923,12 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdi
 #
 # ----------------------------------------------------------------------------
 #
-# - `convergedBeforeIt`: The indices of all voxels which had converged before
-#                        the iteration, relative to the full list of voxels. 
-# - `convergedDuringIt`: The indices of all voxels which converged during the
-#                        iteration, relative to the list of voxels considered
-#                        during the iteration.
+# - `convergedBeforeIt`: Boolean array of all voxels which had converged
+#                        before the iteration, relative to the full list of 
+#                        voxels. 
+# - `convergedDuringIt`: Boolean array of all voxels which converged during
+#                        the iteration, relative to the list of voxels
+#                        considered during the iteration.
 #
 # ----------------------------------------------------------------------------
 #
@@ -917,6 +949,11 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdi
 #                        iteration, and were not converged prior to the 
 #                        iteration, relative to the list of voxels considered
 #                        during the iteration.
+#
+# ----------------------------------------------------------------------------
+#
+# Developer note: If this documentation seems confusing, see the example in 
+# `unitTests3D.py`. It might help shed some light on what's going on here.
 #
 # ============================================================================
 def getConvergedIndices(convergedBeforeIt, convergedDuringIt):
@@ -949,44 +986,250 @@ def getConvergedIndices(convergedBeforeIt, convergedDuringIt):
   return(indices_ConAfterIt, indices_notConAfterIt, indices_conDuringIt, local_converged, local_notconverged)
 
 
+# ============================================================================
+# 
+# This function converts a 3D matrix partitioned into blocks into a 3D matrix 
+# with each 2D submatrix consisting of the blocks stacked on top of one 
+# another. I.e. for each matrix Ai=A[i,:,:], it maps Ai to matrix Ai_s like
+# so:
+#
+#                                                           |   Ai_{1,1}   |
+#                                                           |   Ai_{1,2}   |
+#      | Ai_{1,1}    Ai_{1,2}  ...  Ai_{1,l_2}  |           |     ...      |
+#      | Ai_{2,1}    Ai_{2,2}  ...  Ai_{2,l_2}  |           |  Ai_{1,l_2}  |
+# Ai = |    ...        ...     ...       ...    | -> Ai_s = |   Ai_{2,1}   |
+#      | Ai_{l_1,1} Ai_{l_1,2} ... Ai_{l_1,l_2} |           |     ...      |
+#                                                           |     ...      |
+#                                                           | Ai_{l_1,l_2} |
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes as inputs:
+# 
+# ----------------------------------------------------------------------------
+#
+#  - A: A 3D matrix of dimension (v by m1 by m2).
+#  - pA: The size of the block partitions of the Ai, e.g. if A_{i,j} is of 
+#        dimension (n1 by n2) then pA=[n1, n2].
+# 
+# ----------------------------------------------------------------------------
+#
+# And returns as output:
+#
+# ----------------------------------------------------------------------------
+#
+#  - As: The matrix A reshaped to have for each i all blocks Ai_{i,j} on top
+#        of one another. I.e. the above mapping has been performed.
+#
+# ============================================================================
+def block2stacked3D(A, pA):
 
-# TO DOCUMENT
+  # Work out shape of A
+  v = A.shape[0] # (Number of voxels)
+  m1 = A.shape[1]
+  m2 = A.shape[2]
 
-def get_mat_covdlDk(k, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict):
+  # Work out shape of As
+  n1 = pA[0]
+  n2 = pA[1]
   
-  # Sum of R_k kron R_(k1, k2, i, j) over i and j 
-  for i in np.arange(nlevels[k]):
+  # Change A to stacked form
+  As = A.reshape((v,m1//n1,n1,m2//n2,n2)).transpose(0,1,3,2,4).reshape(v,m1*m2//n2,n2)
 
-    # Get the indices for the kth factor jth level
-    Iki = faclev_indices2D(k, i, nlevels, nparams)
+  return(As)
 
-    # Work out R_k
-    Rki = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Iki,Iki)] - (ZtZ[:,Iki,:] @ DinvIplusZtZD @ ZtZ[:,:,Iki])
 
-    # Work out Rk kron Rk
-    RkRt = kron3D(Rki,Rki)
+# ============================================================================
+# 
+# This function converts a 3D matrix partitioned into blocks into a 3D matrix 
+# with each 2D submatrix consisting of the blocks converted to vectors stacked
+# on top of one another. I.e. for each matrix Ai=A[i,:,:], it maps Ai to
+# matrix Ai_s like so:
+#
+#                                                               |   vec'(Ai_{1,1})   |
+#                                                               |   vec'(Ai_{1,2})   |
+#      | Ai_{1,1}    Ai_{1,2}  ...  Ai_{1,l_2}  |               |        ...         |
+#      | Ai_{2,1}    Ai_{2,2}  ...  Ai_{2,l_2}  |               |  vec'(Ai_{1,l_2})  |
+# Ai = |    ...         ...    ...      ...     | -> vecb(Ai) = |   vec'(Ai_{2,1})   |
+#      | Ai_{l_1,1} Ai_{l_1,2} ... Ai_{l_1,l_2} |               |        ...         |
+#                                                               |        ...         |
+#                                                               | vec'(Ai_{l_1,l_2}) |
+#
+# ----------------------------------------------------------------------------
+#
+# The below function takes the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - mat: A 3D matrix of dimension (v by m1 by m2).
+#  - pA: The size of the block partitions of the mat_i, e.g. if Ai_{i,j} is of 
+#        dimension (n1 by n2) then pA=[n1, n2].
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following outputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - vecb: A matrix composed of each block of mat, converted to row vectors, 
+#          stacked on top of one another. I.e. for an arbitrary matrix A of 
+#          appropriate dimensions, vecb(A) is the result of the above mapping,
+#          where Ai_{j,k} has dimensions (1 by p[0] by p[1]) for all i, j and
+#          k.
+#
+# ============================================================================
+def mat2vecb3D(mat,p):
 
-    # Add together
-    if i == 0:
+  # Change to stacked block format, if necessary
+  if p[1]!=mat.shape[2]:
+    mat = block2stacked3D(mat,p)
 
-      RkRtSum = RkRt
-
-    else:
-
-      RkRtSum = RkRtSum + RkRt
-
+  # Get height of block.
+  n = p[0]
   
-  # Return the result
-  return(forceSym3D(RkRtSum))
+  # Work out shape of matrix.
+  v = mat.shape[0]
+  m = mat.shape[1]
+  k = mat.shape[2]
 
-def get_vec_2dlDk(k, nlevels, nparams, sigma2, ZtZ, Zte, DinvIplusZtZD, reml=False, ZtX=0,XtX=0):
+  # Convert to stacked vector format
+  vecb = mat.reshape(v,m//n, n, k).transpose((0,2, 1, 3)).reshape(v,n, m*k//n).transpose((0,2,1)).reshape(v,m//n,n*k)
+
+  #Return vecb
+  return(vecb)
 
 
-  print('reml: ', reml)
-      
-  # Convert it to vector
-  vecOfInterest = 2*mat2vec3D(get_dldDk3D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD,reml, ZtX,XtX))
+# ============================================================================
+#
+# The below function computes, given two 3D matrices A and B, and denoting Av
+# and Bv as A[v,:,:] and B[v,:,:], the below sum, for all v:
+#
+#                 S = Sum_i Sum_j (Av_{i,j}Bv_{i,j}')
+# 
+# where the matrices A and B are block partitioned like so:
+#
+#      |   Av_{1,1}  ...  Av_{1,l2}  |       |   Bv_{1,1}  ...  Bv_{1,l2}  | 
+# Av = |    ...      ...      ...    |  Bv = |     ...     ...     ...     | 
+#      |  Av_{l1,1}  ...  Av_{l1,l2} |       |  Bv_{l1,1}  ...  Bv_{l1,l2} | 
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - A: A 3D matrix of dimension (v by m1 by m2).
+#  - B: A 3D matrix of dimension (v by m1' by m2).
+#  - pA: The size of the block partitions of A, e.g. if Av_{i,j} is of 
+#        dimension (n1 by n2) then pA=[n1, n2].
+#  - pB: The size of the block partitions of B, e.g. if Bv_{i,j} is of 
+#        dimension (n1' by n2) the pB=[n1', n2].
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+#  - S: The sum of the partitions of Av multiplied by the transpose of the 
+#       partitions of Bv, for every v.
+# 
+# ----------------------------------------------------------------------------
+#
+# Developer note: Note that the above implies that l1 must equal m1/n1=m1'/n1'
+#                 and l2=m2/n2.
+#
+# ============================================================================
+def sumAijBijt3D(A, B, pA, pB):
   
-  # Return it
-  return(vecOfInterest)
+  # Number of voxels
+  v = A.shape[0]
 
+  # Work out second (the common) dimension of the reshaped A and B
+  nA = pA[0]
+  nB = pB[0]
+
+  # Work out the first (the common) dimension of reshaped A and B
+  mA = A.shape[1]*A.shape[2]//nA
+  mB = B.shape[1]*B.shape[2]//nB
+
+  # Check mA equals mB
+  if mA != mB:
+    raise Exception('Matrix dimensions incompatible.')
+
+  # Convert both matrices to stacked block format.
+  A = block2stacked3D(A,pA)
+  B = block2stacked3D(B,pB)
+
+  # Work out the sum
+  S = A.transpose((0,2,1)).reshape((v,mA,nA)).transpose((0,2,1)) @ B.transpose((0,2,1)).reshape((v,mB,nB))
+
+  # Return result
+  return(S)
+
+
+# ============================================================================
+#
+# The below function computes, given two 3D matrices A and B, and denoting Av
+# and Bv as A[v,:,:] and B[v,:,:], the below sum, for all v:
+#
+#                 S = Sum_i Sum_j (Av_{i,j} kron Bv_{i,j})
+# 
+# where the matrices A and B are block partitioned like so:
+#
+#      |   Av_{1,1}  ...  Av_{1,l2}  |       |   Bv_{1,1}  ...  Bv_{1,l2}  | 
+# Av = |    ...      ...      ...    |  Bv = |     ...     ...     ...     | 
+#      |  Av_{l1,1}  ...  Av_{l1,l2} |       |  Bv_{l1,1}  ...  Bv_{l1,l2} | 
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - `A`: A 3D matrix of dimension (v by m1 by m2).
+#  - `B`: A 3D matrix of dimension (v by m1 by m2).
+#  - `p`: The size of the block partitions of A and B, e.g. if A_{i,j} and 
+#         B_{i,j} are of dimension (n1 by n2) then pA=[n1, n2].
+#  - `perm` (optional): The permutation vector representing the matrix kronecker
+#                       product I_{n2} kron K_{n2,n1} kron I_{n1}.
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `S`: The sum of the partitions of Av multiplied by the transpose of the 
+#        partitions of Bv, for every v; i.e. the sum given above.
+# - `perm`: The permutation (same as input) used for calculation (useful for 
+#           later computation).
+#
+# ============================================================================
+def sumAijKronBij3D(A, B, p, perm=None):
+
+  # Check dim A and B and pA and pB all same
+  n1 = p[0]
+  n2 = p[1]
+
+  # Number of voxels
+  v = A.shape[0]
+
+  # This matrix only needs be calculated once
+  if perm is None:
+    perm = permOfIkKkI2D(n2,n1,n2,n1) 
+
+  # Convert to vecb format
+  atilde = mat2vecb3D(A,p)
+  btilde = mat2vecb3D(B,p)
+
+  # Multiply and convert to vector
+  vecba = mat2vec3D(btilde.transpose((0,2,1)) @ atilde)
+
+  # Permute
+  S_noreshape = vecba[:,perm,:] 
+
+  # Reshape to correct shape
+  S = S_noreshape.reshape(v,n2**2,n1**2).transpose((0,2,1))
+
+  return(S,perm)

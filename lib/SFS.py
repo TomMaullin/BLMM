@@ -41,16 +41,6 @@ def SFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
 
   Zte = ZtY - (ZtX @ beta) 
   
-  # Inital D
-  # Dictionary version
-  Ddict = dict()
-  for k in np.arange(len(nparams)):
-
-    Ddict[k] = makeDnnd3D(initDk3D(k, ZtZ, Zte, sigma2, nlevels, nparams))
-  
-  # Full version of D
-  D = getDfromDict3D(Ddict, nparams, nlevels)
-  
   # Duplication matrices
   # ------------------------------------------------------------------------------
   invDupMatdict = dict()
@@ -59,8 +49,16 @@ def SFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
   for i in np.arange(len(nparams)):
 
     invDupMatdict[i] = np.asarray(invDupMat2D(nparams[i]).todense())
-    #dupInvDupMatdict[i] = np.asarray(dupMat(nparams[i]).todense()) @ invDupMatdict[i]
-    #dupDuptMatdict[i] = np.asarray(dupMat(nparams[i]).todense()) @ np.asarray(dupMat(nparams[i]).todense()).transpose()
+    
+  # Inital D
+  # Dictionary version
+  Ddict = dict()
+  for k in np.arange(len(nparams)):
+
+    Ddict[k] = makeDnnd3D(initDk3D(k, ZtZ, Zte, sigma2, nlevels, nparams, invDupMatdict))
+  
+  # Full version of D
+  D = getDfromDict3D(Ddict, nparams, nlevels)
   
   # Index variables
   # ------------------------------------------------------------------------------
@@ -133,28 +131,12 @@ def SFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     for k in np.arange(len(nparams)):
       
       # Work out update amount
-      #update_k = forceSym3D(dupDuptMatdict[k] @ np.linalg.inv(get_mat_covdlDk(k, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict))) @ dupInvDupMatdict[k] @ get_vec_2dlDk(k, nlevels, nparams, sigma2, ZtZ, Zte, DinvIplusZtZD)
-      
-      #print(forceSym3D(np.linalg.inv(get_covdldDk1Dk23D(k, k, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict))).shape)
-      #print(mat2vech3D(get_dldDk3D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD)).shape)
       update = forceSym3D(np.linalg.inv(get_covdldDk1Dk23D(k, k, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict))) @ mat2vech3D(get_dldDk3D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD))
-      #update_k2 = mat2vec3D(vech2mat3D(update_k2))
-      #print(update.shape)
-      
-      #print('1==2',update_k[1,:,:]-update_k2[1,:,:])
-      
-      
-      #update_p = forceSym3D(np.linalg.inv(get_mat_covdlDk(k, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict))) @ get_vec_2dlDk(k, nlevels, nparams, sigma2, ZtZ, Zte, DinvIplusZtZD)
-      #print(update_p.shape)
-
-      #print('3==2',update_k3[1,:,:]-update_k2[1,:,:])
       
       # Multiply by stepsize
-      #update_p = np.einsum('i,ijk->ijk',lam, update_p)
       update = np.einsum('i,ijk->ijk',lam, update)
       
       # Update D_k
-      #Ddict[k] = makeDnnd3D(vec2mat3D(mat2vec3D(Ddict[k]) + update_p))
       Ddict[k] = makeDnnd3D(vech2mat3D(mat2vech3D(Ddict[k]) + update))
       
       # Add D_k back into D and recompute DinvIplusZtZD
@@ -162,8 +144,6 @@ def SFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
 
         D[:, Dinds[counter]:Dinds[counter+1], Dinds[counter]:Dinds[counter+1]] = Ddict[k]
         counter = counter + 1
-      
-      #D = getDfromDict3D(Ddict,nparams,nlevels)
       
       # Inverse of (I+Z'ZD) multiplied by D
       IplusZtZD = np.eye(q) + (ZtZ @ D)
