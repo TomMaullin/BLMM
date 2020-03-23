@@ -1383,6 +1383,7 @@ def test_getCovergedIndices():
     
     return(result)
 
+
 # =============================================================================
 #
 # The below function tests the function `block2stacked3D`. It does this by
@@ -1423,6 +1424,145 @@ def test_block2stacked3D():
 
     print('=============================================================')
     print('Unit test for: block2stacked3D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+    return(result)
+
+
+# =============================================================================
+#
+# The below function tests the function `mat2vecb3D`. It does this by
+# generating a random example and testing against it's 2D counterpart from
+# tools2d.py.
+#
+# =============================================================================
+def test_mat2vecb3D():
+
+    # Generate random matrix dimensions
+    v = np.random.randint(40,140)
+    n1 = np.random.randint(10,20)
+    n2 = np.random.randint(10,20)
+    l1 = np.random.randint(50,100)
+    l2 = np.random.randint(50,100)
+
+    # Work out m1 and m2
+    m1 = n1*l1
+    m2 = n2*l2
+
+    # Generate random A
+    A = np.random.randn(v,m1,m2)
+
+    # Save partition
+    pA = np.array([n1,n2])
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Check against 2D counterpart
+    testVal = np.allclose(mat2vecb3D(A,pA)[testv,:,:],mat2vecb2D(A[testv,:,:],pA))
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: mat2vecb3D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+    return(result)
+
+
+# =============================================================================
+#
+# The below function tests the function `sumAijBijt3D`. It does this by
+# generating a random example and testing against it's 2D counterpart from
+# tools2d.py.
+#
+# =============================================================================
+def test_sumAijBijt3D():
+
+    # Generate random matrix dimensions
+    v = np.random.randint(40,140)
+    n1 = np.random.randint(2,10)
+    n1prime = np.random.randint(2,10)
+    n2 = np.random.randint(2,10)
+    l1 = np.random.randint(50,100)
+    l2 = np.random.randint(50,100)
+
+    # Work out m1 and m2
+    m1 = n1*l1
+    m1prime = n1prime*l1
+    m2 = n2*l2
+
+    # Generate random A and B
+    A = np.random.randn(v,m1,m2)
+    B = np.random.randn(v,m1prime,m2)
+
+    # Save partition
+    pA = np.array([n1,n2])
+    pB = np.array([n1prime,n2])
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Check against 2D counterpart
+    testVal = np.allclose(sumAijBijt3D(A, B, pA, pB)[testv,:,:],sumAijBijt2D(A[testv,:,:], B[testv,:,:], pA, pB))
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: sumAijBijt3D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+    return(result)
+
+# =============================================================================
+#
+# The below function tests the function `sumAijBijt3D`. It does this by
+# generating a random example and testing against it's 2D counterpart from
+# tools2d.py.
+#
+# =============================================================================
+def test_sumAijKronBij3D():
+
+    # Generate random matrix dimensions
+    v = np.random.randint(40,140)
+    n1 = np.random.randint(2,10)
+    n2 = np.random.randint(2,10)
+    l1 = np.random.randint(50,100)
+    l2 = np.random.randint(50,100)
+
+    # Work out m1 and m2
+    m1 = n1*l1
+    m2 = n2*l2
+
+    # Generate random A and B
+    A = np.random.randn(v,m1,m2)
+    B = np.random.randn(v,m1,m2)
+
+    # Save partition
+    p = np.array([n1,n2])
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Check against 2D counterpart
+    testVal = np.allclose(sumAijKronBij3D(A, B, p)[0][testv,:,:],sumAijKronBij2D(A[testv,:,:], B[testv,:,:], p)[0])
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: sumAijKronBij3D')
     print('-------------------------------------------------------------')
     print('Result: ', result)
     return(result)
@@ -1621,6 +1761,33 @@ def run_all3D():
     # Test block2stacked3D
     name = 'block2stacked3D'
     result = test_block2stacked3D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+    # Test mat2vecb3D
+    name = 'mat2vecb3D'
+    result = test_mat2vecb3D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+    # Test sumAijBijt3D
+    name = 'sumAijBijt3D'
+    result = test_sumAijBijt3D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+    # Test sumAijKronBij3D
+    name = 'sumAijKronBij3D'
+    result = test_sumAijKronBij3D()
     # Add result to arrays.
     if result=='Passed':
         passedTests = np.append(passedTests, name)

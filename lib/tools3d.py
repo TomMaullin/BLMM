@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.sparse
-from lib.tools2d import faclev_indices2D
+from lib.tools2d import faclev_indices2D, permOfIkKkI2D
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
@@ -988,9 +988,10 @@ def getConvergedIndices(convergedBeforeIt, convergedDuringIt):
 
 # ============================================================================
 # 
-# This function converts a matrix 3D partitioned into blocks into a matrix 
-# consisting of each block stacked on top of one another. I.e. for each matrix
-# Ai=A[i,:,:], it maps A to matrix A_s like so:
+# This function converts a 3D matrix partitioned into blocks into a 3D matrix 
+# with each 2D submatrix consisting of the blocks stacked on top of one 
+# another. I.e. for each matrix Ai=A[i,:,:], it maps Ai to matrix Ai_s like
+# so:
 #
 #                                                           |   Ai_{1,1}   |
 #                                                           |   Ai_{1,2}   |
@@ -1036,6 +1037,202 @@ def block2stacked3D(A, pA):
   As = A.reshape((v,m1//n1,n1,m2//n2,n2)).transpose(0,1,3,2,4).reshape(v,m1*m2//n2,n2)
 
   return(As)
+
+
+# ============================================================================
+# 
+# This function converts a 3D matrix partitioned into blocks into a 3D matrix 
+# with each 2D submatrix consisting of the blocks converted to vectors stacked
+# on top of one another. I.e. for each matrix Ai=A[i,:,:], it maps Ai to
+# matrix Ai_s like so:
+#
+#                                                               |   vec'(Ai_{1,1})   |
+#                                                               |   vec'(Ai_{1,2})   |
+#      | Ai_{1,1}    Ai_{1,2}  ...  Ai_{1,l_2}  |               |        ...         |
+#      | Ai_{2,1}    Ai_{2,2}  ...  Ai_{2,l_2}  |               |  vec'(Ai_{1,l_2})  |
+# Ai = |    ...         ...    ...      ...     | -> vecb(Ai) = |   vec'(Ai_{2,1})   |
+#      | Ai_{l_1,1} Ai_{l_1,2} ... Ai_{l_1,l_2} |               |        ...         |
+#                                                               |        ...         |
+#                                                               | vec'(Ai_{l_1,l_2}) |
+#
+# ----------------------------------------------------------------------------
+#
+# The below function takes the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - mat: A 3D matrix of dimension (v by m1 by m2).
+#  - pA: The size of the block partitions of the mat_i, e.g. if Ai_{i,j} is of 
+#        dimension (n1 by n2) then pA=[n1, n2].
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following outputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - vecb: A matrix composed of each block of mat, converted to row vectors, 
+#          stacked on top of one another. I.e. for an arbitrary matrix A of 
+#          appropriate dimensions, vecb(A) is the result of the above mapping,
+#          where Ai_{j,k} has dimensions (1 by p[0] by p[1]) for all i, j and
+#          k.
+#
+# ============================================================================
+def mat2vecb3D(mat,p):
+
+  # Change to stacked block format, if necessary
+  if p[1]!=mat.shape[2]:
+    mat = block2stacked3D(mat,p)
+
+  # Get height of block.
+  n = p[0]
+  
+  # Work out shape of matrix.
+  v = mat.shape[0]
+  m = mat.shape[1]
+  k = mat.shape[2]
+
+  # Convert to stacked vector format
+  vecb = mat.reshape(v,m//n, n, k).transpose((0,2, 1, 3)).reshape(v,n, m*k//n).transpose((0,2,1)).reshape(v,m//n,n*k)
+
+  #Return vecb
+  return(vecb)
+
+
+# ============================================================================
+#
+# The below function computes, given two 3D matrices A and B, and denoting Av
+# and Bv as A[v,:,:] and B[v,:,:], the below sum, for all v:
+#
+#                 S = Sum_i Sum_j (Av_{i,j}Bv_{i,j}')
+# 
+# where the matrices A and B are block partitioned like so:
+#
+#      |   Av_{1,1}  ...  Av_{1,l2}  |       |   Bv_{1,1}  ...  Bv_{1,l2}  | 
+# Av = |    ...      ...      ...    |  Bv = |     ...     ...     ...     | 
+#      |  Av_{l1,1}  ...  Av_{l1,l2} |       |  Bv_{l1,1}  ...  Bv_{l1,l2} | 
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - A: A 3D matrix of dimension (v by m1 by m2).
+#  - B: A 3D matrix of dimension (v by m1' by m2).
+#  - pA: The size of the block partitions of A, e.g. if Av_{i,j} is of 
+#        dimension (n1 by n2) then pA=[n1, n2].
+#  - pB: The size of the block partitions of B, e.g. if Bv_{i,j} is of 
+#        dimension (n1' by n2) the pB=[n1', n2].
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+#  - S: The sum of the partitions of Av multiplied by the transpose of the 
+#       partitions of Bv, for every v.
+# 
+# ----------------------------------------------------------------------------
+#
+# Developer note: Note that the above implies that l1 must equal m1/n1=m1'/n1'
+#                 and l2=m2/n2.
+#
+# ============================================================================
+def sumAijBijt3D(A, B, pA, pB):
+  
+  # Number of voxels
+  v = A.shape[0]
+
+  # Work out second (the common) dimension of the reshaped A and B
+  nA = pA[0]
+  nB = pB[0]
+
+  # Work out the first (the common) dimension of reshaped A and B
+  mA = A.shape[1]*A.shape[2]//nA
+  mB = B.shape[1]*B.shape[2]//nB
+
+  # Check mA equals mB
+  if mA != mB:
+    raise Exception('Matrix dimensions incompatible.')
+
+  # Convert both matrices to stacked block format.
+  A = block2stacked3D(A,pA)
+  B = block2stacked3D(B,pB)
+
+  # Work out the sum
+  S = A.transpose((0,2,1)).reshape((v,mA,nA)).transpose((0,2,1)) @ B.transpose((0,2,1)).reshape((v,mB,nB))
+
+  # Return result
+  return(S)
+
+
+# ============================================================================
+#
+# The below function computes, given two 3D matrices A and B, and denoting Av
+# and Bv as A[v,:,:] and B[v,:,:], the below sum, for all v:
+#
+#                 S = Sum_i Sum_j (Av_{i,j} kron Bv_{i,j})
+# 
+# where the matrices A and B are block partitioned like so:
+#
+#      |   Av_{1,1}  ...  Av_{1,l2}  |       |   Bv_{1,1}  ...  Bv_{1,l2}  | 
+# Av = |    ...      ...      ...    |  Bv = |     ...     ...     ...     | 
+#      |  Av_{l1,1}  ...  Av_{l1,l2} |       |  Bv_{l1,1}  ...  Bv_{l1,l2} | 
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - `A`: A 3D matrix of dimension (v by m1 by m2).
+#  - `B`: A 3D matrix of dimension (v by m1 by m2).
+#  - `p`: The size of the block partitions of A and B, e.g. if A_{i,j} and 
+#         B_{i,j} are of dimension (n1 by n2) then pA=[n1, n2].
+#  - `perm` (optional): The permutation vector representing the matrix kronecker
+#                       product I_{n2} kron K_{n2,n1} kron I_{n1}.
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `S`: The sum of the partitions of Av multiplied by the transpose of the 
+#        partitions of Bv, for every v; i.e. the sum given above.
+# - `perm`: The permutation (same as input) used for calculation (useful for 
+#           later computation).
+#
+# ============================================================================
+def sumAijKronBij3D(A, B, p, perm=None):
+
+  # Check dim A and B and pA and pB all same
+  n1 = p[0]
+  n2 = p[1]
+
+  # Number of voxels
+  v = A.shape[0]
+
+  # This matrix only needs be calculated once
+  if perm is None:
+    perm = permOfIkKkI2D(n2,n1,n2,n1) 
+
+  # Convert to vecb format
+  atilde = mat2vecb3D(A,p)
+  btilde = mat2vecb3D(B,p)
+
+  # Multiply and convert to vector
+  vecba = mat2vec3D(btilde.transpose((0,2,1)) @ atilde)
+
+  # Permute
+  S_noreshape = vecba[:,perm,:] 
+
+  # Reshape to correct shape
+  S = S_noreshape.reshape(v,n2**2,n1**2).transpose((0,2,1))
+
+  return(S,perm)
 
 
 # TO DOCUMENT

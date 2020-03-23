@@ -551,7 +551,7 @@ def mat2vecb2D(mat,p):
 #
 # ----------------------------------------------------------------------------
 #
-#  - S: The sum of the partitions of $A$ multiplied by the transpose of the 
+#  - S: The sum of the partitions of A multiplied by the transpose of the 
 #       partitions of B.
 # 
 # ----------------------------------------------------------------------------
