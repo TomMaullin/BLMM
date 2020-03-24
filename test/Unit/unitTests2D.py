@@ -818,8 +818,8 @@ def test_mat2vecb2D():
 def test_sumAijBijt2D():
 
     # Random number of blocks
-    l1 = np.random.randint(1,3000)
-    l2 = np.random.randint(1,3000)
+    l1 = np.random.randint(1,300)
+    l2 = np.random.randint(1,300)
 
     # Random blocksizes (the second dimension must be the same for both)
     n1 = np.random.randint(1,5)
@@ -1319,7 +1319,7 @@ def test_llh2D():
     # (Niave) Expected log likelihood
     V = np.eye(n)+(Z @ D @ Z.transpose())
     e = Y - X @ beta
-    expected = -0.5*(n*np.log(sigma2)+np.log(np.linalg.det(V))+(1/sigma2)*e.transpose() @ np.linalg.inv(V) @ e)
+    expected = -0.5*(n*np.log(sigma2)+np.linalg.slogdet(V)[0]*np.linalg.slogdet(V)[1]+(1/sigma2)*e.transpose() @ np.linalg.inv(V) @ e)
 
     # Check if the function gives as expected
     testVal = np.allclose(loglh_test,expected)
@@ -1462,7 +1462,8 @@ def test_get_dldDk2D():
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
     
     # Obtain dldDk
-    dldDk_test = get_dldDk2D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD)
+    dldDk_test,ZtZmat = get_dldDk2D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD)
+    dldDk_test,_ = get_dldDk2D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat)
 
     # (Niave) calculation of dl/dDk
     sqrtinvIplusZDZt = forceSym2D(scipy.linalg.sqrtm(np.eye(n) - Z @ DinvIplusZtZD @ Z.transpose()))
@@ -1625,7 +1626,7 @@ def test_get_covdldDkdsigma22D():
     covdldDkdsigma2_expected = 1/(2*sigma2)*(invDupMatdict[k] @ mat2vec2D(sumTTt))
 
     # Computation using the function
-    covdldDkdsigma2_test = get_covdldDkdsigma22D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False)
+    covdldDkdsigma2_test = get_covdldDkdsigma22D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False,ZtZmat=None)[0]
   
     # Check if the function gives as expected
     testVal = np.allclose(covdldDkdsigma2_test,covdldDkdsigma2_expected)
@@ -1682,7 +1683,8 @@ def test_get_covdldDk1Dk22D():
       invDupMatdict[i] = invDupMat2D(nparams[i])
 
     # Test the function
-    covdldDk1Dk2_test = get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict)
+    covdldDk1Dk2_test,perm = get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict)
+    covdldDk1Dk2_test,_ = get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict,perm=perm)
 
     # Perform the same calculation niavely
     for j in np.arange(nlevels[k1]):

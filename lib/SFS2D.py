@@ -125,8 +125,19 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
   # Make sure indices are ints
   Dinds = np.int64(Dinds)
   
+  # This will hold the matrices: Sum_j^{l_k} Z_{i,j}'Z_{i,j}
+  ZtZmatdict = dict()
+  for k in np.arange(len(nparams)):
+    ZtZmatdict[k] = None
+
+  # This will hold the permutations needed for the covariance between the
+  # derivatives with respect to k
+  permdict = dict()
+  for k in np.arange(len(nparams)):
+    permdict[str(k)] = None
+
   while np.abs(llhprev-llhcurr)>tol:
-    
+
     # Change current likelihood to previous
     llhprev = llhcurr
     
@@ -143,8 +154,19 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
     counter = 0
     for k in np.arange(len(nparams)):
       
+      # Work out derivative
+      if ZtZmatdict[k] is None:
+        dldD,ZtZmatdict[k] = get_dldDk2D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None)
+      else:
+        dldD,_ = get_dldDk2D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k])
+
       # Work out update amount
-      update = lam*forceSym2D(np.linalg.inv(get_covdldDk1Dk22D(k, k, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict))) @ mat2vech2D(get_dldDk2D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD))
+      if permdict[str(k)] is None:
+        covdldDk,permdict[str(k)] = get_covdldDk1Dk22D(k, k, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict,perm=None)
+      else:
+        covdldDk,_ = get_covdldDk1Dk22D(k, k, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, perm=permdict[str(k)])
+
+      update = lam*forceSym2D(np.linalg.inv(covdldDk)) @ mat2vech2D(dldD)
       
       # Update D_k
       Ddict[k] = makeDnnd2D(vech2mat2D(mat2vech2D(Ddict[k]) + update))
