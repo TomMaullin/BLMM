@@ -501,12 +501,16 @@ def llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,reml=False, XtX=0, XtZ=0, Zt
 
       n = n.reshape(sigma2.shape)
   
-  # Work out -1/2(nln(sigma^2) + ln|I+Z'ZD|)
+  # Work out log|I+ZtZD|
+  logdet = np.linalg.slogdet(np.eye(ZtZ.shape[1]) + D @ ZtZ)
+  logdet = (logdet[0]*logdet[1]).reshape(ete.shape[0])
+
+  # Work out -1/2(nln(sigma^2) + ln|I+DZ'Z|)
   if reml==False:
-    firstterm = -0.5*(n*np.log(sigma2)).reshape(ete.shape[0]) - 0.5*np.log(np.linalg.det(np.eye(ZtZ.shape[1]) + D @ ZtZ)).reshape(ete.shape[0])
+    firstterm = -0.5*(n*np.log(sigma2)).reshape(ete.shape[0]) - 0.5*logdet
   else:
     p = XtX.shape[1]
-    firstterm = -0.5*((n-p)*np.log(sigma2)).reshape(ete.shape[0]) -0.5*np.log(np.linalg.det(np.eye(ZtZ.shape[1]) + D @ ZtZ)).reshape(ete.shape[0])
+    firstterm = -0.5*((n-p)*np.log(sigma2)).reshape(ete.shape[0]) -0.5*logdet
 
 
   # Work out sigma^(-2)*(e'e - e'ZD(I+Z'ZD)^(-1)Z'e)
@@ -516,7 +520,8 @@ def llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,reml=False, XtX=0, XtZ=0, Zt
   llh = (firstterm + secondterm).reshape(ete.shape[0])
 
   if reml:
-    llh = llh - 0.5*np.log(np.linalg.det(XtX - XtZ @ DinvIplusZtZD @ ZtX))
+    logdet = np.linalg.slogdet(XtX - XtZ @ DinvIplusZtZD @ ZtX)
+    llh = llh - 0.5*logdet[0]*logdet[1]
   
   # Return result
   return(llh)
