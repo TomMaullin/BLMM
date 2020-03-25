@@ -65,18 +65,14 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
 
       Ddict[k] = makeDnnd2D(vech2mat2D(init_paramVector[FishIndsDk[k]:FishIndsDk[k+1]]))
       
-    for i in np.arange(len(nparams)):
-
+    # Matrix version
+    D = scipy.sparse.lil_matrix((q,q))
+    counter = 0
+    for k in np.arange(len(nparams)):
       for j in np.arange(nlevels[i]):
 
-
-        if i == 0 and j == 0:
-
-          D = Ddict[i]
-
-        else:
-
-          D = scipy.linalg.block_diag(D, Ddict[i])
+        D[Dinds[counter]:Dinds[counter+1], Dinds[counter]:Dinds[counter+1]] = Ddict[k]
+        counter = counter + 1
 
   else:
 

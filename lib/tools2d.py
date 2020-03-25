@@ -1022,6 +1022,10 @@ def makeDnnd2D(D):
 # ============================================================================
 def llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D):
   
+  print(n*np.log(sigma2))
+  print(np.prod(np.linalg.slogdet(np.eye(ZtZ.shape[0]) + ZtZ @ D)))
+  print((1/sigma2)*(ete - forceSym2D(Zte.transpose() @ DinvIplusZtZD @ Zte)))
+
   # Work out the log likelihood
   llh = -0.5*(n*np.log(sigma2) + np.prod(np.linalg.slogdet(np.eye(ZtZ.shape[0]) + ZtZ @ D)) + (1/sigma2)*(ete - forceSym2D(Zte.transpose() @ DinvIplusZtZD @ Zte)))
   
