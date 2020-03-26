@@ -21,7 +21,7 @@ def main(*args):
     print(len(args))
     print(args[0])
     with open(ipath, 'r') as stream:
-        inputs = yaml.load(stream)
+        inputs = yaml.load(stream,Loader=yaml.FullLoader)
 
     # Run the setup job to obtain the number of batches needed.
     # The second argument tells setup to return nB rather than save it
@@ -30,7 +30,7 @@ def main(*args):
     # Reload inputs (setup may have changed paths in inputs if they
     # were relative).
     with open(ipath, 'r') as stream:
-        inputs = yaml.load(stream)
+        inputs = yaml.load(stream,Loader=yaml.FullLoader)
 
     # Run batch jobs and concatenate results
     print('Running batch 1/' + str(nB))

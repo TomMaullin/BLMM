@@ -29,7 +29,7 @@ def main(*args):
         # Load in inputs
         ipath = os.path.abspath(os.path.join('..','blmm_config.yml'))
         with open(ipath, 'r') as stream:
-            inputs = yaml.load(stream)
+            inputs = yaml.load(stream,Loader=yaml.FullLoader)
         retnb = False
     else:
         if type(args[0]) is str:
@@ -39,7 +39,7 @@ def main(*args):
                 ipath = os.path.abspath(os.path.join(pwd, args[0]))
             # In this case inputs file is first argument
             with open(ipath, 'r') as stream:
-                inputs = yaml.load(stream)
+                inputs = yaml.load(stream,Loader=yaml.FullLoader)
                 # Work out whether to return nb or save it in a 
                 # file
                 if len(args)>1:

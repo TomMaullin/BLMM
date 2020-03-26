@@ -56,12 +56,12 @@ def main(*args):
                     os.path.dirname(os.path.realpath(__file__)),
                     '..',
                     'blmm_config.yml'), 'r') as stream:
-            inputs = yaml.load(stream)
+            inputs = yaml.load(stream,Loader=yaml.FullLoader)
     else:
         if type(args[0]) is str:
             # In this case inputs file is first argument
             with open(os.path.join(args[0]), 'r') as stream:
-                inputs = yaml.load(stream)
+                inputs = yaml.load(stream,Loader=yaml.FullLoader)
         else:  
             # In this case inputs structure is first argument.
             inputs = args[0]

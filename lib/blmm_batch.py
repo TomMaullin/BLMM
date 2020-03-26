@@ -30,12 +30,12 @@ def main(*args):
     if len(args)==1 or (not args[1]):
         # Load in inputs
         with open(os.path.join(os.getcwd(),'..','blmm_config.yml'), 'r') as stream:
-            inputs = yaml.load(stream)
+            inputs = yaml.load(stream,Loader=yaml.FullLoader)
     else:
         if type(args[1]) is str:
             # In this case inputs file is first argument
             with open(os.path.join(args[1]), 'r') as stream:
-                inputs = yaml.load(stream)
+                inputs = yaml.load(stream,Loader=yaml.FullLoader)
         else:  
             # In this case inputs structure is first argument.
             inputs = args[1]
