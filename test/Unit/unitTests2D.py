@@ -350,7 +350,6 @@ def test_mat2vech2D():
     return(result)
 
 
-
 # =============================================================================
 #
 # The below function tests the function `mat2vechTri2D`. It does this by

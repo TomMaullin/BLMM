@@ -58,6 +58,29 @@ def mat2vech2D(matrix):
 
 # ============================================================================
 #
+# This function takes in a (lower triangular, square) matrix and 
+# half-vectorizes it (i.e. transforms it to a vector of each of the columns 
+# of the matrix, below and including the diagonal, stacked on top of one
+# another).
+#
+# Developer Note: This function is currently a wrapper for mat2vech2D. The 
+# reason for this is that, conceptually, both functions return the lower half
+# of the input matrix as a vector. However, I distinguished between the two,
+# firstly so the steps in each algorithm are more readable and secondly, as
+# the functions should expect different inputs. mat2vech2D expects a
+# symmetric matrix whilst mat2vechTri2D expects a lower triangular matrix. If
+# either of these implementations change in future, it may be useful to have 
+# noted the distinction between these functions in the code.
+#
+# ============================================================================
+def mat2vechTri2D(mat):
+
+    # Return vech
+    return(mat2vech2D(mat))
+
+
+# ============================================================================
+#
 # This function maps the vector of a symmetric matrix to a vector of the
 # elements of the lower half of the matrix stacked column-wise.
 #
@@ -123,6 +146,19 @@ def vech2mat2D(vech):
   
   # Return vectorised half-matrix
   return(matrix)
+
+
+# ============================================================================
+#
+# This function maps a vector of the elements of the lower half of a
+# lower triangular matrix stacked column-wise to the vector of all elements
+# of the matrix.
+#
+# ============================================================================
+def vechTri2mat2D(vech):
+
+    # Return lower triangular
+    return(np.tril(vech2mat2D(vech)))
 
 
 # ============================================================================
@@ -298,6 +334,35 @@ def dupMat2D(n):
   D = scipy.sparse.csr_matrix((np.ones(n**2),(np.arange(n**2),np.int64(vec).reshape(vec.shape[0]))))
   
   return(D)
+
+
+# ============================================================================
+#
+# This function generates a duplication matrix of size n^2 by n(n+1)/2,
+# which maps vec(X) to vechTri(X) for any lower triangular n by n matrix X,
+# where vechTri(X) is the vector of the lower triangular elements of X, 
+# reading downwards before to the right.
+#
+# ============================================================================
+def elimMat2D(n):
+
+    # Work out indices of lower triangular matrix
+    tri_row, tri_col = np.tril_indices(n)
+
+    # Translate these into the column indices we need
+    elim_col = np.sort(tri_col*n+tri_row)
+
+    # The row indices are just 1 to n(n+1)/2
+    elim_row = np.arange(n*(n+1)//2)
+
+    # We need to put ones in
+    elim_dat = np.ones(n*(n+1)//2)
+
+    # Construct the elimination matrix
+    elim=scipy.sparse.csr_matrix((elim_dat,(elim_row,elim_col)))
+
+    # Return 
+    return(elim)
 
 
 # ============================================================================
@@ -1756,72 +1821,3 @@ def get_mapping2D(nlevels, nparams):
 
     # Return lambda
     return(theta_repeated_inds, row_indices, col_indices)
-
-
-
-
-
-
-
-
-
-
-
-
-    # to document
-
-
-def elimMat2D(n):
-
-    # Work out indices of lower triangular matrix
-    tri_row, tri_col = np.tril_indices(n)
-
-    # Translate these into the column indices we need
-    elim_col = np.sort(tri_col*n+tri_row)
-
-    # The row indices are just 1 to n(n+1)/2
-    elim_row = np.arange(n*(n+1)//2)
-
-    # We need to put ones in
-    elim_dat = np.ones(n*(n+1)//2)
-
-    # Construct the elimination matrix
-    elim=scipy.sparse.csr_matrix((elim_dat,(elim_row,elim_col)))
-
-    # Return 
-    return(elim)
-
-# ============================================================================
-#
-# This function maps a vector of the elements of the lower half of a
-# lower triangular matrix stacked column-wise to the vector of all elements
-# of the matrix.
-#
-# ============================================================================
-def vechTri2mat2D(vech):
-
-    # Return lower triangular
-    return(np.tril(vech2mat2D(vech)))
-
-# ============================================================================
-#
-# This function takes in a (lower triangular, square) matrix and 
-# half-vectorizes it (i.e. transforms it to a vector of each of the columns 
-# of the matrix, below and including the diagonal, stacked on top of one
-# another).
-#
-# Developer Note: This function is currently a wrapper for mat2vech2D. The 
-# reason for this is that, conceptually, both functions return the lower half
-# of the input matrix as a vector. However, I distinguished between the two,
-# firstly so the steps in each algorithm are more readable and secondly, as
-# the functions should expect different inputs. mat2vech2D expects a
-# symmetric matrix whilst mat2vechTri2D expects a lower triangular matrix. If
-# either of these implementations change in future, it may be useful to have 
-# noted the distinction between these functions in the code.
-#
-# ============================================================================
-def mat2vechTri2D(mat):
-
-    # Return vech
-    return(mat2vech2D(mat))
-
