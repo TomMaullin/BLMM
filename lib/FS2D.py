@@ -111,6 +111,18 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, 
   llhprev = np.inf
   llhcurr = -np.inf
   
+  # This will hold the matrices: Sum_j^{l_k} Z_{i,j}'Z_{i,j}
+  ZtZmatdict = dict()
+  for k in np.arange(len(nparams)):
+    ZtZmatdict[k] = None
+
+  # This will hold the permutations needed for the covariance between the
+  # derivatives with respect to k1 and k2
+  permdict = dict()
+  for k1 in np.arange(len(nparams)):
+    for k2 in np.arange(len(nparams)):
+      permdict[str(k1)+str(k2)] = None
+
   counter = 0
   while np.abs(llhprev-llhcurr)>tol:
     
@@ -145,8 +157,12 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, 
     # For each factor, factor k, work out dl/dD_k
     dldDdict = dict()
     for k in np.arange(len(nparams)):
-      # Store it in the dictionary
-      dldDdict[k] = get_dldDk2D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD)
+      # Store it in the dictionary# Store it in the dictionary
+      if ZtZmatdict[k] is None:
+        dldDdict[k],ZtZmatdict[k] = get_dldDk2D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None)
+      else:
+        dldDdict[k],_ = get_dldDk2D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k])
+
 
     # Covariances
     # ----------------------------------------------------------------------------
@@ -168,7 +184,13 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, 
     for k in np.arange(len(nparams)):
 
       # Assign to the relevant block
-      FisherInfoMat[p, FishIndsDk[k]:FishIndsDk[k+1]] = get_covdldDkdsigma22D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict).reshape(FishIndsDk[k+1]-FishIndsDk[k])
+      if ZtZmatdict[k] is None:
+        covdldDksigma2,ZtZmatdict[k] = get_covdldDkdsigma22D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, ZtZmat=None)
+      else:
+        covdldDksigma2,_ = get_covdldDkdsigma22D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, ZtZmat=ZtZmatdict[k])
+
+      # Assign to the relevant block
+      FisherInfoMat[p, FishIndsDk[k]:FishIndsDk[k+1]] = covdldDksigma2.reshape(FishIndsDk[k+1]-FishIndsDk[k])
       FisherInfoMat[FishIndsDk[k]:FishIndsDk[k+1],p] = FisherInfoMat[p, FishIndsDk[k]:FishIndsDk[k+1]].transpose()
 
     # Add dl/dD covariance
@@ -180,7 +202,12 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, 
         IndsDk2 = np.arange(FishIndsDk[k2],FishIndsDk[k2+1])
 
         # Get covariance between D_k1 and D_k2 
-        FisherInfoMat[np.ix_(IndsDk1, IndsDk2)] = get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict)
+        if permdict[str(k1)+str(k2)] is None:
+          FisherInfoMat[np.ix_(IndsDk1, IndsDk2)],permdict[str(k1)+str(k2)] = get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict,perm=None)
+        else:
+          FisherInfoMat[np.ix_(IndsDk1, IndsDk2)],_ = get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict,perm=permdict[str(k1)+str(k2)])
+
+        # Get covariance between D_k1 and D_k2 
         FisherInfoMat[np.ix_(IndsDk2, IndsDk1)] = FisherInfoMat[np.ix_(IndsDk1, IndsDk2)].transpose()
 
     paramVector = np.concatenate((beta, np.array([[sigma2]])))

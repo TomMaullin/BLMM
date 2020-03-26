@@ -43,7 +43,7 @@ def mat2vec2D(matrix):
 def mat2vech2D(matrix):
   
   # Get lower triangular indices
-  rowinds, colinds = np.tril_indices(matrix.shape[0]) #Try mat.transpose()[trilu]?
+  rowinds, colinds = np.tril_indices(matrix.shape[0])
   
   # They're in the wrong order so we need to order them
   # To do this we first hash them
@@ -54,6 +54,29 @@ def mat2vech2D(matrix):
   
   # Return vectorised half-matrix
   return(np.array([matrix[rowinds[perm],colinds[perm]]]).transpose())
+
+
+# ============================================================================
+#
+# This function takes in a (lower triangular, square) matrix and 
+# half-vectorizes it (i.e. transforms it to a vector of each of the columns 
+# of the matrix, below and including the diagonal, stacked on top of one
+# another).
+#
+# Developer Note: This function is currently a wrapper for mat2vech2D. The 
+# reason for this is that, conceptually, both functions return the lower half
+# of the input matrix as a vector. However, I distinguished between the two,
+# firstly so the steps in each algorithm are more readable and secondly, as
+# the functions should expect different inputs. mat2vech2D expects a
+# symmetric matrix whilst mat2vechTri2D expects a lower triangular matrix. If
+# either of these implementations change in future, it may be useful to have 
+# noted the distinction between these functions in the code.
+#
+# ============================================================================
+def mat2vechTri2D(mat):
+
+    # Return vech
+    return(mat2vech2D(mat))
 
 
 # ============================================================================
@@ -123,6 +146,19 @@ def vech2mat2D(vech):
   
   # Return vectorised half-matrix
   return(matrix)
+
+
+# ============================================================================
+#
+# This function maps a vector of the elements of the lower half of a
+# lower triangular matrix stacked column-wise to the vector of all elements
+# of the matrix.
+#
+# ============================================================================
+def vechTri2mat2D(vech):
+
+    # Return lower triangular
+    return(np.tril(vech2mat2D(vech)))
 
 
 # ============================================================================
@@ -298,6 +334,35 @@ def dupMat2D(n):
   D = scipy.sparse.csr_matrix((np.ones(n**2),(np.arange(n**2),np.int64(vec).reshape(vec.shape[0]))))
   
   return(D)
+
+
+# ============================================================================
+#
+# This function generates a duplication matrix of size n^2 by n(n+1)/2,
+# which maps vec(X) to vechTri(X) for any lower triangular n by n matrix X,
+# where vechTri(X) is the vector of the lower triangular elements of X, 
+# reading downwards before to the right.
+#
+# ============================================================================
+def elimMat2D(n):
+
+    # Work out indices of lower triangular matrix
+    tri_row, tri_col = np.tril_indices(n)
+
+    # Translate these into the column indices we need
+    elim_col = np.sort(tri_col*n+tri_row)
+
+    # The row indices are just 1 to n(n+1)/2
+    elim_row = np.arange(n*(n+1)//2)
+
+    # We need to put ones in
+    elim_dat = np.ones(n*(n+1)//2)
+
+    # Construct the elimination matrix
+    elim=scipy.sparse.csr_matrix((elim_dat,(elim_row,elim_col)))
+
+    # Return 
+    return(elim)
 
 
 # ============================================================================
@@ -728,7 +793,7 @@ def ssr2D(YtX, YtY, XtX, beta):
 def fac_indices2D(k, nlevels, nparams):
   
   # Get indices for all factors
-  allInds = np.insert(np.cumsum(nlevels*nparams),0,0)
+  allInds = np.concatenate((np.array([0]),np.cumsum(nlevels*nparams)))
 
   # Work out the first index
   start = allInds[k]
@@ -888,50 +953,35 @@ def initSigma22D(ete, n):
 # ============================================================================
 def initDk2D(k, ZtZ, Zte, sigma2, nlevels, nparams, invDupMatdict):
   
-  # Initalize D to zeros
-  invSig2ZteetZminusZtZ = np.zeros((nparams[k],nparams[k]))
-  
+  # Initalize to zeros
+  ZkjtZkj = np.zeros((nparams[k],nparams[k]))
+
   # First we work out the derivative we require.
   for j in np.arange(nlevels[k]):
     
     Ikj = faclev_indices2D(k, j, nlevels, nparams)
 
     # Work out Z_(k, j)'Z_(k, j)
-    ZkjtZkj = ZtZ[np.ix_(Ikj,Ikj)]
+    ZkjtZkj = ZkjtZkj + ZtZ[np.ix_(Ikj,Ikj)]
     
-    # Work out Z_(k,j)'e
-    Zkjte = Zte[Ikj,:]
-    
-    if j==0:
-      
-      # Add first \sigma^{-2}Z'ee'Z - Z_(k,j)'Z_(k,j)
-      invSig2ZteetZminusZtZ = 1/sigma2*(Zkjte @ Zkjte.transpose()) - ZkjtZkj
-      
-    else:
-      
-      # Add next \sigma^{-2}Z'ee'Z - Z_(k,j)'Z_(k,j)
-      invSig2ZteetZminusZtZ = invSig2ZteetZminusZtZ + 1/sigma2*(Zkjte @ Zkjte.transpose()) - ZkjtZkj
+  # Work out block size
+  qk = nparams[k]
+  p = np.array([qk,1])
+
+  # Get indices
+  Ik = fac_indices2D(k, nlevels, nparams)
+
+  # Work out the sum of Z_{(k,j)}'ee'Z_{(k,j)}
+  ZteetZ = sumAijBijt2D(Zte[Ik,:],Zte[Ik,:],p,p)
+
+  # Add first \sigma^{-2}Z'ee'Z - Z_(k,j)'Z_(k,j)
+  invSig2ZteetZminusZtZ = 1/sigma2*ZteetZ - ZkjtZkj
   
   # Second we need to work out the double sum of Z_(k,j)'Z_(k,j)
-  for j in np.arange(nlevels[k]):
+  p = np.array([nparams[k],nparams[k]])
 
-    for i in np.arange(nlevels[k]):
-      
-      Iki = faclev_indices2D(k, i, nlevels, nparams)
-      Ikj = faclev_indices2D(k, j, nlevels, nparams)
-
-      # Work out Z_(k, j)'Z_(k, j)
-      ZkitZkj = ZtZ[np.ix_(Iki,Ikj)]
-      
-      if j==0 and i==0:
-        
-        # Add first Z_(k,j)'Z_(k,j) kron Z_(k,j)'Z_(k,j)
-        ZtZkronZtZ = np.kron(ZkitZkj,ZkitZkj.transpose())
-        
-      else:
-        
-        # Add next Z_(k,j)'Z_(k,j) kron Z_(k,j)'Z_(k,j)
-        ZtZkronZtZ = ZtZkronZtZ + np.kron(ZkitZkj,ZkitZkj.transpose())
+  # Get sum of Z_{(k,j)}'Z_{(k,j)} kron Z_{(k,j)}'Z_{(k,j)}
+  ZtZkronZtZ,_ = sumAijKronBij2D(ZtZ[np.ix_(Ik,Ik)], ZtZ[np.ix_(Ik,Ik)], p, perm=None)
 
   # Work out information matrix
   infoMat = invDupMatdict[k] @ ZtZkronZtZ @ invDupMatdict[k].transpose()
@@ -1036,7 +1086,7 @@ def makeDnnd2D(D):
 #
 # ============================================================================
 def llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D):
-  
+
   # Work out the log likelihood
   llh = -0.5*(n*np.log(sigma2) + np.prod(np.linalg.slogdet(np.eye(ZtZ.shape[0]) + ZtZ @ D)) + (1/sigma2)*(ete - forceSym2D(Zte.transpose() @ DinvIplusZtZD @ Zte)))
   
@@ -1159,6 +1209,9 @@ def get_dldsigma22D(n, ete, Zte, sigma2, DinvIplusZtZD):
 #          (Z'e=Z'(Y-X\beta) in the above notation).
 # - `sigma2`: The fixed effects variance (\sigma^2 in the above notation).
 # - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1).
+# - `ZtZmat` (optional): The sum over j of Z_{(k,j)}'Z_{(k,j)}. This only
+#                        need be calculated once so can be stored and 
+#                        re-entered for each iteration.
 #
 # ----------------------------------------------------------------------------
 #
@@ -1167,47 +1220,104 @@ def get_dldsigma22D(n, ete, Zte, sigma2, DinvIplusZtZD):
 # ----------------------------------------------------------------------------
 #
 # - `dldDk`: The derivative of l with respect to D_k.
+# - `ZtZmat`: The sum over j of Z_{(k,j)}'Z_{(k,j)}. This only need be 
+#             calculated once so can be stored and re-entered for each
+#             iteration.
 #
 # ============================================================================
-def get_dldDk2D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD):
+def get_dldDk2D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=None):
 
-  # Initalize the derivative to zeros
-  dldDk = np.zeros((nparams[k],nparams[k]))
+  # We only need calculate this once across all iterations
+  if ZtZmat is None:
 
-  # For each level j we need to add a term
-  for j in np.arange(nlevels[k]):
+    # Instantiate to zeros
+    ZtZmat = np.zeros(nparams[k],nparams[k])
 
-    # Get the indices for the kth factor jth level
-    Ikj = faclev_indices2D(k, j, nlevels, nparams)
+    for j in np.arange(nlevels[k]):
 
-    # Get (the kj^th columns of Z)^T multiplied by Z
-    Z_kjtZ = ZtZ[Ikj,:]
-    Z_kjte = Zte[Ikj,:]
+      # Get the indices for the kth factor jth level
+      Ikj = faclev_indices2D(k, j, nlevels, nparams)
 
-    # Get the first term of the derivative
-    Z_kjtVinve = Z_kjte - (Z_kjtZ @ DinvIplusZtZD @ Zte)
-    firstterm = 1/sigma2 * forceSym2D(Z_kjtVinve @ Z_kjtVinve.transpose())
-    
-    # Get (the kj^th columns of Z)^T multiplied by (the kj^th columns of Z)
-    Z_kjtZ_kj = ZtZ[np.ix_(Ikj,Ikj)]
-    secondterm = forceSym2D(Z_kjtZ_kj) - forceSym2D(Z_kjtZ @ DinvIplusZtZD @ Z_kjtZ.transpose())
-    
-    if j == 0:
-      
-      # Start a running sum over j
-      dldDk = firstterm - secondterm
-      
-    else:
-    
-      # Add these to the running sum
-      dldDk = dldDk + firstterm - secondterm
+      # Work out R_(k, j)
+      ZtZterm = ZtZ[np.ix_(Ikj,Ikj)]
 
-  # Halve the sum (the coefficient of a half was not included in the above)
-  dldDk = forceSym2D(dldDk/2)
+      # Add together
+      ZtZmat = ZtZmat + ZtZterm
+
+  # Get the indices for the factors 
+  Ik = fac_indices2D(k, nlevels, nparams)
+
+  # Work out lk
+  lk = nlevels[k]
+
+  # Work out block size
+  qk = nparams[k]
+  p = np.array([qk,1])
+
+  # Work out the second term in TT'
+  secondTerm = sumAijBijt2D(ZtZ[Ik,:] @ DinvIplusZtZD, ZtZ[Ik,:], p, p)
+
+  # Obtain RkSum=sum (TkjTkj')
+  RkSum = ZtZmat - secondTerm
+
+  # Work out T_ku*sigma
+  TuSig = Zte[Ik,:] - (ZtZ[Ik,:] @ DinvIplusZtZD @ Zte)
+
+  # Obtain Sum Tu(Tu)'
+  TuuTSum = sumAijBijt2D(TuSig, TuSig, p, p)/sigma2
+
+  # Work out dldDk
+  dldDk = 0.5*(forceSym2D(TuuTSum - RkSum))
 
   # Store it in the dictionary
-  return(dldDk)
+  return(dldDk,ZtZmat)
 
+
+# ============================================================================
+#
+# Commented out below is an older version of the above code. This has been 
+# left here in case it has any use for future development.
+#
+# ============================================================================
+# def get_dldDk2D_old(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD):
+#
+#   # Initalize the derivative to zeros
+#   dldDk = np.zeros((nparams[k],nparams[k]))
+#
+#   # For each level j we need to add a term
+#   for j in np.arange(nlevels[k]):
+#
+#     # Get the indices for the kth factor jth level
+#     Ikj = faclev_indices2D(k, j, nlevels, nparams)
+#
+#     # Get (the kj^th columns of Z)^T multiplied by Z
+#     Z_kjtZ = ZtZ[Ikj,:]
+#     Z_kjte = Zte[Ikj,:]
+#
+#     # Get the first term of the derivative
+#     Z_kjtVinve = Z_kjte - (Z_kjtZ @ DinvIplusZtZD @ Zte)
+#     firstterm = 1/sigma2 * forceSym2D(Z_kjtVinve @ Z_kjtVinve.transpose())
+#    
+#     # Get (the kj^th columns of Z)^T multiplied by (the kj^th columns of Z)
+#     Z_kjtZ_kj = ZtZ[np.ix_(Ikj,Ikj)]
+#     secondterm = forceSym2D(Z_kjtZ_kj) - forceSym2D(Z_kjtZ @ DinvIplusZtZD @ Z_kjtZ.transpose())
+#    
+#     if j == 0:
+#      
+#       # Start a running sum over j
+#       dldDk = firstterm - secondterm
+#      
+#     else:
+#    
+#       # Add these to the running sum
+#       dldDk = dldDk + firstterm - secondterm
+#
+#   # Halve the sum (the coefficient of a half was not included in the above)
+#   dldDk = forceSym2D(dldDk/2)
+#
+#   # Store it in the dictionary
+#   return(dldDk)
+# ============================================================================
 
 
 # ============================================================================
@@ -1275,6 +1385,9 @@ def get_covdldbeta2D(XtZ, XtX, ZtZ, DinvIplusZtZD, sigma2):
 # - `vec`: This is a boolean value which by default is false. If True it gives
 #          the update vector for vec (i.e. duplicates included), otherwise it
 #          gives the update vector for vech.
+# - `ZtZmat`: The sum over j of Z_{(k,j)}'Z_{(k,j)}. This only need be 
+#             calculated once so can be stored and re-entered for each
+#             iteration.
 #
 # ----------------------------------------------------------------------------
 #
@@ -1285,31 +1398,87 @@ def get_covdldbeta2D(XtZ, XtX, ZtZ, DinvIplusZtZD, sigma2):
 # - `covdldDdldsigma2`: The covariance between the derivative of the log 
 #                       likelihood with respect to vech(D_k) and the 
 #                       derivative with respect to \sigma^2.
+# - `ZtZmat`: The sum over j of Z_{(k,j)}'Z_{(k,j)}. This only need be 
+#             calculated once so can be stored and re-entered for each
+#             iteration.
 #
 # ============================================================================
-def get_covdldDkdsigma22D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False):
-  
-  # Sum of R_(k, j) over j
-  RkSum = np.zeros(nparams[k],nparams[k])
+def get_covdldDkdsigma22D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False, ZtZmat=None):
 
-  for j in np.arange(nlevels[k]):
+  # We only need calculate this once across all iterations
+  if ZtZmat is None:
 
-    # Get the indices for the kth factor jth level
-    Ikj = faclev_indices2D(k, j, nlevels, nparams)
+    # Instantiate to zeros
+    ZtZmat = np.zeros(nparams[k],nparams[k])
 
-    # Work out R_(k, j)
-    Rkj = ZtZ[np.ix_(Ikj,Ikj)] - forceSym2D(ZtZ[Ikj,:] @ DinvIplusZtZD @ ZtZ[:,Ikj])
+    for j in np.arange(nlevels[k]):
 
-    # Add together
-    RkSum = RkSum + Rkj
+      # Get the indices for the kth factor jth level
+      Ikj = faclev_indices2D(k, j, nlevels, nparams)
+
+      # Work out R_(k, j)
+      ZtZterm = ZtZ[np.ix_(Ikj,Ikj)]
+
+      # Add together
+      ZtZmat = ZtZmat + ZtZterm
+
+  # Get the indices for the factors 
+  Ik = fac_indices2D(k, nlevels, nparams)
+
+  # Work out lk
+  lk = nlevels[k]
+
+  # Work out block size
+  q = np.sum(nlevels*nparams)
+  qk = nparams[k]
+  p = np.array([qk,q])
+
+  # Work out the second term
+  secondTerm = sumAijBijt2D(ZtZ[Ik,:] @ DinvIplusZtZD, ZtZ[Ik,:], p, p)
+
+  # Obtain ZtZmat
+  RkSum = ZtZmat - secondTerm
 
   # Multiply by duplication matrices and save
   if not vec:
     covdldDdldsigma2 = 1/(2*sigma2) * invDupMatdict[k] @ mat2vec2D(RkSum)
   else:
     covdldDdldsigma2 = 1/(2*sigma2) * mat2vec2D(RkSum)  
+  
+  return(covdldDdldsigma2,ZtZmat)
 
-  return(covdldDdldsigma2)
+
+
+# ============================================================================
+#
+# Commented out below is an older version of the above code. This has been 
+# left here in case it has any use for future development.
+#
+# ============================================================================
+# def get_covdldDkdsigma22D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False):
+#  
+#   # Sum of R_(k, j) over j
+#   RkSum = np.zeros(nparams[k],nparams[k])
+#
+#   for j in np.arange(nlevels[k]):
+#
+#     # Get the indices for the kth factor jth level
+#     Ikj = faclev_indices2D(k, j, nlevels, nparams)
+#
+#     # Work out R_(k, j)
+#     Rkj = ZtZ[np.ix_(Ikj,Ikj)] - forceSym2D(ZtZ[Ikj,:] @ DinvIplusZtZD @ ZtZ[:,Ikj])
+#
+#     # Add together
+#     RkSum = RkSum + Rkj
+#
+#   # Multiply by duplication matrices and save
+#   if not vec:
+#     covdldDdldsigma2 = 1/(2*sigma2) * invDupMatdict[k] @ mat2vec2D(RkSum)
+#   else:
+#     covdldDdldsigma2 = 1/(2*sigma2) * mat2vec2D(RkSum)  
+#
+#   return(covdldDdldsigma2)
+# ============================================================================
 
 
 # ============================================================================
@@ -1343,9 +1512,13 @@ def get_covdldDkdsigma22D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDu
 # - `DinvIplusZtZD`: D(I+Z'ZD)^(-1) in the above notation.
 # - `invDupMatdict`: A dictionary of inverse duplication matrices such that 
 #                    `invDupMatdict[k]` = DupMat_k^+
-# - `vec`: This is a boolean value which by default is false. If True it gives
-#          the update vector for vec (i.e. duplicates included), otherwise it
-#          gives the update vector for vech.
+# - `vec` (optional): This is a boolean value which by default is false. If
+#                     True it gives the update vector for vec (i.e.
+#                     duplicates included), otherwise it gives the update
+#                     vector for vech.
+# - `perm` (optional): The permutation of I kron K kron I (see 
+#                      `permOfIkKkI2D`). This only need be calculated once so
+#                      can be passed between iterations.
 #
 # ----------------------------------------------------------------------------
 #
@@ -1356,43 +1529,78 @@ def get_covdldDkdsigma22D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDu
 # - `covdldDk1dldk2`: The covariance between the derivative of the log
 #                     likelihood with respect to vech(D_(k1)) and the 
 #                     derivative with respect to vech(D_(k2)).
+# - `perm`: The permutation of I kron K kron I (see `permOfIkKkI2D`). This 
+#           only need be calculated once so can be passed between iterations.
 #
 # ============================================================================
-def get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False):
-  
-  # Sum of R_(k1, k2, i, j) kron R_(k1, k2, i, j) over i and j 
-  for i in np.arange(nlevels[k1]):
+def get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, perm=None, vec=False):
 
-    for j in np.arange(nlevels[k2]):
-      
-      # Get the indices for the k1th factor jth level
-      Ik1i = faclev_indices2D(k1, i, nlevels, nparams)
-      Ik2j = faclev_indices2D(k2, j, nlevels, nparams)
-      
-      # Work out R_(k1, k2, i, j)
-      Rk1k2ij = ZtZ[np.ix_(Ik1i,Ik2j)] - (ZtZ[Ik1i,:] @ DinvIplusZtZD @ ZtZ[:,Ik2j])
-      
-      # Work out Rk1k2ij kron Rk1k2ij
-      RkRt = np.kron(Rk1k2ij,Rk1k2ij)
-      
-      # Add together
-      if (i == 0) and (j == 0):
-      
-        RkRtSum = RkRt
-      
-      else:
-        
-        RkRtSum = RkRtSum + RkRt
+  # Get the indices for the factors 
+  Ik1 = fac_indices2D(k1, nlevels, nparams)
+  Ik2 = fac_indices2D(k2, nlevels, nparams)
+
+  # Work out R_(k1,k2)
+  Rk1k2 = ZtZ[np.ix_(Ik1,Ik2)] - (ZtZ[Ik1,:] @ DinvIplusZtZD @ ZtZ[:,Ik2])
+
+  # Work out block sizes
+  p = np.array([nparams[k1],nparams[k2]])
+
+  # Obtain permutation
+  RkRSum,perm=sumAijKronBij2D(Rk1k2, Rk1k2, p, perm)
     
   # Multiply by duplication matrices and save
   if not vec:
-    covdldDk1dldk2 = 1/2 * invDupMatdict[k1] @ RkRtSum @ invDupMatdict[k2].transpose()
+    covdldDk1dldk2 = 1/2 * invDupMatdict[k1] @ RkRSum @ invDupMatdict[k2].transpose()
   else:
-    covdldDk1dldk2 = 1/2 * RkRtSum 
+    covdldDk1dldk2 = 1/2 * RkRSum 
 
   
   # Return the result
-  return(covdldDk1dldk2)
+  return(covdldDk1dldk2,perm)
+
+
+# ============================================================================
+#
+# Commented out below is an older version of the above code. This has been 
+# left here in case it has any use for future development.
+#
+# ============================================================================
+# def get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False):
+#  
+#   # Sum of R_(k1, k2, i, j) kron R_(k1, k2, i, j) over i and j 
+#   for i in np.arange(nlevels[k1]):
+#
+#     for j in np.arange(nlevels[k2]):
+#      
+#       # Get the indices for the k1th factor jth level
+#       Ik1i = faclev_indices2D(k1, i, nlevels, nparams)
+#       Ik2j = faclev_indices2D(k2, j, nlevels, nparams)
+#      
+#       # Work out R_(k1, k2, i, j)
+#       Rk1k2ij = ZtZ[np.ix_(Ik1i,Ik2j)] - (ZtZ[Ik1i,:] @ DinvIplusZtZD @ ZtZ[:,Ik2j])
+#      
+#       # Work out Rk1k2ij kron Rk1k2ij
+#       RkRt = np.kron(Rk1k2ij,Rk1k2ij)
+#      
+#       # Add together
+#       if (i == 0) and (j == 0):
+#      
+#         RkRtSum = RkRt
+#      
+#       else:
+#        
+#         RkRtSum = RkRtSum + RkRt
+#    
+#   # Multiply by duplication matrices and save
+#   if not vec:
+#     covdldDk1dldk2 = 1/2 * invDupMatdict[k1] @ RkRtSum @ invDupMatdict[k2].transpose()
+#   else:
+#     covdldDk1dldk2 = 1/2 * RkRtSum 
+#
+#  
+#   # Return the result
+#   return(covdldDk1dldk2)
+# ============================================================================
 
 
 # ============================================================================
@@ -1523,6 +1731,7 @@ def sparse_chol2D(M, perm=None, retF=False, retP=True, retL=True):
 
 
 # ============================================================================
+#
 # This function takes in a vector of parameters, theta, and returns indices 
 # which maps them the to lower triangular block diagonal matrix, lambda.
 #

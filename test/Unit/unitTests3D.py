@@ -805,7 +805,7 @@ def test_initDk3D():
     invDupMatdict = dict()
     for i in np.arange(len(nparams)):
       
-      invDupMatdict[i] = invDupMat2D(nparams[i])
+      invDupMatdict[i] = invDupMat2D(nparams[i]).toarray()
 
     # Work out Z'e
     Zte = ZtY - ZtX @ beta
@@ -1108,14 +1108,14 @@ def test_get_dldDk3D():
 
     # First test spatially varying
     dldDk_sv_test = get_dldDk3D(k, nlevels, nparams, ZtZ_sv, Zte_sv, sigma2, DinvIplusZtZD_sv)[testv,:,:]
-    dldDk_sv_expected = get_dldDk2D(k, nlevels, nparams, ZtZ_sv[testv,:,:], Zte_sv[testv,:,:], sigma2[testv], DinvIplusZtZD_sv[testv,:,:])
+    dldDk_sv_expected = get_dldDk2D(k, nlevels, nparams, ZtZ_sv[testv,:,:], Zte_sv[testv,:,:], sigma2[testv], DinvIplusZtZD_sv[testv,:,:])[0]
 
     # Check if results are all close.
     sv_testVal = np.allclose(dldDk_sv_test,dldDk_sv_expected)
 
     # Now test non spatially varying
     dldDk_nsv_test = get_dldDk3D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD)[testv,:,:]
-    dldDk_nsv_expected = get_dldDk2D(k, nlevels, nparams, ZtZ[0,:,:], Zte[testv,:,:], sigma2[testv], DinvIplusZtZD[testv,:,:])
+    dldDk_nsv_expected = get_dldDk2D(k, nlevels, nparams, ZtZ[0,:,:], Zte[testv,:,:], sigma2[testv], DinvIplusZtZD[testv,:,:])[0]
     
     # Check if results are all close.
     nsv_testVal = np.allclose(dldDk_nsv_test,dldDk_nsv_expected)
@@ -1227,14 +1227,14 @@ def test_get_covdldDkdsigma23D():
 
     # First test spatially varying
     covdldDsigma2_sv_test = get_covdldDkdsigma23D(k, sigma2, nlevels, nparams, ZtZ_sv, DinvIplusZtZD_sv, invDupMatdict)[testv,:,:]
-    covdldDsigma2_sv_expected = get_covdldDkdsigma22D(k, sigma2[testv], nlevels, nparams, ZtZ_sv[testv,:,:], DinvIplusZtZD_sv[testv,:,:], invDupMatdict)
+    covdldDsigma2_sv_expected = get_covdldDkdsigma22D(k, sigma2[testv], nlevels, nparams, ZtZ_sv[testv,:,:], DinvIplusZtZD_sv[testv,:,:], invDupMatdict, ZtZmat=None)[0]
 
     # Check if results are all close.
     sv_testVal = np.allclose(covdldDsigma2_sv_test,covdldDsigma2_sv_expected)
 
     # Now test non spatially varying
     covdldDsigma2_nsv_test = get_covdldDkdsigma23D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict)[testv,:,:]
-    covdldDsigma2_nsv_expected = get_covdldDkdsigma22D(k, sigma2[testv], nlevels, nparams, ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], invDupMatdict)
+    covdldDsigma2_nsv_expected = get_covdldDkdsigma22D(k, sigma2[testv], nlevels, nparams, ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], invDupMatdict, ZtZmat=None)[0]
 
     # Check if results are all close.
     nsv_testVal = np.allclose(covdldDsigma2_nsv_test,covdldDsigma2_nsv_expected)
@@ -1292,14 +1292,14 @@ def test_get_covdldDk1Dk23D():
 
     # First test spatially varying
     covdldD_sv_test = get_covdldDk1Dk23D(k1, k2, nlevels, nparams, ZtZ_sv, DinvIplusZtZD_sv, invDupMatdict)[testv,:,:]
-    covdldD_sv_expected = get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ_sv[testv,:,:], DinvIplusZtZD_sv[testv,:,:], invDupMatdict)
+    covdldD_sv_expected = get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ_sv[testv,:,:], DinvIplusZtZD_sv[testv,:,:], invDupMatdict)[0]
   
     # Check if results are all close.
     sv_testVal = np.allclose(covdldD_sv_test,covdldD_sv_expected)
 
     # Now test non spatially varying
     covdldD_nsv_test = get_covdldDk1Dk23D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict)[testv,:,:]
-    covdldD_nsv_expected = get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], invDupMatdict)
+    covdldD_nsv_expected = get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], invDupMatdict)[0]
     
     # Check if results are all close.
     nsv_testVal = np.allclose(covdldD_nsv_test,covdldD_nsv_expected)

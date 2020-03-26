@@ -30,6 +30,20 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
   FishIndsDk = np.insert(FishIndsDk,0,p+1)
   #print('inds',FishIndsDk)
 
+  # Work out D indices (there is one block of D per level)
+  Dinds = np.zeros(np.sum(nlevels)+1)
+  counter = 0
+  for k in np.arange(len(nparams)):
+    for j in np.arange(nlevels[k]):
+      Dinds[counter] = np.concatenate((np.array([0]), np.cumsum(nlevels*nparams)))[k] + nparams[k]*j
+      counter = counter + 1
+      
+  # Last index will be missing so add it
+  Dinds[len(Dinds)-1]=Dinds[len(Dinds)-2]+nparams[-1]
+  
+  # Make sure indices are ints
+  Dinds = np.int64(Dinds)
+
   # Duplication matrices
   # ------------------------------------------------------------------------------
   invDupMatdict = dict()
@@ -51,18 +65,14 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
 
       Ddict[k] = makeDnnd2D(vech2mat2D(init_paramVector[FishIndsDk[k]:FishIndsDk[k+1]]))
       
-    for i in np.arange(len(nparams)):
+    # Matrix version
+    D = scipy.sparse.lil_matrix((q,q))
+    counter = 0
+    for k in np.arange(len(nparams)):
+      for j in np.arange(nlevels[k]):
 
-      for j in np.arange(nlevels[i]):
-
-
-        if i == 0 and j == 0:
-
-          D = Ddict[i]
-
-        else:
-
-          D = scipy.linalg.block_diag(D, Ddict[i])
+        D[Dinds[counter]:Dinds[counter+1], Dinds[counter]:Dinds[counter+1]] = Ddict[k]
+        counter = counter + 1
 
   else:
 
@@ -85,24 +95,26 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
       Ddict[k] = makeDnnd2D(initDk2D(k, ZtZ, Zte, sigma2, nlevels, nparams, invDupMatdict))
       
     # Matrix version
-    D = np.array([])
-    for i in np.arange(len(nparams)):
+    D = scipy.sparse.lil_matrix((q,q))
+    t1 = time.time()
+    counter = 0
+    for k in np.arange(len(nparams)):
+      for j in np.arange(nlevels[k]):
 
-      for j in np.arange(nlevels[i]):
+        D[Dinds[counter]:Dinds[counter+1], Dinds[counter]:Dinds[counter+1]] = Ddict[k]
+        counter = counter + 1
 
-        if i == 0 and j == 0:
-
-          D = Ddict[i]
-
-        else:
-
-          D = scipy.linalg.block_diag(D, Ddict[i])
+    t2 = time.time()
+    print('toDict time: ', t2-t1)
 
   Zte = ZtY - (ZtX @ beta)
 
   # Inverse of (I+Z'ZD) multiplied by DIplusDZtZ 
   IplusZtZD = np.eye(q) + ZtZ @ D
+  t1 = time.time()
   DinvIplusZtZD = forceSym2D(D @ scipy.sparse.linalg.inv(scipy.sparse.csc_matrix(IplusZtZD)))
+  t2 = time.time()
+  print('inv time: ', t2-t1)
 
   # Step size lambda
   lam = 1
@@ -110,26 +122,27 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
   # Initial log likelihoods
   llhprev = np.inf
   llhcurr = -np.inf
-
-  # Work out D indices (there is one block of D per level)
-  Dinds = np.zeros(np.sum(nlevels)+1)
-  counter = 0
+  
+  # This will hold the matrices: Sum_j^{l_k} Z_{i,j}'Z_{i,j}
+  ZtZmatdict = dict()
   for k in np.arange(len(nparams)):
-    for j in np.arange(nlevels[k]):
-      Dinds[counter] = np.concatenate((np.array([0]), np.cumsum(nlevels*nparams)))[k] + nparams[k]*j
-      counter = counter + 1
-      
-  # Last index will be missing so add it
-  Dinds[len(Dinds)-1]=Dinds[len(Dinds)-2]+nparams[-1]
-  
-  # Make sure indices are ints
-  Dinds = np.int64(Dinds)
-  
+    ZtZmatdict[k] = None
+
+  # This will hold the permutations needed for the covariance between the
+  # derivatives with respect to k
+  permdict = dict()
+  for k in np.arange(len(nparams)):
+    permdict[str(k)] = None
+
+  nit = 0
   while np.abs(llhprev-llhcurr)>tol:
     
     # Change current likelihood to previous
     llhprev = llhcurr
-    
+
+    #print(nit)
+    nit = nit+1
+
     #---------------------------------------------------------------------------
     # Update beta
     beta = np.linalg.solve(XtX - XtZ @ DinvIplusZtZD @ ZtX, XtY - XtZ @ DinvIplusZtZD @ ZtY)
@@ -142,9 +155,22 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
     # Update D_k
     counter = 0
     for k in np.arange(len(nparams)):
+
+      # Work out derivative
+      if ZtZmatdict[k] is None:
+        dldD,ZtZmatdict[k] = get_dldDk2D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None)
+      else:
+        dldD,_ = get_dldDk2D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k])
+
       
       # Work out update amount
-      update = lam*forceSym2D(np.linalg.inv(get_covdldDk1Dk22D(k, k, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict,vec=True))) @ mat2vec2D(get_dldDk2D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD))
+      if permdict[str(k)] is None:
+        covdldDk,permdict[str(k)] = get_covdldDk1Dk22D(k, k, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True, perm=None)
+      else:
+        covdldDk,_ = get_covdldDk1Dk22D(k, k, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True, perm=permdict[str(k)])
+
+      # Work out update amount
+      update = lam*forceSym2D(np.linalg.inv(covdldDk)) @ mat2vec2D(dldD)
       update = vec2vech2D(update)
       
       # Update D_k
@@ -160,7 +186,7 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
       
       # Inverse of (I+Z'ZD) multiplied by D
       IplusZtZD = np.eye(q) + (ZtZ @ D)
-      DinvIplusZtZD = forceSym2D(D @ np.linalg.inv(IplusZtZD)) 
+      DinvIplusZtZD = forceSym2D(D @ scipy.sparse.linalg.inv(scipy.sparse.csc_matrix(IplusZtZD)))
 
     # Update the step size
     llhcurr = llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D)[0,0]
@@ -172,5 +198,7 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
     paramVector = np.concatenate((paramVector, mat2vech2D(Ddict[k])))
 
   bvals = DinvIplusZtZD @ Zte
-  
+
+  print('nit',nit)
+    
   return(paramVector, bvals)
