@@ -805,7 +805,7 @@ def test_initDk3D():
     invDupMatdict = dict()
     for i in np.arange(len(nparams)):
       
-      invDupMatdict[i] = invDupMat2D(nparams[i])
+      invDupMatdict[i] = invDupMat2D(nparams[i]).toarray()
 
     # Work out Z'e
     Zte = ZtY - ZtX @ beta

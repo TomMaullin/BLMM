@@ -390,7 +390,7 @@ def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nparams, invDupMatdict):
         ZtZkronZtZ = ZtZkronZtZ + kron3D(ZkitZkj,ZkitZkj.transpose(0,2,1))
 
   # Work out information matrix
-  infoMat = invDupMatdict[k].toarray() @ ZtZkronZtZ @ invDupMatdict[k].toarray().transpose()
+  infoMat = invDupMatdict[k] @ ZtZkronZtZ @ invDupMatdict[k].transpose()
 
   # Work out the final term.
   Dkest = vech2mat3D(np.linalg.inv(infoMat) @ mat2vech3D(invSig2ZteetZminusZtZ)) 
