@@ -2,6 +2,7 @@ import numpy as np
 import scipy.sparse
 import cvxopt
 from cvxopt import cholmod, umfpack, amd, matrix, spmatrix, lapack
+from numba import jit
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
@@ -43,7 +44,7 @@ def mat2vec2D(matrix):
 def mat2vech2D(matrix):
   
   # Get lower triangular indices
-  rowinds, colinds = np.tril_indices(matrix.shape[0]) #Try mat.transpose()[trilu]?
+  rowinds, colinds = np.tril_indices(matrix.shape[0])
   
   # They're in the wrong order so we need to order them
   # To do this we first hash them
@@ -74,6 +75,7 @@ def vec2vech2D(vec):
 # top of one another to it's corresponding square matrix.
 #
 # ============================================================================
+@jit(nopython=True)
 def vec2mat2D(vec):
   
   # Return matrix
@@ -1021,10 +1023,6 @@ def makeDnnd2D(D):
 #
 # ============================================================================
 def llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D):
-  
-  print(n*np.log(sigma2))
-  print(np.prod(np.linalg.slogdet(np.eye(ZtZ.shape[0]) + ZtZ @ D)))
-  print((1/sigma2)*(ete - forceSym2D(Zte.transpose() @ DinvIplusZtZD @ Zte)))
 
   # Work out the log likelihood
   llh = -0.5*(n*np.log(sigma2) + np.prod(np.linalg.slogdet(np.eye(ZtZ.shape[0]) + ZtZ @ D)) + (1/sigma2)*(ete - forceSym2D(Zte.transpose() @ DinvIplusZtZD @ Zte)))
@@ -1760,3 +1758,48 @@ def get_mapping2D(nlevels, nparams):
 
     # Return lambda
     return(theta_repeated_inds, row_indices, col_indices)
+
+
+
+
+
+
+
+
+
+
+
+
+    # to document
+
+
+def elimMat2D(n):
+
+    # Work out indices of lower triangular matrix
+    tri_row, tri_col = np.tril_indices(n)
+
+    # Translate these into the column indices we need
+    elim_col = np.sort(tri_col*n+tri_row)
+
+    # The row indices are just 1 to n(n+1)/2
+    elim_row = np.arange(n*(n+1)//2)
+
+    # We need to put ones in
+    elim_dat = np.ones(n*(n+1)//2)
+
+    # Construct the elimination matrix
+    elim=scipy.sparse.csr_matrix((elim_dat,(elim_row,elim_col)))
+
+    # Return 
+    return(elim)
+
+def vechTri2mat2D(vech):
+
+    # Return lower triangular
+    return(np.tril(vech2mat2D(vech)))
+
+def mat2vechTri2D(mat):
+
+    # Return vech
+    return(mat2vech2D(mat))
+
