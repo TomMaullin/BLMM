@@ -350,6 +350,47 @@ def test_mat2vech2D():
     return(result)
 
 
+
+# =============================================================================
+#
+# The below function tests the function `mat2vechTri2D`. It does this by
+# checking the function against a predefined example.
+#
+# =============================================================================
+def test_mat2vechTri2D():
+
+    # Test vector
+    expected = (np.arange(28)+1).reshape(28,1)
+
+    # Empty n by n matrix.
+    mat = np.array([[1,0,0,0,0,0,0],
+                    [2,8,0,0,0,0,0],
+                    [3,9,14,0,0,0,0],
+                    [4,10,15,19,0,0,0],
+                    [5,11,16,20,23,0,0],
+                    [6,12,17,21,24,26,0],
+                    [7,13,18,22,25,27,28]])
+
+    # Test output
+    test = mat2vechTri2D(mat)
+    
+    # Test
+    testVal = np.allclose(test, expected)
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: mat2vechTri2D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+
+    return(result)
+
+
 # =============================================================================
 #
 # The below function tests the function `vec2mat2D`. It does this by checking 
@@ -411,6 +452,45 @@ def test_vech2mat2D():
 
     return(result)
 
+
+# =============================================================================
+#
+# The below function tests the function `vechTri2mat2D`. It does this by
+# checking the function against a predefined example.
+#
+# =============================================================================
+def test_vechTri2mat2D():
+
+    # Test vector
+    vech=np.arange(28)+1
+
+    # Empty n by n matrix.
+    expected = np.array([[1,0,0,0,0,0,0],
+                         [2,8,0,0,0,0,0],
+                         [3,9,14,0,0,0,0],
+                         [4,10,15,19,0,0,0],
+                         [5,11,16,20,23,0,0],
+                         [6,12,17,21,24,26,0],
+                         [7,13,18,22,25,27,28]])
+
+    # Test output
+    test = vechTri2mat2D(vech)
+    
+    # Test
+    testVal = np.allclose(test, expected)
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: vechTri2mat2D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+
+    return(result)
 
 
 # =============================================================================
@@ -610,6 +690,45 @@ def test_dupMat2D():
 
     return(result)
 
+
+# =============================================================================
+#
+# The below function tests the function `elimMat2D`. It does this by checking 
+# the elimination matrix given has the desired effect on a vector.
+#
+# =============================================================================
+def test_elimMat2D():
+
+    # Choose dimension for random matrix
+    m = np.random.randint(3,14)
+
+    # Make random lower triangular matrix
+    a = np.tril(np.random.randn(m**2).reshape(m,m))
+
+    # Convert to vec
+    avec = mat2vec2D(a)
+
+    # Expected result
+    expected = avec[avec!=0].reshape(avec[avec!=0].shape[0],1)
+
+    # Result given using elimMatFunction
+    test = elimMat2D(m) @ avec
+
+    # Test
+    testVal = np.allclose(test, expected)
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: elimMat2D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+
+    return(result)
 
 # =============================================================================
 #
@@ -1922,6 +2041,16 @@ def run_all2D():
         failedTests = np.append(failedTests, name)
 
 
+    # Test mat2vechTri2D
+    name = 'mat2vechTri2D'
+    result = test_mat2vechTri2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
     # Test vec2mat2D
     name = 'vec2mat2D'
     result = test_vec2mat2D()
@@ -1935,6 +2064,16 @@ def run_all2D():
     # Test vech2mat2D
     name = 'vech2mat2D'
     result = test_vech2mat2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test vechTri2mat2D
+    name = 'vechTri2mat2D'
+    result = test_vechTri2mat2D()
     # Add result to arrays.
     if result=='Passed':
         passedTests = np.append(passedTests, name)
@@ -1975,6 +2114,16 @@ def run_all2D():
     # Test dupMat2D
     name = 'dupMat2D'
     result = test_dupMat2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test elimMat2D
+    name = 'elimMat2D'
+    result = test_elimMat2D()
     # Add result to arrays.
     if result=='Passed':
         passedTests = np.append(passedTests, name)

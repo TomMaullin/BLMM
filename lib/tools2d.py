@@ -2,7 +2,6 @@ import numpy as np
 import scipy.sparse
 import cvxopt
 from cvxopt import cholmod, umfpack, amd, matrix, spmatrix, lapack
-from numba import jit
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
@@ -75,7 +74,6 @@ def vec2vech2D(vec):
 # top of one another to it's corresponding square matrix.
 #
 # ============================================================================
-@jit(nopython=True)
 def vec2mat2D(vec):
   
   # Return matrix
@@ -730,7 +728,7 @@ def ssr2D(YtX, YtY, XtX, beta):
 def fac_indices2D(k, nlevels, nparams):
   
   # Get indices for all factors
-  allInds = np.insert(np.cumsum(nlevels*nparams),0,0)
+  allInds = np.concatenate((np.array([0]),np.cumsum(nlevels*nparams)))
 
   # Work out the first index
   start = allInds[k]
@@ -1793,11 +1791,35 @@ def elimMat2D(n):
     # Return 
     return(elim)
 
+# ============================================================================
+#
+# This function maps a vector of the elements of the lower half of a
+# lower triangular matrix stacked column-wise to the vector of all elements
+# of the matrix.
+#
+# ============================================================================
 def vechTri2mat2D(vech):
 
     # Return lower triangular
     return(np.tril(vech2mat2D(vech)))
 
+# ============================================================================
+#
+# This function takes in a (lower triangular, square) matrix and 
+# half-vectorizes it (i.e. transforms it to a vector of each of the columns 
+# of the matrix, below and including the diagonal, stacked on top of one
+# another).
+#
+# Developer Note: This function is currently a wrapper for mat2vech2D. The 
+# reason for this is that, conceptually, both functions return the lower half
+# of the input matrix as a vector. However, I distinguished between the two,
+# firstly so the steps in each algorithm are more readable and secondly, as
+# the functions should expect different inputs. mat2vech2D expects a
+# symmetric matrix whilst mat2vechTri2D expects a lower triangular matrix. If
+# either of these implementations change in future, it may be useful to have 
+# noted the distinction between these functions in the code.
+#
+# ============================================================================
 def mat2vechTri2D(mat):
 
     # Return vech
