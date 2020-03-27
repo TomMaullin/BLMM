@@ -651,7 +651,7 @@ def main(*args):
                                 header=nifti.header)
     nib.save(sigma2map, os.path.join(OutDir,'blmm_vox_sigma2.nii'))
 
-    # Unmask d11
+    # Unmask D (WIP)
     if n_v_r:
 
         D[R_inds,:] = D_r[:,0,0].reshape(D[R_inds,:].shape)
