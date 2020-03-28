@@ -111,144 +111,32 @@ def main(*args):
     n_v = int(np.prod(NIFTIsize))
 
     # ----------------------------------------------------------------------
-    # Load X'X, X'Y, Y'Y and n_s
+    # Get n_s (number of subjects) and n_s_sv (spatially varying number of
+    # subjects)
     # ----------------------------------------------------------------------
+
     if (len(args)==0) or (type(args[0]) is str):
-        # Read the matrices from the first batch. Note XtY is transposed as np
-        # handles lots of rows much faster than lots of columns.
-        sumXtY = np.load(os.path.join(OutDir,"tmp","XtY1.npy")).transpose()
-        sumYtY = np.load(os.path.join(OutDir,"tmp","YtY1.npy"))
-        sumZtY = np.load(os.path.join(OutDir,"tmp","ZtY1.npy"))
+
+        # Read in n_s (spatially varying)
         nmapb  = blmm_load(os.path.join(OutDir,"tmp", "blmm_vox_n_batch1.nii"))
         n_s_sv = nmapb.get_data()# Read in uniqueness Mask file
 
-        uniquenessMask = blmm_load(os.path.join(OutDir,"tmp", 
-            "blmm_vox_uniqueM_batch1.nii")).get_data().reshape(n_v)
-
-        maxM = np.int32(np.amax(uniquenessMask))
-
-        # read in XtX, ZtX, ZtZ
-        ZtZ_batch_unique = np.load(
-            os.path.join(OutDir,"tmp","ZtZ1.npy"))
-        ZtX_batch_unique = np.load(
-            os.path.join(OutDir,"tmp","ZtX1.npy"))
-        XtX_batch_unique = np.load(
-            os.path.join(OutDir,"tmp","XtX1.npy"))
-
-        # Make zeros for whole nifti ZtZ, XtX, ZtX etc
-        ZtZ_batch_full = np.zeros((n_v, ZtZ_batch_unique.shape[1]))
-        ZtX_batch_full = np.zeros((n_v, ZtX_batch_unique.shape[1]))
-        XtX_batch_full = np.zeros((n_v, XtX_batch_unique.shape[1]))
-
-        # Fill with unique maskings
-        for m in range(1,maxM+1):
-
-            ZtZ_batch_full[np.where(uniquenessMask==m),:] = ZtZ_batch_unique[(m-1),:]
-            ZtX_batch_full[np.where(uniquenessMask==m),:] = ZtX_batch_unique[(m-1),:]
-            XtX_batch_full[np.where(uniquenessMask==m),:] = XtX_batch_unique[(m-1),:]
-
-        sumXtX = XtX_batch_full
-        sumZtX = ZtX_batch_full
-        sumZtZ = ZtZ_batch_full
-
-
-        # Delete the files as they are no longer needed.
-        os.remove(os.path.join(OutDir,"tmp","XtX1.npy"))
-        os.remove(os.path.join(OutDir,"tmp","XtY1.npy"))
-        os.remove(os.path.join(OutDir,"tmp","YtY1.npy"))
-        os.remove(os.path.join(OutDir,"tmp","ZtX1.npy"))
-        os.remove(os.path.join(OutDir,"tmp","ZtY1.npy"))
-        os.remove(os.path.join(OutDir,"tmp","ZtZ1.npy"))
+        # Remove files, don't need them anymore
         os.remove(os.path.join(OutDir,"tmp","blmm_vox_n_batch1.nii"))
-        os.remove(os.path.join(OutDir,"tmp","blmm_vox_uniqueM_batch1.nii"))
 
-        # Work out how many files we need.
-        XtX_files = glob.glob(os.path.join(OutDir,"tmp","XtX*"))
-
-        # Cycle through batches and add together results.
+        # Cycle through batches and add together n.
         for batchNo in range(2,(len(XtX_files)+2)):
-
-            sumXtY = sumXtY + np.load(
-                os.path.join(OutDir,"tmp","XtY" + str(batchNo) + ".npy")).transpose()
-
-            sumYtY = sumYtY + np.load(
-                os.path.join(OutDir,"tmp","YtY" + str(batchNo) + ".npy"))
-
-            sumZtY = sumZtY + np.load(
-                os.path.join(OutDir,"tmp","ZtY" + str(batchNo) + ".npy"))
             
             # Obtain the full nmap.
             n_s_sv = n_s_sv + blmm_load(os.path.join(OutDir,"tmp", 
                 "blmm_vox_n_batch" + str(batchNo) + ".nii")).get_data()
-
-
-            # UPTOHERE
             
-            # Read in uniqueness Mask file
-            uniquenessMask = blmm_load(os.path.join(OutDir,"tmp", 
-                "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii")).get_data().reshape(n_v)
-
-            maxM = np.int32(np.amax(uniquenessMask))
-
-            # read in XtX, ZtX, ZtZ
-            ZtZ_batch_unique = np.load(
-                os.path.join(OutDir,"tmp","ZtZ" + str(batchNo) + ".npy"))
-            ZtX_batch_unique = np.load(
-                os.path.join(OutDir,"tmp","ZtX" + str(batchNo) + ".npy"))
-            XtX_batch_unique = np.load(
-                os.path.join(OutDir,"tmp","XtX" + str(batchNo) + ".npy"))
-
-            # Make zeros for whole nifti ZtZ, XtX, ZtX etc
-            ZtZ_batch_full = np.zeros((n_v, ZtZ_batch_unique.shape[1]))
-            ZtX_batch_full = np.zeros((n_v, ZtX_batch_unique.shape[1]))
-            XtX_batch_full = np.zeros((n_v, XtX_batch_unique.shape[1]))
-
-            # Fill with unique maskings
-            for m in range(1,maxM+1):
-
-                # print('check3')
-                # print('maxM ', maxM)
-                # print(m)
-                # print(m-1)
-                # print(ZtZ_batch_unique.shape)
-                # print('Uniques:')
-                # print(ZtZ_batch_unique[(m-1),:])
-
-                # print('ZtZ_batch_unique shape: ', ZtZ_batch_unique.shape)
-                # print('ZtX_batch_unique shape: ', ZtX_batch_unique.shape)
-                # print('XtX_batch_unique shape: ', XtX_batch_unique.shape)
-
-                # print('ZtZ_batch_full shape: ', ZtZ_batch_full.shape)
-                # print('ZtX_batch_full shape: ', ZtX_batch_full.shape)
-                # print('XtX_batch_full shape: ', XtX_batch_full.shape)
-
-                ZtZ_batch_full[np.where(uniquenessMask==m),:] = ZtZ_batch_unique[(m-1),:]
-                ZtX_batch_full[np.where(uniquenessMask==m),:] = ZtX_batch_unique[(m-1),:]
-                XtX_batch_full[np.where(uniquenessMask==m),:] = XtX_batch_unique[(m-1),:]
-
-            # Add to running total
-            sumXtX = sumXtX + XtX_batch_full
-            sumZtX = sumZtX + ZtX_batch_full
-            sumZtZ = sumZtZ + ZtZ_batch_full
-            
-            # Delete the files as they are no longer needed.
-            os.remove(os.path.join(OutDir, "tmp","XtY" + str(batchNo) + ".npy"))
-            os.remove(os.path.join(OutDir, "tmp","YtY" + str(batchNo) + ".npy"))
-            os.remove(os.path.join(OutDir, "tmp","ZtY" + str(batchNo) + ".npy"))
-            os.remove(os.path.join(OutDir, "tmp","XtX" + str(batchNo) + ".npy"))
-            os.remove(os.path.join(OutDir, "tmp","ZtX" + str(batchNo) + ".npy"))
-            os.remove(os.path.join(OutDir, "tmp","ZtZ" + str(batchNo) + ".npy"))
-            os.remove(os.path.join(OutDir, "tmp", "blmm_vox_n_batch" + str(batchNo) + ".nii"))
+            # Remove file, don't need it anymore
             os.remove(os.path.join(OutDir, "tmp", "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii"))
 
     else:
-        # Read in sums.
-        sumXtX = args[1]
-        sumXtY = args[2].transpose()
-        sumYtY = args[3]
+        # Read in n_s_sv.
         n_s_sv = args[4]
-
-
 
     # Save nmap
     nmap = nib.Nifti1Image(n_s_sv,
@@ -257,17 +145,6 @@ def main(*args):
     nib.save(nmap, os.path.join(OutDir,'blmm_vox_n.nii'))
     n_s_sv = n_s_sv.reshape(n_v, 1)
     del nmap
-
-    # Dimension bug handling
-    if np.ndim(sumXtX) == 0:
-        sumXtX = np.array([[sumXtX]])
-    elif np.ndim(sumXtX) == 1:
-        sumXtX = np.array([sumXtX])
-
-    if np.ndim(sumXtY) == 0:
-        sumXtY = np.array([[sumXtY]])
-    elif np.ndim(sumXtY) == 1:
-        sumXtY = np.array([sumXtY])
 
     # Get ns.
     X = blmm_load(inputs['X'])
@@ -335,20 +212,6 @@ def main(*args):
         
         Mask[addmask==0]=0
 
-    # Reshape sumXtX to correct n_v by n_p by n_p
-    sumXtX = sumXtX.reshape([n_v, n_p, n_p])
-
-    # We also remove all voxels where the design has a column of just
-    # zeros.
-    for i in range(0,n_p):
-        Mask[np.where(sumXtX[:,i,i]==0)]=0
-
-    # Remove voxels with designs without full rank.
-    M_inds = np.where(Mask==1)[0]
-    Mask[M_inds[np.where(
-        np.absolute(blmm_det(sumXtX[M_inds,:,:])) < np.sqrt(sys.float_info.epsilon)
-        )]]=0
-
     # Output final mask map
     maskmap = nib.Nifti1Image(Mask.reshape(
                                     NIFTIsize[0],
@@ -396,6 +259,178 @@ def main(*args):
                             header=nifti.header)
     nib.save(dfmap, os.path.join(OutDir,'blmm_vox_edf.nii'))
     del df, dfmap
+
+    # ----------------------------------------------------------------------
+    # Load X'X, X'Y, Y'Y, X'Z, Y'Z, Z'Z
+    # ----------------------------------------------------------------------
+    if (len(args)==0) or (type(args[0]) is str):
+
+        # Read the matrices from the first batch. Note XtY is transposed as np
+        # handles lots of rows much faster than lots of columns.
+        sumXtY = np.load(os.path.join(OutDir,"tmp","XtY1.npy")).transpose()
+        sumYtY = np.load(os.path.join(OutDir,"tmp","YtY1.npy"))
+        sumZtY = np.load(os.path.join(OutDir,"tmp","ZtY1.npy"))
+
+        # Work out the uniqueness mask for the spatially varying designs
+        uniquenessMask = blmm_load(os.path.join(OutDir,"tmp", 
+            "blmm_vox_uniqueM_batch1.nii")).get_data().reshape(n_v)
+
+        # Work out the uniqueness mask inside the ring around the brain
+        uniquenessMask_r = uniquenessMask[R_inds]
+
+        # Work out the uniqueness mask value inside the inner part of the brain
+        uniquenessMask_i = uniquenessMask[I_inds[0]]
+
+        maxM = np.int32(np.amax(uniquenessMask))
+
+        # read in XtX, ZtX, ZtZ
+        ZtZ_batch_unique = np.load(
+            os.path.join(OutDir,"tmp","ZtZ1.npy"))
+        ZtX_batch_unique = np.load(
+            os.path.join(OutDir,"tmp","ZtX1.npy"))
+        XtX_batch_unique = np.load(
+            os.path.join(OutDir,"tmp","XtX1.npy"))
+
+        # Make zeros for outer ring of brain ZtZ, XtX, ZtX etc
+        ZtZ_batch_r = np.zeros((n_v_r, ZtZ_batch_unique.shape[1]))
+        ZtX_batch_r = np.zeros((n_v_r, ZtX_batch_unique.shape[1]))
+        XtX_batch_r = np.zeros((n_v_r, XtX_batch_unique.shape[1]))
+
+        # Fill with unique maskings
+        for m in range(1,maxM+1):
+
+            # Work out Z'Z, Z'X and X'X for the ring
+            ZtZ_batch_r[np.where(uniquenessMask_r==m),:] = ZtZ_batch_unique[(m-1),:]
+            ZtX_batch_r[np.where(uniquenessMask_r==m),:] = ZtX_batch_unique[(m-1),:]
+            XtX_batch_r[np.where(uniquenessMask_r==m),:] = XtX_batch_unique[(m-1),:]
+
+            # Work out Z'Z, Z'X and X'X for the inner
+            if uniquenessMask_i == m:
+                ZtZ_batch_i = ZtZ_batch_unique[(m-1),:]
+                ZtX_batch_i = ZtX_batch_unique[(m-1),:]
+                XtX_batch_i = XtX_batch_unique[(m-1),:]
+
+        # Perform summation for ring
+        sumXtX_r = XtX_batch_r
+        sumZtX_r = ZtX_batch_r
+        sumZtZ_r = ZtZ_batch_r
+
+        # Perform summation for ring
+        sumXtX_i = XtX_batch_i
+        sumZtX_i = ZtX_batch_i
+        sumZtZ_i = ZtZ_batch_i
+
+
+        # Delete the files as they are no longer needed.
+        os.remove(os.path.join(OutDir,"tmp","XtX1.npy"))
+        os.remove(os.path.join(OutDir,"tmp","XtY1.npy"))
+        os.remove(os.path.join(OutDir,"tmp","YtY1.npy"))
+        os.remove(os.path.join(OutDir,"tmp","ZtX1.npy"))
+        os.remove(os.path.join(OutDir,"tmp","ZtY1.npy"))
+        os.remove(os.path.join(OutDir,"tmp","ZtZ1.npy"))
+        os.remove(os.path.join(OutDir,"tmp","blmm_vox_uniqueM_batch1.nii"))
+
+        # Work out how many files we need.
+        XtX_files = glob.glob(os.path.join(OutDir,"tmp","XtX*"))
+
+        # Cycle through batches and add together results.
+        for batchNo in range(2,(len(XtX_files)+2)):
+
+            sumXtY = sumXtY + np.load(
+                os.path.join(OutDir,"tmp","XtY" + str(batchNo) + ".npy")).transpose()
+
+            sumYtY = sumYtY + np.load(
+                os.path.join(OutDir,"tmp","YtY" + str(batchNo) + ".npy"))
+
+            sumZtY = sumZtY + np.load(
+                os.path.join(OutDir,"tmp","ZtY" + str(batchNo) + ".npy"))
+            
+            # Read in uniqueness Mask file
+            uniquenessMask = blmm_load(os.path.join(OutDir,"tmp", 
+                "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii")).get_data().reshape(n_v)
+
+            # Work out the uniqueness mask inside the ring around the brain
+            uniquenessMask_r = uniquenessMask[R_inds]
+
+            # Work out the uniqueness mask value inside the inner part of the brain
+            uniquenessMask_i = uniquenessMask[I_inds[0]]
+
+
+            maxM = np.int32(np.amax(uniquenessMask))
+
+            # read in XtX, ZtX, ZtZ
+            ZtZ_batch_unique = np.load(
+                os.path.join(OutDir,"tmp","ZtZ" + str(batchNo) + ".npy"))
+            ZtX_batch_unique = np.load(
+                os.path.join(OutDir,"tmp","ZtX" + str(batchNo) + ".npy"))
+            XtX_batch_unique = np.load(
+                os.path.join(OutDir,"tmp","XtX" + str(batchNo) + ".npy"))
+
+            # Make zeros for whole nifti ZtZ, XtX, ZtX etc
+            ZtZ_batch_r = np.zeros((n_v_r, ZtZ_batch_unique.shape[1]))
+            ZtX_batch_r = np.zeros((n_v_r, ZtX_batch_unique.shape[1]))
+            XtX_batch_r = np.zeros((n_v_r, XtX_batch_unique.shape[1]))
+
+            # Fill with unique maskings
+            for m in range(1,maxM+1):
+
+                ZtZ_batch_r[np.where(uniquenessMask_r==m),:] = ZtZ_batch_unique[(m-1),:]
+                ZtX_batch_r[np.where(uniquenessMask_r==m),:] = ZtX_batch_unique[(m-1),:]
+                XtX_batch_r[np.where(uniquenessMask_r==m),:] = XtX_batch_unique[(m-1),:]
+
+                # Work out Z'Z, Z'X and X'X for the inner
+                if uniquenessMask_i == m:
+                    ZtZ_batch_i = ZtZ_batch_unique[(m-1),:]
+                    ZtX_batch_i = ZtX_batch_unique[(m-1),:]
+                    XtX_batch_i = XtX_batch_unique[(m-1),:]
+
+                # Add to running total
+                sumXtX_r = sumXtX_r + XtX_batch_r
+                sumZtX_r = sumZtX_r + ZtX_batch_r
+                sumZtZ_r = sumZtZ_r + ZtZ_batch_r
+
+                sumXtX_i = sumXtX_i + XtX_batch_i
+                sumZtX_i = sumZtX_i + ZtX_batch_i
+                sumZtZ_i = sumZtZ_i + ZtZ_batch_i
+            
+            # Delete the files as they are no longer needed.
+            os.remove(os.path.join(OutDir, "tmp","XtY" + str(batchNo) + ".npy"))
+            os.remove(os.path.join(OutDir, "tmp","YtY" + str(batchNo) + ".npy"))
+            os.remove(os.path.join(OutDir, "tmp","ZtY" + str(batchNo) + ".npy"))
+            os.remove(os.path.join(OutDir, "tmp","XtX" + str(batchNo) + ".npy"))
+            os.remove(os.path.join(OutDir, "tmp","ZtX" + str(batchNo) + ".npy"))
+            os.remove(os.path.join(OutDir, "tmp","ZtZ" + str(batchNo) + ".npy"))
+            os.remove(os.path.join(OutDir, "tmp", "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii"))
+
+    else:
+        # Read in sums.
+        sumXtX = args[1]
+        sumXtY = args[2].transpose()
+        sumYtY = args[3]
+
+    # Dimension bug handling
+    if np.ndim(sumXtX_i) == 0:
+        sumXtX_i = np.array([[sumXtX_i]])
+    elif np.ndim(sumXtX) == 1:
+        sumXtX_i = np.array([sumXtX_i])
+
+    if np.ndim(sumXtY) == 0:
+        sumXtY = np.array([[sumXtY]])
+    elif np.ndim(sumXtY) == 1:
+        sumXtY = np.array([sumXtY])
+
+
+
+############### UPDATE MASK
+
+
+
+
+
+
+
+
+
 
     # ----------------------------------------------------------------------
     # Calculate betahat = (X'X)^(-1)X'Y and output beta maps
