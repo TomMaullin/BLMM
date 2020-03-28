@@ -448,13 +448,13 @@ def main(*args):
     sumYtY = sumYtY.reshape([n_v, 1, 1])
     sumZtY = sumZtY.reshape([n_v, n_q, 1])
 
-    sumXtX_r = sumXtY.reshape([n_v_r, n_p, n_p])
-    sumZtX_r = sumYtY.reshape([n_v_r, n_q, n_p])
-    sumZtZ_r = sumZtY.reshape([n_v_r, n_q, n_q])
+    sumXtX_r = sumXtX_r.reshape([n_v_r, n_p, n_p])
+    sumZtX_r = sumZtX_r.reshape([n_v_r, n_q, n_p])
+    sumZtZ_r = sumZtZ_r.reshape([n_v_r, n_q, n_q])
 
-    sumXtX_i = sumXtY.reshape([1, n_p, n_p])
-    sumZtX_i = sumYtY.reshape([1, n_q, n_p])
-    sumZtZ_i = sumZtY.reshape([1, n_q, n_q])
+    sumXtX_i = sumXtX_i.reshape([1, n_p, n_p])
+    sumZtX_i = sumZtX_i.reshape([1, n_q, n_p])
+    sumZtZ_i = sumZtZ_i.reshape([1, n_q, n_q])
 
     # Empty vectors for parameter estimates
     beta = np.zeros([n_v, n_p])
