@@ -116,7 +116,7 @@ def main(*args):
     # ----------------------------------------------------------------------
 
     # Work out number of batchs
-    nb = len(glob.glob(os.path.join(OutDir,"tmp","blmm_vox_n_batch*")))
+    n_b = len(glob.glob(os.path.join(OutDir,"tmp","blmm_vox_n_batch*")))
 
     if (len(args)==0) or (type(args[0]) is str):
 
@@ -128,14 +128,14 @@ def main(*args):
         os.remove(os.path.join(OutDir,"tmp","blmm_vox_n_batch1.nii"))
 
         # Cycle through batches and add together n.
-        for batchNo in range(2,(nb+1)):
+        for batchNo in range(2,(n_b+1)):
             
             # Obtain the full nmap.
             n_s_sv = n_s_sv + blmm_load(os.path.join(OutDir,"tmp", 
                 "blmm_vox_n_batch" + str(batchNo) + ".nii")).get_data()
             
             # Remove file, don't need it anymore
-            os.remove(os.path.join(OutDir, "tmp", "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii"))
+            os.remove(os.path.join(OutDir, "tmp", "blmm_vox_n_batch" + str(batchNo) + ".nii"))
 
     else:
         # Read in n_s_sv.
@@ -337,7 +337,7 @@ def main(*args):
         os.remove(os.path.join(OutDir,"tmp","blmm_vox_uniqueM_batch1.nii"))
 
         # Cycle through batches and add together results.
-        for batchNo in range(2,(nb+1)):
+        for batchNo in range(2,(n_b+1)):
 
             sumXtY = sumXtY + np.load(
                 os.path.join(OutDir,"tmp","XtY" + str(batchNo) + ".npy")).transpose()
@@ -424,7 +424,7 @@ def main(*args):
 
 
 
-############### UPDATE MASK
+############### UPDATE MASK - wherever XtX,ZtX and ZtZ not full rank must go
 
 
 
