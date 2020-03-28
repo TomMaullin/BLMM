@@ -115,6 +115,9 @@ def main(*args):
     # subjects)
     # ----------------------------------------------------------------------
 
+    # Work out number of batchs
+    nb = len(glob.glob(os.path.join(OutDir,"tmp","blmm_vox_n_batch*")))
+
     if (len(args)==0) or (type(args[0]) is str):
 
         # Read in n_s (spatially varying)
@@ -125,7 +128,7 @@ def main(*args):
         os.remove(os.path.join(OutDir,"tmp","blmm_vox_n_batch1.nii"))
 
         # Cycle through batches and add together n.
-        for batchNo in range(2,(len(XtX_files)+2)):
+        for batchNo in range(2,(nb+1)):
             
             # Obtain the full nmap.
             n_s_sv = n_s_sv + blmm_load(os.path.join(OutDir,"tmp", 
@@ -239,6 +242,9 @@ def main(*args):
     # Number of voxels in inner mask
     n_v_i = I_inds.shape[0]
 
+    # Number of voxels in whole (inner + ring) mask
+    n_v_m = n_v_i + n_v_r
+
     # Create dpf map
     df_r = n_s_sv[R_inds,:] - n_p
     df_r = df_r.reshape([n_v_r])
@@ -330,11 +336,8 @@ def main(*args):
         os.remove(os.path.join(OutDir,"tmp","ZtZ1.npy"))
         os.remove(os.path.join(OutDir,"tmp","blmm_vox_uniqueM_batch1.nii"))
 
-        # Work out how many files we need.
-        XtX_files = glob.glob(os.path.join(OutDir,"tmp","XtX*"))
-
         # Cycle through batches and add together results.
-        for batchNo in range(2,(len(XtX_files)+2)):
+        for batchNo in range(2,(nb+1)):
 
             sumXtY = sumXtY + np.load(
                 os.path.join(OutDir,"tmp","XtY" + str(batchNo) + ".npy")).transpose()
