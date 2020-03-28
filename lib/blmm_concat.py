@@ -468,8 +468,16 @@ def main(*args):
         # Calculate masked Z'Y for ring
         ZtY_r = sumZtY[R_inds,:,:]
 
+        # We rename these for convinience
+        XtX_r = sumXtX_r
+        ZtZ_r = sumZtZ_r
+        ZtX_r = sumZtX_r
+
+        # We calculate these by transposing
         YtX_r = XtY_r.transpose((0,2,1))
         YtZ_r = ZtY_r.transpose((0,2,1))
+        XtZ_r = ZtX_r.transpose((0,2,1))
+
 
         # Spatially varying nv for ring
         n_s_sv_r = n_s_sv[R_inds,:]
@@ -507,7 +515,12 @@ def main(*args):
         # Calculate Z'Y for inner
         ZtZ_i = ZtZ_i.reshape([1, n_q, n_q])
 
+        # We rename these for convinience
+        XtX_i = sumXtX_i
+        ZtZ_i = sumZtZ_i
+        ZtX_i = sumZtX_i
 
+        # We calculate these by transposing
         YtX_i = XtY_i.transpose((0,2,1))
         YtZ_i = ZtY_i.transpose((0,2,1))
         XtZ_i = ZtX_i.transpose((0,2,1))
