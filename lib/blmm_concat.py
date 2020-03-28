@@ -411,10 +411,12 @@ def main(*args):
         sumXtY = args[2].transpose()
         sumYtY = args[3]
 
+        # TODO
+
     # Dimension bug handling
     if np.ndim(sumXtX_i) == 0:
         sumXtX_i = np.array([[sumXtX_i]])
-    elif np.ndim(sumXtX) == 1:
+    elif np.ndim(sumXtX_i) == 1:
         sumXtX_i = np.array([sumXtX_i])
 
     if np.ndim(sumXtY) == 0:
@@ -424,7 +426,7 @@ def main(*args):
 
 
 
-############### UPDATE MASK - wherever XtX,ZtX and ZtZ not full rank must go
+############### UPDATE MASK - wherever XtX,ZtX and ZtZ not full rank must go #TODO
 
 
 
@@ -443,16 +445,13 @@ def main(*args):
     sumXtY = sumXtY.transpose()
 
     sumXtY = sumXtY.reshape([n_v, n_p, 1])
-    sumXtX = sumXtX.reshape([n_v, n_p, n_p])
     sumYtY = sumYtY.reshape([n_v, 1, 1])
-    sumZtX = sumZtX.reshape([n_v, n_q, n_p])
     sumZtY = sumZtY.reshape([n_v, n_q, 1])
-    sumZtZ = sumZtZ.reshape([n_v, n_q, n_q])
 
     # Empty vectors for parameter estimates
     beta = np.zeros([n_v, n_p])
     sigma2 = np.zeros([n_v, 1])
-    D = np.zeros([n_v, 1])
+    vechD = np.zeros([n_v, 1]) # TO SORT
 
     REML = False
 
@@ -460,27 +459,17 @@ def main(*args):
     # X'Y for these studies.
     if n_v_r:
 
-        # Calculate masked X'X for ring
-        XtX_r = sumXtX[R_inds,:,:]
-
         # Calculate masked X'Y for ring
         XtY_r = sumXtY[R_inds,:,:]
 
         # Calculate Y'Y for ring
         YtY_r = sumYtY[R_inds,:,:]
 
-        # Calculate masked Z'X for ring
-        ZtX_r = sumZtX[R_inds,:,:]
-
         # Calculate masked Z'Y for ring
         ZtY_r = sumZtY[R_inds,:,:]
 
-        # Calculate Z'Y for ring
-        ZtZ_r = sumZtZ[R_inds,:,:]
-
         YtX_r = XtY_r.transpose((0,2,1))
         YtZ_r = ZtY_r.transpose((0,2,1))
-        XtZ_r = ZtX_r.transpose((0,2,1))
 
         # Spatially varying nv for ring
         n_s_sv_r = n_s_sv[R_inds,:]
@@ -499,7 +488,6 @@ def main(*args):
     if n_v_i:
         
         # X'X must be 1 by np by np for broadcasting
-        XtX_i = sumXtX[I_inds[0],:,:]
         XtX_i = XtX_i.reshape([1, n_p, n_p])
 
         XtY_i = sumXtY[I_inds,:]
@@ -511,14 +499,12 @@ def main(*args):
         YtY_i = sumYtY[I_inds,:,:]
 
         # Calculate masked Z'X for inner
-        ZtX_i = sumZtX[I_inds[0],:,:]
         ZtX_i = ZtX_i.reshape([1, n_q, n_p])
 
         # Calculate masked Z'Y for inner
         ZtY_i = sumZtY[I_inds,:,:]
 
         # Calculate Z'Y for inner
-        ZtZ_i = sumZtZ[I_inds[0],:,:]
         ZtZ_i = ZtZ_i.reshape([1, n_q, n_q])
 
 
