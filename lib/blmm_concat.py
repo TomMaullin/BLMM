@@ -504,7 +504,7 @@ def main(*args):
     if n_v_i:
         
         # X'X must be 1 by np by np for broadcasting
-        XtX_i = XtX_i.reshape([1, n_p, n_p])
+        XtX_i = sumXtX_i.reshape([1, n_p, n_p])
 
         XtY_i = sumXtY[I_inds,:]
 
@@ -515,18 +515,13 @@ def main(*args):
         YtY_i = sumYtY[I_inds,:,:]
 
         # Calculate masked Z'X for inner
-        ZtX_i = ZtX_i.reshape([1, n_q, n_p])
+        ZtX_i = sumZtX_i.reshape([1, n_q, n_p])
 
         # Calculate masked Z'Y for inner
         ZtY_i = sumZtY[I_inds,:,:]
 
         # Calculate Z'Y for inner
-        ZtZ_i = ZtZ_i.reshape([1, n_q, n_q])
-
-        # We rename these for convinience
-        XtX_i = sumXtX_i
-        ZtZ_i = sumZtZ_i
-        ZtX_i = sumZtX_i
+        ZtZ_i = sumZtZ_i.reshape([1, n_q, n_q])
 
         # We calculate these by transposing
         YtX_i = XtY_i.transpose((0,2,1))
