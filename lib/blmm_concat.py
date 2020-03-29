@@ -1361,7 +1361,7 @@ def outputNifti(vol_i,vol_r,I_inds,R_inds,dimv,fpath):
     n_v_i = I_inds.shape[0]
 
     # Work out number of volumes to be output
-    if ndim(vol_i)=2:
+    if ndim(vol_i)==2:
         n_o = vol_i.shape[1]
     else:
         n_o = 1
