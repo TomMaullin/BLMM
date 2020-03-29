@@ -510,7 +510,7 @@ def main(*args):
         n_s_sv_r = n_s_sv[R_inds,:]
 
         # Clear some memory
-        del sumXtX_r, sumXtZ_r, sumZtZ_r
+        del sumXtX_r, sumZtX_r, sumZtZ_r
 
         #================================================================================
         # Run parameter estimation
@@ -551,7 +551,7 @@ def main(*args):
         XtZ_i = ZtX_i.transpose((0,2,1))
 
         # Clear some memory
-        del sumXtX_i, sumXtZ_i, sumZtZ_i
+        del sumXtX_i, sumZtX_i, sumZtZ_i
         del sumXtY, sumYtY, sumZtY
 
         #================================================================================
