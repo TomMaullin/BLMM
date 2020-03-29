@@ -434,8 +434,26 @@ def main(*args):
 
 
 
+    # ----------------------------------------------------------------------
+    # Decide on blocks to consider for inference and parameter estimation
+    # ----------------------------------------------------------------------
 
+    # Save XtY, YtY, ZtY
 
+    # New uniqueness mask for ZtZ XtX XtZ
+
+    # Save ZtX. ZtZ and XtX unique ones
+
+    # NIFTI of batch numbers, each vox has batch number showing where it goes
+
+    # Ceiling batch number... maybe in options? preset to no more than 40 batches
+    # for NIFTI... loops beyond that
+
+    # Number of batches as well
+
+    # MUST OUTPUT HERE THOUGH: Spatially varying n, Mask
+
+    # Other info: nlevels, nparams - can get from inputs
 
 
 
@@ -461,8 +479,7 @@ def main(*args):
 
     # Empty vectors for parameter estimates
     beta = np.zeros([n_v, n_p])
-    sigma2 = np.zeros([n_v, 1])
-    vechD = np.zeros([n_v, n_q_u]) 
+    sigma2 = np.zeros([n_v, 1]) 
 
     REML = False
 
@@ -489,9 +506,11 @@ def main(*args):
         YtZ_r = ZtY_r.transpose((0,2,1))
         XtZ_r = ZtX_r.transpose((0,2,1))
 
-
         # Spatially varying nv for ring
         n_s_sv_r = n_s_sv[R_inds,:]
+
+        # Clear some memory
+        del sumXtX_r, sumXtZ_r, sumZtZ_r
 
         #================================================================================
         # Run parameter estimation
@@ -530,6 +549,10 @@ def main(*args):
         YtX_i = XtY_i.transpose((0,2,1))
         YtZ_i = ZtY_i.transpose((0,2,1))
         XtZ_i = ZtX_i.transpose((0,2,1))
+
+        # Clear some memory
+        del sumXtX_i, sumXtZ_i, sumZtZ_i
+        del sumXtY, sumYtY, sumZtY
 
         #================================================================================
         # Run parameter estimation
@@ -576,8 +599,6 @@ def main(*args):
                               header=nifti.header)
     nib.save(betamap, os.path.join(OutDir,'blmm_vox_beta.nii'))
     del beta_out, betamap
-
-    del sumXtY
 
     if np.ndim(beta) == 0:
         beta = np.array([[beta]])
@@ -667,6 +688,7 @@ def main(*args):
                              nifti.affine,
                              header=nifti.header)
     nib.save(llhmap, os.path.join(OutDir,'blmm_vox_llh.nii'))
+    del llhmap, llh_out, llh_i, llh_r
 
 
     # Unmask sigma2
@@ -690,7 +712,9 @@ def main(*args):
                                 header=nifti.header)
     nib.save(sigma2map, os.path.join(OutDir,'blmm_vox_sigma2.nii'))
 
-    # Unmask D (WIP)
+    # Save D
+    vechD = np.zeros([n_v, n_q_u])
+
     if n_v_r:
 
         vechD[R_inds,:] = paramVec_r[:,(n_p+1):,:].reshape(vechD[R_inds,:].shape)
@@ -1351,6 +1375,18 @@ def blmm_det(A):
 # WIP: Moving to functions
 #
 # ============================================================================================================
+
+def addBlockToNifti(fname, block, blockInds):
+
+    # Load in Nifti, if NIFTI exists, if not make NIFTI
+
+    # Add block to NIFTI
+
+    # Write out NIFTI
+
+    pass
+
+
 
 # This function takes in two matrices of dimension
 # n_v_i by k and n_v_r by k and two sets of indices.
