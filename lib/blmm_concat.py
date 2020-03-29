@@ -497,7 +497,7 @@ def main(*args):
         # Run parameter estimation
         #================================================================================
         t1 = time.time()
-        paramVec_r = pSFS(XtX_r, XtY_r, ZtX_r, ZtY_r, ZtZ_r, XtZ_r, YtZ_r, YtY_r, YtX_r, nlevels, nparams, 1e-14,n_s_sv_r,reml=REML)
+        paramVec_r = pSFS(XtX_r, XtY_r, ZtX_r, ZtY_r, ZtZ_r, XtZ_r, YtZ_r, YtY_r, YtX_r, nlevels, nparams, 1e-6,n_s_sv_r,reml=REML)
         t2 = time.time()
         print(t2-t1)
 
@@ -597,9 +597,7 @@ def main(*args):
         # D as a dictionary
         for k in np.arange(len(nparams)):
 
-          #Ddict[k] = makeDnnd3D(vech2mat3D(paramVec[:,FishIndsDk[k]:FishIndsDk[k+1],:]))
-
-          Ddict_r[k] = vech2mat3D(paramVec_r[:,FishIndsDk[k]:FishIndsDk[k+1],:])
+            Ddict_r[k] = vech2mat3D(paramVec_r[:,FishIndsDk[k]:FishIndsDk[k+1],:])
           
         # Full version of D
         D_r = getDfromDict3D(Ddict_r, nparams, nlevels)
@@ -628,9 +626,7 @@ def main(*args):
         # D as a dictionary
         for k in np.arange(len(nparams)):
 
-          #Ddict[k] = makeDnnd3D(vech2mat3D(paramVec[:,FishIndsDk[k]:FishIndsDk[k+1],:]))
-
-          Ddict_i[k] = makeDnnd3D(vech2mat3D(paramVec_i[:,FishIndsDk[k]:FishIndsDk[k+1],:]))
+            Ddict_i[k] = makeDnnd3D(vech2mat3D(paramVec_i[:,FishIndsDk[k]:FishIndsDk[k+1],:]))
           
         # Full version of D
         D_i = getDfromDict3D(Ddict_i, nparams, nlevels)
