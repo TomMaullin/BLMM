@@ -701,7 +701,7 @@ def main(*args):
 
     if n_v_i:
 
-        vechD[I_inds,:] = paramVec_i[:,(n_p+1):,:].reshape(vechD[R_inds,:].shape)
+        vechD[I_inds,:] = paramVec_i[:,(n_p+1):,:].reshape(vechD[I_inds,:].shape)
 
     # Output vechD
     vechD = vechD.reshape([n_v, n_q_u]).transpose()
