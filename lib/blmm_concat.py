@@ -712,7 +712,7 @@ def main(*args):
                          vechD.shape[0]])
 
     # Cycle through betas and output results.
-    for k in range(0,beta.shape[0]):
+    for k in range(0,vechD.shape[0]):
 
         vechD_out[:,:,:,k] = vechD[k,:].reshape(int(NIFTIsize[0]),
                                                int(NIFTIsize[1]),
@@ -1349,6 +1349,320 @@ def blmm_det(A):
     detA = detDAD/detDD
 
     return(detA)
+
+# ============================================================================================================
+#
+# WIP: Moving to functions
+#
+# ============================================================================================================
+
+# This function takes in two matrices of dimension
+# n_v_i by k and n_v_r by k and two sets of indices.
+def outputNifti(vol_i,vol_r,I_inds,R_inds,dimv,fpath):
+
+    # Work out n_v_r and n_v_i
+    n_v_r = R_inds.shape[0]
+    n_v_i = I_inds.shape[0]
+
+    # Work out number of volumes to be output
+    if ndim(vol_i)=2:
+        n_o = vol_i.shape[1]
+    else:
+        n_o = 1
+
+    # Number of voxels
+    n_v = np.prod(dimv)
+
+    # Initiate empty nifti
+    vol = np.zeros([n_v,n_o])
+
+    # Put vol_r and vol_i into the volume
+    if n_v_r:
+
+        vol[R_inds,:] = vol_r.reshape(vol[R_inds,:].shape)
+
+    if n_v_i:
+
+        vol[I_inds,:] = vol_i.reshape(vol[I_inds,:].shape)
+
+    
+    # Output volume
+    vol = vol.transpose()
+    vol_out = np.zeros([int(dimv[0]),
+                        int(dimv[1]),
+                        int(dimv[2]),
+                        vol.shape[0]])
+
+    # Cycle through individual niftis and output results.
+    for k in range(0,vechD.shape[0]):
+
+        vol_out[:,:,:,k] = vol[k,:].reshape(int(dimv[0]),
+                                            int(dimv[1]),
+                                            int(dimv[2]))
+
+    # Save final volume.
+    finalVol = nib.Nifti1Image(vol_out,
+                               nifti.affine,
+                               header=nifti.header)
+    nib.save(finalVol, fpath)
+
+def get_resms3D(YtX, YtY, XtX, beta,n):
+
+    ete = ssr3D(YtX, YtY, XtX, beta)
+
+    return(ete/n)
+
+def get_varLB3D(L, XtX, XtZ, DinvIplusZtZD):
+
+    # Work out X'V^{-1}X = X'X - X'ZD(I+Z'ZD)^{-1}Z'X
+    XtinvVX = XtX - XtZ @ DinvIplusZtZD @ XtZ.transpose((0,2,1))
+
+    # Work out var(LB) = L'(X'V^{-1}X)^{-1}L
+    varLB = L.transpose() @ np.linalg.inv(XtinvVX) @ L
+
+    # Return result
+    return(varLB)
+
+def get_R23D(L, F, df):
+
+    # Work out the rank of L
+    rL = np.linalg.matrix_rank(L)
+
+    # Convert F to R2
+    R2 = (rL*F)/(rL*F + df)
+    
+    # Return R2
+    return(R2)
+
+
+def get_T3D(L, XtX, XtZ, DinvIplusZtZD, betahat):
+
+    # Work out the rank of L
+    rL = np.linalg.matrix_rank(L)
+
+    # Work out Lbeta
+    LB = L @ betahat
+
+    # Work out se(T)
+    varLB = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD)
+
+    # Work out T
+    T = LB/np.sqrt(varLB)
+
+    # Return T
+    return(T)
+
+
+def get_F3D(L, XtX, XtZ, DinvIplusZtZD, betahat):
+
+    # Work out the rank of L
+    rL = np.linalg.matrix_rank(L)
+
+    # Work out Lbeta
+    LB = L @ betahat
+
+    # Work out se(F)
+    varLB = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD)
+
+    # Work out F
+    F = LB.transpose(0,2,1) @ varLB @ LB/rL
+
+    # Return T
+    return(F)
+    
+
+def T2P3D(T,df,inputs):
+
+    # Initialize empty P
+    P = np.zeros(np.shape(T))
+
+    # Do this seperately for >0 and <0 to avoid underflow
+    P[T < 0] = -np.log10(1-stats.t.cdf(T[T < 0], df[T < 0]))
+    P[T >= 0] = -np.log10(stats.t.cdf(-T[T >= 0], df[T >= 0]))
+
+    # Remove infs
+    if "minlog" in inputs:
+        P[np.logical_and(np.isinf(P), P<0)]=inputs['minlog']
+    else:
+        P[np.logical_and(np.isinf(P), P<0)]=-323.3062153431158
+
+    return(P)
+
+
+def F2P3D(F, df_num, df_denom, inputs):
+
+    # Work out P
+    P = -np.log10(1-stats.f.cdf(F, df_num, df_denom))
+
+    # Remove infs
+    if "minlog" in inputs:
+        P[np.logical_and(np.isinf(P), P<0)]=inputs['minlog']
+    else:
+        P[np.logical_and(np.isinf(P), P<0)]=-323.3062153431158
+
+    return(P)
+
+
+# ============================================================================================================
+#
+# WIP: SATTHERTHWAITE INTEGRATING
+#
+# ============================================================================================================
+
+
+def get_swdf_T3D(L, D, sigma2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevels, nparams): 
+
+
+    # Get S^2
+    S2 = get_S23D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
+    
+    # Get derivative of S^2
+    dS2 = get_dS23D(nparams, nlevels, L, XtX, XtZ, ZtZ, ZtX, D, sigma2)
+
+    # Get Fisher information matrix
+    InfoMat = get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nparams, ZtZ)
+
+    # Calculate df estimator
+    df = 2*(S2**2)/(dS2.transpose(0,2,1) @ np.linalg.inv(InfoMat) @ dS2)
+
+    # Return df
+    return(df)
+
+
+
+def get_S23D(L, XtX, XtZ, DinvIplusZtZD, sigma2):
+
+    # Calculate X'V^{-1}X=X'(I+ZDZ')^{-1}X=X'X-X'ZD(I+Z'ZD)^{-1}Z'X
+    varLB = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD)
+
+    # Calculate S^2 = sigma^2L(X'V^{-1}X)^(-1)L'
+    S2 = np.einsum('i,ijk->ijk',sigma2,(varLB))
+
+    return(S2)
+
+
+def get_dS23D(nparams, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
+
+    # ZtX
+    ZtX = XtZ.transpose(0,2,1)
+
+    # Number of voxels
+    nv = DinvIplusZtZD.shape[0]
+
+    # Calculate X'V^{-1}X=X'(I+ZDZ')^{-1}X=X'X-X'Z(I+DZ'Z)^{-1}DZ'X
+    XtiVX = XtX - XtZ @  DinvIplusZtZD @ ZtX
+
+    # New empty array for differentiating S^2 wrt (sigma2, vech(D1),...vech(Dr)).
+    dS2 = np.zeros((nv, 1+np.int32(np.sum(nparams*(nparams+1)/2)),1))
+
+    # Work out indices for each start of each component of vector 
+    # i.e. [dS2/dsigm2, dS2/vechD1,...dS2/vechDr]
+    DerivInds = np.int32(np.cumsum(nparams*(nparams+1)/2) + 1)
+    DerivInds = np.insert(DerivInds,0,1)
+
+    # Work of derivative wrt to sigma^2
+    dS2dsigma2 = L @ np.linalg.inv(XtiVX) @ L.transpose()
+
+    # Add to dS2deta
+    dS2[:,0:1] = dS2dsigma2.reshape(dS2deta[:,0:1].shape)
+
+    # Now we need to work out ds2dVech(Dk)
+    for k in np.arange(len(nparams)):
+
+        # Initialize an empty zeros matrix
+        dS2dvechDk = np.zeros((np.int32(nparams[k]*(nparams[k]+1)/2),1))#...
+
+        for j in np.arange(nlevels[k]):
+
+            # Get the indices for this level and factor.
+            Ikj = faclev_indices2D(k, j, nlevels, nparams)
+                    
+            # Work out Z_(k,j)'Z
+            ZkjtZ = ZtZ[:,Ikj,:]
+
+            # Work out Z_(k,j)'X
+            ZkjtX = ZtX[:,Ikj,:]
+
+            # Work out Z_(k,j)'V^{-1}X
+            ZkjtiVX = ZkjtX - ZkjtZ @ DinvIplusZtZD @ ZtX
+
+            # Work out the term to put into the kronecker product
+            # K = Z_(k,j)'V^{-1}X(X'V^{-1})^{-1}L'
+            K = ZkjtiVX @ np.linalg.inv(XtiVX) @ L.transpose()
+            
+            # Sum terms
+            dS2dvechDk = dS2dvechDk + mat2vech3D(kron3D(K,K.transpose(0,2,1)))
+
+        # Multiply by sigma^2
+        dS2dvechDk = np.einsum('i,ijk->ijk',sigma2,dS2dvechDk)
+
+        # Add to dS2
+        dS2[:,DerivInds[k]:DerivInds[k+1]] = dS2dvechDk.reshape(dS2deta[:,DerivInds[k]:DerivInds[k+1]].shape)
+
+    return(dS2)
+
+def get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nparams, ZtZ):
+
+    # Number of random effects, q
+    q = np.sum(np.dot(nparams,nlevels))
+
+    # Number of voxels 
+    nv = sigma2.shape[0]
+
+    # Duplication matrices
+    # ------------------------------------------------------------------------------
+    invDupMatdict = dict()
+    for i in np.arange(len(nparams)):
+
+        invDupMatdict[i] = np.asarray(invDupMat2D(nparams[i]).todense())
+
+    # Index variables
+    # ------------------------------------------------------------------------------
+    # Work out the total number of paramateres
+    tnp = np.int32(1 + np.sum(nparams*(nparams+1)/2))
+
+    # Indices for submatrics corresponding to Dks
+    FishIndsDk = np.int32(np.cumsum(nparams*(nparams+1)/2) + 1)
+    FishIndsDk = np.insert(FishIndsDk,0,1)
+
+    # Initialize FIsher Information matrix
+    FisherInfoMat = np.zeros((nv,tnp,tnp))
+    
+    # Covariance of dl/dsigma2
+    covdldsigma2 = n/(2*(sigma2**2))
+    
+    # Add dl/dsigma2 covariance
+    FisherInfoMat[:,0,0] = covdldsigma2
+
+    
+    # Add dl/dsigma2 dl/dD covariance
+    for k in np.arange(len(nparams)):
+
+        # Get covariance of dldsigma and dldD      
+        covdldsigmadD = get_covdldDkdsigma23D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict).reshape(nv,FishIndsDk[k+1]-FishIndsDk[k])
+
+        # Assign to the relevant block
+        FisherInfoMat[:,0, FishIndsDk[k]:FishIndsDk[k+1]] = covdldsigmadD
+        FisherInfoMat[:,FishIndsDk[k]:FishIndsDk[k+1],0:1] = FisherInfoMat[:,0:1, FishIndsDk[k]:FishIndsDk[k+1]].transpose((0,2,1))
+      
+    # Add dl/dD covariance
+    for k1 in np.arange(len(nparams)):
+
+        for k2 in np.arange(k1+1):
+
+            IndsDk1 = np.arange(FishIndsDk[k1],FishIndsDk[k1+1])
+            IndsDk2 = np.arange(FishIndsDk[k2],FishIndsDk[k2+1])
+
+            # Get covariance between D_k1 and D_k2 
+            covdldDk1dDk2 = get_covdldDk1Dk23D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict)
+
+            # Add to FImat
+            FisherInfoMat[np.ix_(np.arange(nv), IndsDk1, IndsDk2)] = covdldDk1dDk2
+            FisherInfoMat[np.ix_(np.arange(nv), IndsDk2, IndsDk1)] = FisherInfoMat[np.ix_(np.arange(nv), IndsDk1, IndsDk2)].transpose((0,2,1))
+
+
+    # Return result
+    return(FisherInfoMat)
 
 if __name__ == "__rain__":
     main()
