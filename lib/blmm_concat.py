@@ -95,6 +95,9 @@ def main(*args):
     nparams = np.array(nparams)
     nlevels = np.array(nlevels)
     n_q = np.sum(nparams*nlevels)
+
+    # Get number of unique rfx params
+    n_q_u = np.sum(nparams*(nparams+1)//2)
     
     # Get number of parameters
     c1 = blmm_eval(inputs['contrasts'][0]['c' + str(1)]['vector'])
@@ -459,7 +462,7 @@ def main(*args):
     # Empty vectors for parameter estimates
     beta = np.zeros([n_v, n_p])
     sigma2 = np.zeros([n_v, 1])
-    vechD = np.zeros([n_v, 1]) # TO SORT
+    vechD = np.zeros([n_v, n_q_u]) 
 
     REML = False
 
@@ -574,7 +577,7 @@ def main(*args):
     nib.save(betamap, os.path.join(OutDir,'blmm_vox_beta.nii'))
     del beta_out, betamap
 
-    del sumXtY, sumXtX
+    del sumXtY
 
     if np.ndim(beta) == 0:
         beta = np.array([[beta]])
@@ -596,7 +599,7 @@ def main(*args):
 
           #Ddict[k] = makeDnnd3D(vech2mat3D(paramVec[:,FishIndsDk[k]:FishIndsDk[k+1],:]))
 
-          Ddict_r[k] = makeDnnd3D(vech2mat3D(paramVec_r[:,FishIndsDk[k]:FishIndsDk[k+1],:]))
+          Ddict_r[k] = vech2mat3D(paramVec_r[:,FishIndsDk[k]:FishIndsDk[k+1],:])
           
         # Full version of D
         D_r = getDfromDict3D(Ddict_r, nparams, nlevels)
@@ -694,23 +697,32 @@ def main(*args):
     # Unmask D (WIP)
     if n_v_r:
 
-        D[R_inds,:] = D_r[:,0,0].reshape(D[R_inds,:].shape)
+        vechD[R_inds,:] = paramVec_r[:,(n_p+1):,:].reshape(vechD[R_inds,:].shape)
 
     if n_v_i:
 
-        D[I_inds,:] = D_i[:,0,0].reshape(D[I_inds,:].shape)
+        vechD[I_inds,:] = paramVec_i[:,(n_p+1):,:].reshape(vechD[R_inds,:].shape)
 
+    # Output vechD
+    vechD = vechD.reshape([n_v, n_q_u]).transpose()
 
+    vechD_out = np.zeros([int(NIFTIsize[0]),
+                         int(NIFTIsize[1]),
+                         int(NIFTIsize[2]),
+                         vechD.shape[0]])
 
-    D_out = D.reshape(int(NIFTIsize[0]),
-                      int(NIFTIsize[1]),
-                      int(NIFTIsize[2]))
+    # Cycle through betas and output results.
+    for k in range(0,beta.shape[0]):
+
+        vechD_out[:,:,:,k] = vechD[k,:].reshape(int(NIFTIsize[0]),
+                                               int(NIFTIsize[1]),
+                                               int(NIFTIsize[2]))
 
     # Save beta map.
-    Dmap = nib.Nifti1Image(D_out,
-                           nifti.affine,
-                           header=nifti.header)
-    nib.save(Dmap, os.path.join(OutDir,'blmm_vox_D.nii'))
+    vechDmap = nib.Nifti1Image(vechD_out,
+                               nifti.affine,
+                               header=nifti.header)
+    nib.save(vechDmap, os.path.join(OutDir,'blmm_vox_D.nii'))
 
 
 
