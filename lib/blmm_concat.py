@@ -1387,6 +1387,9 @@ def get_resms3D(YtX, YtY, XtX, beta,n):
 
     ete = ssr3D(YtX, YtY, XtX, beta)
 
+    print(ete.shape)
+    print(n.shape)
+
     return(ete/n)
 
 def get_varLB3D(L, XtX, XtZ, DinvIplusZtZD):
