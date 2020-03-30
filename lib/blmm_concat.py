@@ -874,7 +874,7 @@ def main(*args):
     current_n_cf = 0
 
     # Setup 4d volumes to output
-    cbeta = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_c])
+    Lbeta = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_c])
     se_t = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_ct])
     stat_t = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_ct])
     p_t = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_ct])
@@ -896,9 +896,9 @@ def main(*args):
 
         # Calculate C\hat{\beta}}
         if n_v_r:
-            cbeta_r = np.matmul(L, beta_r)
+            Lbeta_r = np.matmul(L, beta_r)
         if n_v_i:
-            cbeta_i = np.matmul(L, beta_i)
+            Lbeta_i = np.matmul(L, beta_i)
     
         if L.ndim == 1:
             statType='T'
@@ -908,14 +908,14 @@ def main(*args):
 
         if statType == 'T':
 
-            # A T contrast has only one row so we can output cbeta here
-            current_cbeta = np.zeros([n_v,1])
+            # A T contrast has only one row so we can output Lbeta here
+            current_Lbeta = np.zeros([n_v,1])
             if n_v_r:
-                current_cbeta[R_inds,:] = cbeta_r
+                current_Lbeta[R_inds,:] = Lbeta_r
             if n_v_i:
-                current_cbeta[I_inds,:] = cbeta_i
+                current_Lbeta[I_inds,:] = Lbeta_i
 
-            cbeta[:,:,:,current_n_ct] = current_cbeta.reshape(
+            Lbeta[:,:,:,current_n_ct] = current_Lbeta.reshape(
                                                     NIFTIsize[0],
                                                     NIFTIsize[1],
                                                     NIFTIsize[2]
@@ -1036,9 +1036,9 @@ def main(*args):
                     np.matmul(L, isumXtX_r),
                     np.transpose(L))
 
-                # Cbeta needs to be nvox by 1 by npar for stacked
+                # Lbeta needs to be nvox by 1 by npar for stacked
                 # multiply.
-                cbetat_r = cbeta_r.transpose(0,2,1)
+                Lbetat_r = Lbeta_r.transpose(0,2,1)
 
                 # Calculate masked (c'(X'X)^(-1)c)^(-1) values for ring
                 iLtiXtXL_r = blmm_inverse(LtiXtXL_r, ouflow=True).reshape([n_v_r, q*q])
@@ -1050,9 +1050,9 @@ def main(*args):
                     np.matmul(L, isumXtX_i),
                     np.transpose(L))
 
-                # Cbeta needs to be nvox by 1 by npar for stacked
+                # Lbeta needs to be nvox by 1 by npar for stacked
                 # multiply.
-                cbetat_i = cbeta_i.transpose(0,2,1)
+                Lbetat_i = Lbeta_i.transpose(0,2,1)
 
                 # Calculate masked (c'(X'X)^(-1)c)^(-1) values for inner
                 iLtiXtXL_i = blmm_inverse(LtiXtXL_i, ouflow=True).reshape([1, q*q])
@@ -1066,8 +1066,8 @@ def main(*args):
             # Calculate the numerator of the F statistic for the ring
             if n_v_r:
                 Fnumerator_r = np.matmul(
-                    cbetat_r,
-                    np.linalg.solve(LtiXtXL_r, cbeta_r))
+                    Lbetat_r,
+                    np.linalg.solve(LtiXtXL_r, Lbeta_r))
 
                 Fnumerator_r = Fnumerator_r.reshape(Fnumerator_r.shape[0])
 
@@ -1081,8 +1081,8 @@ def main(*args):
             # Calculate the numerator of the F statistic for the inner 
             if n_v_i:
                 Fnumerator_i = np.matmul(
-                    cbetat_i,
-                    np.linalg.solve(LtiXtXL_i, cbeta_i))
+                    Lbetat_i,
+                    np.linalg.solve(LtiXtXL_i, Lbeta_i))
 
                 Fnumerator_i = Fnumerator_i.reshape(Fnumerator_i.shape[0])
 
@@ -1164,13 +1164,13 @@ def main(*args):
     if n_ct:
 
         # Output standard error map
-        secbetamap = nib.Nifti1Image(se_t,
+        seLbetamap = nib.Nifti1Image(se_t,
                                       nifti.affine,
                                       header=nifti.header)
-        nib.save(secbetamap,
+        nib.save(seLbetamap,
             os.path.join(OutDir, 
                 'blmm_vox_conSE.nii'))
-        del se_t, secbetamap
+        del se_t, seLbetamap
 
         # Output statistic map
         tStatcmap = nib.Nifti1Image(stat_t,
@@ -1190,14 +1190,14 @@ def main(*args):
                 'blmm_vox_conTlp.nii'))  
         del pcmap, p_t
 
-        # Output cbeta/cope map
-        cbetamap = nib.Nifti1Image(cbeta,
+        # Output Lbeta/cope map
+        Lbetamap = nib.Nifti1Image(Lbeta,
                                    nifti.affine,
                                    header=nifti.header)
-        nib.save(cbetamap,
+        nib.save(Lbetamap,
             os.path.join(OutDir, 
                 'blmm_vox_con.nii'))
-        del cbeta, cbetamap
+        del Lbeta, Lbetamap
 
     if n_cf:
 
@@ -1452,7 +1452,15 @@ def get_resms3D(YtX, YtY, XtX, beta,n):
 
     ete = ssr3D(YtX, YtY, XtX, beta)
 
-    return(ete/n.reshape(ete.shape))
+    # Reshape n if necessary
+    if isinstance(n,np.ndarray):
+
+        # Check first that n isn't a single value
+        if np.prod(n.shape)>1:
+    
+            n = n.reshape(ete.shape)
+
+    return(ete/n)
 
 def get_varLB3D(L, XtX, XtZ, DinvIplusZtZD):
 
