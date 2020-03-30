@@ -1321,15 +1321,80 @@ def blmm_det(A):
 #
 # ============================================================================================================
 
-def addBlockToNifti(fname, block, blockInds):
+def addBlockToNifti(fname, block, blockInds,dim=None):
 
-    # Load in Nifti, if NIFTI exists, if not make NIFTI
+    # Check whether the NIFTI exists already
+    if os.path.isfile(fname):
 
-    # Add block to NIFTI
+        # Load in NIFTI
+        img = nib.load(fname)
 
-    # Write out NIFTI
+        # Work out dim if we don't already have it
+        dim = img.shape
 
-    pass
+        # Work out data
+        data = img.get_fdata()
+
+        # Work out affine
+        affine = img.affine
+        
+    else:
+
+        # If we know how, make the NIFTI
+        if dim is not None:
+            
+            # Make data
+            data = np.zeros(dim)
+
+            # Make affine
+            affine = np.eye(4)
+
+        else:
+
+            # Throw an error because we don't know what to do
+            raise Exception('NIFTI does not exist and dimensions not given')
+
+    # Work out the number of output volumes inside the nifti 
+    if len(dim)==3:
+
+        # We only have one volume in this case
+        n_vol = 1
+        dim = np.array([dim[0],dim[1],dim[2],1])
+
+    else:
+
+        # The number of volumes is the last dimension
+        n_vol = dim[3]
+
+    # Work out the number of voxels
+    n_vox = np.prod(dim[:3])
+
+    # Reshape     
+    data = data.reshape([n_vox, n_vol])
+
+    # Add block
+    data[blockInds,:] = block.reshape(data[blockInds,:].shape)
+
+    # Transpose
+    data = data.transpose()
+
+    # Output shape.
+    data_out = np.zeros(dim)
+    
+    # Cycle through volumes, reshaping.
+    for k in range(0,data.shape[0]):
+
+        data_out[:,:,:,k] = data[k,:].reshape(int(dim[0]),
+                                              int(dim[1]),
+                                              int(dim[2]))
+
+    # Make NIFTI
+    nifti = nib.Nifti1Image(data_out, affine)
+    
+    # Save NIFTI
+    nib.save(nifti, fname)
+
+    del nifti, fname, data_out, affine
 
 
 
