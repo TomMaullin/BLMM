@@ -1591,7 +1591,7 @@ def get_swdf_T3D(L, D, sigma2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, n
     S2 = get_S23D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
     
     # Get derivative of S^2
-    dS2 = get_dS23D(nparams, nlevels, L, XtX, XtZ, ZtZ, ZtX, D, sigma2)
+    dS2 = get_dS23D(nparams, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2)
 
     # Get Fisher information matrix
     InfoMat = get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nparams, ZtZ)
