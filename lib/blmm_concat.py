@@ -1006,7 +1006,7 @@ def main(*args):
                 # Do this seperately for >0 and <0 to avoid underflow
                 pc_i = np.zeros(np.shape(tStatc_i))
                 pc_i[tStatc_i < 0] = -np.log10(1-stats.t.cdf(tStatc_i[tStatc_i < 0], swdf[I_inds][tStatc_i < 0]))
-                pc_i[tStatc_i >= 0] = -np.log10(stats.t.cdf(-tStatc_i[tStatc_i >= 0], swdf[I_inds][tStatc_i < 0]))
+                pc_i[tStatc_i >= 0] = -np.log10(stats.t.cdf(-tStatc_i[tStatc_i >= 0], swdf[I_inds][tStatc_i >= 0]))
 
                 # Remove infs
                 if "minlog" in inputs:
