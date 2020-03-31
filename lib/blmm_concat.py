@@ -877,6 +877,7 @@ def main(*args):
     # Setup 4d volumes to output
     Lbeta = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_c])
     se_t = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_ct])
+    df_sw = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_ct])
     stat_t = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_ct])
     p_t = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_ct])
     stat_f = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_cf])
@@ -961,6 +962,12 @@ def main(*args):
             print('swdf shape: ', swdf.shape)
             print('swdf i shape: ', swdf[I_inds].shape)
             print('swdf r shape: ', swdf[R_inds].shape)
+
+            df_sw[:,:,:,current_n_ct] = swdf.reshape(
+                                                    NIFTIsize[0],
+                                                    NIFTIsize[1],
+                                                    NIFTIsize[2]
+                                                )
 
 
             # Unmask T stat
@@ -1209,6 +1216,15 @@ def main(*args):
             os.path.join(OutDir, 
                 'blmm_vox_conT.nii'))
         del stat_t, tStatcmap
+
+        # Output pvalue map
+        pcmap = nib.Nifti1Image(p_t,
+                                nifti.affine,
+                                header=nifti.header)
+        nib.save(df_sw,
+            os.path.join(OutDir, 
+                'blmm_vox_edf_sw.nii'))  
+        del swdf, df_sw
 
         # Output pvalue map
         pcmap = nib.Nifti1Image(p_t,
