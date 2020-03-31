@@ -1581,6 +1581,8 @@ def F2P3D(F, df_num, df_denom, inputs):
 
 def get_swdf_T3D(L, D, sigma2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevels, nparams): 
 
+    # Reshape sigma2 if necessary
+    sigma2 = sigma2.reshape(sigma2.shape[0])
 
     # Get D(I+Z'ZD)^(-1)
     DinvIplusZtZD = D @ blmm_inverse(np.eye(ZtZ.shape[1]) + ZtZ @ D)
@@ -1607,8 +1609,11 @@ def get_S23D(L, XtX, XtZ, DinvIplusZtZD, sigma2):
     # Calculate X'V^{-1}X=X'(I+ZDZ')^{-1}X=X'X-X'ZD(I+Z'ZD)^{-1}Z'X
     varLB = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD)
 
+    print(sigma2.shape)
+    print(varLB.shape)
+
     # Calculate S^2 = sigma^2L(X'V^{-1}X)^(-1)L'
-    S2 = np.einsum('i,ijk->ijk',sigma2,(varLB))
+    S2 = np.einsum('i,ijk->ijk',sigma2,varLB)
 
     return(S2)
 
