@@ -965,11 +965,11 @@ def main(*args):
             # Calculate masked T statistic image for ring
             if n_v_r:
 
-                tStatc[R_inds] = get_T3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, beta_r).reshaepe(tStatc[R_inds].shape)
+                tStatc[R_inds] = get_T3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, beta_r).reshape(tStatc[R_inds].shape)
 
             if n_v_i:
 
-                tStatc[I_inds] = get_T3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, beta_i).reshaepe(tStatc[I_inds].shape)
+                tStatc[I_inds] = get_T3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, beta_i).reshape(tStatc[I_inds].shape)
 
             stat_t[:,:,:,current_n_ct] = tStatc.reshape(
                                                     NIFTIsize[0],
