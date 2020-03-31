@@ -1586,7 +1586,12 @@ def get_swdf_T3D(L, D, sigma2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, n
     sigma2 = sigma2.reshape(sigma2.shape[0])
 
     # Reshape n if necessary
-    n = n.reshape(sigma2.shape)
+    if isinstance(n,np.ndarray):
+
+        # Check first that n isn't a single value
+        if np.prod(n.shape)>1:
+    
+            n = n.reshape(sigma2.shape)
 
     # Get D(I+Z'ZD)^(-1)
     DinvIplusZtZD = D @ blmm_inverse(np.eye(ZtZ.shape[1]) + ZtZ @ D)
