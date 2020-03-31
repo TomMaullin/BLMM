@@ -1640,8 +1640,8 @@ def get_dS23D(nparams, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
     # Work of derivative wrt to sigma^2
     dS2dsigma2 = L @ np.linalg.inv(XtiVX) @ L.transpose()
 
-    # Add to dS2deta
-    dS2[:,0:1] = dS2dsigma2.reshape(dS2deta[:,0:1].shape)
+    # Add to dS2
+    dS2[:,0:1] = dS2dsigma2.reshape(dS2[:,0:1].shape)
 
     # Now we need to work out ds2dVech(Dk)
     for k in np.arange(len(nparams)):
@@ -1674,7 +1674,7 @@ def get_dS23D(nparams, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
         dS2dvechDk = np.einsum('i,ijk->ijk',sigma2,dS2dvechDk)
 
         # Add to dS2
-        dS2[:,DerivInds[k]:DerivInds[k+1]] = dS2dvechDk.reshape(dS2deta[:,DerivInds[k]:DerivInds[k+1]].shape)
+        dS2[:,DerivInds[k]:DerivInds[k+1]] = dS2dvechDk.reshape(dS2[:,DerivInds[k]:DerivInds[k+1]].shape)
 
     return(dS2)
 
