@@ -1042,9 +1042,9 @@ def main(*args):
 
             del tStatc, pc
             if n_v_i:
-                del tStatc_i, pc_i, covLB_i
+                del tStatc_i, pc_i
             if n_v_r:
-                del tStatc_r, pc_r, covLB_r
+                del tStatc_r, pc_r
 
             print('p vals ran')
 
