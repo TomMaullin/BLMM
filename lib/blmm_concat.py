@@ -958,6 +958,10 @@ def main(*args):
 
             print('swdf ran')
 
+            print('swdf shape: ', swdf.shape)
+            print('swdf i shape: ', swdf[I_inds].shape)
+            print('swdf r shape: ', swdf[R_inds].shape)
+
 
             # Unmask T stat
             tStatc = np.zeros([n_v])
@@ -980,6 +984,9 @@ def main(*args):
                                                 )
 
             print('stat_t ran')
+            print('tstatc shape: ', tStatc.shape)
+            print('tstatc i shape: ', tStatc[I_inds].shape)
+            print('tstatc r shape: ', tStatc[R_inds].shape)
 
 
 
@@ -998,8 +1005,8 @@ def main(*args):
             if n_v_i:
                 # Do this seperately for >0 and <0 to avoid underflow
                 pc_i = np.zeros(np.shape(tStatc_i))
-                pc_i[tStatc_i < 0] = -np.log10(1-stats.t.cdf(tStatc_i[tStatc_i < 0], swdf[I_inds]))
-                pc_i[tStatc_i >= 0] = -np.log10(stats.t.cdf(-tStatc_i[tStatc_i >= 0], swdf[I_inds]))
+                pc_i[tStatc_i < 0] = -np.log10(1-stats.t.cdf(tStatc_i[tStatc_i < 0], swdf[I_inds][tStatc_i < 0]))
+                pc_i[tStatc_i >= 0] = -np.log10(stats.t.cdf(-tStatc_i[tStatc_i >= 0], swdf[I_inds][tStatc_i < 0]))
 
                 # Remove infs
                 if "minlog" in inputs:
