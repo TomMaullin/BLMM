@@ -929,12 +929,12 @@ def main(*args):
             if n_v_r:
 
                 # Get cov(L\beta)
-                covLB[R_inds] = get_varLB3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r).reshape(covLB[R_inds].shape)
+                covLB[R_inds] = get_varLB3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, sigma2_r).reshape(covLB[R_inds].shape)
 
             if n_v_i:
 
                 # Get cov(L\beta)
-                covLB[I_inds] = get_varLB3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i).reshape(covLB[I_inds].shape)
+                covLB[I_inds] = get_varLB3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, sigma2_i).reshape(covLB[I_inds].shape)
 
             se_t[:,:,:,current_n_ct] = np.sqrt(covLB.reshape(
                                                     NIFTIsize[0],
@@ -1507,13 +1507,24 @@ def get_resms3D(YtX, YtY, XtX, beta,n):
 
     return(ete/n)
 
-def get_varLB3D(L, XtX, XtZ, DinvIplusZtZD):
+def get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2):
+
+    # Reshape n if necessary
+    if isinstance(sigma2,np.ndarray):
+
+        # Check first that n isn't a single value
+        if np.prod(sigma2.shape)>1:
+    
+            sigma2 = sigma2.reshape(sigma2.shape[0])
 
     # Work out X'V^{-1}X = X'X - X'ZD(I+Z'ZD)^{-1}Z'X
     XtinvVX = XtX - XtZ @ DinvIplusZtZD @ XtZ.transpose((0,2,1))
 
     # Work out var(LB) = L'(X'V^{-1}X)^{-1}L
     varLB = L @ np.linalg.inv(XtinvVX) @ L.transpose()
+
+    # Calculate S^2 = sigma^2L(X'V^{-1}X)^(-1)L'
+    varLB = np.einsum('i,ijk->ijk',sigma2,varLB)
 
     # Return result
     return(varLB)
@@ -1530,7 +1541,7 @@ def get_R23D(L, F, df):
     return(R2)
 
 
-def get_T3D(L, XtX, XtZ, DinvIplusZtZD, betahat):
+def get_T3D(L, XtX, XtZ, DinvIplusZtZD, betahat, sigma2):
 
     # Work out the rank of L
     rL = np.linalg.matrix_rank(L)
@@ -1539,7 +1550,7 @@ def get_T3D(L, XtX, XtZ, DinvIplusZtZD, betahat):
     LB = L @ betahat
 
     # Work out se(T)
-    varLB = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD)
+    varLB = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
 
     # Work out T
     T = LB/np.sqrt(varLB)
@@ -1548,7 +1559,7 @@ def get_T3D(L, XtX, XtZ, DinvIplusZtZD, betahat):
     return(T)
 
 
-def get_F3D(L, XtX, XtZ, DinvIplusZtZD, betahat):
+def get_F3D(L, XtX, XtZ, DinvIplusZtZD, betahat, sigma2):
 
     # Work out the rank of L
     rL = np.linalg.matrix_rank(L)
@@ -1557,7 +1568,7 @@ def get_F3D(L, XtX, XtZ, DinvIplusZtZD, betahat):
     LB = L @ betahat
 
     # Work out se(F)
-    varLB = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD)
+    varLB = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
 
     # Work out F
     F = LB.transpose(0,2,1) @ varLB @ LB/rL
@@ -1640,16 +1651,10 @@ def get_swdf_T3D(L, D, sigma2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, n
 
 def get_S23D(L, XtX, XtZ, DinvIplusZtZD, sigma2):
 
-    # Calculate X'V^{-1}X=X'(I+ZDZ')^{-1}X=X'X-X'ZD(I+Z'ZD)^{-1}Z'X
-    varLB = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD)
+    # Calculate sigma^2L(X'V^{-1}X)^(-1)L'
+    varLB = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
 
-    print(sigma2.shape)
-    print(varLB.shape)
-
-    # Calculate S^2 = sigma^2L(X'V^{-1}X)^(-1)L'
-    S2 = np.einsum('i,ijk->ijk',sigma2,varLB)
-
-    return(S2)
+    return(varLB)
 
 
 def get_dS23D(nparams, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
