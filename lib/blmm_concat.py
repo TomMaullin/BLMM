@@ -1468,7 +1468,7 @@ def get_varLB3D(L, XtX, XtZ, DinvIplusZtZD):
     XtinvVX = XtX - XtZ @ DinvIplusZtZD @ XtZ.transpose((0,2,1))
 
     # Work out var(LB) = L'(X'V^{-1}X)^{-1}L
-    varLB = L.transpose() @ np.linalg.inv(XtinvVX) @ L
+    varLB = L @ np.linalg.inv(XtinvVX) @ L.transpose()
 
     # Return result
     return(varLB)
