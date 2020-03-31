@@ -927,12 +927,12 @@ def main(*args):
             if n_v_r:
 
                 # Get cov(L\beta)
-                covLB[R_inds] = get_varLB3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r)
+                covLB[R_inds] = get_varLB3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r).reshape(covLB[R_inds].shape)
 
             if n_v_i:
 
                 # Get cov(L\beta)
-                covLB[I_inds] = get_varLB3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i)
+                covLB[I_inds] = get_varLB3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i).reshape(covLB[I_inds].shape)
 
             se_t[:,:,:,current_n_ct] = np.sqrt(covLB.reshape(
                                                     NIFTIsize[0],
@@ -940,7 +940,23 @@ def main(*args):
                                                     NIFTIsize[2]
                                                     ))
 
+            print('se_t ran')
+
             del covLB
+
+            # Unmask to output
+            swdf = np.zeros([n_v])
+
+            if n_v_r:
+
+                swdf[R_inds] = get_swdf_T3D(L, D_r, sigma2_r, ZtX_r, ZtY_r, XtX_r, ZtZ_r, XtY_r, YtX_r, YtZ_r, XtZ_r, YtY_r, n_s_sv_r, nlevels, nparams).reshape(swdf[R_inds].shape)
+
+            if n_v_i:
+
+                swdf[I_inds] = get_swdf_T3D(L, D_i, sigma2_i, ZtX_i, ZtY_i, XtX_i, ZtZ_i, XtY_i, YtX_i, YtZ_i, XtZ_i, YtY_i, n_s, nlevels, nparams).reshape(swdf[I_inds].shape)
+
+            print('swdf ran')
+
 
             # Unmask T stat
             tStatc = np.zeros([n_v])
@@ -948,11 +964,11 @@ def main(*args):
             # Calculate masked T statistic image for ring
             if n_v_r:
 
-                tStatc[R_inds] = get_T3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, beta_r)
+                tStatc[R_inds] = get_T3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, beta_r).reshaepe(tStatc[R_inds].shape)
 
             if n_v_i:
 
-                tStatc[I_inds] = get_T3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, beta_i)
+                tStatc[I_inds] = get_T3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, beta_i).reshaepe(tStatc[I_inds].shape)
 
             stat_t[:,:,:,current_n_ct] = tStatc.reshape(
                                                     NIFTIsize[0],
@@ -960,6 +976,7 @@ def main(*args):
                                                     NIFTIsize[2]
                                                 )
 
+            print('stat_t ran')
 
 
 
@@ -978,8 +995,8 @@ def main(*args):
             if n_v_i:
                 # Do this seperately for >0 and <0 to avoid underflow
                 pc_i = np.zeros(np.shape(tStatc_i))
-                pc_i[tStatc_i < 0] = -np.log10(1-stats.t.cdf(tStatc_i[tStatc_i < 0], df_i))
-                pc_i[tStatc_i >= 0] = -np.log10(stats.t.cdf(-tStatc_i[tStatc_i >= 0], df_i))
+                pc_i[tStatc_i < 0] = -np.log10(1-stats.t.cdf(tStatc_i[tStatc_i < 0], swdf[I_inds]))
+                pc_i[tStatc_i >= 0] = -np.log10(stats.t.cdf(-tStatc_i[tStatc_i >= 0], swdf[I_inds]))
 
                 # Remove infs
                 if "minlog" in inputs:
@@ -992,8 +1009,8 @@ def main(*args):
             if n_v_r:
                 # Do this seperately for >0 and <0 to avoid underflow
                 pc_r = np.zeros(np.shape(tStatc_r))
-                pc_r[tStatc_r < 0] = -np.log10(1-stats.t.cdf(tStatc_r[tStatc_r < 0], df_r[tStatc_r < 0]))
-                pc_r[tStatc_r >= 0] = -np.log10(stats.t.cdf(-tStatc_r[tStatc_r >= 0], df_r[tStatc_r >= 0]))
+                pc_r[tStatc_r < 0] = -np.log10(1-stats.t.cdf(tStatc_r[tStatc_r < 0], swdf[R_inds][tStatc_r < 0]))
+                pc_r[tStatc_r >= 0] = -np.log10(stats.t.cdf(-tStatc_r[tStatc_r >= 0], swdf[R_inds][tStatc_r >= 0]))
 
                 # Remove infs
                 if "minlog" in inputs:
@@ -1018,6 +1035,8 @@ def main(*args):
                 del tStatc_i, pc_i, covLB_i
             if n_v_r:
                 del tStatc_r, pc_r, covLB_r
+
+            print('p vals ran')
 
 
         if statType == 'F':
