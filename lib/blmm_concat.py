@@ -1218,13 +1218,13 @@ def main(*args):
         del stat_t, tStatcmap
 
         # Output pvalue map
-        pcmap = nib.Nifti1Image(p_t,
+        dfmap = nib.Nifti1Image(df_sw,
                                 nifti.affine,
                                 header=nifti.header)
-        nib.save(df_sw,
+        nib.save(dfmap,
             os.path.join(OutDir, 
                 'blmm_vox_edf_sw.nii'))  
-        del swdf, df_sw
+        del swdf, df_sw, dfmap
 
         # Output pvalue map
         pcmap = nib.Nifti1Image(p_t,
