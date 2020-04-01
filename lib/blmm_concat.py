@@ -345,8 +345,6 @@ def main(*args):
         # Cycle through batches and add together results.
         for batchNo in range(2,(n_b+1)):
 
-            print(os.path.join(OutDir,"tmp","XtY" + str(batchNo) + ".npy"))
-
             sumXtY = sumXtY + np.load(
                 os.path.join(OutDir,"tmp","XtY" + str(batchNo) + ".npy")).transpose()
 
@@ -411,14 +409,10 @@ def main(*args):
             os.remove(os.path.join(OutDir, "tmp","XtY" + str(batchNo) + ".npy"))
             os.remove(os.path.join(OutDir, "tmp","YtY" + str(batchNo) + ".npy"))
             os.remove(os.path.join(OutDir, "tmp","ZtY" + str(batchNo) + ".npy"))
-            #os.remove(os.path.join(OutDir, "tmp","XtX" + str(batchNo) + ".npy"))
+            os.remove(os.path.join(OutDir, "tmp","XtX" + str(batchNo) + ".npy"))
             os.remove(os.path.join(OutDir, "tmp","ZtX" + str(batchNo) + ".npy"))
             os.remove(os.path.join(OutDir, "tmp","ZtZ" + str(batchNo) + ".npy"))
-            #os.remove(os.path.join(OutDir, "tmp", "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii"))
-
-            print('marker ', batchNo, ' ', XtX_batch_i[0])
-
-        print(a)
+            os.remove(os.path.join(OutDir, "tmp", "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii"))
 
     else:
         # Read in sums.
@@ -604,12 +598,6 @@ def main(*args):
         beta_out[:,:,:,k] = beta[k,:].reshape(int(NIFTIsize[0]),
                                               int(NIFTIsize[1]),
                                               int(NIFTIsize[2]))
-
-    # Random voxel test
-    vox = I_inds[300]
-    print(vox)
-    print(XtX_i[0,:,:])    
-    print(XtY_i[vox,:,:])
 
     # Save beta map.
     betamap = nib.Nifti1Image(beta_out,
@@ -959,7 +947,6 @@ def main(*args):
                                                     NIFTIsize[2]
                                                     ))
 
-            print('se_t ran')
 
             del covLB
 
@@ -974,11 +961,6 @@ def main(*args):
 
                 swdf[I_inds] = get_swdf_T3D(L, D_i, sigma2_i, ZtX_i, ZtY_i, XtX_i, ZtZ_i, XtY_i, YtX_i, YtZ_i, XtZ_i, YtY_i, n_s, nlevels, nparams).reshape(swdf[I_inds].shape)
 
-            print('swdf ran')
-
-            print('swdf shape: ', swdf.shape)
-            print('swdf i shape: ', swdf[I_inds].shape)
-            print('swdf r shape: ', swdf[R_inds].shape)
 
             df_sw[:,:,:,current_n_ct] = swdf.reshape(
                                                     NIFTIsize[0],

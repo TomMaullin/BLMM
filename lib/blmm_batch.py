@@ -184,7 +184,7 @@ def main(*args):
     ZtY = blkXtY(Z, Y, Mask) # REVISIT ONCE SPARSED
 
     tmpXtX = X.transpose() @ X
-    print('marker ', batchNo, ' ', tmpXtX[0,0])
+
     # In a spatially varying design XtX has dimensions n_voxels
     # by n_parameters by n_parameters. We reshape to n_voxels by
     # n_parameters^2 so that we can save as a csv.
@@ -248,7 +248,6 @@ def main(*args):
     w.resetwarnings()
 
     t2_overall = time.time()
-    print('TIME: ', t2_overall-t1_overall)
 
 
 def verifyInput(Y_files, M_files, Y0):
@@ -304,9 +303,6 @@ def verifyInput(Y_files, M_files, Y0):
 
 def blkMX(X,Y,M):
 
-    print('X shape ', X.shape)
-    print('M shape ', M.shape)
-
     # Get M in a form where each voxel's mask is mutliplied
     # by X
     M = M.transpose().reshape([M.shape[1], 1, M.shape[0]])
@@ -315,8 +311,6 @@ def blkMX(X,Y,M):
     # Obtain design for each voxel
     MXt = np.multiply(M, Xt)
     MX = MXt.transpose(0,2,1)
-
-    print('MX shape ', MX.shape)
 
     return MX
 
@@ -383,9 +377,6 @@ def obtainY(Y_files, M_files, M_t, M_a):
     M_df['id'] = M_df.groupby(M_df.columns.tolist(), sort=False).ngroup() + 1
     unique_id_nifti = M_df['id'].values
     Mmap = np.zeros(Mask.shape)
-    print('Mask shape: ', Mask.shape)
-    print('Masked mmap shape: ', Mmap[Mask > 0].shape)
-    print('unique_id_nifti shape: ', unique_id_nifti.shape)
     Mmap[np.flatnonzero(Mask)] = unique_id_nifti[:]
     Mmap = Mmap.reshape(nmap.shape)
 
