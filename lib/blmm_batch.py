@@ -389,8 +389,11 @@ def obtainY(Y_files, M_files, M_t, M_a):
     Mmap[np.flatnonzero(Mask)] = unique_id_nifti[:]
     Mmap = Mmap.reshape(nmap.shape)
 
-    # Get the unique columns of M
-    M = np.unique(M, axis=1)
+    # Get the unique columns of M (Care must be taken here to retain
+    # the original ordering, as unique_id_nifti is now based on said
+    # ordering)
+    _, idx = np.unique(M, axis=1, return_index=True)
+    M = M[:,np.sort(idx)]
 
 
 
