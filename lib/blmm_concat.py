@@ -134,7 +134,7 @@ def main(*args):
         os.remove(os.path.join(OutDir,"tmp","blmm_vox_n_batch1.nii"))
 
         # Cycle through batches and add together n.
-        for batchNo in range(2,(n_b+2)):
+        for batchNo in range(2,(n_b+1)):
             
             # Obtain the full nmap.
             n_s_sv = n_s_sv + blmm_load(os.path.join(OutDir,"tmp", 
@@ -343,7 +343,7 @@ def main(*args):
         os.remove(os.path.join(OutDir,"tmp","blmm_vox_uniqueM_batch1.nii"))
 
         # Cycle through batches and add together results.
-        for batchNo in range(2,(n_b+2)):
+        for batchNo in range(2,(n_b+1)):
 
             print(os.path.join(OutDir,"tmp","XtY" + str(batchNo) + ".npy"))
 
@@ -597,6 +597,11 @@ def main(*args):
         beta_out[:,:,:,k] = beta[k,:].reshape(int(NIFTIsize[0]),
                                               int(NIFTIsize[1]),
                                               int(NIFTIsize[2]))
+
+    # Random voxel test
+    vox = 100*100*100//2
+    print(XtX_i[0,:,:])    
+    print(XtY_i[vox,:,:])
 
     # Save beta map.
     betamap = nib.Nifti1Image(beta_out,
