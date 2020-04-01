@@ -395,14 +395,14 @@ def main(*args):
                     ZtX_batch_i = ZtX_batch_unique[(m-1),:]
                     XtX_batch_i = XtX_batch_unique[(m-1),:]
 
-                # Add to running total
-                sumXtX_r = sumXtX_r + XtX_batch_r
-                sumZtX_r = sumZtX_r + ZtX_batch_r
-                sumZtZ_r = sumZtZ_r + ZtZ_batch_r
+            # Add to running total
+            sumXtX_r = sumXtX_r + XtX_batch_r
+            sumZtX_r = sumZtX_r + ZtX_batch_r
+            sumZtZ_r = sumZtZ_r + ZtZ_batch_r
 
-                sumXtX_i = sumXtX_i + XtX_batch_i
-                sumZtX_i = sumZtX_i + ZtX_batch_i
-                sumZtZ_i = sumZtZ_i + ZtZ_batch_i
+            sumXtX_i = sumXtX_i + XtX_batch_i
+            sumZtX_i = sumZtX_i + ZtX_batch_i
+            sumZtZ_i = sumZtZ_i + ZtZ_batch_i
             
             # Delete the files as they are no longer needed.
             os.remove(os.path.join(OutDir, "tmp","XtY" + str(batchNo) + ".npy"))
