@@ -480,6 +480,8 @@ def main(*args):
 
     # Empty vectors for parameter estimates
     beta = np.zeros([n_v, n_p])
+    beta2 = np.zeros([n_v, n_p])
+    beta3 = np.zeros([n_v, n_p])
     sigma2 = np.zeros([n_v, 1]) 
 
     REML = False
@@ -573,12 +575,18 @@ def main(*args):
         beta_r = paramVec_r[:, 0:n_p]
         beta[R_inds,:] = beta_r.reshape([n_v_r, n_p])
 
+        beta2[R_inds,:] = (np.linalg.inv(XtX_r) @ XtY_r).reshape(beta2[R_inds,:].shape)
+
+
     if n_v_i:
 
         paramVec[I_inds,:] = paramVec_i[:].reshape(paramVec[I_inds,:].shape)
 
         beta_i = paramVec_i[:, 0:n_p]
         beta[I_inds,:] = beta_i.reshape([n_v_i, n_p])
+
+        beta2[I_inds,:] = (np.linalg.inv(XtX_i) @ XtY_i).reshape(beta2[I_inds,:].shape)
+
 
     beta = beta.reshape([n_v, n_p]).transpose()
 
@@ -600,6 +608,55 @@ def main(*args):
                               header=nifti.header)
     nib.save(betamap, os.path.join(OutDir,'blmm_vox_beta.nii'))
     del beta_out, betamap
+
+# =================================================================================
+
+    beta2 = beta2.reshape([n_v, n_p]).transpose()
+
+    beta2_out = np.zeros([int(NIFTIsize[0]),
+                         int(NIFTIsize[1]),
+                         int(NIFTIsize[2]),
+                         beta2.shape[0]])
+
+    # Cycle through betas and output results.
+    for k in range(0,beta2.shape[0]):
+
+        beta2_out[:,:,:,k] = beta2[k,:].reshape(int(NIFTIsize[0]),
+                                              int(NIFTIsize[1]),
+                                              int(NIFTIsize[2]))
+
+    # Save beta map.
+    beta2map = nib.Nifti1Image(beta2_out,
+                              nifti.affine,
+                              header=nifti.header)
+    nib.save(beta2map, os.path.join(OutDir,'blmm_vox_beta2.nii'))
+    del beta2_out, beta2map
+
+
+    beta3 = beta3.reshape([n_v, n_p]).transpose()
+
+    beta3_out = np.zeros([int(NIFTIsize[0]),
+                         int(NIFTIsize[1]),
+                         int(NIFTIsize[2]),
+                         beta3.shape[0]])
+
+    # Cycle through betas and output results.
+    for k in range(0,beta3.shape[0]):
+
+        beta3_out[:,:,:,k] = beta3[k,:].reshape(int(NIFTIsize[0]),
+                                              int(NIFTIsize[1]),
+                                              int(NIFTIsize[2]))
+
+    # Save beta map.
+    beta3map = nib.Nifti1Image(beta3_out,
+                              nifti.affine,
+                              header=nifti.header)
+    nib.save(beta3map, os.path.join(OutDir,'blmm_vox_beta3.nii'))
+    del beta3_out, beta3map
+
+
+# =================================================================================
+
 
     if np.ndim(beta) == 0:
         beta = np.array([[beta]])
@@ -640,6 +697,8 @@ def main(*args):
             llh_r = llh3D(n_s_sv_r, ZtZ_r, Zte_r, ete_r, sigma2_r, DinvIplusZtZD_r, D_r, REML, XtX_r, XtZ_r, ZtX_r) - (0.5*(n_s_sv_r)*np.log(2*np.pi)).reshape(ete_r.shape[0])
 
 
+        beta3[R_inds,:] = (np.linalg.inv(XtX_r- XtZ_r @ DinvIplusZtZD_r @ ZtX_r) @ (XtY_r- XtZ_r @ DinvIplusZtZD_r @ ZtY_r)).reshape(beta3[R_inds,:].shape)
+
     if n_v_i:
 
         sigma2_i = paramVec_i[:,n_p:(n_p+1),:]
@@ -667,6 +726,9 @@ def main(*args):
             llh_i = llh3D(n_s, ZtZ_i, Zte_i, ete_i, sigma2_i, DinvIplusZtZD_i, D_i, REML, XtX_i, XtZ_i, ZtX_i) - 0.5*(n_s-n_p)*np.log(2*np.pi)
         else:
             llh_i = llh3D(n_s, ZtZ_i, Zte_i, ete_i, sigma2_i, DinvIplusZtZD_i, D_i, REML, XtX_i, XtZ_i, ZtX_i) - 0.5*(n_s)*np.log(2*np.pi)
+
+
+        beta3[I_inds,:] = (np.linalg.inv(XtX_i- XtZ_i @ DinvIplusZtZD_i @ ZtX_i) @ (XtY_i- XtZ_i @ DinvIplusZtZD_i @ ZtY_i)).reshape(beta3[I_inds,:].shape)
 
     # Unmask llh
     llh = np.zeros([n_v,1])
