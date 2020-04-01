@@ -411,12 +411,12 @@ def main(*args):
             os.remove(os.path.join(OutDir, "tmp","XtY" + str(batchNo) + ".npy"))
             os.remove(os.path.join(OutDir, "tmp","YtY" + str(batchNo) + ".npy"))
             os.remove(os.path.join(OutDir, "tmp","ZtY" + str(batchNo) + ".npy"))
-            os.remove(os.path.join(OutDir, "tmp","XtX" + str(batchNo) + ".npy"))
+            #os.remove(os.path.join(OutDir, "tmp","XtX" + str(batchNo) + ".npy"))
             os.remove(os.path.join(OutDir, "tmp","ZtX" + str(batchNo) + ".npy"))
             os.remove(os.path.join(OutDir, "tmp","ZtZ" + str(batchNo) + ".npy"))
-            os.remove(os.path.join(OutDir, "tmp", "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii"))
+            #os.remove(os.path.join(OutDir, "tmp", "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii"))
 
-            print('marker ', batchNo, XtX_batch_i[0])
+            print('marker ', batchNo, ' ', XtX_batch_i[0])
 
         print(a)
 
@@ -1294,7 +1294,7 @@ def main(*args):
     # Clean up files
     if len(args)==0:
         os.remove(os.path.join(OutDir, 'nb.txt'))
-    shutil.rmtree(os.path.join(OutDir, 'tmp'))
+    #shutil.rmtree(os.path.join(OutDir, 'tmp'))
 
     w.resetwarnings()
 
