@@ -134,7 +134,7 @@ def main(*args):
         os.remove(os.path.join(OutDir,"tmp","blmm_vox_n_batch1.nii"))
 
         # Cycle through batches and add together n.
-        for batchNo in range(2,(n_b+1)):
+        for batchNo in range(2,(n_b+2)):
             
             # Obtain the full nmap.
             n_s_sv = n_s_sv + blmm_load(os.path.join(OutDir,"tmp", 
@@ -343,7 +343,7 @@ def main(*args):
         os.remove(os.path.join(OutDir,"tmp","blmm_vox_uniqueM_batch1.nii"))
 
         # Cycle through batches and add together results.
-        for batchNo in range(2,(n_b+1)):
+        for batchNo in range(2,(n_b+2)):
 
             print(os.path.join(OutDir,"tmp","XtY" + str(batchNo) + ".npy"))
 
