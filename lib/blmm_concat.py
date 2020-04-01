@@ -334,7 +334,6 @@ def main(*args):
 
 
         # Delete the files as they are no longer needed.
-        os.remove(os.path.join(OutDir,"tmp","XtX1.npy"))
         os.remove(os.path.join(OutDir,"tmp","XtY1.npy"))
         os.remove(os.path.join(OutDir,"tmp","YtY1.npy"))
         os.remove(os.path.join(OutDir,"tmp","ZtX1.npy"))
@@ -368,6 +367,8 @@ def main(*args):
 
 
             maxM = np.int32(np.amax(uniquenessMask))
+            print('maxM',maxM)
+            print('minM',np.int32(np.amin(uniquenessMask)))
 
             # read in XtX, ZtX, ZtZ
             ZtZ_batch_unique = np.load(
@@ -391,6 +392,8 @@ def main(*args):
 
                 # Work out Z'Z, Z'X and X'X for the inner
                 if uniquenessMask_i == m:
+
+                    print('active ', batchNo)
                     ZtZ_batch_i = ZtZ_batch_unique[(m-1),:]
                     ZtX_batch_i = ZtX_batch_unique[(m-1),:]
                     XtX_batch_i = XtX_batch_unique[(m-1),:]
