@@ -600,6 +600,7 @@ def main(*args):
 
     # Random voxel test
     vox = I_inds[300]
+    print(vox)
     print(XtX_i[0,:,:])    
     print(XtY_i[vox,:,:])
 
