@@ -332,6 +332,7 @@ def main(*args):
         sumZtX_i = ZtX_batch_i
         sumZtZ_i = ZtZ_batch_i
 
+        a = XtX_batch_i[0,0]
 
         # Delete the files as they are no longer needed.
         os.remove(os.path.join(OutDir,"tmp","XtY1.npy"))
@@ -409,6 +410,8 @@ def main(*args):
             sumXtX_i = sumXtX_i + XtX_batch_i
             sumZtX_i = sumZtX_i + ZtX_batch_i
             sumZtZ_i = sumZtZ_i + ZtZ_batch_i
+
+            a = a + XtX_batch_i[0,0]
             
             # Delete the files as they are no longer needed.
             os.remove(os.path.join(OutDir, "tmp","XtY" + str(batchNo) + ".npy"))
@@ -418,6 +421,10 @@ def main(*args):
             os.remove(os.path.join(OutDir, "tmp","ZtX" + str(batchNo) + ".npy"))
             os.remove(os.path.join(OutDir, "tmp","ZtZ" + str(batchNo) + ".npy"))
             os.remove(os.path.join(OutDir, "tmp", "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii"))
+
+            print(batchNo, XtX_batch_i[0,0])
+
+        print(a)
 
     else:
         # Read in sums.
