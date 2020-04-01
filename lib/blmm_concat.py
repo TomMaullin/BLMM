@@ -378,6 +378,9 @@ def main(*args):
             XtX_batch_unique = np.load(
                 os.path.join(OutDir,"tmp","XtX" + str(batchNo) + ".npy"))
 
+            print('unique shape')
+            print(XtX_batch_unique.shape)
+
             # Make zeros for whole nifti ZtZ, XtX, ZtX etc
             ZtZ_batch_r = np.zeros((n_v_r, ZtZ_batch_unique.shape[1]))
             ZtX_batch_r = np.zeros((n_v_r, ZtX_batch_unique.shape[1]))
