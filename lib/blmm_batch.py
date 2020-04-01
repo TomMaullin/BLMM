@@ -304,6 +304,9 @@ def verifyInput(Y_files, M_files, Y0):
 
 def blkMX(X,Y,M):
 
+    print('X shape ', X.shape)
+    print('M shape ', M.shape)
+
     # Get M in a form where each voxel's mask is mutliplied
     # by X
     M = M.transpose().reshape([M.shape[1], 1, M.shape[0]])
@@ -312,6 +315,8 @@ def blkMX(X,Y,M):
     # Obtain design for each voxel
     MXt = np.multiply(M, Xt)
     MX = MXt.transpose(0,2,1)
+
+    print('MX shape ', MX.shape)
 
     return MX
 
