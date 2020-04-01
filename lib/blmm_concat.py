@@ -599,7 +599,7 @@ def main(*args):
                                               int(NIFTIsize[2]))
 
     # Random voxel test
-    vox = 100*100*100//2
+    vox = I_inds[300]
     print(XtX_i[0,:,:])    
     print(XtY_i[vox,:,:])
 
