@@ -183,6 +183,8 @@ def main(*args):
     YtY = blkYtY(Y, Mask)
     ZtY = blkXtY(Z, Y, Mask) # REVISIT ONCE SPARSED
 
+    tmpXtX = X.transpose() @ X
+    print('marker ', batchNo, ' ', tmpXtX[0,0])
     # In a spatially varying design XtX has dimensions n_voxels
     # by n_parameters by n_parameters. We reshape to n_voxels by
     # n_parameters^2 so that we can save as a csv.

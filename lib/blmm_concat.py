@@ -368,8 +368,6 @@ def main(*args):
 
 
             maxM = np.int32(np.amax(uniquenessMask))
-            print('maxM',maxM)
-            print('minM',np.int32(np.amin(uniquenessMask)))
 
             # read in XtX, ZtX, ZtZ
             ZtZ_batch_unique = np.load(
@@ -378,9 +376,6 @@ def main(*args):
                 os.path.join(OutDir,"tmp","ZtX" + str(batchNo) + ".npy"))
             XtX_batch_unique = np.load(
                 os.path.join(OutDir,"tmp","XtX" + str(batchNo) + ".npy"))
-
-            print('unique shape')
-            print(XtX_batch_unique.shape)
 
             # Make zeros for whole nifti ZtZ, XtX, ZtX etc
             ZtZ_batch_r = np.zeros((n_v_r, ZtZ_batch_unique.shape[1]))
@@ -397,7 +392,6 @@ def main(*args):
                 # Work out Z'Z, Z'X and X'X for the inner
                 if uniquenessMask_i == m:
 
-                    print('active ', batchNo)
                     ZtZ_batch_i = ZtZ_batch_unique[(m-1),:]
                     ZtX_batch_i = ZtX_batch_unique[(m-1),:]
                     XtX_batch_i = XtX_batch_unique[(m-1),:]
@@ -422,7 +416,7 @@ def main(*args):
             os.remove(os.path.join(OutDir, "tmp","ZtZ" + str(batchNo) + ".npy"))
             os.remove(os.path.join(OutDir, "tmp", "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii"))
 
-            print(batchNo, XtX_batch_i[0])
+            print('marker ', batchNo, XtX_batch_i[0])
 
         print(a)
 
