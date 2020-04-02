@@ -1285,7 +1285,7 @@ def blmm_det(A):
 #
 # ============================================================================================================
 
-def addBlockToNifti(fname, block, blockInds,dim=None,volc=None):
+def addBlockToNifti(fname, block, blockInds,dim=None,volc=None,aff=None):
 
     # Check volc is correct datatype
     if volc is not None:
@@ -1316,7 +1316,10 @@ def addBlockToNifti(fname, block, blockInds,dim=None,volc=None):
             data = np.zeros(dim)
 
             # Make affine
-            affine = np.eye(4)
+            if aff is not None:
+                affine = np.eye(4)
+            else:
+                affine = aff
 
         else:
 
