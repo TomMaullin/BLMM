@@ -1559,7 +1559,7 @@ def get_swdf_F3D(L, D, sigma2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, n
         swdf_adj = swdf_row/(swdf_row-2)
 
         # Add to running sum
-        sum_swdf_adj = sum_swdf_adj + swdf_adj
+        sum_swdf_adj = sum_swdf_adj + swdf_adj.reshape(sum_swdf_adj.shape)
 
     # Work out final df
     df = 2*sum_swdf_adj/(sum_swdf_adj-rL)
