@@ -1356,7 +1356,7 @@ def addBlockToNifti(fname, block, blockInds,dim=None,volc=None,aff=None,hdr=None
         # Cycle through volumes, reshaping.
         for k in range(0,data.shape[0]):
 
-            data_out[:,:,:,k] = data[k,:].reshape(int(dim[0]),
+            data_out[:,:,:,k] = data[:,k].reshape(int(dim[0]),
                                                   int(dim[1]),
                                                   int(dim[2]))
 
@@ -1370,7 +1370,7 @@ def addBlockToNifti(fname, block, blockInds,dim=None,volc=None,aff=None,hdr=None
         data[blockInds,:] = block.reshape(data[blockInds,:].shape)
         
         # Put in the volume
-        data_out[:,:,:,volc] = data[0,:].reshape(int(dim[0]),
+        data_out[:,:,:,volc] = data[:,0].reshape(int(dim[0]),
                                                  int(dim[1]),
                                                  int(dim[2]))
 
