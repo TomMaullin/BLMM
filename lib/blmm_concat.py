@@ -978,14 +978,14 @@ def main(*args):
                 Tc_r = get_T3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, beta_r, sigma2_r).reshape(Tc[R_inds].shape)
                 Tc[R_inds] = Tc_r 
 
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT2.nii'), Tc_r, R_inds,volc=i,dim=dimT)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT2.nii'), Tc_r, R_inds,volc=i,dim=dimT,aff=nifti.affine)
 
             if n_v_i:
 
                 Tc_i = get_T3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, beta_i, sigma2_i).reshape(Tc[I_inds].shape)
                 Tc[I_inds] = Tc_i 
 
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT2.nii'), Tc_i, I_inds,volc=i,dim=dimT)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT2.nii'), Tc_i, I_inds,volc=i,dim=dimT,aff=nifti.affine)
 
             stat_t[:,:,:,current_n_ct] = Tc.reshape(
                                                     NIFTIsize[0],
@@ -1323,6 +1323,9 @@ def addBlockToNifti(fname, block, blockInds,dim=None,volc=None):
             # Throw an error because we don't know what to do
             raise Exception('NIFTI does not exist and dimensions not given')
 
+    # Seperate copy of data for outputting
+    data_out = np.array(data)
+
     # Work out the number of output volumes inside the nifti 
     if len(dim)==3:
 
@@ -1349,9 +1352,6 @@ def addBlockToNifti(fname, block, blockInds,dim=None,volc=None):
 
         # Transpose
         data = data.transpose()
-
-        # Output shape.
-        data_out = np.zeros(dim)
         
         # Cycle through volumes, reshaping.
         for k in range(0,data.shape[0]):
@@ -1371,9 +1371,6 @@ def addBlockToNifti(fname, block, blockInds,dim=None,volc=None):
 
         # Transpose
         data = data.transpose()
-
-        # Output shape.
-        data_out = np.zeros(dim)
         
         # Put in the volume
         data_out[:,:,:,volc] = data[0,:].reshape(int(dim[0]),
