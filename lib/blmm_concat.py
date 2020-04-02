@@ -1316,7 +1316,7 @@ def addBlockToNifti(fname, block, blockInds,dim=None,volc=None,aff=None,hdr=None
             data = np.zeros(dim)
 
             # Make affine
-            if aff is not None:
+            if aff is None:
                 affine = np.eye(4)
             else:
                 affine = aff
