@@ -1046,8 +1046,6 @@ def main(*args):
                                                NIFTIsize[2]
                                            )
 
-            del fStatc
-
             # Unmask p and swdf for this contrast
             pc = np.zeros([n_v])
             swdf = np.zeros([n_v])
