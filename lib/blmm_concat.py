@@ -1362,7 +1362,7 @@ def addBlockToNifti(fname, block, blockInds,dim=None,volc=None):
     else:
 
         # We're only looking at this volume
-        data = data[:,volc].reshape((nvox,1))
+        data = data[:,volc].reshape((n_vox,1))
 
         # Add block
         data[blockInds,:] = block.reshape(data[blockInds,:].shape)
