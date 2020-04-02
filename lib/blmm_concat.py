@@ -968,29 +968,29 @@ def main(*args):
 
 
             # Unmask T stat
-            tStatc = np.zeros([n_v])
+            Tc = np.zeros([n_v])
 
             # Calculate masked T statistic image for ring
             if n_v_r:
 
-                tStatc_r = get_T3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, beta_r, sigma2_r).reshape(tStatc[R_inds].shape)
-                tStatc[R_inds] = tStatc_r 
+                Tc_r = get_T3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, beta_r, sigma2_r).reshape(Tc[R_inds].shape)
+                Tc[R_inds] = Tc_r 
 
             if n_v_i:
 
-                tStatc_i = get_T3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, beta_i, sigma2_i).reshape(tStatc[I_inds].shape)
-                tStatc[I_inds] = tStatc_i 
+                Tc_i = get_T3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, beta_i, sigma2_i).reshape(Tc[I_inds].shape)
+                Tc[I_inds] = Tc_i 
 
-            stat_t[:,:,:,current_n_ct] = tStatc.reshape(
+            stat_t[:,:,:,current_n_ct] = Tc.reshape(
                                                     NIFTIsize[0],
                                                     NIFTIsize[1],
                                                     NIFTIsize[2]
                                                 )
 
             print('stat_t ran')
-            print('tstatc shape: ', tStatc.shape)
-            print('tstatc i shape: ', tStatc[I_inds].shape)
-            print('tstatc r shape: ', tStatc[R_inds].shape)
+            print('tstatc shape: ', Tc.shape)
+            print('tstatc i shape: ', Tc[I_inds].shape)
+            print('tstatc r shape: ', Tc[R_inds].shape)
 
             # Unmask p for this contrast
             pc = np.zeros([n_v])
@@ -999,11 +999,11 @@ def main(*args):
             if n_v_i:
 
 
-                pc[I_inds] = T2P3D(T_i,swdf_i,inputs).reshape(pc[I_inds].shape)
+                pc[I_inds] = T2P3D(Tc_i,swdf_i,inputs).reshape(pc[I_inds].shape)
 
             if n_v_r:
 
-                pc[R_inds] = T2P3D(T_r,swdf_r,inputs).reshape(pc[R_inds].shape)
+                pc[R_inds] = T2P3D(Tc_r,swdf_r,inputs).reshape(pc[R_inds].shape)
 
             p_t[:,:,:,current_n_ct] = pc.reshape(
                                                 NIFTIsize[0],
@@ -1015,11 +1015,11 @@ def main(*args):
             current_n_ct = current_n_ct + 1
 
 
-            del tStatc, pc
+            del Tc, pc
             if n_v_i:
-                del tStatc_i, pc_i
+                del Tc_i, pc_i
             if n_v_r:
-                del tStatc_r, pc_r
+                del Tc_r, pc_r
 
             print('p vals ran')
 
@@ -1115,13 +1115,13 @@ def main(*args):
         del se_t, seLbetamap
 
         # Output statistic map
-        tStatcmap = nib.Nifti1Image(stat_t,
+        Tcmap = nib.Nifti1Image(stat_t,
                                     nifti.affine,
                                     header=nifti.header)
-        nib.save(tStatcmap,
+        nib.save(Tcmap,
             os.path.join(OutDir, 
                 'blmm_vox_conT.nii'))
-        del stat_t, tStatcmap
+        del stat_t, Tcmap
 
         # Output swdf map for T
         dfmap = nib.Nifti1Image(df_sw_t,
