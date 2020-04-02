@@ -1033,12 +1033,12 @@ def main(*args):
             if n_v_r:
 
                 # Calculate F statistic.
-                fStatc[R_inds]=get_F3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, beta_r, sigma2_r)
+                fStatc[R_inds]=get_F3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, beta_r, sigma2_r).reshape(fStatc[R_inds].shape)
 
             # Calculate the numerator of the F statistic for the inner 
             if n_v_i:
 
-                fStatc[I_inds]=get_F3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, beta_i, sigma2_i)
+                fStatc[I_inds]=get_F3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, beta_i, sigma2_i).reshape(fStatc[I_inds].shape)
 
             stat_f[:,:,:,current_n_cf] = fStatc.reshape(
                                                NIFTIsize[0],
@@ -1058,13 +1058,13 @@ def main(*args):
             # Work out p for this contrast
             if n_v_i:
 
-                swdf[I_inds] = get_swdf_F3D(L, D_i, sigma2_i, ZtX_i, ZtY_i, XtX_i, ZtZ_i, XtY_i, YtX_i, YtZ_i, XtZ_i, YtY_i, n_s, nlevels, nparams)
-                pc[I_inds] = F2P3D(fStatc[I_inds], rL, swdf[I_inds], inputs)
+                swdf[I_inds] = get_swdf_F3D(L, D_i, sigma2_i, ZtX_i, ZtY_i, XtX_i, ZtZ_i, XtY_i, YtX_i, YtZ_i, XtZ_i, YtY_i, n_s, nlevels, nparams).reshape(swdf[I_inds].shape)
+                pc[I_inds] = F2P3D(fStatc[I_inds], rL, swdf[I_inds], inputs).reshape(pc[I_inds].shape)
 
             if n_v_r:
 
-                swdf[R_inds] = get_swdf_F3D(L, D_r, sigma2_r, ZtX_r, ZtY_r, XtX_r, ZtZ_r, XtY_r, YtX_r, YtZ_r, XtZ_r, YtY_r, n_s_sv, nlevels, nparams)
-                pc[R_inds] = F2P3D(fStatc[R_inds], rL, swdf[R_inds], inputs) 
+                swdf[R_inds] = get_swdf_F3D(L, D_r, sigma2_r, ZtX_r, ZtY_r, XtX_r, ZtZ_r, XtY_r, YtX_r, YtZ_r, XtZ_r, YtY_r, n_s_sv, nlevels, nparams).reshape(swdf[R_inds].shape)
+                pc[R_inds] = F2P3D(fStatc[R_inds], rL, swdf[R_inds], inputs).reshape(pc[R_inds])
 
             df_sw_f[:,:,:,current_n_cf] = swdf.reshape(
                                                     NIFTIsize[0],
