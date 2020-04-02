@@ -794,7 +794,7 @@ def main(*args):
 
 
 
-
+    #### NTS: REMOVE FILES FROM PREV RERUN IF NECESSARY
 
 
 
@@ -973,22 +973,22 @@ def main(*args):
             if n_v_r:
 
                 # Obtain and output T statistic
-                Tc_r = get_T3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, beta_r, sigma2_r).reshape(Tc[R_inds].shape)
+                Tc_r = get_T3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, beta_r, sigma2_r)
                 addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT.nii'), Tc_r, R_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
                 # Obatin and output p-values
-                pc_r = T2P3D(Tc_r,swdf[R_inds],inputs).reshape(pc_r.shape)
+                pc_r = T2P3D(Tc_r,swdf[R_inds],inputs)
                 addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conTlp.nii'), pc_i, I_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
 
             if n_v_i:
 
                 # Obtain and output T statistic
-                Tc_i = get_T3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, beta_i, sigma2_i).reshape(Tc[I_inds].shape)
+                Tc_i = get_T3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, beta_i, sigma2_i)
                 addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT.nii'), Tc_i, I_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
                 
                 # Obtain and output p-values
-                pc_i = T2P3D(Tc_i,swdf[I_inds],inputs).reshape(pc_i.shape)
+                pc_i = T2P3D(Tc_i,swdf[I_inds],inputs)
                 addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conTlp.nii'), pc_i, I_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
 
@@ -1153,7 +1153,7 @@ def main(*args):
     # Clean up files
     if len(args)==0:
         os.remove(os.path.join(OutDir, 'nb.txt'))
-    #shutil.rmtree(os.path.join(OutDir, 'tmp'))
+    shutil.rmtree(os.path.join(OutDir, 'tmp'))
 
     w.resetwarnings()
 
@@ -1248,6 +1248,10 @@ def addBlockToNifti(fname, block, blockInds,dim=None,volc=None,aff=None,hdr=None
     if volc is not None:
 
         volc = int(volc)
+
+    # Work out dimension of block
+    if ndim(block)>1:
+        block = block.reshape(block.shape[0])
 
     # Check whether the NIFTI exists already
     if os.path.isfile(fname):
