@@ -1033,12 +1033,12 @@ def main(*args):
             if n_v_r:
 
                 # Calculate F statistic.
-                fStatc[R_inds]=get_F3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, betah_r, sigma2_r)
+                fStatc[R_inds]=get_F3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, beta_r, sigma2_r)
 
             # Calculate the numerator of the F statistic for the inner 
             if n_v_i:
 
-                fStatc[I_inds]=get_F3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, betahat_i, sigma2_i)
+                fStatc[I_inds]=get_F3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, beta_i, sigma2_i)
 
             stat_f[:,:,:,current_n_cf] = fStatc.reshape(
                                                NIFTIsize[0],
