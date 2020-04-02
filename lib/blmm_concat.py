@@ -1382,7 +1382,7 @@ def addBlockToNifti(fname, block, blockInds,dim=None,volc=None,aff=None,hdr=None
 
 
     # Make NIFTI
-    nifti = nib.Nifti1Image(data_out, affine, hdr)
+    nifti = nib.Nifti1Image(data_out, affine, header=hdr)
     
     # Save NIFTI
     nib.save(nifti, fname)
