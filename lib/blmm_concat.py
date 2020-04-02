@@ -1484,7 +1484,7 @@ def get_F3D(L, XtX, XtZ, DinvIplusZtZD, betahat, sigma2):
     varLB = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
 
     # Work out F
-    F = LB.transpose(0,2,1) @ varLB @ LB/rL
+    F = LB.transpose(0,2,1) @ np.linalg.inv(varLB) @ LB/rL
 
     # Return T
     return(F)
