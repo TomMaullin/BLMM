@@ -967,55 +967,30 @@ def main(*args):
                                                 )
 
 
-            # Unmask T stat
-            Tc = np.zeros([n_v])
-
             dimT = (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],n_ct)
 
             # Calculate masked T statistic image for ring
             if n_v_r:
 
+                # Obtain and output T statistic
                 Tc_r = get_T3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, beta_r, sigma2_r).reshape(Tc[R_inds].shape)
-                Tc[R_inds] = Tc_r 
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT.nii'), Tc_r, R_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT2.nii'), Tc_r, R_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+                # Obatin and output p-values
+                pc_r = T2P3D(Tc_r,swdf[R_inds],inputs).reshape(pc_r.shape)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conTlp.nii'), pc_i, I_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+
 
             if n_v_i:
 
+                # Obtain and output T statistic
                 Tc_i = get_T3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, beta_i, sigma2_i).reshape(Tc[I_inds].shape)
-                Tc[I_inds] = Tc_i 
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT.nii'), Tc_i, I_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+                
+                # Obtain and output p-values
+                pc_i = T2P3D(Tc_i,swdf[I_inds],inputs).reshape(pc_i.shape)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conTlp.nii'), pc_i, I_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT2.nii'), Tc_i, I_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
-
-            stat_t[:,:,:,current_n_ct] = Tc.reshape(
-                                                    NIFTIsize[0],
-                                                    NIFTIsize[1],
-                                                    NIFTIsize[2]
-                                                )
-
-            print('stat_t ran')
-            print('tstatc shape: ', Tc.shape)
-            print('tstatc i shape: ', Tc[I_inds].shape)
-            print('tstatc r shape: ', Tc[R_inds].shape)
-
-            # Unmask p for this contrast
-            pc = np.zeros([n_v])
-
-            # Work out p for this contrast
-            if n_v_i:
-
-
-                pc[I_inds] = T2P3D(Tc_i,swdf[I_inds],inputs).reshape(pc[I_inds].shape)
-
-            if n_v_r:
-
-                pc[R_inds] = T2P3D(Tc_r,swdf[R_inds],inputs).reshape(pc[R_inds].shape)
-
-            p_t[:,:,:,current_n_ct] = pc.reshape(
-                                                NIFTIsize[0],
-                                                NIFTIsize[1],
-                                                NIFTIsize[2]
-                                              )
 
             # Record that we have seen another T contrast
             current_n_ct = current_n_ct + 1
@@ -1027,7 +1002,7 @@ def main(*args):
             if n_v_r:
                 del Tc_r
 
-            print('p vals ran')
+            print('whole of T ran')
 
 
         if statType == 'F':
@@ -1118,15 +1093,6 @@ def main(*args):
                 'blmm_vox_conSE.nii'))
         del se_t, seLbetamap
 
-        # Output statistic map
-        Tcmap = nib.Nifti1Image(stat_t,
-                                    nifti.affine,
-                                    header=nifti.header)
-        nib.save(Tcmap,
-            os.path.join(OutDir, 
-                'blmm_vox_conT.nii'))
-        del stat_t, Tcmap
-
         # Output swdf map for T
         dfmap = nib.Nifti1Image(df_sw_t,
                                 nifti.affine,
@@ -1135,15 +1101,6 @@ def main(*args):
             os.path.join(OutDir, 
                 'blmm_vox_edf_sw_T.nii'))  
         del swdf, df_sw_t, dfmap
-
-        # Output pvalue map
-        pcmap = nib.Nifti1Image(p_t,
-                                nifti.affine,
-                                header=nifti.header)
-        nib.save(pcmap,
-            os.path.join(OutDir, 
-                'blmm_vox_conTlp.nii'))  
-        del pcmap, p_t
 
         # Output Lbeta/cope map
         Lbetamap = nib.Nifti1Image(Lbeta,
