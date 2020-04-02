@@ -999,11 +999,11 @@ def main(*args):
             if n_v_i:
 
 
-                pc[I_inds] = T2P3D(Tc_i,swdf_i,inputs).reshape(pc[I_inds].shape)
+                pc[I_inds] = T2P3D(Tc_i,swdf[I_inds],inputs).reshape(pc[I_inds].shape)
 
             if n_v_r:
 
-                pc[R_inds] = T2P3D(Tc_r,swdf_r,inputs).reshape(pc[R_inds].shape)
+                pc[R_inds] = T2P3D(Tc_r,swdf[R_inds],inputs).reshape(pc[R_inds].shape)
 
             p_t[:,:,:,current_n_ct] = pc.reshape(
                                                 NIFTIsize[0],
