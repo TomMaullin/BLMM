@@ -976,10 +976,14 @@ def main(*args):
                 Tc_r = get_T3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, beta_r, sigma2_r).reshape(Tc[R_inds].shape)
                 Tc[R_inds] = Tc_r 
 
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT2.nii'), Tc_r, R_inds,volc=i,dim=NIFTIsize)
+
             if n_v_i:
 
                 Tc_i = get_T3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, beta_i, sigma2_i).reshape(Tc[I_inds].shape)
                 Tc[I_inds] = Tc_i 
+
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT2.nii'), Tc_i, I_inds,volc=i,dim=NIFTIsize)
 
             stat_t[:,:,:,current_n_ct] = Tc.reshape(
                                                     NIFTIsize[0],
@@ -1279,7 +1283,12 @@ def blmm_det(A):
 #
 # ============================================================================================================
 
-def addBlockToNifti(fname, block, blockInds,dim=None):
+def addBlockToNifti(fname, block, blockInds,dim=None,volc=None):
+
+    # Check volc is correct datatype
+    if volc is not None:
+
+        volc = int(volc)
 
     # Check whether the NIFTI exists already
     if os.path.isfile(fname):
@@ -1330,21 +1339,45 @@ def addBlockToNifti(fname, block, blockInds,dim=None):
     # Reshape     
     data = data.reshape([n_vox, n_vol])
 
-    # Add block
-    data[blockInds,:] = block.reshape(data[blockInds,:].shape)
+    # Add all the volumes
+    if volc is None:
 
-    # Transpose
-    data = data.transpose()
+        # Add block
+        data[blockInds,:] = block.reshape(data[blockInds,:].shape)
 
-    # Output shape.
-    data_out = np.zeros(dim)
-    
-    # Cycle through volumes, reshaping.
-    for k in range(0,data.shape[0]):
+        # Transpose
+        data = data.transpose()
 
-        data_out[:,:,:,k] = data[k,:].reshape(int(dim[0]),
-                                              int(dim[1]),
-                                              int(dim[2]))
+        # Output shape.
+        data_out = np.zeros(dim)
+        
+        # Cycle through volumes, reshaping.
+        for k in range(0,data.shape[0]):
+
+            data_out[:,:,:,k] = data[k,:].reshape(int(dim[0]),
+                                                  int(dim[1]),
+                                                  int(dim[2]))
+
+    # Add the one volume in the correct place
+    else:
+
+        # We're only looking at this volume
+        data = data[:,volc]
+
+        # Add block
+        data[blockInds,:] = block.reshape(data[blockInds,:].shape)
+
+        # Transpose
+        data = data.transpose()
+
+        # Output shape.
+        data_out = np.zeros(dim)
+        
+        # Put in the volume
+        data_out[:,:,:,volc] = data[0,:].reshape(int(dim[0]),
+                                                 int(dim[1]),
+                                                 int(dim[2]))
+
 
     # Make NIFTI
     nifti = nib.Nifti1Image(data_out, affine)
