@@ -882,15 +882,13 @@ def main(*args):
     # Setup 4d volumes to output
     Lbeta = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_c])
     se_t = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_ct])
-    df_sw = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_ct])
+    df_sw_t = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_ct])
     stat_t = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_ct])
     p_t = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_ct])
     stat_f = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_cf])
     p_f = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_cf])
     r2_f = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_cf])
-
-
-# ====================================================================================================================
+    df_sw_f = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_cf])
 
 # WIP AREA
 
@@ -962,7 +960,7 @@ def main(*args):
                 swdf[I_inds] = get_swdf_T3D(L, D_i, sigma2_i, ZtX_i, ZtY_i, XtX_i, ZtZ_i, XtY_i, YtX_i, YtZ_i, XtZ_i, YtY_i, n_s, nlevels, nparams).reshape(swdf[I_inds].shape)
 
 
-            df_sw[:,:,:,current_n_ct] = swdf.reshape(
+            df_sw_t[:,:,:,current_n_ct] = swdf.reshape(
                                                     NIFTIsize[0],
                                                     NIFTIsize[1],
                                                     NIFTIsize[2]
@@ -994,47 +992,18 @@ def main(*args):
             print('tstatc i shape: ', tStatc[I_inds].shape)
             print('tstatc r shape: ', tStatc[R_inds].shape)
 
-
-
-
-
-
-
-
-
-# ====================================================================================================================
-
             # Unmask p for this contrast
             pc = np.zeros([n_v])
 
             # Work out p for this contrast
             if n_v_i:
-                # Do this seperately for >0 and <0 to avoid underflow
-                pc_i = np.zeros(np.shape(tStatc_i))
-                pc_i[tStatc_i < 0] = -np.log10(1-stats.t.cdf(tStatc_i[tStatc_i < 0], swdf[I_inds][tStatc_i < 0]))
-                pc_i[tStatc_i >= 0] = -np.log10(stats.t.cdf(-tStatc_i[tStatc_i >= 0], swdf[I_inds][tStatc_i >= 0]))
 
-                # Remove infs
-                if "minlog" in inputs:
-                    pc_i[np.logical_and(np.isinf(pc_i), pc_i<0)]=inputs['minlog']
-                else:
-                    pc_i[np.logical_and(np.isinf(pc_i), pc_i<0)]=-323.3062153431158
 
-                pc[I_inds] = pc_i
+                pc[I_inds] = T2P3D(T_i,swdf_i,inputs).reshape(pc[I_inds].shape)
 
             if n_v_r:
-                # Do this seperately for >0 and <0 to avoid underflow
-                pc_r = np.zeros(np.shape(tStatc_r))
-                pc_r[tStatc_r < 0] = -np.log10(1-stats.t.cdf(tStatc_r[tStatc_r < 0], swdf[R_inds][tStatc_r < 0]))
-                pc_r[tStatc_r >= 0] = -np.log10(stats.t.cdf(-tStatc_r[tStatc_r >= 0], swdf[R_inds][tStatc_r >= 0]))
 
-                # Remove infs
-                if "minlog" in inputs:
-                    pc_r[np.logical_and(np.isinf(pc_r), pc_r<0)]=inputs['minlog']
-                else:
-                    pc_r[np.logical_and(np.isinf(pc_r), pc_r<0)]=-323.3062153431158
-
-                pc[R_inds] = pc_r
+                pc[R_inds] = T2P3D(T_r,swdf_r,inputs).reshape(pc[R_inds].shape)
 
             p_t[:,:,:,current_n_ct] = pc.reshape(
                                                 NIFTIsize[0],
@@ -1057,76 +1026,19 @@ def main(*args):
 
         if statType == 'F':
 
-            # Get dimension of Ltor
-            q = L.shape[0]
-
-            # Make (c'(X'X)^(-1)c)^(-1) unmasked
-            iLtiXtXL = np.zeros([n_v, q*q])
-
-            # Calculate c'(X'X)^(-1)c
-            # (Note C is read in the other way around for F)
-            if n_v_r:
-
-                LtiXtXL_r = np.matmul(
-                    np.matmul(L, isumXtX_r),
-                    np.transpose(L))
-
-                # Lbeta needs to be nvox by 1 by npar for stacked
-                # multiply.
-                Lbetat_r = Lbeta_r.transpose(0,2,1)
-
-                # Calculate masked (c'(X'X)^(-1)c)^(-1) values for ring
-                iLtiXtXL_r = blmm_inverse(LtiXtXL_r, ouflow=True).reshape([n_v_r, q*q])
-                iLtiXtXL[R_inds,:]=iLtiXtXL_r
-
-            if n_v_i:
-
-                LtiXtXL_i = np.matmul(
-                    np.matmul(L, isumXtX_i),
-                    np.transpose(L))
-
-                # Lbeta needs to be nvox by 1 by npar for stacked
-                # multiply.
-                Lbetat_i = Lbeta_i.transpose(0,2,1)
-
-                # Calculate masked (c'(X'X)^(-1)c)^(-1) values for inner
-                iLtiXtXL_i = blmm_inverse(LtiXtXL_i, ouflow=True).reshape([1, q*q])
-                iLtiXtXL[I_inds,:]=iLtiXtXL_i
-
-            iLtiXtXL = iLtiXtXL.reshape([n_v, q, q])
-
             # Save F statistic
             fStatc = np.zeros([n_v])
 
             # Calculate the numerator of the F statistic for the ring
             if n_v_r:
-                Fnumerator_r = np.matmul(
-                    Lbetat_r,
-                    np.linalg.solve(LtiXtXL_r, Lbeta_r))
-
-                Fnumerator_r = Fnumerator_r.reshape(Fnumerator_r.shape[0])
-
-                # Calculate the denominator of the F statistic for ring
-                Fdenominator_r = q*resms_r.reshape([n_v_r])
 
                 # Calculate F statistic.
-                fStatc_r = Fnumerator_r/Fdenominator_r
-                fStatc[R_inds]=fStatc_r
+                fStatc[R_inds]=get_F3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, betah_r, sigma2_r)
 
             # Calculate the numerator of the F statistic for the inner 
             if n_v_i:
-                Fnumerator_i = np.matmul(
-                    Lbetat_i,
-                    np.linalg.solve(LtiXtXL_i, Lbeta_i))
 
-                Fnumerator_i = Fnumerator_i.reshape(Fnumerator_i.shape[0])
-
-                # Calculate the denominator of the F statistic for inner
-                Fdenominator_i = q*resms_i.reshape([n_v_i])
-
-                # Calculate F statistic.
-                fStatc_i = Fnumerator_i/Fdenominator_i
-                fStatc[I_inds]=fStatc_i
+                fStatc[I_inds]=get_F3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, betahat_i, sigma2_i)
 
             stat_f[:,:,:,current_n_cf] = fStatc.reshape(
                                                NIFTIsize[0],
@@ -1136,31 +1048,29 @@ def main(*args):
 
             del fStatc
 
-            # Unmask p for this contrast
+            # Unmask p and swdf for this contrast
             pc = np.zeros([n_v])
+            swdf = np.zeros([n_v])
+
+            # Get the rank of L
+            rL = np.linalg.matrix_rank(L)
 
             # Work out p for this contrast
             if n_v_i:
-                pc_i = -np.log10(1-stats.f.cdf(fStatc_i, q, df_i))
 
-                # Remove infs
-                if "minlog" in inputs:
-                    pc_i[np.logical_and(np.isinf(pc_i), pc_i<0)]=inputs['minlog']
-                else:
-                    pc_i[np.logical_and(np.isinf(pc_i), pc_i<0)]=-323.3062153431158
-
-                pc[I_inds] = pc_i
+                swdf[I_inds] = get_swdf_F3D(L, D_i, sigma2_i, ZtX_i, ZtY_i, XtX_i, ZtZ_i, XtY_i, YtX_i, YtZ_i, XtZ_i, YtY_i, n_s, nlevels, nparams)
+                pc[I_inds] = F2P3D(fStatc[I_inds], rL, swdf[I_inds], inputs)
 
             if n_v_r:
-                pc_r = -np.log10(1-stats.f.cdf(fStatc_r, q, df_r))
 
-                # Remove infs
-                if "minlog" in inputs:
-                    pc_r[np.logical_and(np.isinf(pc_r), pc_r<0)]=inputs['minlog']
-                else:
-                    pc_r[np.logical_and(np.isinf(pc_r), pc_r<0)]=-323.3062153431158
+                swdf[R_inds] = get_swdf_F3D(L, D_r, sigma2_r, ZtX_r, ZtY_r, XtX_r, ZtZ_r, XtY_r, YtX_r, YtZ_r, XtZ_r, YtY_r, n_s_sv, nlevels, nparams)
+                pc[R_inds] = F2P3D(fStatc[R_inds], rL, swdf[R_inds], inputs) 
 
-                pc[R_inds] = pc_r
+            df_sw_f[:,:,:,current_n_cf] = swdf.reshape(
+                                                    NIFTIsize[0],
+                                                    NIFTIsize[1],
+                                                    NIFTIsize[2]
+                                                )
 
             p_f[:,:,:,current_n_cf] = pc.reshape(
                                                NIFTIsize[0],
@@ -1171,18 +1081,15 @@ def main(*args):
             # Unmask partialR2.
             partialR2 = np.zeros([n_v])
 
-            # Mask spatially varying n_s
             if n_v_r:
-                n_s_sv_r = n_s_sv_r.reshape([n_v_r])
 
                 # Calculate partial R2 masked for ring.
-                partialR2_r = (q*fStatc_r)/(q*fStatc_r + n_s_sv_r - n_p)
-                partialR2[R_inds] = partialR2_r
+                partialR2[R_inds] = get_R23D(L, F_r, swdf_r)
 
             if n_v_i:
+
                 # Calculate partial R2 masked for inner mask.
-                partialR2_i = (q*fStatc_i)/(q*fStatc_i + n_s - n_p)
-                partialR2[I_inds] = partialR2_i
+                partialR2[I_inds] = get_R23D(L, F_i, df_i)
 
             r2_f[:,:,:,current_n_cf] = partialR2.reshape(
                                                        NIFTIsize[0],
@@ -1216,14 +1123,14 @@ def main(*args):
                 'blmm_vox_conT.nii'))
         del stat_t, tStatcmap
 
-        # Output pvalue map
-        dfmap = nib.Nifti1Image(df_sw,
+        # Output swdf map for T
+        dfmap = nib.Nifti1Image(df_sw_t,
                                 nifti.affine,
                                 header=nifti.header)
         nib.save(dfmap,
             os.path.join(OutDir, 
-                'blmm_vox_edf_sw.nii'))  
-        del swdf, df_sw, dfmap
+                'blmm_vox_edf_sw_T.nii'))  
+        del swdf, df_sw_t, dfmap
 
         # Output pvalue map
         pcmap = nib.Nifti1Image(p_t,
@@ -1263,6 +1170,15 @@ def main(*args):
             os.path.join(OutDir, 
                 'blmm_vox_conFlp.nii'))  
         del pcmap, p_f
+
+        # Output swdf map for T
+        dfmap = nib.Nifti1Image(df_sw_f,
+                                nifti.affine,
+                                header=nifti.header)
+        nib.save(dfmap,
+            os.path.join(OutDir, 
+                'blmm_vox_edf_sw_F.nii'))  
+        del df_sw_f
 
         # Output statistic map
         partialR2map = nib.Nifti1Image(r2_f,
@@ -1614,6 +1530,44 @@ def F2P3D(F, df_num, df_denom, inputs):
 #
 # ============================================================================================================
 
+def get_swdf_F3D(L, D, sigma2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevels, nparams): 
+
+    # Reshape sigma2 if necessary
+    sigma2 = sigma2.reshape(sigma2.shape[0])
+
+    # Reshape n if necessary
+    if isinstance(n,np.ndarray):
+
+        # Check first that n isn't a single value
+        if np.prod(n.shape)>1:
+    
+            n = n.reshape(sigma2.shape)
+
+    # L is rL in rank
+    rL = np.linalg.matrix_rank(L)
+
+    # Initialize empty sum.
+    sum_swdf_adj = np.zeros(sigma2.shape)
+
+    # Loop through first rL rows of L
+    for i in np.arange(rL):
+
+        # Work out the swdf for each row of L
+        swdf_row = get_swdf_T3D(L, D, sigma2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevels, nparams)
+
+        # Work out adjusted df = df/(df-2)
+        swdf_adj = swdf_row/(swdf_row-2)
+
+        # Add to running sum
+        sum_swdf_adj = sum_swdf_adj + swdf_adj
+
+    # Work out final df
+    df = 2*sum_swdf_adj/(sum_swdf_adj-rL)
+
+    print('df shape', df.shape)
+
+    # Return df
+    return(df)
 
 def get_swdf_T3D(L, D, sigma2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevels, nparams): 
 
