@@ -1061,7 +1061,7 @@ def main(*args):
 
             if n_v_r:
 
-                swdf[R_inds] = get_swdf_F3D(L, D_r, sigma2_r, ZtX_r, ZtY_r, XtX_r, ZtZ_r, XtY_r, YtX_r, YtZ_r, XtZ_r, YtY_r, n_s_sv, nlevels, nparams).reshape(swdf[R_inds].shape)
+                swdf[R_inds] = get_swdf_F3D(L, D_r, sigma2_r, ZtX_r, ZtY_r, XtX_r, ZtZ_r, XtY_r, YtX_r, YtZ_r, XtZ_r, YtY_r, n_s_sv_r, nlevels, nparams).reshape(swdf[R_inds].shape)
                 pc[R_inds] = F2P3D(fStatc[R_inds], rL, swdf[R_inds], inputs).reshape(pc[R_inds])
 
             df_sw_f[:,:,:,current_n_cf] = swdf.reshape(
