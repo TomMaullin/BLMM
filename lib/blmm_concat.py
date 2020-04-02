@@ -1017,9 +1017,9 @@ def main(*args):
 
             del Tc, pc
             if n_v_i:
-                del Tc_i, pc_i
+                del Tc_i
             if n_v_r:
-                del Tc_r, pc_r
+                del Tc_r
 
             print('p vals ran')
 
