@@ -1553,7 +1553,7 @@ def get_swdf_F3D(L, D, sigma2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, n
     for i in np.arange(rL):
 
         # Work out the swdf for each row of L
-        swdf_row = get_swdf_T3D(L, D, sigma2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevels, nparams)
+        swdf_row = get_swdf_T3D(L[i:(i+1),:], D, sigma2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevels, nparams)
 
         # Work out adjusted df = df/(df-2)
         swdf_adj = swdf_row/(swdf_row-2)
