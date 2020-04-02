@@ -1027,20 +1027,20 @@ def main(*args):
         if statType == 'F':
 
             # Save F statistic
-            fStatc = np.zeros([n_v])
+            Fc = np.zeros([n_v])
 
             # Calculate the numerator of the F statistic for the ring
             if n_v_r:
 
                 # Calculate F statistic.
-                fStatc[R_inds]=get_F3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, beta_r, sigma2_r).reshape(fStatc[R_inds].shape)
+                Fc[R_inds]=get_F3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, beta_r, sigma2_r).reshape(Fc[R_inds].shape)
 
             # Calculate the numerator of the F statistic for the inner 
             if n_v_i:
 
-                fStatc[I_inds]=get_F3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, beta_i, sigma2_i).reshape(fStatc[I_inds].shape)
+                Fc[I_inds]=get_F3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, beta_i, sigma2_i).reshape(Fc[I_inds].shape)
 
-            stat_f[:,:,:,current_n_cf] = fStatc.reshape(
+            stat_f[:,:,:,current_n_cf] = Fc.reshape(
                                                NIFTIsize[0],
                                                NIFTIsize[1],
                                                NIFTIsize[2]
@@ -1057,12 +1057,12 @@ def main(*args):
             if n_v_i:
 
                 swdf[I_inds] = get_swdf_F3D(L, D_i, sigma2_i, ZtX_i, ZtY_i, XtX_i, ZtZ_i, XtY_i, YtX_i, YtZ_i, XtZ_i, YtY_i, n_s, nlevels, nparams).reshape(swdf[I_inds].shape)
-                pc[I_inds] = F2P3D(fStatc[I_inds], rL, swdf[I_inds], inputs).reshape(pc[I_inds].shape)
+                pc[I_inds] = F2P3D(Fc[I_inds], rL, swdf[I_inds], inputs).reshape(pc[I_inds].shape)
 
             if n_v_r:
 
                 swdf[R_inds] = get_swdf_F3D(L, D_r, sigma2_r, ZtX_r, ZtY_r, XtX_r, ZtZ_r, XtY_r, YtX_r, YtZ_r, XtZ_r, YtY_r, n_s_sv_r, nlevels, nparams).reshape(swdf[R_inds].shape)
-                pc[R_inds] = F2P3D(fStatc[R_inds], rL, swdf[R_inds], inputs).reshape(pc[R_inds].shape)
+                pc[R_inds] = F2P3D(Fc[R_inds], rL, swdf[R_inds], inputs).reshape(pc[R_inds].shape)
 
             df_sw_f[:,:,:,current_n_cf] = swdf.reshape(
                                                     NIFTIsize[0],
@@ -1082,12 +1082,12 @@ def main(*args):
             if n_v_r:
 
                 # Calculate partial R2 masked for ring.
-                partialR2[R_inds] = get_R23D(L, F_r, swdf_r)
+                partialR2[R_inds] = get_R23D(L, Fc[R_inds], swdf[R_inds])
 
             if n_v_i:
 
                 # Calculate partial R2 masked for inner mask.
-                partialR2[I_inds] = get_R23D(L, F_i, df_i)
+                partialR2[I_inds] = get_R23D(L, Fc[I_inds], swdf[I_inds])
 
             r2_f[:,:,:,current_n_cf] = partialR2.reshape(
                                                        NIFTIsize[0],
@@ -1152,13 +1152,13 @@ def main(*args):
 
 
         # Output statistic map
-        fStatcmap = nib.Nifti1Image(stat_f,
+        Fcmap = nib.Nifti1Image(stat_f,
                                     nifti.affine,
                                     header=nifti.header)
-        nib.save(fStatcmap,
+        nib.save(Fcmap,
             os.path.join(OutDir, 
                 'blmm_vox_conF.nii'))
-        del stat_f, fStatcmap
+        del stat_f, Fcmap
 
         # Output pvalue map
         pcmap = nib.Nifti1Image(p_f,
