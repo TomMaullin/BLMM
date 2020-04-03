@@ -295,17 +295,86 @@ def main(*args):
     # ----------------------------------------------------------------------
     # Load X'X, X'Y, Y'Y, X'Z, Y'Z, Z'Z
     # ----------------------------------------------------------------------
-    if (len(args)==0) or (type(args[0]) is str):
+    # Read the matrices from the first batch. Note XtY is transposed as np
+    # handles lots of rows much faster than lots of columns.
+    sumXtY = np.load(os.path.join(OutDir,"tmp","XtY1.npy")).transpose()
+    sumYtY = np.load(os.path.join(OutDir,"tmp","YtY1.npy"))
+    sumZtY = np.load(os.path.join(OutDir,"tmp","ZtY1.npy"))
 
-        # Read the matrices from the first batch. Note XtY is transposed as np
-        # handles lots of rows much faster than lots of columns.
-        sumXtY = np.load(os.path.join(OutDir,"tmp","XtY1.npy")).transpose()
-        sumYtY = np.load(os.path.join(OutDir,"tmp","YtY1.npy"))
-        sumZtY = np.load(os.path.join(OutDir,"tmp","ZtY1.npy"))
+    # Work out the uniqueness mask for the spatially varying designs
+    uniquenessMask = blmm_load(os.path.join(OutDir,"tmp", 
+        "blmm_vox_uniqueM_batch1.nii")).get_data().reshape(n_v)
 
-        # Work out the uniqueness mask for the spatially varying designs
+    # Work out the uniqueness mask inside the ring around the brain
+    uniquenessMask_r = uniquenessMask[R_inds]
+
+    # Work out the uniqueness mask value inside the inner part of the brain
+    uniquenessMask_i = uniquenessMask[I_inds[0]]
+
+    maxM = np.int32(np.amax(uniquenessMask))
+
+    # read in XtX, ZtX, ZtZ
+    ZtZ_batch_unique = np.load(
+        os.path.join(OutDir,"tmp","ZtZ1.npy"))
+    ZtX_batch_unique = np.load(
+        os.path.join(OutDir,"tmp","ZtX1.npy"))
+    XtX_batch_unique = np.load(
+        os.path.join(OutDir,"tmp","XtX1.npy"))
+
+    # Make zeros for outer ring of brain ZtZ, XtX, ZtX etc
+    ZtZ_batch_r = np.zeros((n_v_r, ZtZ_batch_unique.shape[1]))
+    ZtX_batch_r = np.zeros((n_v_r, ZtX_batch_unique.shape[1]))
+    XtX_batch_r = np.zeros((n_v_r, XtX_batch_unique.shape[1]))
+
+    # Fill with unique maskings
+    for m in range(1,maxM+1):
+
+        # Work out Z'Z, Z'X and X'X for the ring
+        ZtZ_batch_r[np.where(uniquenessMask_r==m),:] = ZtZ_batch_unique[(m-1),:]
+        ZtX_batch_r[np.where(uniquenessMask_r==m),:] = ZtX_batch_unique[(m-1),:]
+        XtX_batch_r[np.where(uniquenessMask_r==m),:] = XtX_batch_unique[(m-1),:]
+
+        # Work out Z'Z, Z'X and X'X for the inner
+        if uniquenessMask_i == m:
+            ZtZ_batch_i = ZtZ_batch_unique[(m-1),:]
+            ZtX_batch_i = ZtX_batch_unique[(m-1),:]
+            XtX_batch_i = XtX_batch_unique[(m-1),:]
+
+    # Perform summation for ring
+    sumXtX_r = XtX_batch_r
+    sumZtX_r = ZtX_batch_r
+    sumZtZ_r = ZtZ_batch_r
+
+    # Perform summation for ring
+    sumXtX_i = XtX_batch_i
+    sumZtX_i = ZtX_batch_i
+    sumZtZ_i = ZtZ_batch_i
+
+    a = XtX_batch_i[0]
+
+    # Delete the files as they are no longer needed.
+    os.remove(os.path.join(OutDir,"tmp","XtY1.npy"))
+    os.remove(os.path.join(OutDir,"tmp","YtY1.npy"))
+    os.remove(os.path.join(OutDir,"tmp","ZtX1.npy"))
+    os.remove(os.path.join(OutDir,"tmp","ZtY1.npy"))
+    os.remove(os.path.join(OutDir,"tmp","ZtZ1.npy"))
+    os.remove(os.path.join(OutDir,"tmp","blmm_vox_uniqueM_batch1.nii"))
+
+    # Cycle through batches and add together results.
+    for batchNo in range(2,(n_b+1)):
+
+        sumXtY = sumXtY + np.load(
+            os.path.join(OutDir,"tmp","XtY" + str(batchNo) + ".npy")).transpose()
+
+        sumYtY = sumYtY + np.load(
+            os.path.join(OutDir,"tmp","YtY" + str(batchNo) + ".npy"))
+
+        sumZtY = sumZtY + np.load(
+            os.path.join(OutDir,"tmp","ZtY" + str(batchNo) + ".npy"))
+        
+        # Read in uniqueness Mask file
         uniquenessMask = blmm_load(os.path.join(OutDir,"tmp", 
-            "blmm_vox_uniqueM_batch1.nii")).get_data().reshape(n_v)
+            "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii")).get_data().reshape(n_v)
 
         # Work out the uniqueness mask inside the ring around the brain
         uniquenessMask_r = uniquenessMask[R_inds]
@@ -313,17 +382,18 @@ def main(*args):
         # Work out the uniqueness mask value inside the inner part of the brain
         uniquenessMask_i = uniquenessMask[I_inds[0]]
 
+
         maxM = np.int32(np.amax(uniquenessMask))
 
         # read in XtX, ZtX, ZtZ
         ZtZ_batch_unique = np.load(
-            os.path.join(OutDir,"tmp","ZtZ1.npy"))
+            os.path.join(OutDir,"tmp","ZtZ" + str(batchNo) + ".npy"))
         ZtX_batch_unique = np.load(
-            os.path.join(OutDir,"tmp","ZtX1.npy"))
+            os.path.join(OutDir,"tmp","ZtX" + str(batchNo) + ".npy"))
         XtX_batch_unique = np.load(
-            os.path.join(OutDir,"tmp","XtX1.npy"))
+            os.path.join(OutDir,"tmp","XtX" + str(batchNo) + ".npy"))
 
-        # Make zeros for outer ring of brain ZtZ, XtX, ZtX etc
+        # Make zeros for whole nifti ZtZ, XtX, ZtX etc
         ZtZ_batch_r = np.zeros((n_v_r, ZtZ_batch_unique.shape[1]))
         ZtX_batch_r = np.zeros((n_v_r, ZtX_batch_unique.shape[1]))
         XtX_batch_r = np.zeros((n_v_r, XtX_batch_unique.shape[1]))
@@ -331,116 +401,36 @@ def main(*args):
         # Fill with unique maskings
         for m in range(1,maxM+1):
 
-            # Work out Z'Z, Z'X and X'X for the ring
             ZtZ_batch_r[np.where(uniquenessMask_r==m),:] = ZtZ_batch_unique[(m-1),:]
             ZtX_batch_r[np.where(uniquenessMask_r==m),:] = ZtX_batch_unique[(m-1),:]
             XtX_batch_r[np.where(uniquenessMask_r==m),:] = XtX_batch_unique[(m-1),:]
 
             # Work out Z'Z, Z'X and X'X for the inner
             if uniquenessMask_i == m:
+
                 ZtZ_batch_i = ZtZ_batch_unique[(m-1),:]
                 ZtX_batch_i = ZtX_batch_unique[(m-1),:]
                 XtX_batch_i = XtX_batch_unique[(m-1),:]
 
-        # Perform summation for ring
-        sumXtX_r = XtX_batch_r
-        sumZtX_r = ZtX_batch_r
-        sumZtZ_r = ZtZ_batch_r
+        # Add to running total
+        sumXtX_r = sumXtX_r + XtX_batch_r
+        sumZtX_r = sumZtX_r + ZtX_batch_r
+        sumZtZ_r = sumZtZ_r + ZtZ_batch_r
 
-        # Perform summation for ring
-        sumXtX_i = XtX_batch_i
-        sumZtX_i = ZtX_batch_i
-        sumZtZ_i = ZtZ_batch_i
+        sumXtX_i = sumXtX_i + XtX_batch_i
+        sumZtX_i = sumZtX_i + ZtX_batch_i
+        sumZtZ_i = sumZtZ_i + ZtZ_batch_i
 
-        a = XtX_batch_i[0]
-
+        a = a + XtX_batch_i[0]
+        
         # Delete the files as they are no longer needed.
-        os.remove(os.path.join(OutDir,"tmp","XtY1.npy"))
-        os.remove(os.path.join(OutDir,"tmp","YtY1.npy"))
-        os.remove(os.path.join(OutDir,"tmp","ZtX1.npy"))
-        os.remove(os.path.join(OutDir,"tmp","ZtY1.npy"))
-        os.remove(os.path.join(OutDir,"tmp","ZtZ1.npy"))
-        os.remove(os.path.join(OutDir,"tmp","blmm_vox_uniqueM_batch1.nii"))
-
-        # Cycle through batches and add together results.
-        for batchNo in range(2,(n_b+1)):
-
-            sumXtY = sumXtY + np.load(
-                os.path.join(OutDir,"tmp","XtY" + str(batchNo) + ".npy")).transpose()
-
-            sumYtY = sumYtY + np.load(
-                os.path.join(OutDir,"tmp","YtY" + str(batchNo) + ".npy"))
-
-            sumZtY = sumZtY + np.load(
-                os.path.join(OutDir,"tmp","ZtY" + str(batchNo) + ".npy"))
-            
-            # Read in uniqueness Mask file
-            uniquenessMask = blmm_load(os.path.join(OutDir,"tmp", 
-                "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii")).get_data().reshape(n_v)
-
-            # Work out the uniqueness mask inside the ring around the brain
-            uniquenessMask_r = uniquenessMask[R_inds]
-
-            # Work out the uniqueness mask value inside the inner part of the brain
-            uniquenessMask_i = uniquenessMask[I_inds[0]]
-
-
-            maxM = np.int32(np.amax(uniquenessMask))
-
-            # read in XtX, ZtX, ZtZ
-            ZtZ_batch_unique = np.load(
-                os.path.join(OutDir,"tmp","ZtZ" + str(batchNo) + ".npy"))
-            ZtX_batch_unique = np.load(
-                os.path.join(OutDir,"tmp","ZtX" + str(batchNo) + ".npy"))
-            XtX_batch_unique = np.load(
-                os.path.join(OutDir,"tmp","XtX" + str(batchNo) + ".npy"))
-
-            # Make zeros for whole nifti ZtZ, XtX, ZtX etc
-            ZtZ_batch_r = np.zeros((n_v_r, ZtZ_batch_unique.shape[1]))
-            ZtX_batch_r = np.zeros((n_v_r, ZtX_batch_unique.shape[1]))
-            XtX_batch_r = np.zeros((n_v_r, XtX_batch_unique.shape[1]))
-
-            # Fill with unique maskings
-            for m in range(1,maxM+1):
-
-                ZtZ_batch_r[np.where(uniquenessMask_r==m),:] = ZtZ_batch_unique[(m-1),:]
-                ZtX_batch_r[np.where(uniquenessMask_r==m),:] = ZtX_batch_unique[(m-1),:]
-                XtX_batch_r[np.where(uniquenessMask_r==m),:] = XtX_batch_unique[(m-1),:]
-
-                # Work out Z'Z, Z'X and X'X for the inner
-                if uniquenessMask_i == m:
-
-                    ZtZ_batch_i = ZtZ_batch_unique[(m-1),:]
-                    ZtX_batch_i = ZtX_batch_unique[(m-1),:]
-                    XtX_batch_i = XtX_batch_unique[(m-1),:]
-
-            # Add to running total
-            sumXtX_r = sumXtX_r + XtX_batch_r
-            sumZtX_r = sumZtX_r + ZtX_batch_r
-            sumZtZ_r = sumZtZ_r + ZtZ_batch_r
-
-            sumXtX_i = sumXtX_i + XtX_batch_i
-            sumZtX_i = sumZtX_i + ZtX_batch_i
-            sumZtZ_i = sumZtZ_i + ZtZ_batch_i
-
-            a = a + XtX_batch_i[0]
-            
-            # Delete the files as they are no longer needed.
-            os.remove(os.path.join(OutDir, "tmp","XtY" + str(batchNo) + ".npy"))
-            os.remove(os.path.join(OutDir, "tmp","YtY" + str(batchNo) + ".npy"))
-            os.remove(os.path.join(OutDir, "tmp","ZtY" + str(batchNo) + ".npy"))
-            os.remove(os.path.join(OutDir, "tmp","XtX" + str(batchNo) + ".npy"))
-            os.remove(os.path.join(OutDir, "tmp","ZtX" + str(batchNo) + ".npy"))
-            os.remove(os.path.join(OutDir, "tmp","ZtZ" + str(batchNo) + ".npy"))
-            os.remove(os.path.join(OutDir, "tmp", "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii"))
-
-    else:
-        # Read in sums.
-        sumXtX = args[1]
-        sumXtY = args[2].transpose()
-        sumYtY = args[3]
-
-        # TODO
+        os.remove(os.path.join(OutDir, "tmp","XtY" + str(batchNo) + ".npy"))
+        os.remove(os.path.join(OutDir, "tmp","YtY" + str(batchNo) + ".npy"))
+        os.remove(os.path.join(OutDir, "tmp","ZtY" + str(batchNo) + ".npy"))
+        os.remove(os.path.join(OutDir, "tmp","XtX" + str(batchNo) + ".npy"))
+        os.remove(os.path.join(OutDir, "tmp","ZtX" + str(batchNo) + ".npy"))
+        os.remove(os.path.join(OutDir, "tmp","ZtZ" + str(batchNo) + ".npy"))
+        os.remove(os.path.join(OutDir, "tmp", "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii"))
 
     # Dimension bug handling
     if np.ndim(sumXtX_i) == 0:
@@ -452,10 +442,6 @@ def main(*args):
         sumXtY = np.array([[sumXtY]])
     elif np.ndim(sumXtY) == 1:
         sumXtY = np.array([sumXtY])
-
-
-
-############### UPDATE MASK - wherever XtX,ZtX and ZtZ not full rank must go #TODO
 
 
 
@@ -654,7 +640,7 @@ def main(*args):
         # ---------------------------------------------------------------------- 
 
         # Variables for likelihood
-        DinvIplusZtZD_r = D_r @ blmm_inverse(np.eye(n_q) + ZtZ_r @ D_r)
+        DinvIplusZtZD_r = D_r @ np.linalg.inv(np.eye(n_q) + ZtZ_r @ D_r)
         Zte_r = ZtY_r - (ZtX_r @ beta_r)
         ete_r = ssr3D(YtX_r, YtY_r, XtX_r, beta_r)
 
@@ -779,33 +765,19 @@ def main(*args):
     # Calculate residual mean squares = e'e/(n_s - n_p)
     # ----------------------------------------------------------------------
 
-    # Unmask resms
-    resms = np.zeros([n_v,1])
-
-    # Mask spatially varying n_s
     if n_v_r:
 
         # In spatially varying the degrees of freedom
         # varies across voxels
-        resms_r = get_resms3D(YtX_r, YtY_r, XtX_r, beta_r,n_s_sv_r)
-        resms[R_inds,:] = resms_r.reshape(resms[R_inds,:].shape)
+        resms_r = get_resms3D(YtX_r, YtY_r, XtX_r, beta_r,n_s_sv_r).reshape(n_v_r)
+        addBlockToNifti(os.path.join(OutDir, 'blmm_vox_resms.nii'), resms_r, R_inds,volc=i,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
+
 
     if n_v_i:
 
         # All voxels in the inner mask have n_s scans present
-        resms_i = get_resms3D(YtX_i, YtY_i, XtX_i, beta_i, n_s)
-        resms[I_inds,:] = resms_i.reshape(resms[I_inds,:].shape)
-
-    resms = resms.reshape(NIFTIsize[0], 
-                          NIFTIsize[1],
-                          NIFTIsize[2])
-
-    # Output ResSS.
-    msmap = nib.Nifti1Image(resms,
-                            nifti.affine,
-                            header=nifti.header)
-    nib.save(msmap, os.path.join(OutDir,'blmm_vox_resms.nii'))
-    del msmap, resms
+        resms_i = get_resms3D(YtX_i, YtY_i, XtX_i, beta_i, n_s).reshape(n_v_i)
+        addBlockToNifti(os.path.join(OutDir, 'blmm_vox_resms.nii'), resms_i, I_inds,volc=i,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
 
 
     print('resms output')
@@ -892,13 +864,6 @@ def main(*args):
     current_n_ct = 0
     current_n_cf = 0
 
-    # Setup 4d volumes to output
-    se_t = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_ct])
-    stat_f = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_cf])
-    p_f = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_cf])
-    r2_f = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_cf])
-    df_sw_f = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_cf])
-
 
     for i in range(0,n_c):
 
@@ -914,7 +879,7 @@ def main(*args):
             statType='F'
 
         if statType == 'T':
-            
+
             # Work out the dimension of the T-stat-related volumes
             dimT = (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],n_ct)
 
@@ -970,129 +935,55 @@ def main(*args):
             # Record that we have seen another T contrast
             current_n_ct = current_n_ct + 1
 
-            if n_v_i:
-                del Lbeta_i, seLB_i, Tc_i, pc_i, swdfc_i 
-            if n_v_r:
-                del Lbeta_r, seLB_r, Tc_r, pc_r, swdfc_r 
-
             print('whole of T ran')
 
 
         if statType == 'F':
 
-            # Save F statistic
-            Fc = np.zeros([n_v])
+            # Work out the dimension of the F-stat-related volumes
+            dimF = (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],n_cf)
 
             # Calculate the numerator of the F statistic for the ring
             if n_v_r:
 
+                # Calculate sattherthwaite degrees of freedom for the inner.
+                swdfc_r = get_swdf_F3D(L, D_r, sigma2_r, ZtX_r, ZtY_r, XtX_r, ZtZ_r, XtY_r, YtX_r, YtZ_r, XtZ_r, YtY_r, n_s_sv_r, nlevels, nparams).reshape(n_v_r)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conF_swedf.nii'), swdfc_r, R_inds,volc=i,dim=dimF,aff=nifti.affine,hdr=nifti.header)
+
                 # Calculate F statistic.
-                Fc[R_inds]=get_F3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, beta_r, sigma2_r).reshape(Fc[R_inds].shape)
+                Fc_r=get_F3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, beta_r, sigma2_r).reshape(n_v_r)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conF.nii'), Fc_r, R_inds,volc=i,dim=dimF,aff=nifti.affine,hdr=nifti.header)
+
+                # Work out p for this contrast
+                pc_r = F2P3D(Fc_r, L, swdfc_r, inputs).reshape(n_v_r)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conFlp.nii'), pc_r, R_inds,volc=i,dim=dimF,aff=nifti.affine,hdr=nifti.header)
+ 
+                # Calculate partial R2 masked for ring.
+                R2_r = get_R23D(L, Fc_r, swdf_r).reshape(n_v_r)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conR2.nii'), R2_r, R_inds,volc=i,dim=dimF,aff=nifti.affine,hdr=nifti.header)
+
 
             # Calculate the numerator of the F statistic for the inner 
             if n_v_i:
 
-                Fc[I_inds]=get_F3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, beta_i, sigma2_i).reshape(Fc[I_inds].shape)
+                # Calculate sattherthwaite degrees of freedom for the inner.
+                swdfc_i = get_swdf_F3D(L, D_i, sigma2_i, ZtX_i, ZtY_i, XtX_i, ZtZ_i, XtY_i, YtX_i, YtZ_i, XtZ_i, YtY_i, n_s, nlevels, nparams).reshape(n_v_i)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conF_swedf.nii'), swdfc_i, I_inds,volc=i,dim=dimF,aff=nifti.affine,hdr=nifti.header)
+                
+                # Calculate F statistic.
+                Fc_i=get_F3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, beta_i, sigma2_i).reshape(n_v_i)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conF.nii'), Fc_i, I_inds,volc=i,dim=dimF,aff=nifti.affine,hdr=nifti.header)
 
-            stat_f[:,:,:,current_n_cf] = Fc.reshape(
-                                               NIFTIsize[0],
-                                               NIFTIsize[1],
-                                               NIFTIsize[2]
-                                           )
-
-            # Unmask p and swdf for this contrast
-            pc = np.zeros([n_v])
-            swdf = np.zeros([n_v])
-
-            # Get the rank of L
-            rL = np.linalg.matrix_rank(L)
-
-            # Work out p for this contrast
-            if n_v_i:
-
-                swdf[I_inds] = get_swdf_F3D(L, D_i, sigma2_i, ZtX_i, ZtY_i, XtX_i, ZtZ_i, XtY_i, YtX_i, YtZ_i, XtZ_i, YtY_i, n_s, nlevels, nparams).reshape(swdf[I_inds].shape)
-                pc[I_inds] = F2P3D(Fc[I_inds], rL, swdf[I_inds], inputs).reshape(pc[I_inds].shape)
-
-            if n_v_r:
-
-                swdf[R_inds] = get_swdf_F3D(L, D_r, sigma2_r, ZtX_r, ZtY_r, XtX_r, ZtZ_r, XtY_r, YtX_r, YtZ_r, XtZ_r, YtY_r, n_s_sv_r, nlevels, nparams).reshape(swdf[R_inds].shape)
-                pc[R_inds] = F2P3D(Fc[R_inds], rL, swdf[R_inds], inputs).reshape(pc[R_inds].shape)
-
-            df_sw_f[:,:,:,current_n_cf] = swdf.reshape(
-                                                    NIFTIsize[0],
-                                                    NIFTIsize[1],
-                                                    NIFTIsize[2]
-                                                )
-
-            p_f[:,:,:,current_n_cf] = pc.reshape(
-                                               NIFTIsize[0],
-                                               NIFTIsize[1],
-                                               NIFTIsize[2]
-                                           )
-
-            # Unmask partialR2.
-            partialR2 = np.zeros([n_v])
-
-            if n_v_r:
-
-                # Calculate partial R2 masked for ring.
-                partialR2[R_inds] = get_R23D(L, Fc[R_inds], swdf[R_inds])
-
-            if n_v_i:
+                # Work out p for this contrast
+                pc_i = F2P3D(Fc_i, L, swdfc_i, inputs).reshape(n_v_i)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conFlp.nii'), pc_i, I_inds,volc=i,dim=dimF,aff=nifti.affine,hdr=nifti.header)
 
                 # Calculate partial R2 masked for inner mask.
-                partialR2[I_inds] = get_R23D(L, Fc[I_inds], swdf[I_inds])
-
-            r2_f[:,:,:,current_n_cf] = partialR2.reshape(
-                                                       NIFTIsize[0],
-                                                       NIFTIsize[1],
-                                                       NIFTIsize[2]
-                                                   )
+                R2_i = get_R23D(L, Fc_i, swdf_i).reshape(n_v_i)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conR2.nii'), R2_i, I_inds,volc=i,dim=dimF,aff=nifti.affine,hdr=nifti.header)
 
             # Record that we have seen another F contrast
             current_n_cf = current_n_cf + 1
-
-            del partialR2
-
-    # Save contrast maps
-    if n_cf:
-
-
-        # Output statistic map
-        Fcmap = nib.Nifti1Image(stat_f,
-                                    nifti.affine,
-                                    header=nifti.header)
-        nib.save(Fcmap,
-            os.path.join(OutDir, 
-                'blmm_vox_conF.nii'))
-        del stat_f, Fcmap
-
-        # Output pvalue map
-        pcmap = nib.Nifti1Image(p_f,
-                                nifti.affine,
-                                header=nifti.header)
-        nib.save(pcmap,
-            os.path.join(OutDir, 
-                'blmm_vox_conFlp.nii'))  
-        del pcmap, p_f
-
-        # Output swdf map for T
-        dfmap = nib.Nifti1Image(df_sw_f,
-                                nifti.affine,
-                                header=nifti.header)
-        nib.save(dfmap,
-            os.path.join(OutDir, 
-                'blmm_vox_edf_sw_F.nii'))  
-        del df_sw_f
-
-        # Output statistic map
-        partialR2map = nib.Nifti1Image(r2_f,
-                                    nifti.affine,
-                                    header=nifti.header)
-        nib.save(partialR2map,
-            os.path.join(OutDir, 
-                'blmm_vox_conR2.nii'))
-        del partialR2map, r2_f
 
     # Clean up files
     if len(args)==0:
@@ -1101,84 +992,6 @@ def main(*args):
 
     w.resetwarnings()
 
-
-# This function inverts matrix A. If ouflow is True,
-# special handling is used to account for over/under
-# flow. In this case, it assumes that A has non-zero
-# diagonals.
-def blmm_inverse(A, ouflow=False):
-
-    # Work out number of matrices and dimension of
-    # matrices. I.e. if we have seven 3 by 3 matrices
-    # to invert n_r = 7, d_r = 3.
-    n_r = A.shape[0]
-    d_r = A.shape[1]
-
-    # If ouflow is true, we need to precondition A.
-    if ouflow:
-
-        # Make D to be filled with diagonal elements
-        D = np.broadcast_to(np.eye(d_r), (n_r,d_r,d_r)).copy()
-
-        # Obtain 1/sqrt(diagA)
-        diagA = 1/np.sqrt(A.diagonal(0,1,2))
-        diagA = diagA.reshape(n_r, d_r)
-
-        # Make this back into diagonal matrices
-        diaginds = np.diag_indices(d_r)
-        D[:, diaginds[0], diaginds[1]] = diagA 
-
-        # Precondition A.
-        A = np.matmul(np.matmul(D, A), D)
-
-    # np linalg inverse doesn't handle dim=[1,1]
-    if np.ndim(A) == 1:
-        iA = 1/A
-    else:
-        iA = np.linalg.solve(A, np.eye(d_r).reshape(1,d_r,d_r))
-
-    if ouflow:
-
-        # Undo preconditioning.
-        iA = np.matmul(np.matmul(D, iA), D)
-
-    return(iA)
-
-# This function calculates the determinant of matrix A/
-# stack of matrices A, with special handling accounting
-# for over/under flow. 
-def blmm_det(A):
-
-
-    # Precondition A.
-    # Work out number of matrices and dimension of
-    # matrices. I.e. if we have seven 3 by 3 matrices
-    # to invert n_r = 7, d_r = 3.
-    n_r = A.shape[0]
-    d_r = A.shape[1]
-
-    # Make D to be filled with diagonal elements
-    D = np.broadcast_to(np.eye(d_r), (n_r,d_r,d_r)).copy()
-
-    # Obtain 1/sqrt(diagA)
-    diagA = 1/np.sqrt(A.diagonal(0,1,2))
-    diagA = diagA.reshape(n_r, d_r)
-
-    # Make this back into diagonal matrices
-    diaginds = np.diag_indices(d_r)
-    D[:, diaginds[0], diaginds[1]] = diagA 
-
-    # Calculate DAD.
-    DAD = np.matmul(np.matmul(D, A), D)
-
-    # Calculate determinants.
-    detDAD = np.linalg.det(DAD)
-    detDD = np.prod(diagA, axis=1)
-    
-    # Calculate determinant of A
-    detA = detDAD/detDD
-
-    return(detA)
 
 def addBlockToNifti(fname, block, blockInds,dim=None,volc=None,aff=None,hdr=None):
 
@@ -1436,7 +1249,10 @@ def T2P3D(T,df,inputs):
     return(P)
 
 
-def F2P3D(F, df_num, df_denom, inputs):
+def F2P3D(F, L, df_denom, inputs):
+    
+    # Get the rank of L
+    df_num = np.linalg.matrix_rank(L)
 
     # Work out P
     P = -np.log10(1-stats.f.cdf(F, df_num, df_denom))
@@ -1509,7 +1325,7 @@ def get_swdf_T3D(L, D, sigma2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, n
             n = n.reshape(sigma2.shape)
 
     # Get D(I+Z'ZD)^(-1)
-    DinvIplusZtZD = D @ blmm_inverse(np.eye(ZtZ.shape[1]) + ZtZ @ D)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(ZtZ.shape[1]) + ZtZ @ D)
 
     # Get S^2
     S2 = get_S23D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
