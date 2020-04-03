@@ -527,58 +527,32 @@ def main(*args):
         #================================================================================
         paramVec_i = pSFS(XtX_i, XtY_i, ZtX_i, ZtY_i, ZtZ_i, XtZ_i, YtZ_i, YtY_i, YtX_i, nlevels, nparams, 1e-6,n_s, reml=REML)
 
-
-    paramVec = np.zeros([n_v, n_p + 1 + np.sum(nparams*(nparams+1)//2)])
+    # Dimension of beta volume
+    dimBeta =  (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],n_p**2)
 
     # Complete parameter vector
     if n_v_r:
-        paramVec[R_inds,:] = paramVec_r[:].reshape(paramVec[R_inds,:].shape)
+
         # Assign betas
         beta_r = paramVec_r[:, 0:n_p]
-        beta[R_inds,:] = beta_r.reshape([n_v_r, n_p])
+        addBlockToNifti(os.path.join(OutDir, 'blmm_vox_beta.nii'), beta_r, R_inds,volc=None,dim=dimBeta,aff=nifti.affine,hdr=nifti.header)        
+        
+        sigma2_r = paramVec_r[:,n_p:(n_p+1),:]
+        addBlockToNifti(os.path.join(OutDir, 'blmm_vox_sigma2.nii'), sigma2_r, R_inds,volc=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
 
     if n_v_i:
 
-        paramVec[I_inds,:] = paramVec_i[:].reshape(paramVec[I_inds,:].shape)
+        beta_i = paramVec_i[:, 0:n_p]        
+        addBlockToNifti(os.path.join(OutDir, 'blmm_vox_beta.nii'), beta_i, I_inds,volc=None,dim=dimBeta,aff=nifti.affine,hdr=nifti.header)
 
-        beta_i = paramVec_i[:, 0:n_p]
-        beta[I_inds,:] = beta_i.reshape([n_v_i, n_p])
-
-    beta = beta.reshape([n_v, n_p]).transpose()
-
-    beta_out = np.zeros([int(NIFTIsize[0]),
-                         int(NIFTIsize[1]),
-                         int(NIFTIsize[2]),
-                         beta.shape[0]])
-
-    # Cycle through betas and output results.
-    for k in range(0,beta.shape[0]):
-
-        beta_out[:,:,:,k] = beta[k,:].reshape(int(NIFTIsize[0]),
-                                              int(NIFTIsize[1]),
-                                              int(NIFTIsize[2]))
-
-    # Save beta map.
-    betamap = nib.Nifti1Image(beta_out,
-                              nifti.affine,
-                              header=nifti.header)
-    nib.save(betamap, os.path.join(OutDir,'blmm_vox_beta.nii'))
-    del beta_out, betamap
-
-    if np.ndim(beta) == 0:
-        beta = np.array([[beta]])
-    elif np.ndim(beta) == 1:
-        beta = np.array([beta])
+        sigma2_i = paramVec_i[:,n_p:(n_p+1),:].reshape(n_v_i)
+        addBlockToNifti(os.path.join(OutDir, 'blmm_vox_sigma2.nii'), sigma2_i, I_inds,volc=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
 
     # Get the D matrices
     FishIndsDk = np.int32(np.cumsum(nparams*(nparams+1)//2) + n_p + 1)
     FishIndsDk = np.insert(FishIndsDk,0,n_p+1)
 
-
     if n_v_r:
-
-        sigma2_r = paramVec_r[:,n_p:(n_p+1),:]
-        addBlockToNifti(os.path.join(OutDir, 'blmm_vox_sigma2.nii'), sigma2_r, R_inds,volc=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
 
         Ddict_r = dict()
         # D as a dictionary
@@ -600,12 +574,10 @@ def main(*args):
 
         # Output log likelihood
         llh_r = llh3D(n_s_sv_r, ZtZ_r, Zte_r, ete_r, sigma2_r, DinvIplusZtZD_r, D_r, REML, XtX_r, XtZ_r, ZtX_r) - (0.5*(n_s_sv_r)*np.log(2*np.pi)).reshape(ete_r.shape[0])
+        addBlockToNifti(os.path.join(OutDir, 'blmm_vox_llh.nii'), llh_r, R_inds,volc=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
 
 
     if n_v_i:
-
-        sigma2_i = paramVec_i[:,n_p:(n_p+1),:].reshape(n_v_i)
-        addBlockToNifti(os.path.join(OutDir, 'blmm_vox_sigma2.nii'), sigma2_i, I_inds,volc=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
 
         Ddict_i = dict()
         # D as a dictionary
@@ -627,29 +599,7 @@ def main(*args):
 
         # Output log likelihood
         llh_i = llh3D(n_s, ZtZ_i, Zte_i, ete_i, sigma2_i, DinvIplusZtZD_i, D_i, REML, XtX_i, XtZ_i, ZtX_i) - 0.5*(n_s)*np.log(2*np.pi)
-
-    # Unmask llh
-    llh = np.zeros([n_v,1])
-    if n_v_r:
-
-        llh[R_inds,:] = llh_r[:].reshape(llh[R_inds,:].shape)
-
-    if n_v_i:
-
-        llh[I_inds,:] = llh_i[:].reshape(llh[I_inds,:].shape)
-    
-
-
-    llh_out = llh.reshape(int(NIFTIsize[0]),
-                          int(NIFTIsize[1]),
-                          int(NIFTIsize[2]))
-
-    # Save beta map.
-    llhmap = nib.Nifti1Image(llh_out,
-                             nifti.affine,
-                             header=nifti.header)
-    nib.save(llhmap, os.path.join(OutDir,'blmm_vox_llh.nii'))
-    del llhmap, llh_out, llh_i, llh_r
+        addBlockToNifti(os.path.join(OutDir, 'blmm_vox_llh.nii'), llh_i, I_inds,volc=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
 
     # Save D
     vechD = np.zeros([n_v, n_q_u])
