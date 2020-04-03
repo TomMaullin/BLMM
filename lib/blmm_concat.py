@@ -705,20 +705,27 @@ def main(*args):
 
     # ----------------------------------------------------------------------
     # Calculate residual mean squares = e'e/(n_s - n_p)
+    #
+    # Note: In the mixed model resms is different to our sigma2 estimate as:
+    #
+    #  - resms = e'e/(n-p)
+    #  - sigma2 = e'V^(-1)e/n for "Simplified methods" or has no closed form
+    #             expression for more general methods
+    #
     # ----------------------------------------------------------------------
 
     if n_v_r:
 
         # In spatially varying the degrees of freedom
         # varies across voxels
-        resms_r = get_resms3D(YtX_r, YtY_r, XtX_r, beta_r,n_s_sv_r).reshape(n_v_r)
+        resms_r = get_resms3D(YtX_r, YtY_r, XtX_r, beta_r,n_s_sv_r-n_p).reshape(n_v_r)
         addBlockToNifti(os.path.join(OutDir, 'blmm_vox_resms.nii'), resms_r, R_inds,volc=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
 
 
     if n_v_i:
 
         # All voxels in the inner mask have n_s scans present
-        resms_i = get_resms3D(YtX_i, YtY_i, XtX_i, beta_i, n_s).reshape(n_v_i)
+        resms_i = get_resms3D(YtX_i, YtY_i, XtX_i, beta_i, n_s-n_p).reshape(n_v_i)
         addBlockToNifti(os.path.join(OutDir, 'blmm_vox_resms.nii'), resms_i, I_inds,volc=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
 
 
@@ -976,7 +983,7 @@ def addBlockToNifti(fname, block, blockInds,dim=None,volc=None,aff=None,hdr=None
         data[blockInds,:] = block.reshape(data[blockInds,:].shape)
         
         # Cycle through volumes, reshaping.
-        for k in range(0,data.shape[0]):
+        for k in range(0,data.shape[1]):
 
             data_out[:,:,:,k] = data[:,k].reshape(int(dim[0]),
                                                   int(dim[1]),
