@@ -909,9 +909,10 @@ def addBlockToNifti(fname, block, blockInds,dim=None,volc=None,aff=None,hdr=None
 
         volc = int(volc)
 
-    # Work out dimension of block
-    if np.ndim(block)>1:
-        block = block.reshape(block.shape[0])
+    # # Work out dimension of block
+    # if np.ndim(block)>1:
+    #     if block.shape[1]==1:
+    #         block = block.reshape(block.shape[0])
 
     # Check whether the NIFTI exists already
     if os.path.isfile(fname):
@@ -1079,7 +1080,7 @@ def get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2):
         if np.prod(sigma2.shape)>1:
     
             sigma2 = sigma2.reshape(sigma2.shape[0])
-            
+
     # Work out X'V^{-1}X = X'X - X'ZD(I+Z'ZD)^{-1}Z'X
     XtinvVX = XtX - XtZ @ DinvIplusZtZD @ XtZ.transpose((0,2,1))
 
