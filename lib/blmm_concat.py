@@ -1561,6 +1561,10 @@ def get_swdf_T3D(L, D, sigma2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, n
     # Calculate df estimator
     df = 2*(S2**2)/(dS2.transpose(0,2,1) @ np.linalg.inv(InfoMat) @ dS2)
 
+    print('df shape ', df.shape)
+    print('dS2 shape ', dS2.shape)
+    print('InfoMat shape ', InfoMat.shape)
+
     # Return df
     return(df)
 
