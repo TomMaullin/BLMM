@@ -795,6 +795,7 @@ def main(*args):
 
 
     #### NTS: REMOVE FILES FROM PREV RERUN IF NECESSARY
+    files = []
 
 
 
@@ -967,7 +968,7 @@ def main(*args):
             if n_v_i:
 
                 # Calculate sattherwaite estimate of the degrees of freedom of this statistic
-                swdfc_i = get_swdf_T3D(L, D_i, sigma2_i, ZtX_i, ZtY_i, XtX_i, ZtZ_i, XtY_i, YtX_i, YtZ_i, XtZ_i, YtY_i, n_s, nlevels, nparams).reshape(n_v_r)
+                swdfc_i = get_swdf_T3D(L, D_i, sigma2_i, ZtX_i, ZtY_i, XtX_i, ZtZ_i, XtY_i, YtX_i, YtZ_i, XtZ_i, YtY_i, n_s, nlevels, nparams).reshape(n_v_i)
                 addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT_swedf.nii'), swdfc_i, I_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
                 # Obtain and output T statistic
