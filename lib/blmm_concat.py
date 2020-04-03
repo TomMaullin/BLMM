@@ -722,63 +722,33 @@ def main(*args):
         addBlockToNifti(os.path.join(OutDir, 'blmm_vox_resms.nii'), resms_i, I_inds,volc=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
 
 
-    # # ----------------------------------------------------------------------
-    # # Calculate beta covariance maps
-    # # ----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
+    # Calculate beta covariance maps
+    # ----------------------------------------------------------------------
 
-    # if "OutputCovB" in inputs:
-    #     OutputCovB = inputs["OutputCovB"]
-    # else:
-    #     OutputCovB = True
+    if "OutputCovB" in inputs:
+        OutputCovB = inputs["OutputCovB"]
+    else:
+        OutputCovB = True
 
-    # if OutputCovB:
+    if OutputCovB:
+
+        dimCov =  (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],n_p**2)
         
-    #     vol = 0
-    #     covbetaij_out = np.zeros([int(NIFTIsize[0]),
-    #                               int(NIFTIsize[1]),
-    #                               int(NIFTIsize[2]),
-    #                               n_p*n_p])
+        # Output variance for each pair of betas
+        if n_v_r: 
 
-    #     # Output variance for each pair of betas
-    #     for i in range(0,n_p):
-    #         for j in range(0,n_p):
+            # Work out cov beta
+            covB_r = get_covB3D(XtX_r, XtZ_r, DinvIplusZtZD_r, sigma2_r).reshape(n_v_r, n_p**2)
+            addBlockToNifti(os.path.join(OutDir, 'blmm_vox_cov.nii'), covB_r, R_inds,volc=None,dim=dimCov,aff=nifti.affine,hdr=nifti.header)
+            del covB_r
 
-    #                 # Unmask cov beta ij
-    #                 covbetaij = np.zeros([n_v])
+        if n_v_i: 
 
-    #                 if n_v_r: 
-    #                     # Calculate masked cov beta ij for ring
-    #                     covbetaij_r = np.multiply(
-    #                         resms_r.reshape([resms_r.shape[0]]),
-    #                         isumXtX_r[:,i,j])
-    #                     covbetaij[R_inds] = covbetaij_r
-        
-    #                 if n_v_i:
-    #                     # Calculate masked cov beta ij for inner
-    #                     covbetaij_i = np.multiply(
-    #                         resms_i.reshape([resms_i.shape[0]]),
-    #                         isumXtX_i[:,i,j])
-    #                     covbetaij[I_inds] = covbetaij_i
-
-    #                 covbetaij_out[:,:,:,vol] = covbetaij.reshape(
-    #                                         NIFTIsize[0],
-    #                                         NIFTIsize[1],
-    #                                         NIFTIsize[2],
-    #                                         )
-    #                 vol = vol+1;
-                        
-    #     # Output covariance map
-    #     covbetaijmap = nib.Nifti1Image(covbetaij_out,
-    #                                    nifti.affine,
-    #                                    header=nifti.header)
-    #     nib.save(covbetaijmap,
-    #         os.path.join(OutDir, 
-    #             'blmm_vox_cov.nii'))
-    #     del covbetaij, covbetaijmap, vol, covbetaij_out
-    #     if n_v_r:
-    #         del covbetaij_r
-    #     if n_v_i:
-    #         del covbetaij_i
+            # Work out cov beta
+            covB_i = get_covB3D(XtX_i, XtZ_i, DinvIplusZtZD_i, sigma2_i).reshape(n_v_i, n_p**2)
+            addBlockToNifti(os.path.join(OutDir, 'blmm_vox_cov.nii'), covB_i, I_inds,volc=None,dim=dimCov,aff=nifti.affine,hdr=nifti.header)
+            del covB_i
 
     # ----------------------------------------------------------------------
     # Calculate COPEs, statistic maps and covariance maps.
