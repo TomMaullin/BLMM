@@ -995,12 +995,10 @@ def main(*args):
             # Record that we have seen another T contrast
             current_n_ct = current_n_ct + 1
 
-
-            del Tc, pc
             if n_v_i:
-                del Tc_i
+                del Tc_i, pc_i
             if n_v_r:
-                del Tc_r
+                del Tc_r, pc_r
 
             print('whole of T ran')
 
