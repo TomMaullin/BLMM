@@ -978,7 +978,7 @@ def main(*args):
 
                 # Obatin and output p-values
                 pc_r = T2P3D(Tc_r,swdf[R_inds],inputs)
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conTlp.nii'), pc_i, I_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conTlp.nii'), pc_r, R_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
 
             if n_v_i:
