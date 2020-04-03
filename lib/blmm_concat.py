@@ -1250,7 +1250,7 @@ def addBlockToNifti(fname, block, blockInds,dim=None,volc=None,aff=None,hdr=None
         volc = int(volc)
 
     # Work out dimension of block
-    if ndim(block)>1:
+    if np.ndim(block)>1:
         block = block.reshape(block.shape[0])
 
     # Check whether the NIFTI exists already
