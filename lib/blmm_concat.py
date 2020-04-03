@@ -882,9 +882,6 @@ def main(*args):
     # Setup 4d volumes to output
     Lbeta = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_c])
     se_t = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_ct])
-    df_sw_t = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_ct])
-    stat_t = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_ct])
-    p_t = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_ct])
     stat_f = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_cf])
     p_f = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_cf])
     r2_f = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_cf])
@@ -948,47 +945,37 @@ def main(*args):
 
             del covLB
 
-            # Unmask to output
-            swdf = np.zeros([n_v])
-
-            if n_v_r:
-
-                swdf[R_inds] = get_swdf_T3D(L, D_r, sigma2_r, ZtX_r, ZtY_r, XtX_r, ZtZ_r, XtY_r, YtX_r, YtZ_r, XtZ_r, YtY_r, n_s_sv_r, nlevels, nparams).reshape(swdf[R_inds].shape)
-
-            if n_v_i:
-
-                swdf[I_inds] = get_swdf_T3D(L, D_i, sigma2_i, ZtX_i, ZtY_i, XtX_i, ZtZ_i, XtY_i, YtX_i, YtZ_i, XtZ_i, YtY_i, n_s, nlevels, nparams).reshape(swdf[I_inds].shape)
-
-
-            df_sw_t[:,:,:,current_n_ct] = swdf.reshape(
-                                                    NIFTIsize[0],
-                                                    NIFTIsize[1],
-                                                    NIFTIsize[2]
-                                                )
-
-
             dimT = (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],n_ct)
+
 
             # Calculate masked T statistic image for ring
             if n_v_r:
+
+                # Calculate sattherwaite estimate of the degrees of freedom of this statistic
+                swdfc_r = get_swdf_T3D(L, D_r, sigma2_r, ZtX_r, ZtY_r, XtX_r, ZtZ_r, XtY_r, YtX_r, YtZ_r, XtZ_r, YtY_r, n_s_sv_r, nlevels, nparams).reshape(n_v_r)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT_swedf.nii'), swdfc_r, R_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
                 # Obtain and output T statistic
                 Tc_r = get_T3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, beta_r, sigma2_r).reshape(n_v_r)
                 addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT.nii'), Tc_r, R_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
                 # Obatin and output p-values
-                pc_r = T2P3D(Tc_r,swdf[R_inds],inputs)
+                pc_r = T2P3D(Tc_r,swdfc_r,inputs)
                 addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conTlp.nii'), pc_r, R_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
 
             if n_v_i:
+
+                # Calculate sattherwaite estimate of the degrees of freedom of this statistic
+                swdfc_i = get_swdf_T3D(L, D_i, sigma2_i, ZtX_i, ZtY_i, XtX_i, ZtZ_i, XtY_i, YtX_i, YtZ_i, XtZ_i, YtY_i, n_s, nlevels, nparams).reshape(n_v_r)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT_swedf.nii'), swdfc_i, I_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
                 # Obtain and output T statistic
                 Tc_i = get_T3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, beta_i, sigma2_i).reshape(n_v_i)
                 addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT.nii'), Tc_i, I_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
                 
                 # Obtain and output p-values
-                pc_i = T2P3D(Tc_i,swdf[I_inds],inputs)
+                pc_i = T2P3D(Tc_i,swdfc_i,inputs)
                 addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conTlp.nii'), pc_i, I_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
 
@@ -996,9 +983,9 @@ def main(*args):
             current_n_ct = current_n_ct + 1
 
             if n_v_i:
-                del Tc_i, pc_i
+                del Tc_i, pc_i, swdfc_i 
             if n_v_r:
-                del Tc_r, pc_r
+                del Tc_r, pc_r, swdfc_r 
 
             print('whole of T ran')
 
@@ -1090,15 +1077,6 @@ def main(*args):
             os.path.join(OutDir, 
                 'blmm_vox_conSE.nii'))
         del se_t, seLbetamap
-
-        # Output swdf map for T
-        dfmap = nib.Nifti1Image(df_sw_t,
-                                nifti.affine,
-                                header=nifti.header)
-        nib.save(dfmap,
-            os.path.join(OutDir, 
-                'blmm_vox_edf_sw_T.nii'))  
-        del swdf, df_sw_t, dfmap
 
         # Output Lbeta/cope map
         Lbetamap = nib.Nifti1Image(Lbeta,

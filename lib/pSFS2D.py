@@ -5,7 +5,7 @@ import scipy
 from lib.tools3d import *
 from lib.tools2d import *
 
-def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, init_paramVector):
+def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, init_paramVector=None):
   
   # Useful scalars
   # ------------------------------------------------------------------------------
