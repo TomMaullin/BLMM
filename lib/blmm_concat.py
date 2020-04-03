@@ -959,7 +959,7 @@ def main(*args):
                 addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conFlp.nii'), pc_r, R_inds,volc=current_n_cf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
  
                 # Calculate partial R2 masked for ring.
-                R2_r = get_R23D(L, Fc_r, swdf_r).reshape(n_v_r)
+                R2_r = get_R23D(L, Fc_r, swdfc_r).reshape(n_v_r)
                 addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conR2.nii'), R2_r, R_inds,volc=current_n_cf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
 
 
@@ -979,7 +979,7 @@ def main(*args):
                 addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conFlp.nii'), pc_i, I_inds,volc=current_n_cf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
 
                 # Calculate partial R2 masked for inner mask.
-                R2_i = get_R23D(L, Fc_i, swdf_i).reshape(n_v_i)
+                R2_i = get_R23D(L, Fc_i, swdfc_i).reshape(n_v_i)
                 addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conR2.nii'), R2_i, I_inds,volc=current_n_cf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
 
             # Record that we have seen another F contrast

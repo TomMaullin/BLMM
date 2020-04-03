@@ -29,18 +29,18 @@ cfg=$(RealPath $cfg)
 eval $(parse_yaml $cfg "config_")
 mkdir -p $config_outdir
 
-# Check if we are in voxel batch mode
-if [ -z $config_vb ] ; then
+# Check if we are in voxel batch mode (not yet implemented)
+#if [ -z $config_vb ] ; then
 
-  config_vb=0
+  #config_vb=0
 
-  echo "Voxel batch unset"
+  #echo "Voxel batch unset"
 
-else
+#else
 
-  echo "Voxel batch set"
+  #echo "Voxel batch set"
 
-fi
+#fi
 
 # This file is used to record number of batches
 if [ -f $config_outdir/nb.txt ] ; then
