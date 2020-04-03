@@ -973,7 +973,7 @@ def main(*args):
             if n_v_r:
 
                 # Obtain and output T statistic
-                Tc_r = get_T3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, beta_r, sigma2_r)
+                Tc_r = get_T3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, beta_r, sigma2_r).reshape(n_v_r)
                 addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT.nii'), Tc_r, R_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
                 # Obatin and output p-values
@@ -984,7 +984,7 @@ def main(*args):
             if n_v_i:
 
                 # Obtain and output T statistic
-                Tc_i = get_T3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, beta_i, sigma2_i)
+                Tc_i = get_T3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, beta_i, sigma2_i).reshape(n_v_i)
                 addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT.nii'), Tc_i, I_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
                 
                 # Obtain and output p-values
