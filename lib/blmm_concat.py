@@ -116,6 +116,10 @@ def main(*args):
 
     # ----------------------------------------------------------------------
     # Remove any files from the previous runs
+    #
+    # Note: This is important as if we are outputting blocks to files we
+    # want to be sure none of the previous results are lingering around 
+    # anywhere.
     # ----------------------------------------------------------------------
 
     files = ['blmm_vox_n.nii', 'blmm_vox_mask.nii', 'blmm_vox_edf.nii', 'blmm_vox_beta.nii',
@@ -889,14 +893,12 @@ def main(*args):
     current_n_cf = 0
 
     # Setup 4d volumes to output
-    Lbeta = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_c])
     se_t = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_ct])
     stat_f = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_cf])
     p_f = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_cf])
     r2_f = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_cf])
     df_sw_f = np.zeros([int(NIFTIsize[0]), int(NIFTIsize[1]), int(NIFTIsize[2]), n_cf])
 
-# WIP AREA
 
     for i in range(0,n_c):
 
@@ -904,12 +906,6 @@ def main(*args):
         # Get number of parameters
         L = blmm_eval(inputs['contrasts'][i]['c' + str(i+1)]['vector'])
         L = np.array(L)
-
-        # Calculate C\hat{\beta}}
-        if n_v_r:
-            Lbeta_r = np.matmul(L, beta_r)
-        if n_v_i:
-            Lbeta_i = np.matmul(L, beta_i)
     
         if L.ndim == 1:
             statType='T'
@@ -918,22 +914,6 @@ def main(*args):
             statType='F'
 
         if statType == 'T':
-
-            # A T contrast has only one row so we can output Lbeta here
-            current_Lbeta = np.zeros([n_v,1])
-            if n_v_r:
-                current_Lbeta[R_inds,:] = Lbeta_r
-            if n_v_i:
-                current_Lbeta[I_inds,:] = Lbeta_i
-
-            Lbeta[:,:,:,current_n_ct] = current_Lbeta.reshape(
-                                                    NIFTIsize[0],
-                                                    NIFTIsize[1],
-                                                    NIFTIsize[2]
-                                                    )
-
-            # Unmask to output
-            covLB = np.zeros([n_v])
 
             if n_v_r:
 
@@ -945,20 +925,21 @@ def main(*args):
                 # Get cov(L\beta)
                 covLB[I_inds] = get_varLB3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, sigma2_i).reshape(covLB[I_inds].shape)
 
-            se_t[:,:,:,current_n_ct] = np.sqrt(covLB.reshape(
-                                                    NIFTIsize[0],
-                                                    NIFTIsize[1],
-                                                    NIFTIsize[2]
-                                                    ))
-
-
-            del covLB
-
+            # Work out the dimension of the T-stat-related volumes
             dimT = (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],n_ct)
 
 
             # Calculate masked T statistic image for ring
             if n_v_r:
+
+                # Work out L\beta
+                Lbeta_r = L @ beta_r
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_con.nii'), Lbeta_r, R_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+    
+                # Work out s.e.(L\beta)
+                seLB_r = np.sqrt(get_varLB3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, sigma2_r).reshape(n_v_r))
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conSE.nii'), seLB_r, R_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+    
 
                 # Calculate sattherwaite estimate of the degrees of freedom of this statistic
                 swdfc_r = get_swdf_T3D(L, D_r, sigma2_r, ZtX_r, ZtY_r, XtX_r, ZtZ_r, XtY_r, YtX_r, YtZ_r, XtZ_r, YtY_r, n_s_sv_r, nlevels, nparams).reshape(n_v_r)
@@ -974,6 +955,14 @@ def main(*args):
 
 
             if n_v_i:
+
+                # Work out L\beta
+                Lbeta_i = L @ beta_i
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_con.nii'), Lbeta_i, I_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+
+                # Work out s.e.(L\beta)
+                seLB_i = np.sqrt(get_varLB3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, sigma2_i).reshape(n_v_i))
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conSE.nii'), seLB_i, I_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
                 # Calculate sattherwaite estimate of the degrees of freedom of this statistic
                 swdfc_i = get_swdf_T3D(L, D_i, sigma2_i, ZtX_i, ZtY_i, XtX_i, ZtZ_i, XtY_i, YtX_i, YtZ_i, XtZ_i, YtY_i, n_s, nlevels, nparams).reshape(n_v_i)
@@ -992,9 +981,9 @@ def main(*args):
             current_n_ct = current_n_ct + 1
 
             if n_v_i:
-                del Tc_i, pc_i, swdfc_i 
+                del Lbeta_i, seLB_i, Tc_i, pc_i, swdfc_i 
             if n_v_r:
-                del Tc_r, pc_r, swdfc_r 
+                del Lbeta_r, seLB_r, Tc_r, pc_r, swdfc_r 
 
             print('whole of T ran')
 
@@ -1076,26 +1065,6 @@ def main(*args):
             del partialR2
 
     # Save contrast maps
-    if n_ct:
-
-        # Output standard error map
-        seLbetamap = nib.Nifti1Image(se_t,
-                                      nifti.affine,
-                                      header=nifti.header)
-        nib.save(seLbetamap,
-            os.path.join(OutDir, 
-                'blmm_vox_conSE.nii'))
-        del se_t, seLbetamap
-
-        # Output Lbeta/cope map
-        Lbetamap = nib.Nifti1Image(Lbeta,
-                                   nifti.affine,
-                                   header=nifti.header)
-        nib.save(Lbetamap,
-            os.path.join(OutDir, 
-                'blmm_vox_con.nii'))
-        del Lbeta, Lbetamap
-
     if n_cf:
 
 
