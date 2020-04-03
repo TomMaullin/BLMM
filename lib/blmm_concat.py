@@ -1072,17 +1072,25 @@ def get_resms3D(YtX, YtY, XtX, beta,n):
 
 def get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2):
 
+    # Reshape n if necessary
+    if isinstance(sigma2,np.ndarray):
+
+        # Check first that n isn't a single value
+        if np.prod(sigma2.shape)>1:
+    
+            sigma2 = sigma2.reshape(sigma2.shape[0])
+            
     # Work out X'V^{-1}X = X'X - X'ZD(I+Z'ZD)^{-1}Z'X
     XtinvVX = XtX - XtZ @ DinvIplusZtZD @ XtZ.transpose((0,2,1))
 
     # Work out var(LB) = L'(X'V^{-1}X)^{-1}L
-    varB = np.linalg.inv(XtinvVX)
+    covB = np.linalg.inv(XtinvVX)
 
     # Calculate sigma^2(X'V^{-1}X)^(-1)
-    varB = np.einsum('i,ijk->ijk',sigma2,varB)
+    covB = np.einsum('i,ijk->ijk',sigma2,covB)
 
     # Return result
-    return(varB)
+    return(covB)
 
 def get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2):
 
