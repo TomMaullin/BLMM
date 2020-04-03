@@ -1038,9 +1038,6 @@ def addBlockToNifti(fname, block, blockInds,dim=None,volc=None,aff=None,hdr=None
             # Throw an error because we don't know what to do
             raise Exception('NIFTI does not exist and dimensions not given')
 
-    # Seperate copy of data for outputting
-    data_out = np.array(data)
-
     # Work out the number of output volumes inside the nifti 
     if len(dim)==3:
 
@@ -1052,6 +1049,9 @@ def addBlockToNifti(fname, block, blockInds,dim=None,volc=None,aff=None,hdr=None
 
         # The number of volumes is the last dimension
         n_vol = dim[3]
+
+    # Seperate copy of data for outputting
+    data_out = np.array(data).reshape(dim)
 
     # Work out the number of voxels
     n_vox = np.prod(dim[:3])
