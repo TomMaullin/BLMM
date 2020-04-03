@@ -578,6 +578,7 @@ def main(*args):
     if n_v_r:
 
         sigma2_r = paramVec_r[:,n_p:(n_p+1),:]
+        addBlockToNifti(os.path.join(OutDir, 'blmm_vox_sigma2.nii'), sigma2_r, R_inds,volc=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
 
         Ddict_r = dict()
         # D as a dictionary
@@ -603,7 +604,8 @@ def main(*args):
 
     if n_v_i:
 
-        sigma2_i = paramVec_i[:,n_p:(n_p+1),:]
+        sigma2_i = paramVec_i[:,n_p:(n_p+1),:].reshape(n_v_i)
+        addBlockToNifti(os.path.join(OutDir, 'blmm_vox_sigma2.nii'), sigma2_i, I_inds,volc=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
 
         Ddict_i = dict()
         # D as a dictionary
@@ -648,28 +650,6 @@ def main(*args):
                              header=nifti.header)
     nib.save(llhmap, os.path.join(OutDir,'blmm_vox_llh.nii'))
     del llhmap, llh_out, llh_i, llh_r
-
-
-    # Unmask sigma2
-    if n_v_r:
-
-        sigma2[R_inds,:] = sigma2_r[:].reshape(sigma2[R_inds,:].shape)
-
-    if n_v_i:
-
-        sigma2[I_inds,:] = sigma2_i[:].reshape(sigma2[I_inds,:].shape)
-
-
-
-    sigma2_out = sigma2.reshape(int(NIFTIsize[0]),
-                                int(NIFTIsize[1]),
-                                int(NIFTIsize[2]))
-
-    # Save beta map.
-    sigma2map = nib.Nifti1Image(sigma2_out,
-                                nifti.affine,
-                                header=nifti.header)
-    nib.save(sigma2map, os.path.join(OutDir,'blmm_vox_sigma2.nii'))
 
     # Save D
     vechD = np.zeros([n_v, n_q_u])
@@ -730,7 +710,7 @@ def main(*args):
 
 
     # ----------------------------------------------------------------------
-    # Calculate beta covariance maps
+    # Calculate beta covariance maps (Optionally output)
     # ----------------------------------------------------------------------
 
     if "OutputCovB" in inputs:
