@@ -1109,7 +1109,7 @@ def get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2):
     varB = np.linalg.inv(XtinvVX)
 
     # Calculate sigma^2(X'V^{-1}X)^(-1)
-    varB = np.einsum('i,ijk->ijk',sigma2,varLB)
+    varB = np.einsum('i,ijk->ijk',sigma2,varB)
 
     # Return result
     return(varB)
