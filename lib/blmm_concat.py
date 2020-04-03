@@ -428,20 +428,6 @@ def main(*args):
         os.remove(os.path.join(OutDir, "tmp","ZtZ" + str(batchNo) + ".npy"))
         os.remove(os.path.join(OutDir, "tmp", "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii"))
 
-    # Dimension bug handling
-    if np.ndim(sumXtX_i) == 0:
-        sumXtX_i = np.array([[sumXtX_i]])
-    elif np.ndim(sumXtX_i) == 1:
-        sumXtX_i = np.array([sumXtX_i])
-
-    print('xty bit')
-    print(sumXtY.shape)
-    if np.ndim(sumXtY) == 0:
-        sumXtY = np.array([[sumXtY]])
-    elif np.ndim(sumXtY) == 1:
-        sumXtY = np.array([sumXtY])
-    print(sumXtY.shape)
-
     # ----------------------------------------------------------------------
     # Calculate betahat = (X'X)^(-1)X'Y and output beta maps
     # ----------------------------------------------------------------------    
@@ -1114,7 +1100,7 @@ def get_resms3D(YtX, YtY, XtX, beta,n):
 
     return(ete/n)
 
-def get_varB3D(XtX, XtZ, DinvIplusZtZD, sigma2):
+def get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2):
 
     # Work out X'V^{-1}X = X'X - X'ZD(I+Z'ZD)^{-1}Z'X
     XtinvVX = XtX - XtZ @ DinvIplusZtZD @ XtZ.transpose((0,2,1))
@@ -1138,14 +1124,8 @@ def get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2):
     
             sigma2 = sigma2.reshape(sigma2.shape[0])
 
-    # Work out X'V^{-1}X = X'X - X'ZD(I+Z'ZD)^{-1}Z'X
-    XtinvVX = XtX - XtZ @ DinvIplusZtZD @ XtZ.transpose((0,2,1))
-
     # Work out var(LB) = L'(X'V^{-1}X)^{-1}L
-    varLB = L @ np.linalg.inv(XtinvVX) @ L.transpose()
-
-    # Calculate S^2 = sigma^2L(X'V^{-1}X)^(-1)L'
-    varLB = np.einsum('i,ijk->ijk',sigma2,varLB)
+    varLB = L @ get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2) @ L.transpose()
 
     # Return result
     return(varLB)
