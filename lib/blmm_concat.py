@@ -528,7 +528,7 @@ def main(*args):
         paramVec_i = pSFS(XtX_i, XtY_i, ZtX_i, ZtY_i, ZtZ_i, XtZ_i, YtZ_i, YtY_i, YtX_i, nlevels, nparams, 1e-6,n_s, reml=REML)
 
     # Dimension of beta volume
-    dimBeta =  (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],n_p**2)
+    dimBeta =  (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],n_p)
 
     # Complete parameter vector
     if n_v_r:
