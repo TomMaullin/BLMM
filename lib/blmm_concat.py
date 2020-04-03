@@ -770,14 +770,14 @@ def main(*args):
         # In spatially varying the degrees of freedom
         # varies across voxels
         resms_r = get_resms3D(YtX_r, YtY_r, XtX_r, beta_r,n_s_sv_r).reshape(n_v_r)
-        addBlockToNifti(os.path.join(OutDir, 'blmm_vox_resms.nii'), resms_r, R_inds,volc=i,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
+        addBlockToNifti(os.path.join(OutDir, 'blmm_vox_resms.nii'), resms_r, R_inds,volc=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
 
 
     if n_v_i:
 
         # All voxels in the inner mask have n_s scans present
         resms_i = get_resms3D(YtX_i, YtY_i, XtX_i, beta_i, n_s).reshape(n_v_i)
-        addBlockToNifti(os.path.join(OutDir, 'blmm_vox_resms.nii'), resms_i, I_inds,volc=i,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
+        addBlockToNifti(os.path.join(OutDir, 'blmm_vox_resms.nii'), resms_i, I_inds,volc=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
 
 
     print('resms output')
