@@ -914,17 +914,7 @@ def main(*args):
             statType='F'
 
         if statType == 'T':
-
-            if n_v_r:
-
-                # Get cov(L\beta)
-                covLB[R_inds] = get_varLB3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, sigma2_r).reshape(covLB[R_inds].shape)
-
-            if n_v_i:
-
-                # Get cov(L\beta)
-                covLB[I_inds] = get_varLB3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, sigma2_i).reshape(covLB[I_inds].shape)
-
+            
             # Work out the dimension of the T-stat-related volumes
             dimT = (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],n_ct)
 
@@ -1189,12 +1179,6 @@ def blmm_det(A):
     detA = detDAD/detDD
 
     return(detA)
-
-# ============================================================================================================
-#
-# WIP: Moving to functions
-#
-# ============================================================================================================
 
 def addBlockToNifti(fname, block, blockInds,dim=None,volc=None,aff=None,hdr=None):
 
