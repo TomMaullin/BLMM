@@ -889,47 +889,47 @@ def main(*args):
 
                 # Work out L\beta
                 Lbeta_r = L @ beta_r
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_con.nii'), Lbeta_r, R_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_con.nii'), Lbeta_r, R_inds,volc=current_n_ct,dim=dimT,aff=nifti.affine,hdr=nifti.header)
     
                 # Work out s.e.(L\beta)
                 seLB_r = np.sqrt(get_varLB3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, sigma2_r).reshape(n_v_r))
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conSE.nii'), seLB_r, R_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conSE.nii'), seLB_r, R_inds,volc=current_n_ct,dim=dimT,aff=nifti.affine,hdr=nifti.header)
     
 
                 # Calculate sattherwaite estimate of the degrees of freedom of this statistic
                 swdfc_r = get_swdf_T3D(L, D_r, sigma2_r, ZtX_r, ZtY_r, XtX_r, ZtZ_r, XtY_r, YtX_r, YtZ_r, XtZ_r, YtY_r, n_s_sv_r, nlevels, nparams).reshape(n_v_r)
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT_swedf.nii'), swdfc_r, R_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT_swedf.nii'), swdfc_r, R_inds,volc=current_n_ct,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
                 # Obtain and output T statistic
                 Tc_r = get_T3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, beta_r, sigma2_r).reshape(n_v_r)
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT.nii'), Tc_r, R_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT.nii'), Tc_r, R_inds,volc=current_n_ct,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
                 # Obatin and output p-values
                 pc_r = T2P3D(Tc_r,swdfc_r,inputs)
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conTlp.nii'), pc_r, R_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conTlp.nii'), pc_r, R_inds,volc=current_n_ct,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
 
             if n_v_i:
 
                 # Work out L\beta
                 Lbeta_i = L @ beta_i
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_con.nii'), Lbeta_i, I_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_con.nii'), Lbeta_i, I_inds,volc=current_n_ct,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
                 # Work out s.e.(L\beta)
                 seLB_i = np.sqrt(get_varLB3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, sigma2_i).reshape(n_v_i))
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conSE.nii'), seLB_i, I_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conSE.nii'), seLB_i, I_inds,volc=current_n_ct,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
                 # Calculate sattherwaite estimate of the degrees of freedom of this statistic
                 swdfc_i = get_swdf_T3D(L, D_i, sigma2_i, ZtX_i, ZtY_i, XtX_i, ZtZ_i, XtY_i, YtX_i, YtZ_i, XtZ_i, YtY_i, n_s, nlevels, nparams).reshape(n_v_i)
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT_swedf.nii'), swdfc_i, I_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT_swedf.nii'), swdfc_i, I_inds,volc=current_n_ct,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
                 # Obtain and output T statistic
                 Tc_i = get_T3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, beta_i, sigma2_i).reshape(n_v_i)
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT.nii'), Tc_i, I_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT.nii'), Tc_i, I_inds,volc=current_n_ct,dim=dimT,aff=nifti.affine,hdr=nifti.header)
                 
                 # Obtain and output p-values
                 pc_i = T2P3D(Tc_i,swdfc_i,inputs)
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conTlp.nii'), pc_i, I_inds,volc=i,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conTlp.nii'), pc_i, I_inds,volc=current_n_ct,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
 
             # Record that we have seen another T contrast
@@ -948,19 +948,19 @@ def main(*args):
 
                 # Calculate sattherthwaite degrees of freedom for the inner.
                 swdfc_r = get_swdf_F3D(L, D_r, sigma2_r, ZtX_r, ZtY_r, XtX_r, ZtZ_r, XtY_r, YtX_r, YtZ_r, XtZ_r, YtY_r, n_s_sv_r, nlevels, nparams).reshape(n_v_r)
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conF_swedf.nii'), swdfc_r, R_inds,volc=i,dim=dimF,aff=nifti.affine,hdr=nifti.header)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conF_swedf.nii'), swdfc_r, R_inds,volc=current_n_cf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
 
                 # Calculate F statistic.
                 Fc_r=get_F3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, beta_r, sigma2_r).reshape(n_v_r)
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conF.nii'), Fc_r, R_inds,volc=i,dim=dimF,aff=nifti.affine,hdr=nifti.header)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conF.nii'), Fc_r, R_inds,volc=current_n_cf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
 
                 # Work out p for this contrast
                 pc_r = F2P3D(Fc_r, L, swdfc_r, inputs).reshape(n_v_r)
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conFlp.nii'), pc_r, R_inds,volc=i,dim=dimF,aff=nifti.affine,hdr=nifti.header)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conFlp.nii'), pc_r, R_inds,volc=current_n_cf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
  
                 # Calculate partial R2 masked for ring.
                 R2_r = get_R23D(L, Fc_r, swdf_r).reshape(n_v_r)
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conR2.nii'), R2_r, R_inds,volc=i,dim=dimF,aff=nifti.affine,hdr=nifti.header)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conR2.nii'), R2_r, R_inds,volc=current_n_cf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
 
 
             # Calculate the numerator of the F statistic for the inner 
@@ -968,19 +968,19 @@ def main(*args):
 
                 # Calculate sattherthwaite degrees of freedom for the inner.
                 swdfc_i = get_swdf_F3D(L, D_i, sigma2_i, ZtX_i, ZtY_i, XtX_i, ZtZ_i, XtY_i, YtX_i, YtZ_i, XtZ_i, YtY_i, n_s, nlevels, nparams).reshape(n_v_i)
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conF_swedf.nii'), swdfc_i, I_inds,volc=i,dim=dimF,aff=nifti.affine,hdr=nifti.header)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conF_swedf.nii'), swdfc_i, I_inds,volc=current_n_cf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
                 
                 # Calculate F statistic.
                 Fc_i=get_F3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, beta_i, sigma2_i).reshape(n_v_i)
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conF.nii'), Fc_i, I_inds,volc=i,dim=dimF,aff=nifti.affine,hdr=nifti.header)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conF.nii'), Fc_i, I_inds,volc=current_n_cf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
 
                 # Work out p for this contrast
                 pc_i = F2P3D(Fc_i, L, swdfc_i, inputs).reshape(n_v_i)
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conFlp.nii'), pc_i, I_inds,volc=i,dim=dimF,aff=nifti.affine,hdr=nifti.header)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conFlp.nii'), pc_i, I_inds,volc=current_n_cf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
 
                 # Calculate partial R2 masked for inner mask.
                 R2_i = get_R23D(L, Fc_i, swdf_i).reshape(n_v_i)
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conR2.nii'), R2_i, I_inds,volc=i,dim=dimF,aff=nifti.affine,hdr=nifti.header)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conR2.nii'), R2_i, I_inds,volc=current_n_cf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
 
             # Record that we have seen another F contrast
             current_n_cf = current_n_cf + 1
@@ -1160,6 +1160,20 @@ def get_resms3D(YtX, YtY, XtX, beta,n):
             n = n.reshape(ete.shape)
 
     return(ete/n)
+
+def get_varB3D(XtX, XtZ, DinvIplusZtZD, sigma2):
+
+    # Work out X'V^{-1}X = X'X - X'ZD(I+Z'ZD)^{-1}Z'X
+    XtinvVX = XtX - XtZ @ DinvIplusZtZD @ XtZ.transpose((0,2,1))
+
+    # Work out var(LB) = L'(X'V^{-1}X)^{-1}L
+    varB = np.linalg.inv(XtinvVX)
+
+    # Calculate sigma^2(X'V^{-1}X)^(-1)
+    varB = np.einsum('i,ijk->ijk',sigma2,varLB)
+
+    # Return result
+    return(varB)
 
 def get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2):
 
