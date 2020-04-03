@@ -14,11 +14,7 @@ from lib.blmm_eval import blmm_eval
 from lib.blmm_load import blmm_load
 
 # Main takes in two arguments at most:
-# - input: Either the path to an input file or an input structure
-#          with all paths already set to absolute.
-# - retnb: A boolean which tells us whether to return the number
-#          of batches needed (retnb=True) or save the variable
-#          in a text file (retnb=False).
+# - input: Path to an input file
 def main(*args):
 
     # Change to blmm directory
@@ -30,27 +26,14 @@ def main(*args):
         ipath = os.path.abspath(os.path.join('..','blmm_config.yml'))
         with open(ipath, 'r') as stream:
             inputs = yaml.load(stream,Loader=yaml.FullLoader)
-        retnb = False
     else:
-        if type(args[0]) is str:
-            if os.path.isabs(args[0]):
-                ipath = args[0]
-            else:
-                ipath = os.path.abspath(os.path.join(pwd, args[0]))
-            # In this case inputs file is first argument
-            with open(ipath, 'r') as stream:
-                inputs = yaml.load(stream,Loader=yaml.FullLoader)
-                # Work out whether to return nb or save it in a 
-                # file
-                if len(args)>1:
-                    retnb = args[1]
-                else:
-                    retnb = False
-        else:  
-            # In this case inputs structure is first argument.
-            inputs = args[0]
-            ipath = ''
-            retnb = True
+        if os.path.isabs(args[0]):
+            ipath = args[0]
+        else:
+            ipath = os.path.abspath(os.path.join(pwd, args[0]))
+        # In this case inputs file is first argument
+        with open(ipath, 'r') as stream:
+            inputs = yaml.load(stream,Loader=yaml.FullLoader)
 
     # Save absolute filepaths in place of relative filepaths
     if ipath: 
@@ -167,11 +150,8 @@ def main(*args):
             if np.linalg.matrix_rank(cvec)<q:
                 raise ValueError('F contrast: \n' + str(cvec) + '\n is not of correct rank.')
 
-    if not retnb:
-        with open(os.path.join(OutDir, "nb.txt"), 'w') as f:
-            print(int(np.ceil(len(Y_files)/int(blksize))), file=f)
-    else:
-        return(int(np.ceil(len(Y_files)/int(blksize))))
+    with open(os.path.join(OutDir, "nb.txt"), 'w') as f:
+        print(int(np.ceil(len(Y_files)/int(blksize))), file=f)
 
     w.resetwarnings()
 

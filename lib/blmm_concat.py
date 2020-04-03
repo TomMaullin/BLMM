@@ -46,8 +46,6 @@ from lib.pSFS import pSFS
 
 def main(*args):
 
-    t1_overall = time.time()
-
     # ----------------------------------------------------------------------
     # Check inputs
     # ----------------------------------------------------------------------
@@ -141,8 +139,6 @@ def main(*args):
 
     # Work out number of batchs
     n_b = len(glob.glob(os.path.join(OutDir,"tmp","blmm_vox_n_batch*")))
-
-    print(glob.glob(os.path.join(OutDir,"tmp","blmm_vox_n_batch*")))
 
     if (len(args)==0) or (type(args[0]) is str):
 
@@ -438,37 +434,13 @@ def main(*args):
     elif np.ndim(sumXtX_i) == 1:
         sumXtX_i = np.array([sumXtX_i])
 
+    print('xty bit')
+    print(sumXtY.shape)
     if np.ndim(sumXtY) == 0:
         sumXtY = np.array([[sumXtY]])
     elif np.ndim(sumXtY) == 1:
         sumXtY = np.array([sumXtY])
-
-
-
-
-    # ----------------------------------------------------------------------
-    # Decide on blocks to consider for inference and parameter estimation
-    # ----------------------------------------------------------------------
-
-    # Save XtY, YtY, ZtY
-
-    # New uniqueness mask for ZtZ XtX XtZ
-
-    # Save ZtX. ZtZ and XtX unique ones
-
-    # NIFTI of batch numbers, each vox has batch number showing where it goes
-
-    # Ceiling batch number... maybe in options? preset to no more than 40 batches
-    # for NIFTI... loops beyond that
-
-    # Number of batches as well
-
-    # MUST OUTPUT HERE THOUGH: Spatially varying n, Mask
-
-    # Other info: nlevels, nparams - can get from inputs
-
-
-
+    print(sumXtY.shape)
 
     # ----------------------------------------------------------------------
     # Calculate betahat = (X'X)^(-1)X'Y and output beta maps
@@ -527,10 +499,8 @@ def main(*args):
         #================================================================================
         # Run parameter estimation
         #================================================================================
-        t1 = time.time()
         paramVec_r = pSFS(XtX_r, XtY_r, ZtX_r, ZtY_r, ZtZ_r, XtZ_r, YtZ_r, YtY_r, YtX_r, nlevels, nparams, 1e-6,n_s_sv_r,reml=REML)
-        t2 = time.time()
-        print(t2-t1)
+
 
 
     # If we have indices where all studies are present, work out X'X and
@@ -569,10 +539,7 @@ def main(*args):
         #================================================================================
         # Run parameter estimation
         #================================================================================
-        t1 = time.time()
         paramVec_i = pSFS(XtX_i, XtY_i, ZtX_i, ZtY_i, ZtZ_i, XtZ_i, YtZ_i, YtY_i, YtX_i, nlevels, nparams, 1e-6,n_s, reml=REML)
-        t2 = time.time()
-        print(t2-t1)
 
 
     paramVec = np.zeros([n_v, n_p + 1 + np.sum(nparams*(nparams+1)//2)])
@@ -645,10 +612,7 @@ def main(*args):
         ete_r = ssr3D(YtX_r, YtY_r, XtX_r, beta_r)
 
         # Output log likelihood
-        if REML:
-            llh_r = llh3D(n_s_sv_r, ZtZ_r, Zte_r, ete_r, sigma2_r, DinvIplusZtZD_r, D_r, REML, XtX_r, XtZ_r, ZtX_r) - (0.5*(n_s_sv_r-n_p)*np.log(2*np.pi)).reshape(ete_r.shape[0])
-        else:
-            llh_r = llh3D(n_s_sv_r, ZtZ_r, Zte_r, ete_r, sigma2_r, DinvIplusZtZD_r, D_r, REML, XtX_r, XtZ_r, ZtX_r) - (0.5*(n_s_sv_r)*np.log(2*np.pi)).reshape(ete_r.shape[0])
+        llh_r = llh3D(n_s_sv_r, ZtZ_r, Zte_r, ete_r, sigma2_r, DinvIplusZtZD_r, D_r, REML, XtX_r, XtZ_r, ZtX_r) - (0.5*(n_s_sv_r)*np.log(2*np.pi)).reshape(ete_r.shape[0])
 
 
     if n_v_i:
@@ -674,10 +638,7 @@ def main(*args):
         ete_i = ssr3D(YtX_i, YtY_i, XtX_i, beta_i)
 
         # Output log likelihood
-        if REML:
-            llh_i = llh3D(n_s, ZtZ_i, Zte_i, ete_i, sigma2_i, DinvIplusZtZD_i, D_i, REML, XtX_i, XtZ_i, ZtX_i) - 0.5*(n_s-n_p)*np.log(2*np.pi)
-        else:
-            llh_i = llh3D(n_s, ZtZ_i, Zte_i, ete_i, sigma2_i, DinvIplusZtZD_i, D_i, REML, XtX_i, XtZ_i, ZtX_i) - 0.5*(n_s)*np.log(2*np.pi)
+        llh_i = llh3D(n_s, ZtZ_i, Zte_i, ete_i, sigma2_i, DinvIplusZtZD_i, D_i, REML, XtX_i, XtZ_i, ZtX_i) - 0.5*(n_s)*np.log(2*np.pi)
 
     # Unmask llh
     llh = np.zeros([n_v,1])
@@ -756,11 +717,6 @@ def main(*args):
                                header=nifti.header)
     nib.save(vechDmap, os.path.join(OutDir,'blmm_vox_D.nii'))
 
-
-
-    t2_overall = time.time()
-    print('TIME: ', t2_overall-t1_overall)
-
     # ----------------------------------------------------------------------
     # Calculate residual mean squares = e'e/(n_s - n_p)
     # ----------------------------------------------------------------------
@@ -778,9 +734,6 @@ def main(*args):
         # All voxels in the inner mask have n_s scans present
         resms_i = get_resms3D(YtX_i, YtY_i, XtX_i, beta_i, n_s).reshape(n_v_i)
         addBlockToNifti(os.path.join(OutDir, 'blmm_vox_resms.nii'), resms_i, I_inds,volc=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
-
-
-    print('resms output')
 
 
     # # ----------------------------------------------------------------------
@@ -1320,8 +1273,6 @@ def get_swdf_F3D(L, D, sigma2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, n
     # Work out final df
     df = 2*sum_swdf_adj/(sum_swdf_adj-rL)
 
-    print('df shape', df.shape)
-
     # Return df
     return(df)
 
@@ -1352,10 +1303,6 @@ def get_swdf_T3D(L, D, sigma2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, n
 
     # Calculate df estimator
     df = 2*(S2**2)/(dS2.transpose(0,2,1) @ np.linalg.inv(InfoMat) @ dS2)
-
-    print('df shape ', df.shape)
-    print('dS2 shape ', dS2.shape)
-    print('InfoMat shape ', InfoMat.shape)
 
     # Return df
     return(df)
@@ -1493,5 +1440,5 @@ def get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nparams, ZtZ):
     # Return result
     return(FisherInfoMat)
 
-if __name__ == "__rain__":
+if __name__ == "__main__":
     main()

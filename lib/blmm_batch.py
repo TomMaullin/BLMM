@@ -196,11 +196,7 @@ def main(*args):
     # n_parameters^2 so that we can save as a csv.
     ZtX = blkZtX(MZ, MX)
     ZtX = ZtX.reshape([ZtX.shape[0], ZtX.shape[1]*ZtX.shape[2]])
-
-    # ======================================================================
-    # NEED TO THINK ABOUT SPARSE HERE
-    # ======================================================================
-    #
+    
     # In a spatially varying design ZtZ has dimensions n_voxels
     # by n_q by n_q. We reshape to n_voxels by n_q^2 so that we
     # can save as a csv.
@@ -214,37 +210,33 @@ def main(*args):
     XtY = XtY.transpose()
     ZtY = ZtY.transpose()
 
-    if (len(args)==1) or (type(args[1]) is str):
+    # Record product matrices 
+    np.save(os.path.join(OutDir,"tmp","XtX" + str(batchNo)), 
+               XtX)
+    np.save(os.path.join(OutDir,"tmp","XtY" + str(batchNo)), 
+               XtY) 
+    np.save(os.path.join(OutDir,"tmp","YtY" + str(batchNo)), 
+               YtY) 
+    np.save(os.path.join(OutDir,"tmp","ZtY" + str(batchNo)), 
+               ZtY) 
+    np.save(os.path.join(OutDir,"tmp","ZtX" + str(batchNo)), 
+               ZtX) 
+    np.save(os.path.join(OutDir,"tmp","ZtZ" + str(batchNo)), 
+               ZtZ) 
 
-        # Record product matrices 
-        np.save(os.path.join(OutDir,"tmp","XtX" + str(batchNo)), 
-                   XtX)
-        np.save(os.path.join(OutDir,"tmp","XtY" + str(batchNo)), 
-                   XtY) 
-        np.save(os.path.join(OutDir,"tmp","YtY" + str(batchNo)), 
-                   YtY) 
-        np.save(os.path.join(OutDir,"tmp","ZtY" + str(batchNo)), 
-                   ZtY) 
-        np.save(os.path.join(OutDir,"tmp","ZtX" + str(batchNo)), 
-                   ZtX) 
-        np.save(os.path.join(OutDir,"tmp","ZtZ" + str(batchNo)), 
-                   ZtZ) 
+    # Get map of number of scans at voxel.
+    nmap = nib.Nifti1Image(nmap,
+                           Y0.affine,
+                           header=Y0.header)
+    nib.save(nmap, os.path.join(OutDir,'tmp',
+                    'blmm_vox_n_batch'+ str(batchNo) + '.nii'))
+    # Get map of number of scans at voxel.
+    Mmap = nib.Nifti1Image(Mmap,
+                           Y0.affine,
+                           header=Y0.header)
+    nib.save(Mmap, os.path.join(OutDir,'tmp',
+                    'blmm_vox_uniqueM_batch'+ str(batchNo) + '.nii'))
 
-        # Get map of number of scans at voxel.
-        nmap = nib.Nifti1Image(nmap,
-                               Y0.affine,
-                               header=Y0.header)
-        nib.save(nmap, os.path.join(OutDir,'tmp',
-                        'blmm_vox_n_batch'+ str(batchNo) + '.nii'))
-        # Get map of number of scans at voxel.
-        Mmap = nib.Nifti1Image(Mmap,
-                               Y0.affine,
-                               header=Y0.header)
-        nib.save(Mmap, os.path.join(OutDir,'tmp',
-                        'blmm_vox_uniqueM_batch'+ str(batchNo) + '.nii'))
-    else:
-        # Return XtX, XtY, YtY, nB
-        return(XtX, XtY, YtY, nmap)
     w.resetwarnings()
 
     t2_overall = time.time()
