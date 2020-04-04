@@ -5,7 +5,7 @@ import scipy
 from lib.tools3d import *
 from lib.tools2d import *
 
-def pSFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n, reml=False):
+def pSFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, reml=False):
 
 
   print('reml: ', reml)

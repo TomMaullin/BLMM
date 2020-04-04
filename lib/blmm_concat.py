@@ -20,8 +20,8 @@ from scipy import stats
 from lib.tools3d import *
 from lib.tools2d import *
 from lib.fileio import *
-from lib.pSFS import pSFS
 import lib.blmm_inference as blmm_inference
+import lib.blmm_estimate as blmm_estimate
 
 # Developer notes:
 # --------------------------------------------------------------------------
@@ -267,7 +267,7 @@ def main(*args):
     # Number of voxels in whole (inner + ring) mask
     n_v_m = n_v_i + n_v_r
 
-    # Create dpf map
+    # Create df map
     df_r = n_s_sv[R_inds,:] - n_p
     df_r = df_r.reshape([n_v_r])
     df_i = n_s - n_p
@@ -518,65 +518,21 @@ def main(*args):
         del sumXtX_i, sumZtX_i, sumZtZ_i
         del sumXtY, sumYtY, sumZtY
 
-        #================================================================================
-        # Run parameter estimation
-        #================================================================================
-        paramVec_i = pSFS(XtX_i, XtY_i, ZtX_i, ZtY_i, ZtZ_i, XtZ_i, YtZ_i, YtY_i, YtX_i, nlevels, nparams, 1e-6,n_s, reml=REML)
 
-    # Dimension of beta volume
-    dimBeta = (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],n_p)
-
-    # Dimension of D volume
-    dimD = (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],n_q_u)
-
-    # Get the indices in the paramvector corresponding to D matrices
-    IndsDk = np.int32(np.cumsum(nparams*(nparams+1)//2) + n_p + 1)
-    IndsDk = np.insert(IndsDk,0,n_p+1)
 
     # Complete parameter vector
     if n_v_r:
 
-        # Assign betas
-        beta_r = paramVec_r[:, 0:n_p]
-        addBlockToNifti(os.path.join(OutDir, 'blmm_vox_beta.nii'), beta_r, R_inds,volc=None,dim=dimBeta,aff=nifti.affine,hdr=nifti.header)        
-        
-        sigma2_r = paramVec_r[:,n_p:(n_p+1),:]
-        addBlockToNifti(os.path.join(OutDir, 'blmm_vox_sigma2.nii'), sigma2_r, R_inds,volc=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
-
-        vechD_r = paramVec_r[:,(n_p+1):,:].reshape((n_v_r,n_q_u))
-        addBlockToNifti(os.path.join(OutDir, 'blmm_vox_D.nii'), vechD_r, R_inds,volc=None,dim=dimD,aff=nifti.affine,hdr=nifti.header) 
-
-        Ddict_r = dict()
-        # D as a dictionary
-        for k in np.arange(len(nparams)):
-
-            Ddict_r[k] = vech2mat3D(paramVec_r[:,IndsDk[k]:IndsDk[k+1],:])
-          
-        # Full version of D
-        D_r = getDfromDict3D(Ddict_r, nparams, nlevels)
+        # Run parameter estimation
+        beta_r, sigma2_r, D_r = blmm_estimate.main(inputs, R_inds, XtX_r, XtY_r, ZtX_r, ZtY_r, ZtZ_r, XtZ_r, YtZ_r, YtY_r, YtX_r, n_s_sv_r, nlevels, nparams)
 
         # Run inference
         blmm_inference.main(inputs, nparams, nlevels, R_inds, beta_r, D_r, sigma2_r, n_s, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r)       
         
     if n_v_i:
 
-        beta_i = paramVec_i[:, 0:n_p]        
-        addBlockToNifti(os.path.join(OutDir, 'blmm_vox_beta.nii'), beta_i, I_inds,volc=None,dim=dimBeta,aff=nifti.affine,hdr=nifti.header)
-
-        sigma2_i = paramVec_i[:,n_p:(n_p+1),:].reshape(n_v_i)
-        addBlockToNifti(os.path.join(OutDir, 'blmm_vox_sigma2.nii'), sigma2_i, I_inds,volc=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
-        
-        vechD_i = paramVec_i[:,(n_p+1):,:].reshape((n_v_i,n_q_u))
-        addBlockToNifti(os.path.join(OutDir, 'blmm_vox_D.nii'), vechD_i, I_inds,volc=None,dim=dimD,aff=nifti.affine,hdr=nifti.header)        
-
-        Ddict_i = dict()
-        # D as a dictionary
-        for k in np.arange(len(nparams)):
-
-            Ddict_i[k] = makeDnnd3D(vech2mat3D(paramVec_i[:,IndsDk[k]:IndsDk[k+1],:]))
-          
-        # Full version of D
-        D_i = getDfromDict3D(Ddict_i, nparams, nlevels)
+        # Run parameter estimation
+        beta_i, sigma2_i, D_i = blmm_estimate.main(inputs, I_inds, XtX_i, XtY_i, ZtX_i, ZtY_i, ZtZ_i, XtZ_i, YtZ_i, YtY_i, YtX_i, n_s, nlevels, nparams)
 
         # Run inference
         blmm_inference.main(inputs, nparams, nlevels, I_inds, beta_i, D_i, sigma2_i, n_s, XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i)
