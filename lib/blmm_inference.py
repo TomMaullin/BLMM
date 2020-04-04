@@ -12,27 +12,27 @@ np.set_printoptions(threshold=np.nan)
 from lib.tools3d import *
 from lib.tools2d import *
 from lib.fileio import *
-from lib.blmm_concat import addBlockToNifti	
+from lib.blmm_concat import addBlockToNifti 
 
 # --------------------------------------------------------------------------
 # Author: Tom Maullin (04/04/2020)
 
 def main(inputs, nparams, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ):
 
-	# ----------------------------------------------------------------------
-	#  Read in one input nifti to get size, affines, etc.
-	# ----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
+    #  Read in one input nifti to get size, affines, etc.
+    # ----------------------------------------------------------------------
     with open(inputs['Y_files']) as a:
         nifti_path = a.readline().replace('\n', '')
         nifti = blmm_load(nifti_path)
 
     NIFTIsize = nifti.shape
 
-	# ----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     # Input variables
-	# ----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
 
-	# Output directory
+    # Output directory
     OutDir = inputs['outdir']
 
     # Value to replace -inf with in -log10(p) maps.
@@ -56,7 +56,7 @@ def main(inputs, nparams, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX,
     if isinstance(n,np.ndarray):
         # Check first that n isn't a single value
         if np.prod(n.shape)>1:
-        	# Reshape
+            # Reshape
             n = n.reshape(v) # (Number of inputs)
 
     # Miscellaneous matrix variables
@@ -100,7 +100,7 @@ def main(inputs, nparams, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX,
 
     if OutputCovB:
 
-    	# Dimensoon of cov(beta) NIFTI
+        # Dimensoon of cov(beta) NIFTI
         dimCov = (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],p**2)
 
         # Work out cov(beta)
@@ -138,16 +138,16 @@ def main(inputs, nparams, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX,
         L = blmm_eval(inputs['contrasts'][i]['c' + str(i+1)]['vector'])
         L = np.array(L)
     
-    	# Work out if it is a T or an F contrast NTS: FIX THIS
+        # Work out if it is a T or an F contrast NTS: FIX THIS
         if L.ndim == 1:
             statType='T'
             L = L.reshape([1,L.shape[0]])
         else:
             statType='F'
 
-	    # ------------------------------------------------------------------
-	    # T contrasts
-	    # ------------------------------------------------------------------
+        # ------------------------------------------------------------------
+        # T contrasts
+        # ------------------------------------------------------------------
         if statType == 'T':
 
             # Work out the dimension of the T-stat-related volumes
@@ -177,9 +177,9 @@ def main(inputs, nparams, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX,
             # Record that we have seen another T contrast
             current_nt = current_nt + 1
 
-	    # ------------------------------------------------------------------
-	    # F contrasts
-	    # ------------------------------------------------------------------
+        # ------------------------------------------------------------------
+        # F contrasts
+        # ------------------------------------------------------------------
         if statType == 'F':
 
             # Work out the dimension of the F-stat-related volumes

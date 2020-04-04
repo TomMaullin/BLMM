@@ -24,9 +24,9 @@ from lib.pSFS import pSFS
 
 def main(inputs, inds, XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, n, nlevels, nparams):
 
-	# ----------------------------------------------------------------------
-	#  Read in one input nifti to get size, affines, etc.
-	# ----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
+    #  Read in one input nifti to get size, affines, etc.
+    # ----------------------------------------------------------------------
     with open(inputs['Y_files']) as a:
         nifti_path = a.readline().replace('\n', '')
         nifti = blmm_load(nifti_path)
@@ -34,11 +34,11 @@ def main(inputs, inds, XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, n, nlevels, 
     NIFTIsize = nifti.shape
 
 
-	# ----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     # Input variables
-	# ----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
 
-	# Output directory
+    # Output directory
     OutDir = inputs['outdir']
 
     # Convergence tolerance
@@ -63,27 +63,27 @@ def main(inputs, inds, XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, n, nlevels, 
     qu = np.sum(nparams*(nparams+1)//2) # (Number of unique random effects)
 
 
-	# REML is just a backdoor option at the moment as it isn't that useful
-	# in the large n setting. For now we just set it to false.
-	REML = False
+    # REML is just a backdoor option at the moment as it isn't that useful
+    # in the large n setting. For now we just set it to false.
+    REML = False
 
-	# ----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     # Parameter estimation
     # ----------------------------------------------------------------------  
 
     if method=='pSFS': # Recommended, default method
-	    paramVec = pSFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6, n, reml=REML)
+        paramVec = pSFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6, n, reml=REML)
     
     if method=='FS': 
-	    paramVec = FS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6, n, reml=REML)
+        paramVec = FS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6, n, reml=REML)
 
     if method=='SFS': 
-	    paramVec = SFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6, n, reml=REML)
+        paramVec = SFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6, n, reml=REML)
 
     if method=='pFS': 
-	    paramVec = pFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6, n, reml=REML)
+        paramVec = pFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6, n, reml=REML)
 
-	# ----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     # Parameter outputting
     # ----------------------------------------------------------------------    
 
