@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.sparse
-from lib.tools2d import faclev_indices2D, permOfIkKkI2D
+from lib.tools2d import faclev_indices2D, permOfIkKkI2D, invDupMat2D
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
@@ -1242,17 +1242,42 @@ def sumAijKronBij3D(A, B, p, perm=None):
 
 
 
+# TO TEST
 
 
 
 
 
-
-# TODOCUMENT
-
-
-
-
+# ============================================================================
+#
+# The below function calculates the residual mean squares for a beta estimate
+# give by:
+#
+#   resms = (Y-X\beta)'(Y-X\beta)/(n-p)'
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `YtX`: Y transpose multiplied by X (Y'X in the above notation).
+# - `YtY`: Y transpose multiplied by Y (Y'Y in the above notation).
+# - `XtX`: X transpose multiplied by X (X'X in the above notation).
+# - `beta`: An estimate of the parameter vector (\beta in the above notation).
+# - `n`: The number of observations/input niftis (potentially spatially
+#        varying)
+# - `p`: The number of fixed effects parameters.
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `resms`: The residual mean squares.
+#
+# ============================================================================
 def get_resms3D(YtX, YtY, XtX, beta, n, p):
 
     ete = ssr3D(YtX, YtY, XtX, beta)
@@ -1267,6 +1292,31 @@ def get_resms3D(YtX, YtY, XtX, beta, n, p):
 
     return(ete/(n-p))
 
+
+# ============================================================================
+#
+# The below function gives the covariance matrix of the beta estimates.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `XtX`: X transpose multiplied by X (X'X in the previous notation).
+# - `XtZ`: X transpose multiplied by Z (X'Z in the previous notation).
+# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1).
+# - `sigma2`: The fixed effects variance (\sigma^2 in the previous notation).
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `covB`: The covariance of the beta estimates.
+#
+# ============================================================================
 def get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2):
 
     # Reshape n if necessary
@@ -1289,6 +1339,34 @@ def get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2):
     # Return result
     return(covB)
 
+
+# ============================================================================
+#
+# The below function calculates the (in most applications, scalar) variance
+# of L\beta.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `L`: A contrast vector (L can also be a matrix, but this isn't often the
+#        case in practice when using this function).
+# - `XtX`: X transpose multiplied by X (X'X in the previous notation).
+# - `XtZ`: X transpose multiplied by Z (X'Z in the previous notation).
+# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1).
+# - `sigma2`: The fixed effects variance (\sigma^2 in the previous notation).
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `varLB`: The (usually scalar) variance of L\beta.
+#
+# ============================================================================
 def get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2):
 
     # Reshape n if necessary
@@ -1305,6 +1383,37 @@ def get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2):
     # Return result
     return(varLB)
 
+
+# ============================================================================
+#
+# The below function calculates the partial R^2 statistic given, in terms of
+# an F statistic by:
+#
+#    R^2 = df1*F/(df1*F+df2)
+#
+# Where df1 and df2 and the numerator and denominator degrees of freedom of
+# F respectively.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `L`: A contrast matrix.
+# - `F`: A matrix of F statistics.
+# - `df`: The denominator degrees of freedom of the F statistic (can be 
+#         spatially varying).
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `R2`: A matrix of R^2 statistics.
+#
+# ============================================================================
 def get_R23D(L, F, df):
 
     # Work out the rank of L
@@ -1317,13 +1426,46 @@ def get_R23D(L, F, df):
     return(R2)
 
 
-def get_T3D(L, XtX, XtZ, DinvIplusZtZD, betahat, sigma2):
+# ============================================================================
+#
+# The below function calculates the approximate T statistic for a null
+# hypothesis test, H0:L\beta == 0 vs H1: L\beta != 0. The T statistic is given
+# by:
+#
+#     T = L\beta/s.e.(L\beta)
+#
+# Where s.e. represents standard error.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `L`: A contrast vector (L can also be a matrix, but this isn't often the
+#        case in practice when using this function).
+# - `XtX`: X transpose multiplied by X (X'X in the previous notation).
+# - `XtZ`: X transpose multiplied by Z (X'Z in the previous notation).
+# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1).
+# - `beta`: The estimate of the fixed effects parameters.
+# - `sigma2`: The fixed effects variance (\sigma^2 in the previous notation).
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `T`: A matrix of T statistics.
+#
+# ============================================================================
+def get_T3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2):
 
     # Work out the rank of L
     rL = np.linalg.matrix_rank(L)
 
     # Work out Lbeta
-    LB = L @ betahat
+    LB = L @ beta
 
     # Work out se(T)
     varLB = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
@@ -1335,6 +1477,36 @@ def get_T3D(L, XtX, XtZ, DinvIplusZtZD, betahat, sigma2):
     return(T)
 
 
+
+# ============================================================================
+#
+# The below function calculates the approximate F staistic given by:
+#
+#    F = (L\beta)'(L(X'V^(-1)X)^(-1)L')^(-1)(L\beta)/rank(L)
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `L`: A contrast vector (L can also be a matrix, but this isn't often the
+#        case in practice when using this function).
+# - `XtX`: X transpose multiplied by X (X'X in the previous notation).
+# - `XtZ`: X transpose multiplied by Z (X'Z in the previous notation).
+# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1).
+# - `beta`: The estimate of the fixed effects parameters.
+# - `sigma2`: The fixed effects variance (\sigma^2 in the previous notation).
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `F`: A matrix of F statistics.
+#
+# ============================================================================
 def get_F3D(L, XtX, XtZ, DinvIplusZtZD, betahat, sigma2):
 
     # Work out the rank of L
@@ -1351,8 +1523,64 @@ def get_F3D(L, XtX, XtZ, DinvIplusZtZD, betahat, sigma2):
 
     # Return T
     return(F)
+
+
+# ============================================================================
+#
+# The below function 
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - 
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - 
+#
+# ============================================================================
+
+
+# TODOCUMENT
+
+
+
+
+
+
+
     
 
+# ============================================================================
+#
+# The below function converts T statistics to -log10(P) values. If minlog is
+# specified, -inf values are replace by minlog, else a default value of 
+# -323.3062153431158 is used.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - 
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `P`: The matrix of -log10(p) values.
+#
+# ============================================================================
 def T2P3D(T,df,inputs):
 
     # Initialize empty P
@@ -1447,8 +1675,8 @@ def get_swdf_T3D(L, D, sigma2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, n
     # Get D(I+Z'ZD)^(-1)
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(ZtZ.shape[1]) + ZtZ @ D)
 
-    # Get S^2
-    S2 = get_S23D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
+    # Get S^2 (= Var(L\beta))
+    S2 = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
     
     # Get derivative of S^2
     dS2 = get_dS23D(nparams, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2)
@@ -1461,15 +1689,6 @@ def get_swdf_T3D(L, D, sigma2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, n
 
     # Return df
     return(df)
-
-
-
-def get_S23D(L, XtX, XtZ, DinvIplusZtZD, sigma2):
-
-    # Calculate sigma^2L(X'V^{-1}X)^(-1)L'
-    varLB = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
-
-    return(varLB)
 
 
 def get_dS23D(nparams, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
