@@ -21,7 +21,7 @@ from lib.tools3d import *
 from lib.tools2d import *
 from lib.fileio import *
 from lib.pSFS import pSFS
-import lib.blmm_inference
+import lib.blmm_inference as blmm_inference
 
 # Developer notes:
 # --------------------------------------------------------------------------

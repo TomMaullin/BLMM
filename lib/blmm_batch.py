@@ -11,16 +11,12 @@ import sys
 import os
 import shutil
 import yaml
-import time
 np.set_printoptions(threshold=np.nan)
-from lib.blmm_eval import blmm_eval
-from lib.blmm_load import blmm_load
+from lib.fileio import *
 import scipy.sparse
 import pandas as pd
 
 def main(*args):
-
-    t1_overall = time.time()
 
     # Change to blm directory
     os.chdir(os.path.dirname(os.path.realpath(__file__)))    
@@ -238,8 +234,6 @@ def main(*args):
                     'blmm_vox_uniqueM_batch'+ str(batchNo) + '.nii'))
 
     w.resetwarnings()
-
-    t2_overall = time.time()
 
 
 def verifyInput(Y_files, M_files, Y0):
