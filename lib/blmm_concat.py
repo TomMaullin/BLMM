@@ -520,7 +520,7 @@ def main(*args):
         beta_r, sigma2_r, D_r = blmm_estimate.main(inputs, R_inds, XtX_r, XtY_r, ZtX_r, ZtY_r, ZtZ_r, XtZ_r, YtZ_r, YtY_r, YtX_r, n_s_sv_r, nlevels, nparams)
 
         # Run inference
-        blmm_inference.main(inputs, nparams, nlevels, R_inds, beta_r, D_r, sigma2_r, n_s, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r)       
+        blmm_inference.main(inputs, nparams, nlevels, R_inds, beta_r, D_r, sigma2_r, n_s_sv_r, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r)       
         
     if n_v_i:
 
