@@ -78,8 +78,8 @@ def main(*args):
 
     for k in range(r):
 
-        rfxdes = blmm_load(rfxmats[k]['f' + str(k+1)]['design'])
-        rfxfac = blmm_load(rfxmats[k]['f' + str(k+1)]['factor'])
+        rfxdes = loadFile(rfxmats[k]['f' + str(k+1)]['design'])
+        rfxfac = loadFile(rfxmats[k]['f' + str(k+1)]['factor'])
 
         nparams = nparams + [rfxdes.shape[1]]
         nlevels = nlevels + [len(np.unique(rfxfac))]
@@ -101,7 +101,7 @@ def main(*args):
     # Read in the nifti size and work out number of voxels.
     with open(inputs['Y_files']) as a:
         nifti_path = a.readline().replace('\n', '')
-        nifti = blmm_load(nifti_path)
+        nifti = loadFile(nifti_path)
 
     NIFTIsize = nifti.shape
     n_v = int(np.prod(NIFTIsize))
@@ -137,7 +137,7 @@ def main(*args):
     if (len(args)==0) or (type(args[0]) is str):
 
         # Read in n_s (spatially varying)
-        nmapb  = blmm_load(os.path.join(OutDir,"tmp", "blmm_vox_n_batch1.nii"))
+        nmapb  = loadFile(os.path.join(OutDir,"tmp", "blmm_vox_n_batch1.nii"))
         n_s_sv = nmapb.get_data()# Read in uniqueness Mask file
 
         # Remove files, don't need them anymore
@@ -147,7 +147,7 @@ def main(*args):
         for batchNo in range(2,(n_b+1)):
             
             # Obtain the full nmap.
-            n_s_sv = n_s_sv + blmm_load(os.path.join(OutDir,"tmp", 
+            n_s_sv = n_s_sv + loadFile(os.path.join(OutDir,"tmp", 
                 "blmm_vox_n_batch" + str(batchNo) + ".nii")).get_data()
             
             # Remove file, don't need it anymore
@@ -166,7 +166,7 @@ def main(*args):
     del nmap
 
     # Get ns.
-    X = blmm_load(inputs['X'])
+    X = loadFile(inputs['X'])
     n_s = X.shape[0]
 
     # ----------------------------------------------------------------------
@@ -227,7 +227,7 @@ def main(*args):
         addmask_path = inputs["analysis_mask"]
         
         # Read in the mask nifti.
-        addmask = blmm_load(addmask_path).get_data().reshape([n_v,1])
+        addmask = loadFile(addmask_path).get_data().reshape([n_v,1])
         
         Mask[addmask==0]=0
 
@@ -292,7 +292,7 @@ def main(*args):
     sumZtY = np.load(os.path.join(OutDir,"tmp","ZtY1.npy"))
 
     # Work out the uniqueness mask for the spatially varying designs
-    uniquenessMask = blmm_load(os.path.join(OutDir,"tmp", 
+    uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
         "blmm_vox_uniqueM_batch1.nii")).get_data().reshape(n_v)
 
     # Work out the uniqueness mask inside the ring around the brain
@@ -363,7 +363,7 @@ def main(*args):
             os.path.join(OutDir,"tmp","ZtY" + str(batchNo) + ".npy"))
         
         # Read in uniqueness Mask file
-        uniquenessMask = blmm_load(os.path.join(OutDir,"tmp", 
+        uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
             "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii")).get_data().reshape(n_v)
 
         # Work out the uniqueness mask inside the ring around the brain

@@ -23,7 +23,7 @@ def main(inputs, nparams, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX,
     # ----------------------------------------------------------------------
     with open(inputs['Y_files']) as a:
         nifti_path = a.readline().replace('\n', '')
-        nifti = blmm_load(nifti_path)
+        nifti = loadFile(nifti_path)
 
     NIFTIsize = nifti.shape
 

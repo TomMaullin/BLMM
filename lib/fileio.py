@@ -4,7 +4,7 @@ import nibabel as nib
 import numpy as np
 
 # This is a small function to load in a file based on it's prefix.
-def blmm_load(filepath):
+def loadFile(filepath):
 
     # If the file is text data in the form of csv, tsv, txt or dat
     if filepath.lower().endswith(('.csv', '.tsv', '.txt', '.dat')):
@@ -105,7 +105,7 @@ def blmm_load(filepath):
 
 # This is a small function to help evaluate a string containing
 # a contrast vector
-def blmm_eval(c):
+def str2vec(c):
 
     c = str(c)
     c = c.replace("'", "")

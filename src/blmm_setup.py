@@ -3,17 +3,19 @@ import warnings as w
 # output.
 w.simplefilter(action = 'ignore', category = FutureWarning)
 import numpy as np
-import warnings
-import resource
-import nibabel as nib
 import sys
 import os
-import shutil
 import yaml
-from lib.fileio import *
+from lib.fileio import loadFile, str2vec
 
-# Main takes in two arguments at most:
-# - input: Path to an input file
+# ------------------------------------------------------------------------------------
+#
+#
+#
+#
+#
+#
+# ------------------------------------------------------------------------------------
 def main(*args):
 
     # Change to blmm directory
@@ -67,6 +69,8 @@ def main(*args):
             # Change X in inputs
             inputs['X'] = os.path.join(pwd, inputs['X'])
 
+        # If the output directory is not an absolute, assume its the relative
+        # to the present working directory 
         if not os.path.isabs(inputs['outdir']):
 
             # Change output directory in inputs
@@ -83,12 +87,13 @@ def main(*args):
         with open(ipath, 'w') as outfile:
             yaml.dump(inputs, outfile, default_flow_style=False)
 
-    # Change paths to absoluate if they aren't already    
+    # Check if the maximum memory is saved.    
     if 'MAXMEM' in inputs:
         MAXMEM = eval(inputs['MAXMEM'])
     else:
         MAXMEM = 2**32
 
+    # Output directory
     OutDir = inputs['outdir']
 
     # Get number of parameters
@@ -103,6 +108,7 @@ def main(*args):
     if not os.path.isdir(os.path.join(OutDir, "tmp")):
         os.mkdir(os.path.join(OutDir, "tmp"))
 
+    # Read in the Y_files (make sure to remove new line characters)
     with open(inputs['Y_files']) as a:
 
         Y_files = []
@@ -113,23 +119,20 @@ def main(*args):
 
     # Load in one nifti to check NIFTI size
     try:
-        Y0 = blmm_load(Y_files[0])
+        Y0 = loadFile(Y_files[0])
     except Exception as error:
         raise ValueError('The NIFTI "' + Y_files[0] + '"does not exist')
 
-    # Get the maximum memory a NIFTI could take in storage. We divide by 3
-    # as approximately a third of the volume is actually non-zero/brain
-    NIFTIsize = sys.getsizeof(np.zeros(Y0.shape,dtype='uint64'))
+    # Get an estimate of the maximum memory a NIFTI could take in storage.
+    NIFTImem = sys.getsizeof(np.zeros(Y0.shape,dtype='uint64'))
 
-    if NIFTIsize > MAXMEM:
+    if NIFTImem > MAXMEM:
         raise ValueError('The NIFTI "' + Y_files[0] + '"is too large')
 
     # Similar to blksize in SwE, we divide by 8 times the size of a nifti
-    # to work out how many blocks we use. We divide NIFTIsize by 3
-    # as approximately a third of the volume is actually non-zero/brain 
-    # and then also divide though everything by the number of parameters
-    # in the analysis.
-    blksize = np.floor(MAXMEM/8/NIFTIsize/n_p)
+    # to work out how many blocks we use. We also divide though everything
+    # by the number of parameters in the analysis.
+    blksize = np.floor(MAXMEM/8/NIFTImem/n_p)
     if blksize == 0:
         raise ValueError('Blocksize too small.')
 
@@ -142,16 +145,16 @@ def main(*args):
         cvec = np.array(cvec)
 
         if cvec.ndim>1:
-                
-            # Get dimension of cvector
-            q = cvec.shape[0]
 
-            if np.linalg.matrix_rank(cvec)<q:
+            # Check the F contrast has appropriate rank
+            if np.linalg.matrix_rank(cvec)<cvec.shape[0]:
                 raise ValueError('F contrast: \n' + str(cvec) + '\n is not of correct rank.')
 
+    # Output number of batches to a text file
     with open(os.path.join(OutDir, "nb.txt"), 'w') as f:
         print(int(np.ceil(len(Y_files)/int(blksize))), file=f)
 
+    # Reset warnings
     w.resetwarnings()
 
 if __name__ == "__main__":

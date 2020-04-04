@@ -60,7 +60,7 @@ def main(*args):
 
     # Load in one nifti to check NIFTI size
     try:
-        Y0 = blmm_load(Y_files[0])
+        Y0 = loadFile(Y_files[0])
     except Exception as error:
         raise ValueError('The NIFTI "' + Y_files[0] + '"does not exist')
 
@@ -74,7 +74,7 @@ def main(*args):
     blksize = int(np.floor(MAXMEM/8/NIFTIsize/n_p));
 
     # Reduce X to X for this block.
-    X = blmm_load(inputs['X'])
+    X = loadFile(inputs['X'])
     X = X[(blksize*(batchNo-1)):min((blksize*batchNo),len(Y_files))]
     
 
@@ -84,8 +84,8 @@ def main(*args):
     # Read in each factor
     for i in range(0,n_f):
 
-        Zi_factor = blmm_load(inputs['Z'][i]['f' + str(i+1)]['factor'])
-        Zi_design = blmm_load(inputs['Z'][i]['f' + str(i+1)]['design'])
+        Zi_factor = loadFile(inputs['Z'][i]['f' + str(i+1)]['factor'])
+        Zi_design = loadFile(inputs['Z'][i]['f' + str(i+1)]['design'])
 
         # Number of levels for factor i
         l_i = np.amax(Zi_factor)
@@ -156,7 +156,7 @@ def main(*args):
 
     # Mask volumes (if they are given)
     if 'analysis_mask' in inputs:
-        M_a = blmm_load(inputs['analysis_mask']).get_data()
+        M_a = loadFile(inputs['analysis_mask']).get_data()
     else:
         M_a = None
 
@@ -248,7 +248,7 @@ def verifyInput(Y_files, M_files, Y0):
         Y_file = Y_files[i]
 
         try:
-            Y = blmm_load(Y_file)
+            Y = loadFile(Y_file)
         except Exception as error:
             raise ValueError('The NIFTI "' + Y_file + '"does not exist')
 
@@ -271,7 +271,7 @@ def verifyInput(Y_files, M_files, Y0):
             M_file = M_files[i]
 
             try:
-                M = blmm_load(M_file)
+                M = loadFile(M_file)
             except Exception as error:
                 raise ValueError('The NIFTI "' + M_file + '"does not exist')
 
@@ -303,7 +303,7 @@ def blkMX(X,Y,M):
 def obtainY(Y_files, M_files, M_t, M_a):
 
     # Load in one nifti to check NIFTI size
-    Y0 = blmm_load(Y_files[0])
+    Y0 = loadFile(Y_files[0])
     d = Y0.get_data()
     
     # Get number of voxels.
@@ -320,13 +320,13 @@ def obtainY(Y_files, M_files, M_t, M_a):
     for i in range(0, len(Y_files)):
 
         # Read in each individual NIFTI.
-        Y_indiv = blmm_load(Y_files[i])
+        Y_indiv = loadFile(Y_files[i])
 
         # Mask Y if necesart
         if M_files:
         
             # Apply mask
-            M_indiv = blmm_load(M_files[i]).get_data()
+            M_indiv = loadFile(M_files[i]).get_data()
             d = np.multiply(
                 Y_indiv.get_data(),
                 M_indiv)
