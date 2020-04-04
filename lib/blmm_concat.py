@@ -17,8 +17,8 @@ import warnings
 import subprocess
 np.set_printoptions(threshold=np.nan)
 from scipy import stats
-from lib.tools3d import *
-from lib.tools2d import *
+from lib.npMatrix3d import *
+from lib.npMatrix2d import *
 from lib.fileio import *
 import lib.blmm_inference as blmm_inference
 import lib.blmm_estimate as blmm_estimate

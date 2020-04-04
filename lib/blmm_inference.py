@@ -9,8 +9,8 @@ import glob
 import shutil
 import yaml
 np.set_printoptions(threshold=np.nan)
-from lib.tools3d import *
-from lib.tools2d import *
+from lib.npMatrix3d import *
+from lib.npMatrix2d import *
 from lib.fileio import *
 
 # --------------------------------------------------------------------------

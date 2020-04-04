@@ -2,8 +2,8 @@ import time
 import os
 import numpy as np
 import scipy
-from lib.tools3d import *
-from lib.tools2d import *
+from lib.npMatrix3d import *
+from lib.npMatrix2d import *
 
 def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
   

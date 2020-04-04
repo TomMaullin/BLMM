@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.sparse
 from scipy import stats
-from lib.tools2d import faclev_indices2D, permOfIkKkI2D, invDupMat2D
+from lib.npMatrix2d import faclev_indices2D, permOfIkKkI2D, invDupMat2D
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
