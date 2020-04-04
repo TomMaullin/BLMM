@@ -163,7 +163,7 @@ def main(inputs, nparams, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX,
 
 
             # Calculate sattherwaite estimate of the degrees of freedom of this statistic
-            swdfc = get_swdf_T3D(L, D, sigma2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevels, nparams).reshape(v)
+            swdfc = get_swdf_T3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nparams).reshape(v)
             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT_swedf.nii'), swdfc, inds,volc=current_nt,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
             # Obtain and output T statistic
@@ -186,7 +186,7 @@ def main(inputs, nparams, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX,
             dimF = (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],nf)
 
             # Calculate sattherthwaite degrees of freedom for the inner.
-            swdfc = get_swdf_F3D(L, D, sigma2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevels, nparams).reshape(v)
+            swdfc = get_swdf_F3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nparams).reshape(v)
             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conF_swedf.nii'), swdfc, inds,volc=current_nf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
 
             # Calculate F statistic.

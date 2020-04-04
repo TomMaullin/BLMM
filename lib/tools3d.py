@@ -1669,7 +1669,7 @@ def F2P3D(F, L, df_denom, minlog):
 # - 
 #
 # ============================================================================
-def get_swdf_F3D(L, D, sigma2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevels, nparams): 
+def get_swdf_F3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nparams): 
 
     # Reshape sigma2 if necessary
     sigma2 = sigma2.reshape(sigma2.shape[0])
@@ -1692,7 +1692,7 @@ def get_swdf_F3D(L, D, sigma2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, n
     for i in np.arange(rL):
 
         # Work out the swdf for each row of L
-        swdf_row = get_swdf_T3D(L[i:(i+1),:], D, sigma2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevels, nparams)
+        swdf_row = get_swdf_T3D(L[i:(i+1),:], D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nparams)
 
         # Work out adjusted df = df/(df-2)
         swdf_adj = swdf_row/(swdf_row-2)
@@ -1706,7 +1706,7 @@ def get_swdf_F3D(L, D, sigma2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, n
     # Return df
     return(df)
 
-def get_swdf_T3D(L, D, sigma2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevels, nparams): 
+def get_swdf_T3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nparams): 
 
     # Reshape sigma2 if necessary
     sigma2 = sigma2.reshape(sigma2.shape[0])
