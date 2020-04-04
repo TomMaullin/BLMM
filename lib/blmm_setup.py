@@ -10,8 +10,7 @@ import sys
 import os
 import shutil
 import yaml
-from lib.blmm_eval import blmm_eval
-from lib.blmm_load import blmm_load
+from lib.fileio import *
 
 # Main takes in two arguments at most:
 # - input: Path to an input file

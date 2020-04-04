@@ -15,12 +15,11 @@ import yaml
 import time
 import warnings
 import subprocess
-from lib.blmm_eval import blmm_eval
 np.set_printoptions(threshold=np.nan)
 from scipy import stats
-from lib.blmm_load import blmm_load
 from lib.tools3d import *
 from lib.tools2d import *
+from lib.fileio import *
 from lib.blmm_concat import addBlockToNifti	
 
 # --------------------------------------------------------------------------

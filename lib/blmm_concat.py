@@ -15,12 +15,11 @@ import yaml
 import time
 import warnings
 import subprocess
-from lib.blmm_eval import blmm_eval
 np.set_printoptions(threshold=np.nan)
 from scipy import stats
-from lib.blmm_load import blmm_load
 from lib.tools3d import *
 from lib.tools2d import *
+from lib.fileio import *
 from lib.pSFS import pSFS
 import lib.blmm_inference
 
@@ -817,105 +816,6 @@ def main(*args):
     shutil.rmtree(os.path.join(OutDir, 'tmp'))
 
     w.resetwarnings()
-
-
-def addBlockToNifti(fname, block, blockInds,dim=None,volc=None,aff=None,hdr=None):
-
-    # Check volc is correct datatype
-    if volc is not None:
-
-        volc = int(volc)
-
-    # Check whether the NIFTI exists already
-    if os.path.isfile(fname):
-
-        # Load in NIFTI
-        img = nib.load(fname)
-
-        # Work out dim if we don't already have it
-        dim = img.shape
-
-        # Work out data
-        data = img.get_fdata()
-
-        # Work out affine
-        affine = img.affine
-        
-    else:
-
-        # If we know how, make the NIFTI
-        if dim is not None:
-            
-            # Make data
-            data = np.zeros(dim)
-
-            # Make affine
-            if aff is None:
-                affine = np.eye(4)
-            else:
-                affine = aff
-
-        else:
-
-            # Throw an error because we don't know what to do
-            raise Exception('NIFTI does not exist and dimensions not given')
-
-    # Work out the number of output volumes inside the nifti 
-    if len(dim)==3:
-
-        # We only have one volume in this case
-        n_vol = 1
-        dim = np.array([dim[0],dim[1],dim[2],1])
-
-    else:
-
-        # The number of volumes is the last dimension
-        n_vol = dim[3]
-
-    # Seperate copy of data for outputting
-    data_out = np.array(data).reshape(dim)
-
-    # Work out the number of voxels
-    n_vox = np.prod(dim[:3])
-
-    # Reshape     
-    data = data.reshape([n_vox, n_vol])
-
-    # Add all the volumes
-    if volc is None:
-
-        # Add block
-        data[blockInds,:] = block.reshape(data[blockInds,:].shape)
-        
-        # Cycle through volumes, reshaping.
-        for k in range(0,data.shape[1]):
-
-            data_out[:,:,:,k] = data[:,k].reshape(int(dim[0]),
-                                                  int(dim[1]),
-                                                  int(dim[2]))
-
-    # Add the one volume in the correct place
-    else:
-
-        # We're only looking at this volume
-        data = data[:,volc].reshape((n_vox,1))
-
-        # Add block
-        data[blockInds,:] = block.reshape(data[blockInds,:].shape)
-        
-        # Put in the volume
-        data_out[:,:,:,volc] = data[:,0].reshape(int(dim[0]),
-                                                 int(dim[1]),
-                                                 int(dim[2]))
-
-
-    # Make NIFTI
-    nifti = nib.Nifti1Image(data_out, affine, header=hdr)
-    
-    # Save NIFTI
-    nib.save(nifti, fname)
-
-    del nifti, fname, data_out, affine
 
 if __name__ == "__main__":
     main()
