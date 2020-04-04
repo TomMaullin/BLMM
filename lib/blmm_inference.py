@@ -3,20 +3,12 @@ import warnings as w
 # be ignored for now.
 w.simplefilter(action = 'ignore', category = FutureWarning)
 import numpy as np
-import subprocess
-import warnings
-import resource
-import nibabel as nib
 import sys
 import os
 import glob
 import shutil
 import yaml
-import time
-import warnings
-import subprocess
 np.set_printoptions(threshold=np.nan)
-from scipy import stats
 from lib.tools3d import *
 from lib.tools2d import *
 from lib.fileio import *
@@ -37,9 +29,17 @@ def main(inputs, nparams, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX,
     NIFTIsize = nifti.shape
 
 	# ----------------------------------------------------------------------
-    # Output directory
+    # Input variables
 	# ----------------------------------------------------------------------
+
+	# Output directory
     OutDir = inputs['outdir']
+
+    # Value to replace -inf with in -log10(p) maps.
+    if "minlog" in inputs:
+        minlog=inputs['minlog']
+    else:
+        minlog=-323.3062153431158
 
     # ----------------------------------------------------------------------
     # Preliminary useful variables
@@ -171,7 +171,7 @@ def main(inputs, nparams, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX,
             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT.nii'), Tc, inds,volc=current_nt,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
             # Obatin and output p-values
-            pc = T2P3D(Tc,swdfc,inputs)
+            pc = T2P3D(Tc,swdfc,minlog)
             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conTlp.nii'), pc, inds,volc=current_nt,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
             # Record that we have seen another T contrast
@@ -194,7 +194,7 @@ def main(inputs, nparams, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX,
             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conF.nii'), Fc, inds,volc=current_nf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
 
             # Work out p for this contrast
-            pc = F2P3D(Fc, L, swdfc, inputs).reshape(v)
+            pc = F2P3D(Fc, L, swdfc, minlog).reshape(v)
             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conFlp.nii'), pc, inds,volc=current_nf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
 
             # Calculate partial R2 masked for ring.

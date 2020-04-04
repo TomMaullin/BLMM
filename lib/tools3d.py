@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.sparse
+from scipy import stats
 from lib.tools2d import faclev_indices2D, permOfIkKkI2D, invDupMat2D
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -20,8 +21,8 @@ from lib.tools2d import faclev_indices2D, permOfIkKkI2D, invDupMat2D
 #   By 3D, I mean, where `2dtools.py` would take a matrix as input and do 
 #   something to it, `3dtools.py` will take as input a 3D array (stack of 
 #   matrices) and perform the operation to all matrices in the last 2 
-#   dimensions. (Note: The documentation below is identical to 2dtools so 
-#   beware this distinction!).
+#   dimensions. (Note: A lot of the documentation below is identical to 
+#   2dtools so beware this distinction!).
 #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1442,8 +1443,7 @@ def get_R23D(L, F, df):
 #
 # ----------------------------------------------------------------------------
 #
-# - `L`: A contrast vector (L can also be a matrix, but this isn't often the
-#        case in practice when using this function).
+# - `L`: A contrast vector.
 # - `XtX`: X transpose multiplied by X (X'X in the previous notation).
 # - `XtZ`: X transpose multiplied by Z (X'Z in the previous notation).
 # - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1).
@@ -1490,8 +1490,7 @@ def get_T3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2):
 #
 # ----------------------------------------------------------------------------
 #
-# - `L`: A contrast vector (L can also be a matrix, but this isn't often the
-#        case in practice when using this function).
+# - `L`: A contrast matrix.
 # - `XtX`: X transpose multiplied by X (X'X in the previous notation).
 # - `XtZ`: X transpose multiplied by Z (X'Z in the previous notation).
 # - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1).
@@ -1560,9 +1559,8 @@ def get_F3D(L, XtX, XtZ, DinvIplusZtZD, betahat, sigma2):
 
 # ============================================================================
 #
-# The below function converts T statistics to -log10(P) values. If minlog is
-# specified, -inf values are replace by minlog, else a default value of 
-# -323.3062153431158 is used.
+# The below function converts T statistics to -log10(P) values. `-inf` values
+# are replace by minlog.
 #
 # ----------------------------------------------------------------------------
 #
@@ -1570,7 +1568,9 @@ def get_F3D(L, XtX, XtZ, DinvIplusZtZD, betahat, sigma2):
 #
 # ----------------------------------------------------------------------------
 #
-#  - 
+# - `T`: A matrix of T statistics.
+# - `df`: The degrees of freedom of the T statistic (can be spatially varying).
+# - `inputs`: TODO
 #
 # ----------------------------------------------------------------------------
 #
@@ -1581,7 +1581,7 @@ def get_F3D(L, XtX, XtZ, DinvIplusZtZD, betahat, sigma2):
 # - `P`: The matrix of -log10(p) values.
 #
 # ============================================================================
-def T2P3D(T,df,inputs):
+def T2P3D(T,df,minlog):
 
     # Initialize empty P
     P = np.zeros(np.shape(T))
@@ -1591,15 +1591,38 @@ def T2P3D(T,df,inputs):
     P[T >= 0] = -np.log10(stats.t.cdf(-T[T >= 0], df[T >= 0]))
 
     # Remove infs
-    if "minlog" in inputs:
-        P[np.logical_and(np.isinf(P), P<0)]=inputs['minlog']
-    else:
-        P[np.logical_and(np.isinf(P), P<0)]=-323.3062153431158
+    P[np.logical_and(np.isinf(P), P<0)]=minlog
 
     return(P)
 
 
-def F2P3D(F, L, df_denom, inputs):
+# ============================================================================
+#
+# The below function converts F statistics to -log10(P) values. `-inf` values
+# are replace by minlog.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `F`: A matrix of F statistics.
+# - `L`: A contrast matrix.
+# - `df_denom`: The denominator degrees of freedom of the F statistic (can be 
+#               spatially varying).
+# - `inputs`: TODO
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `P`: The matrix of -log10(p) values.
+#
+# ============================================================================
+def F2P3D(F, L, df_denom, minlog):
     
     # Get the rank of L
     df_num = np.linalg.matrix_rank(L)
@@ -1608,19 +1631,11 @@ def F2P3D(F, L, df_denom, inputs):
     P = -np.log10(1-stats.f.cdf(F, df_num, df_denom))
 
     # Remove infs
-    if "minlog" in inputs:
-        P[np.logical_and(np.isinf(P), P<0)]=inputs['minlog']
-    else:
-        P[np.logical_and(np.isinf(P), P<0)]=-323.3062153431158
+    P[np.logical_and(np.isinf(P), P<0)]=minlog
 
     return(P)
 
 
-# ============================================================================================================
-#
-# WIP: SATTHERTHWAITE INTEGRATING
-#
-# ============================================================================================================
 
 def get_swdf_F3D(L, D, sigma2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevels, nparams): 
 
