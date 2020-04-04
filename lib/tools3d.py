@@ -1761,7 +1761,8 @@ def get_swdf_T3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nparams):
 
 # ============================================================================
 #
-# The below function 
+# The below function calculates the derivative of Var(L\beta) with respect to
+# the variance parameter vector \theta = (\sigma^2, vech(D_1),..., vech(D_r)).
 #
 # ----------------------------------------------------------------------------
 #
@@ -1769,7 +1770,18 @@ def get_swdf_T3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nparams):
 #
 # ----------------------------------------------------------------------------
 #
-#  - 
+# - `nlevels`: A vector containing the number of levels for each factor, e.g.
+#              `nlevels=[3,4]` would mean the first factor has 3 levels and
+#              the second factor has 4 levels.
+# - `nparams`: A vector containing the number of parameters for each factor,
+#              e.g. `nlevels=[2,1]` would mean the first factor has 2
+#              parameters and the second factor has 1 parameter.
+# - `L`: A contrast vector.
+# - `XtX`: X transpose multiplied by X (X'X in the previous notation).
+# - `XtZ`: X transpose multiplied by Z (X'Z in the previous notation).
+# - `ZtZ`: Z transpose multiplied by Z (Z'Z in the previous notation).
+# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1).
+# - `sigma2`: The fixed effects variance estimate.
 #
 # ----------------------------------------------------------------------------
 #
@@ -1777,21 +1789,9 @@ def get_swdf_T3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nparams):
 #
 # ----------------------------------------------------------------------------
 #
-# - 
+# - `dS2`: The derivative of var(L\beta) with respect to \theta.
 #
 # ============================================================================
-
-
-# TODOCUMENT
-
-
-
-
-
-
-
-
-
 def get_dS23D(nparams, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
 
     # ZtX
@@ -1852,6 +1852,38 @@ def get_dS23D(nparams, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
 
     return(dS2)
 
+
+# ============================================================================
+#
+# The below function calculates the derivative of Var(L\beta) with respect to
+# the variance parameter vector \theta = (\sigma^2, vech(D_1),..., vech(D_r)).
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1).
+# - `sigma2`: The fixed effects variance estimate.
+# - `n`: The total number of observations (potentially spatially varying).
+# - `nlevels`: A vector containing the number of levels for each factor, e.g.
+#              `nlevels=[3,4]` would mean the first factor has 3 levels and
+#              the second factor has 4 levels.
+# - `nparams`: A vector containing the number of parameters for each factor,
+#              e.g. `nlevels=[2,1]` would mean the first factor has 2
+#              parameters and the second factor has 1 parameter.
+# - `ZtZ`: Z transpose multiplied by Z (Z'Z in the previous notation).
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `FisherInfoMat`: The Fisher information matrix of \theta.
+#
+# ============================================================================
 def get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nparams, ZtZ):
 
     # Number of random effects, q
