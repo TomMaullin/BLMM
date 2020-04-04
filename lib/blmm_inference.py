@@ -47,6 +47,13 @@ def main(inputs, nparams, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX,
     qu = np.sum(nparams*(nparams+1)//2) # (Number of unique random effects)
     c = len(inputs['contrasts']) # (Number of contrasts)
 
+    # Reshape n if necessary
+    if isinstance(n,np.ndarray):
+        # Check first that n isn't a single value
+        if np.prod(n.shape)>1:
+        	# Reshape
+            n = n.reshape(v) # (Number of inputs)
+
     # Miscellaneous matrix variables
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
     Zte = ZtY - (ZtX @ beta)
@@ -61,7 +68,7 @@ def main(inputs, nparams, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX,
     # ---------------------------------------------------------------------- 
 
     # Output log likelihood
-    llh = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD, D, REML, XtX, XtZ, ZtX) - (0.5*(n)*np.log(2*np.pi)).reshape(ete.shape[0])
+    llh = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD, D, REML, XtX, XtZ, ZtX) - (0.5*(n)*np.log(2*np.pi))
     addBlockToNifti(os.path.join(OutDir, 'blmm_vox_llh.nii'), llh, inds,volc=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
 
     # ----------------------------------------------------------------------
