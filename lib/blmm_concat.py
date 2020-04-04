@@ -568,7 +568,7 @@ def main(*args):
         
         vechD_i = paramVec_i[:,(n_p+1):,:].reshape((n_v_i,n_q_u))
         addBlockToNifti(os.path.join(OutDir, 'blmm_vox_D.nii'), vechD_i, I_inds,volc=None,dim=dimD,aff=nifti.affine,hdr=nifti.header)        
-        
+
         Ddict_i = dict()
         # D as a dictionary
         for k in np.arange(len(nparams)):
@@ -579,7 +579,7 @@ def main(*args):
         D_i = getDfromDict3D(Ddict_i, nparams, nlevels)
 
         # Run inference
-        blmm_inference(inputs, nparams, nlevels, I_inds, beta_i, D_i, sigma2_i, n_s, XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i)
+        blmm_inference.main(inputs, nparams, nlevels, I_inds, beta_i, D_i, sigma2_i, n_s, XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i)
 
     # Clean up files
     if len(args)==0:

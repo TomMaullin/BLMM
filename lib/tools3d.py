@@ -274,7 +274,7 @@ def initBeta3D(XtX, XtY):
 # ----------------------------------------------------------------------------
 #
 # - `ete`: The sum of square residuals (e'e in the above notation).
-# - `n`: The total number of observations (n in the above notation).
+# - `n`: The total number of observations (potentially spatially varying).
 #
 # ----------------------------------------------------------------------------
 #
@@ -472,7 +472,7 @@ def makeDnnd3D(D):
 #
 # ----------------------------------------------------------------------------
 #
-# - `n`: The total number of observations.
+# - `n`: The total number of observations (potentially spatially varying).
 # - `ZtZ`: The Z matrix transposed and then multiplied by Z (Z'Z in the above
 #          notation).
 # - `Zte`: The Z matrix transposed and then multiplied by the OLS residuals
@@ -583,7 +583,7 @@ def get_dldB3D(sigma2, Xte, XtZ, DinvIplusZtZD, Zte):
 #
 # ----------------------------------------------------------------------------
 #
-# - `n`: The number of observations.
+# - `n`: The number of observations (potentially spatially varying).
 # - `ete`: The OLS residuals transposed and then multiplied by themselves
 #         (e'e=(Y-X\beta)'(Y-X\beta) in the above notation).
 # - `Zte`: The Z matrix transposed and then multiplied by the OLS residuals
@@ -1603,38 +1603,6 @@ def F2P3D(F, L, df_denom, minlog):
     return(P)
 
 
-
-
-# ============================================================================
-#
-# The below function 
-#
-# ----------------------------------------------------------------------------
-#
-# This function takes in the following inputs:
-#
-# ----------------------------------------------------------------------------
-#
-#  - 
-#
-# ----------------------------------------------------------------------------
-#
-# And gives the following output:
-#
-# ----------------------------------------------------------------------------
-#
-# - 
-#
-# ============================================================================
-
-
-# TODOCUMENT
-
-
-
-
-
-
 # ============================================================================
 #
 # The below function estimates the degrees of freedom for an F statistic using
@@ -1643,9 +1611,9 @@ def F2P3D(F, L, df_denom, minlog):
 #
 #      v = (sum_{i=0}^rank(L) v_{l_i})/((sum_{i=0}^rank(L) v_{l_i}) - rank(L))
 #
-# Where l_i is the i^th row of L and v_{l_i} is the sattherthwaite estimate of
-# the degrees of freedom of a T statistic with contrast l_i (see `get_swdf_T3D`
-# below). 
+# Where l_i is the i^th row of L and v_{l_i} is the sattherthwaithe estimate
+# of the degrees of freedom of a T statistic with contrast l_i (see 
+# `get_swdf_T3D` below). 
 #
 # ----------------------------------------------------------------------------
 #
@@ -1656,9 +1624,18 @@ def F2P3D(F, L, df_denom, minlog):
 # - `L`: A contrast matrix.
 # - `D`: The random effects variance-covariance matrix estimate.
 # - `sigma2`: The fixed effects variance estimate.
+# - `XtX`: X transpose multiplied by X (X'X in the previous notation).
+# - `XtZ`: X transpose multiplied by Z (X'Z in the previous notation).
 # - `ZtX`: Z transpose multiplied by X (Z'X in the previous notation).
-#
-# 
+# - `ZtZ`: Z transpose multiplied by Z (Z'Z in the previous notation).
+# - `n`: The number of observations/input niftis (potentially spatially
+#        varying)
+# - `nlevels`: A vector containing the number of levels for each factor, e.g.
+#              `nlevels=[3,4]` would mean the first factor has 3 levels and
+#              the second factor has 4 levels.
+# - `nparams`: A vector containing the number of parameters for each factor,
+#              e.g. `nlevels=[2,1]` would mean the first factor has 2
+#              parameters and the second factor has 1 parameter.
 #
 # ----------------------------------------------------------------------------
 #
@@ -1666,7 +1643,7 @@ def F2P3D(F, L, df_denom, minlog):
 #
 # ----------------------------------------------------------------------------
 #
-# - 
+# - `df`: The spatially varying Sattherthwaithe degrees of freedom estimate.
 #
 # ============================================================================
 def get_swdf_F3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nparams): 
@@ -1706,6 +1683,50 @@ def get_swdf_F3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nparams):
     # Return df
     return(df)
 
+
+# ============================================================================
+#
+# The below function estimates the degrees of freedom for an T statistic using
+# a Sattherthwaite approximation method. For, a contrast matrix L, this 
+# estimate is given by:
+#
+#    v = 2(Var(L\beta)^2)/(d'I^{-1}d)
+#
+# Where d is the derivative of Var(L\beta) with respect to the variance 
+# parameter vector \theta = (\sigma^2, vech(D_1),..., vech(D_r)) and I is the
+# Fisher Information matrix of \theta.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `L`: A contrast vector.
+# - `D`: The random effects variance-covariance matrix estimate.
+# - `sigma2`: The fixed effects variance estimate.
+# - `XtX`: X transpose multiplied by X (X'X in the previous notation).
+# - `XtZ`: X transpose multiplied by Z (X'Z in the previous notation).
+# - `ZtX`: Z transpose multiplied by X (Z'X in the previous notation).
+# - `ZtZ`: Z transpose multiplied by Z (Z'Z in the previous notation).
+# - `n`: The number of observations/input niftis (potentially spatially
+#        varying)
+# - `nlevels`: A vector containing the number of levels for each factor, e.g.
+#              `nlevels=[3,4]` would mean the first factor has 3 levels and
+#              the second factor has 4 levels.
+# - `nparams`: A vector containing the number of parameters for each factor,
+#              e.g. `nlevels=[2,1]` would mean the first factor has 2
+#              parameters and the second factor has 1 parameter.
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `df`: The spatially varying Sattherthwaithe degrees of freedom estimate.
+#
+# ============================================================================
 def get_swdf_T3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nparams): 
 
     # Reshape sigma2 if necessary
@@ -1736,6 +1757,39 @@ def get_swdf_T3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nparams):
 
     # Return df
     return(df)
+
+
+# ============================================================================
+#
+# The below function 
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - 
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - 
+#
+# ============================================================================
+
+
+# TODOCUMENT
+
+
+
+
+
+
+
 
 
 def get_dS23D(nparams, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
