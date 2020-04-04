@@ -21,19 +21,28 @@ from scipy import stats
 from lib.blmm_load import blmm_load
 from lib.tools3d import *
 from lib.tools2d import *
-from lib.pSFS import pSFS
+from lib.blmm_concat import addBlockToNifti	
 
 # --------------------------------------------------------------------------
 # Author: Tom Maullin (04/04/2020)
 
-def main(*args): # Remem for inputs; inputs, (default nifti?,) nparams, nlevels, n, prod matrices, param estimates
+def main(inputs, nparams, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ):
+
+	# ----------------------------------------------------------------------
+	#  Read in one input nifti to get size, affines, etc.
+	# ----------------------------------------------------------------------
+    with open(inputs['Y_files']) as a:
+        nifti_path = a.readline().replace('\n', '')
+        nifti = blmm_load(nifti_path)
+
+    NIFTIsize = nifti.shape
 
     # ----------------------------------------------------------------------
     # Preliminary useful variables
     # ---------------------------------------------------------------------- 
 
     # Scalar quantities
-    v = np.prod(inds.shape) # (Number of voxels)
+    v = np.prod(inds.shape) # (Number of voxels we are looking at)
     p = XtX.shape[1] # (Number of Fixed Effects parameters)
     q = np.sum(nparams*nlevels) # (Total number of random effects)
     qu = np.sum(nparams*(nparams+1)//2) # (Number of unique random effects)

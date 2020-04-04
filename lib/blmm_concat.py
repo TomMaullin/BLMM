@@ -22,6 +22,7 @@ from lib.blmm_load import blmm_load
 from lib.tools3d import *
 from lib.tools2d import *
 from lib.pSFS import pSFS
+import blmm_inference
 
 # Developer notes:
 # --------------------------------------------------------------------------
@@ -447,10 +448,6 @@ def main(*args):
     sumZtX_i = sumZtX_i.reshape([1, n_q, n_p])
     sumZtZ_i = sumZtZ_i.reshape([1, n_q, n_q])
 
-    # Empty vectors for parameter estimates
-    beta = np.zeros([n_v, n_p])
-    sigma2 = np.zeros([n_v, 1]) 
-
     REML = False
 
     # If we have indices where only some studies are present, work out X'X and
@@ -572,18 +569,21 @@ def main(*args):
         # Full version of D
         D_r = getDfromDict3D(Ddict_r, nparams, nlevels)
 
-        # ----------------------------------------------------------------------
-        # Calculate log-likelihood
-        # ---------------------------------------------------------------------- 
+        # Run inference
+        blmm_inference(inputs, nparams, nlevels, R_inds, beta_r, D_r, sigma2_r, n_s, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r)
 
-        # Variables for likelihood
-        DinvIplusZtZD_r = D_r @ np.linalg.inv(np.eye(n_q) + ZtZ_r @ D_r)
-        Zte_r = ZtY_r - (ZtX_r @ beta_r)
-        ete_r = ssr3D(YtX_r, YtY_r, XtX_r, beta_r)
+        # # ----------------------------------------------------------------------
+        # # Calculate log-likelihood
+        # # ---------------------------------------------------------------------- 
 
-        # Output log likelihood
-        llh_r = llh3D(n_s_sv_r, ZtZ_r, Zte_r, ete_r, sigma2_r, DinvIplusZtZD_r, D_r, REML, XtX_r, XtZ_r, ZtX_r) - (0.5*(n_s_sv_r)*np.log(2*np.pi)).reshape(ete_r.shape[0])
-        addBlockToNifti(os.path.join(OutDir, 'blmm_vox_llh.nii'), llh_r, R_inds,volc=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
+        # # Variables for likelihood
+        # DinvIplusZtZD_r = D_r @ np.linalg.inv(np.eye(n_q) + ZtZ_r @ D_r)
+        # Zte_r = ZtY_r - (ZtX_r @ beta_r)
+        # ete_r = ssr3D(YtX_r, YtY_r, XtX_r, beta_r)
+
+        # # Output log likelihood
+        # llh_r = llh3D(n_s_sv_r, ZtZ_r, Zte_r, ete_r, sigma2_r, DinvIplusZtZD_r, D_r, REML, XtX_r, XtZ_r, ZtX_r) - (0.5*(n_s_sv_r)*np.log(2*np.pi)).reshape(ete_r.shape[0])
+        # addBlockToNifti(os.path.join(OutDir, 'blmm_vox_llh.nii'), llh_r, R_inds,volc=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
 
 
     if n_v_i:
@@ -597,216 +597,219 @@ def main(*args):
         # Full version of D
         D_i = getDfromDict3D(Ddict_i, nparams, nlevels)
 
-        # ----------------------------------------------------------------------
-        # Calculate log-likelihood
-        # ---------------------------------------------------------------------- 
+        # Run inference
+        #blmm_inference(inputs, nparams, nlevels, I_inds, beta_i, D_i, sigma2_i, n_s, XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i)
 
-        # Variables for likelihood
-        DinvIplusZtZD_i = D_i @ np.linalg.inv(np.eye(n_q) + ZtZ_i @ D_i)
-        Zte_i = ZtY_i - (ZtX_i @ beta_i)
-        ete_i = ssr3D(YtX_i, YtY_i, XtX_i, beta_i)
+    #     # ----------------------------------------------------------------------
+    #     # Calculate log-likelihood
+    #     # ---------------------------------------------------------------------- 
 
-        # Output log likelihood
-        llh_i = llh3D(n_s, ZtZ_i, Zte_i, ete_i, sigma2_i, DinvIplusZtZD_i, D_i, REML, XtX_i, XtZ_i, ZtX_i) - 0.5*(n_s)*np.log(2*np.pi)
-        addBlockToNifti(os.path.join(OutDir, 'blmm_vox_llh.nii'), llh_i, I_inds,volc=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
+    #     # Variables for likelihood
+    #     DinvIplusZtZD_i = D_i @ np.linalg.inv(np.eye(n_q) + ZtZ_i @ D_i)
+    #     Zte_i = ZtY_i - (ZtX_i @ beta_i)
+    #     ete_i = ssr3D(YtX_i, YtY_i, XtX_i, beta_i)
 
-    # ----------------------------------------------------------------------
-    # Calculate residual mean squares = e'e/(n_s - n_p)
-    #
-    # Note: In the mixed model resms is different to our sigma2 estimate as:
-    #
-    #  - resms = e'e/(n-p)
-    #  - sigma2 = e'V^(-1)e/n for "Simplified methods" or has no closed form
-    #             expression for more general methods
-    #
-    # ----------------------------------------------------------------------
+    #     # Output log likelihood
+    #     llh_i = llh3D(n_s, ZtZ_i, Zte_i, ete_i, sigma2_i, DinvIplusZtZD_i, D_i, REML, XtX_i, XtZ_i, ZtX_i) - 0.5*(n_s)*np.log(2*np.pi)
+    #     addBlockToNifti(os.path.join(OutDir, 'blmm_vox_llh.nii'), llh_i, I_inds,volc=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
 
-    if n_v_r:
+    # # ----------------------------------------------------------------------
+    # # Calculate residual mean squares = e'e/(n_s - n_p)
+    # #
+    # # Note: In the mixed model resms is different to our sigma2 estimate as:
+    # #
+    # #  - resms = e'e/(n-p)
+    # #  - sigma2 = e'V^(-1)e/n for "Simplified methods" or has no closed form
+    # #             expression for more general methods
+    # #
+    # # ----------------------------------------------------------------------
 
-        # In spatially varying the degrees of freedom
-        # varies across voxels
-        resms_r = get_resms3D(YtX_r, YtY_r, XtX_r, beta_r,n_s_sv_r-n_p).reshape(n_v_r)
-        addBlockToNifti(os.path.join(OutDir, 'blmm_vox_resms.nii'), resms_r, R_inds,volc=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
+    # if n_v_r:
 
-
-    if n_v_i:
-
-        # All voxels in the inner mask have n_s scans present
-        resms_i = get_resms3D(YtX_i, YtY_i, XtX_i, beta_i, n_s-n_p).reshape(n_v_i)
-        addBlockToNifti(os.path.join(OutDir, 'blmm_vox_resms.nii'), resms_i, I_inds,volc=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
+    #     # In spatially varying the degrees of freedom
+    #     # varies across voxels
+    #     resms_r = get_resms3D(YtX_r, YtY_r, XtX_r, beta_r,n_s_sv_r,n_p).reshape(n_v_r)
+    #     addBlockToNifti(os.path.join(OutDir, 'blmm_vox_resms.nii'), resms_r, R_inds,volc=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
 
 
-    # ----------------------------------------------------------------------
-    # Calculate beta covariance maps (Optionally output)
-    # ----------------------------------------------------------------------
+    # if n_v_i:
 
-    if "OutputCovB" in inputs:
-        OutputCovB = inputs["OutputCovB"]
-    else:
-        OutputCovB = True
+    #     # All voxels in the inner mask have n_s scans present
+    #     resms_i = get_resms3D(YtX_i, YtY_i, XtX_i, beta_i, n_s,n_p).reshape(n_v_i)
+    #     addBlockToNifti(os.path.join(OutDir, 'blmm_vox_resms.nii'), resms_i, I_inds,volc=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
 
-    if OutputCovB:
 
-        dimCov =  (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],n_p**2)
+    # # ----------------------------------------------------------------------
+    # # Calculate beta covariance maps (Optionally output)
+    # # ----------------------------------------------------------------------
+
+    # if "OutputCovB" in inputs:
+    #     OutputCovB = inputs["OutputCovB"]
+    # else:
+    #     OutputCovB = True
+
+    # if OutputCovB:
+
+    #     dimCov =  (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],n_p**2)
         
-        # Output variance for each pair of betas
-        if n_v_r: 
+    #     # Output variance for each pair of betas
+    #     if n_v_r: 
 
-            # Work out cov beta
-            covB_r = get_covB3D(XtX_r, XtZ_r, DinvIplusZtZD_r, sigma2_r).reshape(n_v_r, n_p**2)
-            addBlockToNifti(os.path.join(OutDir, 'blmm_vox_cov.nii'), covB_r, R_inds,volc=None,dim=dimCov,aff=nifti.affine,hdr=nifti.header)
-            del covB_r
+    #         # Work out cov beta
+    #         covB_r = get_covB3D(XtX_r, XtZ_r, DinvIplusZtZD_r, sigma2_r).reshape(n_v_r, n_p**2)
+    #         addBlockToNifti(os.path.join(OutDir, 'blmm_vox_cov.nii'), covB_r, R_inds,volc=None,dim=dimCov,aff=nifti.affine,hdr=nifti.header)
+    #         del covB_r
 
-        if n_v_i: 
+    #     if n_v_i: 
 
-            # Work out cov beta
-            covB_i = get_covB3D(XtX_i, XtZ_i, DinvIplusZtZD_i, sigma2_i).reshape(n_v_i, n_p**2)
-            addBlockToNifti(os.path.join(OutDir, 'blmm_vox_cov.nii'), covB_i, I_inds,volc=None,dim=dimCov,aff=nifti.affine,hdr=nifti.header)
-            del covB_i
+    #         # Work out cov beta
+    #         covB_i = get_covB3D(XtX_i, XtZ_i, DinvIplusZtZD_i, sigma2_i).reshape(n_v_i, n_p**2)
+    #         addBlockToNifti(os.path.join(OutDir, 'blmm_vox_cov.nii'), covB_i, I_inds,volc=None,dim=dimCov,aff=nifti.affine,hdr=nifti.header)
+    #         del covB_i
 
-    # ----------------------------------------------------------------------
-    # Calculate COPEs, statistic maps and covariance maps.
-    # ----------------------------------------------------------------------
-    n_c = len(inputs['contrasts'])
+    # # ----------------------------------------------------------------------
+    # # Calculate COPEs, statistic maps and covariance maps.
+    # # ----------------------------------------------------------------------
+    # n_c = len(inputs['contrasts'])
 
-    # Record how many T contrasts and F contrasts we have seen
-    n_ct = 0
-    n_cf = 0
-    for i in range(0,n_c):
+    # # Record how many T contrasts and F contrasts we have seen
+    # n_ct = 0
+    # n_cf = 0
+    # for i in range(0,n_c):
 
-        # Read in contrast vector
-        L = blmm_eval(inputs['contrasts'][i]['c' + str(i+1)]['vector'])
-        L = np.array(L)
+    #     # Read in contrast vector
+    #     L = blmm_eval(inputs['contrasts'][i]['c' + str(i+1)]['vector'])
+    #     L = np.array(L)
 
-        if L.ndim == 1:
-            n_ct = n_ct + 1
-        else:
-            n_cf = n_cf + 1
+    #     if L.ndim == 1:
+    #         n_ct = n_ct + 1
+    #     else:
+    #         n_cf = n_cf + 1
 
-    # Current number for contrast (T and F)
-    current_n_ct = 0
-    current_n_cf = 0
+    # # Current number for contrast (T and F)
+    # current_n_ct = 0
+    # current_n_cf = 0
 
 
-    for i in range(0,n_c):
+    # for i in range(0,n_c):
 
-        # Read in contrast vector
-        # Get number of parameters
-        L = blmm_eval(inputs['contrasts'][i]['c' + str(i+1)]['vector'])
-        L = np.array(L)
+    #     # Read in contrast vector
+    #     # Get number of parameters
+    #     L = blmm_eval(inputs['contrasts'][i]['c' + str(i+1)]['vector'])
+    #     L = np.array(L)
     
-        if L.ndim == 1:
-            statType='T'
-            L = L.reshape([1,L.shape[0]])
-        else:
-            statType='F'
+    #     if L.ndim == 1:
+    #         statType='T'
+    #         L = L.reshape([1,L.shape[0]])
+    #     else:
+    #         statType='F'
 
-        if statType == 'T':
+    #     if statType == 'T':
 
-            # Work out the dimension of the T-stat-related volumes
-            dimT = (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],n_ct)
+    #         # Work out the dimension of the T-stat-related volumes
+    #         dimT = (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],n_ct)
 
 
-            # Calculate masked T statistic image for ring
-            if n_v_r:
+    #         # Calculate masked T statistic image for ring
+    #         if n_v_r:
 
-                # Work out L\beta
-                Lbeta_r = L @ beta_r
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_con.nii'), Lbeta_r, R_inds,volc=current_n_ct,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+    #             # Work out L\beta
+    #             Lbeta_r = L @ beta_r
+    #             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_con.nii'), Lbeta_r, R_inds,volc=current_n_ct,dim=dimT,aff=nifti.affine,hdr=nifti.header)
     
-                # Work out s.e.(L\beta)
-                seLB_r = np.sqrt(get_varLB3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, sigma2_r).reshape(n_v_r))
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conSE.nii'), seLB_r, R_inds,volc=current_n_ct,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+    #             # Work out s.e.(L\beta)
+    #             seLB_r = np.sqrt(get_varLB3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, sigma2_r).reshape(n_v_r))
+    #             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conSE.nii'), seLB_r, R_inds,volc=current_n_ct,dim=dimT,aff=nifti.affine,hdr=nifti.header)
     
 
-                # Calculate sattherwaite estimate of the degrees of freedom of this statistic
-                swdfc_r = get_swdf_T3D(L, D_r, sigma2_r, ZtX_r, ZtY_r, XtX_r, ZtZ_r, XtY_r, YtX_r, YtZ_r, XtZ_r, YtY_r, n_s_sv_r, nlevels, nparams).reshape(n_v_r)
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT_swedf.nii'), swdfc_r, R_inds,volc=current_n_ct,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+    #             # Calculate sattherwaite estimate of the degrees of freedom of this statistic
+    #             swdfc_r = get_swdf_T3D(L, D_r, sigma2_r, ZtX_r, ZtY_r, XtX_r, ZtZ_r, XtY_r, YtX_r, YtZ_r, XtZ_r, YtY_r, n_s_sv_r, nlevels, nparams).reshape(n_v_r)
+    #             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT_swedf.nii'), swdfc_r, R_inds,volc=current_n_ct,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
-                # Obtain and output T statistic
-                Tc_r = get_T3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, beta_r, sigma2_r).reshape(n_v_r)
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT.nii'), Tc_r, R_inds,volc=current_n_ct,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+    #             # Obtain and output T statistic
+    #             Tc_r = get_T3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, beta_r, sigma2_r).reshape(n_v_r)
+    #             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT.nii'), Tc_r, R_inds,volc=current_n_ct,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
-                # Obatin and output p-values
-                pc_r = T2P3D(Tc_r,swdfc_r,inputs)
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conTlp.nii'), pc_r, R_inds,volc=current_n_ct,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+    #             # Obatin and output p-values
+    #             pc_r = T2P3D(Tc_r,swdfc_r,inputs)
+    #             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conTlp.nii'), pc_r, R_inds,volc=current_n_ct,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
 
-            if n_v_i:
+    #         if n_v_i:
 
-                # Work out L\beta
-                Lbeta_i = L @ beta_i
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_con.nii'), Lbeta_i, I_inds,volc=current_n_ct,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+    #             # Work out L\beta
+    #             Lbeta_i = L @ beta_i
+    #             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_con.nii'), Lbeta_i, I_inds,volc=current_n_ct,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
-                # Work out s.e.(L\beta)
-                seLB_i = np.sqrt(get_varLB3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, sigma2_i).reshape(n_v_i))
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conSE.nii'), seLB_i, I_inds,volc=current_n_ct,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+    #             # Work out s.e.(L\beta)
+    #             seLB_i = np.sqrt(get_varLB3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, sigma2_i).reshape(n_v_i))
+    #             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conSE.nii'), seLB_i, I_inds,volc=current_n_ct,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
-                # Calculate sattherwaite estimate of the degrees of freedom of this statistic
-                swdfc_i = get_swdf_T3D(L, D_i, sigma2_i, ZtX_i, ZtY_i, XtX_i, ZtZ_i, XtY_i, YtX_i, YtZ_i, XtZ_i, YtY_i, n_s, nlevels, nparams).reshape(n_v_i)
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT_swedf.nii'), swdfc_i, I_inds,volc=current_n_ct,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+    #             # Calculate sattherwaite estimate of the degrees of freedom of this statistic
+    #             swdfc_i = get_swdf_T3D(L, D_i, sigma2_i, ZtX_i, ZtY_i, XtX_i, ZtZ_i, XtY_i, YtX_i, YtZ_i, XtZ_i, YtY_i, n_s, nlevels, nparams).reshape(n_v_i)
+    #             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT_swedf.nii'), swdfc_i, I_inds,volc=current_n_ct,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
-                # Obtain and output T statistic
-                Tc_i = get_T3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, beta_i, sigma2_i).reshape(n_v_i)
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT.nii'), Tc_i, I_inds,volc=current_n_ct,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+    #             # Obtain and output T statistic
+    #             Tc_i = get_T3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, beta_i, sigma2_i).reshape(n_v_i)
+    #             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT.nii'), Tc_i, I_inds,volc=current_n_ct,dim=dimT,aff=nifti.affine,hdr=nifti.header)
                 
-                # Obtain and output p-values
-                pc_i = T2P3D(Tc_i,swdfc_i,inputs)
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conTlp.nii'), pc_i, I_inds,volc=current_n_ct,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+    #             # Obtain and output p-values
+    #             pc_i = T2P3D(Tc_i,swdfc_i,inputs)
+    #             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conTlp.nii'), pc_i, I_inds,volc=current_n_ct,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
 
-            # Record that we have seen another T contrast
-            current_n_ct = current_n_ct + 1
+    #         # Record that we have seen another T contrast
+    #         current_n_ct = current_n_ct + 1
 
-            print('whole of T ran')
+    #         print('whole of T ran')
 
 
-        if statType == 'F':
+    #     if statType == 'F':
 
-            # Work out the dimension of the F-stat-related volumes
-            dimF = (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],n_cf)
+    #         # Work out the dimension of the F-stat-related volumes
+    #         dimF = (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],n_cf)
 
-            # Calculate the numerator of the F statistic for the ring
-            if n_v_r:
+    #         # Calculate the numerator of the F statistic for the ring
+    #         if n_v_r:
 
-                # Calculate sattherthwaite degrees of freedom for the inner.
-                swdfc_r = get_swdf_F3D(L, D_r, sigma2_r, ZtX_r, ZtY_r, XtX_r, ZtZ_r, XtY_r, YtX_r, YtZ_r, XtZ_r, YtY_r, n_s_sv_r, nlevels, nparams).reshape(n_v_r)
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conF_swedf.nii'), swdfc_r, R_inds,volc=current_n_cf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
+    #             # Calculate sattherthwaite degrees of freedom for the inner.
+    #             swdfc_r = get_swdf_F3D(L, D_r, sigma2_r, ZtX_r, ZtY_r, XtX_r, ZtZ_r, XtY_r, YtX_r, YtZ_r, XtZ_r, YtY_r, n_s_sv_r, nlevels, nparams).reshape(n_v_r)
+    #             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conF_swedf.nii'), swdfc_r, R_inds,volc=current_n_cf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
 
-                # Calculate F statistic.
-                Fc_r=get_F3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, beta_r, sigma2_r).reshape(n_v_r)
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conF.nii'), Fc_r, R_inds,volc=current_n_cf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
+    #             # Calculate F statistic.
+    #             Fc_r=get_F3D(L, XtX_r, XtZ_r, DinvIplusZtZD_r, beta_r, sigma2_r).reshape(n_v_r)
+    #             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conF.nii'), Fc_r, R_inds,volc=current_n_cf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
 
-                # Work out p for this contrast
-                pc_r = F2P3D(Fc_r, L, swdfc_r, inputs).reshape(n_v_r)
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conFlp.nii'), pc_r, R_inds,volc=current_n_cf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
+    #             # Work out p for this contrast
+    #             pc_r = F2P3D(Fc_r, L, swdfc_r, inputs).reshape(n_v_r)
+    #             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conFlp.nii'), pc_r, R_inds,volc=current_n_cf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
  
-                # Calculate partial R2 masked for ring.
-                R2_r = get_R23D(L, Fc_r, swdfc_r).reshape(n_v_r)
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conR2.nii'), R2_r, R_inds,volc=current_n_cf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
+    #             # Calculate partial R2 masked for ring.
+    #             R2_r = get_R23D(L, Fc_r, swdfc_r).reshape(n_v_r)
+    #             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conR2.nii'), R2_r, R_inds,volc=current_n_cf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
 
 
-            # Calculate the numerator of the F statistic for the inner 
-            if n_v_i:
+    #         # Calculate the numerator of the F statistic for the inner 
+    #         if n_v_i:
 
-                # Calculate sattherthwaite degrees of freedom for the inner.
-                swdfc_i = get_swdf_F3D(L, D_i, sigma2_i, ZtX_i, ZtY_i, XtX_i, ZtZ_i, XtY_i, YtX_i, YtZ_i, XtZ_i, YtY_i, n_s, nlevels, nparams).reshape(n_v_i)
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conF_swedf.nii'), swdfc_i, I_inds,volc=current_n_cf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
+    #             # Calculate sattherthwaite degrees of freedom for the inner.
+    #             swdfc_i = get_swdf_F3D(L, D_i, sigma2_i, ZtX_i, ZtY_i, XtX_i, ZtZ_i, XtY_i, YtX_i, YtZ_i, XtZ_i, YtY_i, n_s, nlevels, nparams).reshape(n_v_i)
+    #             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conF_swedf.nii'), swdfc_i, I_inds,volc=current_n_cf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
                 
-                # Calculate F statistic.
-                Fc_i=get_F3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, beta_i, sigma2_i).reshape(n_v_i)
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conF.nii'), Fc_i, I_inds,volc=current_n_cf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
+    #             # Calculate F statistic.
+    #             Fc_i=get_F3D(L, XtX_i, XtZ_i, DinvIplusZtZD_i, beta_i, sigma2_i).reshape(n_v_i)
+    #             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conF.nii'), Fc_i, I_inds,volc=current_n_cf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
 
-                # Work out p for this contrast
-                pc_i = F2P3D(Fc_i, L, swdfc_i, inputs).reshape(n_v_i)
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conFlp.nii'), pc_i, I_inds,volc=current_n_cf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
+    #             # Work out p for this contrast
+    #             pc_i = F2P3D(Fc_i, L, swdfc_i, inputs).reshape(n_v_i)
+    #             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conFlp.nii'), pc_i, I_inds,volc=current_n_cf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
 
-                # Calculate partial R2 masked for inner mask.
-                R2_i = get_R23D(L, Fc_i, swdfc_i).reshape(n_v_i)
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conR2.nii'), R2_i, I_inds,volc=current_n_cf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
+    #             # Calculate partial R2 masked for inner mask.
+    #             R2_i = get_R23D(L, Fc_i, swdfc_i).reshape(n_v_i)
+    #             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conR2.nii'), R2_i, I_inds,volc=current_n_cf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
 
-            # Record that we have seen another F contrast
-            current_n_cf = current_n_cf + 1
+    #         # Record that we have seen another F contrast
+    #         current_n_cf = current_n_cf + 1
 
     # Clean up files
     if len(args)==0:
@@ -822,11 +825,6 @@ def addBlockToNifti(fname, block, blockInds,dim=None,volc=None,aff=None,hdr=None
     if volc is not None:
 
         volc = int(volc)
-
-    # # Work out dimension of block
-    # if np.ndim(block)>1:
-    #     if block.shape[1]==1:
-    #         block = block.reshape(block.shape[0])
 
     # Check whether the NIFTI exists already
     if os.path.isfile(fname):
@@ -918,348 +916,6 @@ def addBlockToNifti(fname, block, blockInds,dim=None,volc=None,aff=None,hdr=None
     nib.save(nifti, fname)
 
     del nifti, fname, data_out, affine
-
-def get_resms3D(YtX, YtY, XtX, beta,n):
-
-    ete = ssr3D(YtX, YtY, XtX, beta)
-
-    # Reshape n if necessary
-    if isinstance(n,np.ndarray):
-
-        # Check first that n isn't a single value
-        if np.prod(n.shape)>1:
-    
-            n = n.reshape(ete.shape)
-
-    return(ete/n)
-
-def get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2):
-
-    # Reshape n if necessary
-    if isinstance(sigma2,np.ndarray):
-
-        # Check first that n isn't a single value
-        if np.prod(sigma2.shape)>1:
-    
-            sigma2 = sigma2.reshape(sigma2.shape[0])
-
-    # Work out X'V^{-1}X = X'X - X'ZD(I+Z'ZD)^{-1}Z'X
-    XtinvVX = XtX - XtZ @ DinvIplusZtZD @ XtZ.transpose((0,2,1))
-
-    # Work out var(LB) = L'(X'V^{-1}X)^{-1}L
-    covB = np.linalg.inv(XtinvVX)
-
-    # Calculate sigma^2(X'V^{-1}X)^(-1)
-    covB = np.einsum('i,ijk->ijk',sigma2,covB)
-
-    # Return result
-    return(covB)
-
-def get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2):
-
-    # Reshape n if necessary
-    if isinstance(sigma2,np.ndarray):
-
-        # Check first that n isn't a single value
-        if np.prod(sigma2.shape)>1:
-    
-            sigma2 = sigma2.reshape(sigma2.shape[0])
-
-    # Work out var(LB) = L'(X'V^{-1}X)^{-1}L
-    varLB = L @ get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2) @ L.transpose()
-
-    # Return result
-    return(varLB)
-
-def get_R23D(L, F, df):
-
-    # Work out the rank of L
-    rL = np.linalg.matrix_rank(L)
-
-    # Convert F to R2
-    R2 = (rL*F)/(rL*F + df)
-    
-    # Return R2
-    return(R2)
-
-
-def get_T3D(L, XtX, XtZ, DinvIplusZtZD, betahat, sigma2):
-
-    # Work out the rank of L
-    rL = np.linalg.matrix_rank(L)
-
-    # Work out Lbeta
-    LB = L @ betahat
-
-    # Work out se(T)
-    varLB = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
-
-    # Work out T
-    T = LB/np.sqrt(varLB)
-
-    # Return T
-    return(T)
-
-
-def get_F3D(L, XtX, XtZ, DinvIplusZtZD, betahat, sigma2):
-
-    # Work out the rank of L
-    rL = np.linalg.matrix_rank(L)
-
-    # Work out Lbeta
-    LB = L @ betahat
-
-    # Work out se(F)
-    varLB = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
-
-    # Work out F
-    F = LB.transpose(0,2,1) @ np.linalg.inv(varLB) @ LB/rL
-
-    # Return T
-    return(F)
-    
-
-def T2P3D(T,df,inputs):
-
-    # Initialize empty P
-    P = np.zeros(np.shape(T))
-
-    # Do this seperately for >0 and <0 to avoid underflow
-    P[T < 0] = -np.log10(1-stats.t.cdf(T[T < 0], df[T < 0]))
-    P[T >= 0] = -np.log10(stats.t.cdf(-T[T >= 0], df[T >= 0]))
-
-    # Remove infs
-    if "minlog" in inputs:
-        P[np.logical_and(np.isinf(P), P<0)]=inputs['minlog']
-    else:
-        P[np.logical_and(np.isinf(P), P<0)]=-323.3062153431158
-
-    return(P)
-
-
-def F2P3D(F, L, df_denom, inputs):
-    
-    # Get the rank of L
-    df_num = np.linalg.matrix_rank(L)
-
-    # Work out P
-    P = -np.log10(1-stats.f.cdf(F, df_num, df_denom))
-
-    # Remove infs
-    if "minlog" in inputs:
-        P[np.logical_and(np.isinf(P), P<0)]=inputs['minlog']
-    else:
-        P[np.logical_and(np.isinf(P), P<0)]=-323.3062153431158
-
-    return(P)
-
-
-# ============================================================================================================
-#
-# WIP: SATTHERTHWAITE INTEGRATING
-#
-# ============================================================================================================
-
-def get_swdf_F3D(L, D, sigma2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevels, nparams): 
-
-    # Reshape sigma2 if necessary
-    sigma2 = sigma2.reshape(sigma2.shape[0])
-
-    # Reshape n if necessary
-    if isinstance(n,np.ndarray):
-
-        # Check first that n isn't a single value
-        if np.prod(n.shape)>1:
-    
-            n = n.reshape(sigma2.shape)
-
-    # L is rL in rank
-    rL = np.linalg.matrix_rank(L)
-
-    # Initialize empty sum.
-    sum_swdf_adj = np.zeros(sigma2.shape)
-
-    # Loop through first rL rows of L
-    for i in np.arange(rL):
-
-        # Work out the swdf for each row of L
-        swdf_row = get_swdf_T3D(L[i:(i+1),:], D, sigma2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevels, nparams)
-
-        # Work out adjusted df = df/(df-2)
-        swdf_adj = swdf_row/(swdf_row-2)
-
-        # Add to running sum
-        sum_swdf_adj = sum_swdf_adj + swdf_adj.reshape(sum_swdf_adj.shape)
-
-    # Work out final df
-    df = 2*sum_swdf_adj/(sum_swdf_adj-rL)
-
-    # Return df
-    return(df)
-
-def get_swdf_T3D(L, D, sigma2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevels, nparams): 
-
-    # Reshape sigma2 if necessary
-    sigma2 = sigma2.reshape(sigma2.shape[0])
-
-    # Reshape n if necessary
-    if isinstance(n,np.ndarray):
-
-        # Check first that n isn't a single value
-        if np.prod(n.shape)>1:
-    
-            n = n.reshape(sigma2.shape)
-
-    # Get D(I+Z'ZD)^(-1)
-    DinvIplusZtZD = D @ np.linalg.inv(np.eye(ZtZ.shape[1]) + ZtZ @ D)
-
-    # Get S^2
-    S2 = get_S23D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
-    
-    # Get derivative of S^2
-    dS2 = get_dS23D(nparams, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2)
-
-    # Get Fisher information matrix
-    InfoMat = get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nparams, ZtZ)
-
-    # Calculate df estimator
-    df = 2*(S2**2)/(dS2.transpose(0,2,1) @ np.linalg.inv(InfoMat) @ dS2)
-
-    # Return df
-    return(df)
-
-
-
-def get_S23D(L, XtX, XtZ, DinvIplusZtZD, sigma2):
-
-    # Calculate sigma^2L(X'V^{-1}X)^(-1)L'
-    varLB = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
-
-    return(varLB)
-
-
-def get_dS23D(nparams, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
-
-    # ZtX
-    ZtX = XtZ.transpose(0,2,1)
-
-    # Number of voxels
-    nv = DinvIplusZtZD.shape[0]
-
-    # Calculate X'V^{-1}X=X'(I+ZDZ')^{-1}X=X'X-X'Z(I+DZ'Z)^{-1}DZ'X
-    XtiVX = XtX - XtZ @  DinvIplusZtZD @ ZtX
-
-    # New empty array for differentiating S^2 wrt (sigma2, vech(D1),...vech(Dr)).
-    dS2 = np.zeros((nv, 1+np.int32(np.sum(nparams*(nparams+1)/2)),1))
-
-    # Work out indices for each start of each component of vector 
-    # i.e. [dS2/dsigm2, dS2/vechD1,...dS2/vechDr]
-    DerivInds = np.int32(np.cumsum(nparams*(nparams+1)/2) + 1)
-    DerivInds = np.insert(DerivInds,0,1)
-
-    # Work of derivative wrt to sigma^2
-    dS2dsigma2 = L @ np.linalg.inv(XtiVX) @ L.transpose()
-
-    # Add to dS2
-    dS2[:,0:1] = dS2dsigma2.reshape(dS2[:,0:1].shape)
-
-    # Now we need to work out ds2dVech(Dk)
-    for k in np.arange(len(nparams)):
-
-        # Initialize an empty zeros matrix
-        dS2dvechDk = np.zeros((np.int32(nparams[k]*(nparams[k]+1)/2),1))#...
-
-        for j in np.arange(nlevels[k]):
-
-            # Get the indices for this level and factor.
-            Ikj = faclev_indices2D(k, j, nlevels, nparams)
-                    
-            # Work out Z_(k,j)'Z
-            ZkjtZ = ZtZ[:,Ikj,:]
-
-            # Work out Z_(k,j)'X
-            ZkjtX = ZtX[:,Ikj,:]
-
-            # Work out Z_(k,j)'V^{-1}X
-            ZkjtiVX = ZkjtX - ZkjtZ @ DinvIplusZtZD @ ZtX
-
-            # Work out the term to put into the kronecker product
-            # K = Z_(k,j)'V^{-1}X(X'V^{-1})^{-1}L'
-            K = ZkjtiVX @ np.linalg.inv(XtiVX) @ L.transpose()
-            
-            # Sum terms
-            dS2dvechDk = dS2dvechDk + mat2vech3D(kron3D(K,K.transpose(0,2,1)))
-
-        # Multiply by sigma^2
-        dS2dvechDk = np.einsum('i,ijk->ijk',sigma2,dS2dvechDk)
-
-        # Add to dS2
-        dS2[:,DerivInds[k]:DerivInds[k+1]] = dS2dvechDk.reshape(dS2[:,DerivInds[k]:DerivInds[k+1]].shape)
-
-    return(dS2)
-
-def get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nparams, ZtZ):
-
-    # Number of random effects, q
-    q = np.sum(np.dot(nparams,nlevels))
-
-    # Number of voxels 
-    nv = sigma2.shape[0]
-
-    # Duplication matrices
-    # ------------------------------------------------------------------------------
-    invDupMatdict = dict()
-    for i in np.arange(len(nparams)):
-
-        invDupMatdict[i] = np.asarray(invDupMat2D(nparams[i]).todense())
-
-    # Index variables
-    # ------------------------------------------------------------------------------
-    # Work out the total number of paramateres
-    tnp = np.int32(1 + np.sum(nparams*(nparams+1)/2))
-
-    # Indices for submatrics corresponding to Dks
-    FishIndsDk = np.int32(np.cumsum(nparams*(nparams+1)/2) + 1)
-    FishIndsDk = np.insert(FishIndsDk,0,1)
-
-    # Initialize FIsher Information matrix
-    FisherInfoMat = np.zeros((nv,tnp,tnp))
-    
-    # Covariance of dl/dsigma2
-    covdldsigma2 = n/(2*(sigma2**2))
-    
-    # Add dl/dsigma2 covariance
-    FisherInfoMat[:,0,0] = covdldsigma2
-
-    
-    # Add dl/dsigma2 dl/dD covariance
-    for k in np.arange(len(nparams)):
-
-        # Get covariance of dldsigma and dldD      
-        covdldsigmadD = get_covdldDkdsigma23D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict).reshape(nv,FishIndsDk[k+1]-FishIndsDk[k])
-
-        # Assign to the relevant block
-        FisherInfoMat[:,0, FishIndsDk[k]:FishIndsDk[k+1]] = covdldsigmadD
-        FisherInfoMat[:,FishIndsDk[k]:FishIndsDk[k+1],0:1] = FisherInfoMat[:,0:1, FishIndsDk[k]:FishIndsDk[k+1]].transpose((0,2,1))
-      
-    # Add dl/dD covariance
-    for k1 in np.arange(len(nparams)):
-
-        for k2 in np.arange(k1+1):
-
-            IndsDk1 = np.arange(FishIndsDk[k1],FishIndsDk[k1+1])
-            IndsDk2 = np.arange(FishIndsDk[k2],FishIndsDk[k2+1])
-
-            # Get covariance between D_k1 and D_k2 
-            covdldDk1dDk2 = get_covdldDk1Dk23D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict)
-
-            # Add to FImat
-            FisherInfoMat[np.ix_(np.arange(nv), IndsDk1, IndsDk2)] = covdldDk1dDk2
-            FisherInfoMat[np.ix_(np.arange(nv), IndsDk2, IndsDk1)] = FisherInfoMat[np.ix_(np.arange(nv), IndsDk1, IndsDk2)].transpose((0,2,1))
-
-
-    # Return result
-    return(FisherInfoMat)
 
 if __name__ == "__main__":
     main()
