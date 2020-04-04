@@ -22,7 +22,7 @@ from lib.blmm_load import blmm_load
 from lib.tools3d import *
 from lib.tools2d import *
 from lib.pSFS import pSFS
-import blmm_inference
+import lib.blmm_inference
 
 # Developer notes:
 # --------------------------------------------------------------------------
@@ -555,8 +555,8 @@ def main(*args):
         addBlockToNifti(os.path.join(OutDir, 'blmm_vox_D.nii'), vechD_i, I_inds,volc=None,dim=dimD,aff=nifti.affine,hdr=nifti.header)        
 
     # Get the D matrices
-    FishIndsDk = np.int32(np.cumsum(nparams*(nparams+1)//2) + n_p + 1)
-    FishIndsDk = np.insert(FishIndsDk,0,n_p+1)
+    IndsDk = np.int32(np.cumsum(nparams*(nparams+1)//2) + n_p + 1)
+    IndsDk = np.insert(IndsDk,0,n_p+1)
 
     if n_v_r:
 
@@ -564,13 +564,13 @@ def main(*args):
         # D as a dictionary
         for k in np.arange(len(nparams)):
 
-            Ddict_r[k] = vech2mat3D(paramVec_r[:,FishIndsDk[k]:FishIndsDk[k+1],:])
+            Ddict_r[k] = vech2mat3D(paramVec_r[:,IndsDk[k]:IndsDk[k+1],:])
           
         # Full version of D
         D_r = getDfromDict3D(Ddict_r, nparams, nlevels)
 
         # Run inference
-        blmm_inference(inputs, nparams, nlevels, R_inds, beta_r, D_r, sigma2_r, n_s, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r)
+        blmm_inference.main(inputs, nparams, nlevels, R_inds, beta_r, D_r, sigma2_r, n_s, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r)
 
         # # ----------------------------------------------------------------------
         # # Calculate log-likelihood
@@ -592,7 +592,7 @@ def main(*args):
         # D as a dictionary
         for k in np.arange(len(nparams)):
 
-            Ddict_i[k] = makeDnnd3D(vech2mat3D(paramVec_i[:,FishIndsDk[k]:FishIndsDk[k+1],:]))
+            Ddict_i[k] = makeDnnd3D(vech2mat3D(paramVec_i[:,IndsDk[k]:IndsDk[k+1],:]))
           
         # Full version of D
         D_i = getDfromDict3D(Ddict_i, nparams, nlevels)
