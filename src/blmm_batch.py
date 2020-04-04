@@ -456,8 +456,7 @@ def blkZtX(Z,X):
     else:
 
         # Calculate XtX
-        ZtX = np.asarray(
-                    np.dot(np.transpose(Z), X))
+        ZtX = Z.transpose() @ X
 
         # Check the dimensions haven't been reduced
         # (numpy will lower the dimension of the 

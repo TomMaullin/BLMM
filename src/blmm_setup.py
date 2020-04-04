@@ -10,10 +10,24 @@ from lib.fileio import loadFile, str2vec
 
 # ------------------------------------------------------------------------------------
 #
+# This file is the first stage of the BLMM pipeline. It reads in the inputs file and
+# reformats it where necessary, then works out how many batches should be used for 
+# computation. The number of batches is output into the file `nb.txt` which informs 
+# the rest of the blmm pipeline how many batches are required for computation. 
 #
+# ------------------------------------------------------------------------------------
 #
+# Author: Tom Maullin (04/04/2020)
 #
+# ------------------------------------------------------------------------------------
 #
+# The code takes the following inputs:
+#
+#  - input path (optional): If specified, the first argument will be assumed to be a
+#                           path to an `inputs` yml file, following the same 
+#                           formatting guidelines as `blmm_config.yml`. If not 
+#                           specified, the default file `blmm_config.yml` will be 
+#                           assumed to contain the inputs.
 #
 # ------------------------------------------------------------------------------------
 def main(*args):
@@ -22,6 +36,7 @@ def main(*args):
     pwd = os.getcwd()
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
+    # Check the inputs
     if len(args)==0 or (not args[0]):
         # Load in inputs
         ipath = os.path.abspath(os.path.join('..','blmm_config.yml'))
@@ -77,8 +92,8 @@ def main(*args):
             inputs['outdir'] = os.path.join(pwd, inputs['outdir'])
 
         # Change each random effects factor
-        n_f = len(inputs['Z'])
-        for i in range(0,n_f):
+        nf = len(inputs['Z'])
+        for i in range(0,nf):
 
             inputs['Z'][i]['f' + str(i+1)]['factor'] = os.path.join(pwd, inputs['Z'][i]['f' + str(i+1)]['factor'])
             inputs['Z'][i]['f' + str(i+1)]['design'] = os.path.join(pwd, inputs['Z'][i]['f' + str(i+1)]['design'])
