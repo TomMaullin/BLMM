@@ -1526,39 +1526,6 @@ def get_F3D(L, XtX, XtZ, DinvIplusZtZD, betahat, sigma2):
 
 # ============================================================================
 #
-# The below function 
-#
-# ----------------------------------------------------------------------------
-#
-# This function takes in the following inputs:
-#
-# ----------------------------------------------------------------------------
-#
-#  - 
-#
-# ----------------------------------------------------------------------------
-#
-# And gives the following output:
-#
-# ----------------------------------------------------------------------------
-#
-# - 
-#
-# ============================================================================
-
-
-# TODOCUMENT
-
-
-
-
-
-
-
-    
-
-# ============================================================================
-#
 # The below function converts T statistics to -log10(P) values. `-inf` values
 # are replace by minlog.
 #
@@ -1570,7 +1537,7 @@ def get_F3D(L, XtX, XtZ, DinvIplusZtZD, betahat, sigma2):
 #
 # - `T`: A matrix of T statistics.
 # - `df`: The degrees of freedom of the T statistic (can be spatially varying).
-# - `inputs`: TODO
+# - `minlog`: A value to replace `-inf` p-values with.
 #
 # ----------------------------------------------------------------------------
 #
@@ -1611,7 +1578,7 @@ def T2P3D(T,df,minlog):
 # - `L`: A contrast matrix.
 # - `df_denom`: The denominator degrees of freedom of the F statistic (can be 
 #               spatially varying).
-# - `inputs`: TODO
+# - `minlog`: A value to replace `-inf` p-values with.
 #
 # ----------------------------------------------------------------------------
 #
@@ -1637,6 +1604,71 @@ def F2P3D(F, L, df_denom, minlog):
 
 
 
+
+# ============================================================================
+#
+# The below function 
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - 
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - 
+#
+# ============================================================================
+
+
+# TODOCUMENT
+
+
+
+
+
+
+# ============================================================================
+#
+# The below function estimates the degrees of freedom for an F statistic using
+# a Sattherthwaite approximation method. For, a contrast matrix L, this 
+# estimate is given by:
+#
+#      v = (sum_{i=0}^rank(L) v_{l_i})/((sum_{i=0}^rank(L) v_{l_i}) - rank(L))
+#
+# Where l_i is the i^th row of L and v_{l_i} is the sattherthwaite estimate of
+# the degrees of freedom of a T statistic with contrast l_i (see `get_swdf_T3D`
+# below). 
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `L`: A contrast matrix.
+# - `D`: The random effects variance-covariance matrix estimate.
+# - `sigma2`: The fixed effects variance estimate.
+# - `ZtX`: Z transpose multiplied by X (Z'X in the previous notation).
+#
+# 
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - 
+#
+# ============================================================================
 def get_swdf_F3D(L, D, sigma2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, nlevels, nparams): 
 
     # Reshape sigma2 if necessary
