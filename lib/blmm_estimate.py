@@ -20,7 +20,7 @@ from scipy import stats
 from lib.tools3d import *
 from lib.tools2d import *
 from lib.fileio import *
-from lib.pSFS import pSFS
+from lib.est3D import *
 
 def main(inputs, inds, XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, n, nlevels, nparams):
 
@@ -72,16 +72,16 @@ def main(inputs, inds, XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, n, nlevels, 
     # ----------------------------------------------------------------------  
 
     if method=='pSFS': # Recommended, default method
-        paramVec = pSFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6, n, reml=REML)
+        paramVec = pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6, n, reml=REML)
     
     if method=='FS': 
-        paramVec = FS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6, n, reml=REML)
+        paramVec = FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6, n, reml=REML)
 
     if method=='SFS': 
-        paramVec = SFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6, n, reml=REML)
+        paramVec = SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6, n, reml=REML)
 
     if method=='pFS': 
-        paramVec = pFS(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6, n, reml=REML)
+        paramVec = pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6, n, reml=REML)
 
     # ----------------------------------------------------------------------
     # Parameter outputting

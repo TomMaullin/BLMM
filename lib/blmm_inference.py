@@ -12,7 +12,6 @@ np.set_printoptions(threshold=np.nan)
 from lib.tools3d import *
 from lib.tools2d import *
 from lib.fileio import *
-from lib.blmm_concat import addBlockToNifti 
 
 # --------------------------------------------------------------------------
 # Author: Tom Maullin (04/04/2020)
