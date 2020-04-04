@@ -528,7 +528,10 @@ def main(*args):
         paramVec_i = pSFS(XtX_i, XtY_i, ZtX_i, ZtY_i, ZtZ_i, XtZ_i, YtZ_i, YtY_i, YtX_i, nlevels, nparams, 1e-6,n_s, reml=REML)
 
     # Dimension of beta volume
-    dimBeta =  (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],n_p)
+    dimBeta = (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],n_p)
+
+    # Dimension of D volume
+    dimD = (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],n_q_u)
 
     # Complete parameter vector
     if n_v_r:
@@ -540,6 +543,9 @@ def main(*args):
         sigma2_r = paramVec_r[:,n_p:(n_p+1),:]
         addBlockToNifti(os.path.join(OutDir, 'blmm_vox_sigma2.nii'), sigma2_r, R_inds,volc=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
 
+        vechD_r = paramVec_r[:,(n_p+1):,:].reshape((n_v_r,n_q_u))
+        addBlockToNifti(os.path.join(OutDir, 'blmm_vox_D.nii'), vechD_r, R_inds,volc=None,dim=dimD,aff=nifti.affine,hdr=nifti.header)        
+        
     if n_v_i:
 
         beta_i = paramVec_i[:, 0:n_p]        
@@ -547,6 +553,9 @@ def main(*args):
 
         sigma2_i = paramVec_i[:,n_p:(n_p+1),:].reshape(n_v_i)
         addBlockToNifti(os.path.join(OutDir, 'blmm_vox_sigma2.nii'), sigma2_i, I_inds,volc=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
+        
+        vechD_i = paramVec_i[:,(n_p+1):,:].reshape((n_v_i,n_q_u))
+        addBlockToNifti(os.path.join(OutDir, 'blmm_vox_D.nii'), vechD_i, I_inds,volc=None,dim=dimD,aff=nifti.affine,hdr=nifti.header)        
 
     # Get the D matrices
     FishIndsDk = np.int32(np.cumsum(nparams*(nparams+1)//2) + n_p + 1)
@@ -600,38 +609,6 @@ def main(*args):
         # Output log likelihood
         llh_i = llh3D(n_s, ZtZ_i, Zte_i, ete_i, sigma2_i, DinvIplusZtZD_i, D_i, REML, XtX_i, XtZ_i, ZtX_i) - 0.5*(n_s)*np.log(2*np.pi)
         addBlockToNifti(os.path.join(OutDir, 'blmm_vox_llh.nii'), llh_i, I_inds,volc=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
-
-    # Save D
-    vechD = np.zeros([n_v, n_q_u])
-
-    if n_v_r:
-
-        vechD[R_inds,:] = paramVec_r[:,(n_p+1):,:].reshape(vechD[R_inds,:].shape)
-
-    if n_v_i:
-
-        vechD[I_inds,:] = paramVec_i[:,(n_p+1):,:].reshape(vechD[I_inds,:].shape)
-
-    # Output vechD
-    vechD = vechD.reshape([n_v, n_q_u]).transpose()
-
-    vechD_out = np.zeros([int(NIFTIsize[0]),
-                         int(NIFTIsize[1]),
-                         int(NIFTIsize[2]),
-                         vechD.shape[0]])
-
-    # Cycle through betas and output results.
-    for k in range(0,vechD.shape[0]):
-
-        vechD_out[:,:,:,k] = vechD[k,:].reshape(int(NIFTIsize[0]),
-                                               int(NIFTIsize[1]),
-                                               int(NIFTIsize[2]))
-
-    # Save beta map.
-    vechDmap = nib.Nifti1Image(vechD_out,
-                               nifti.affine,
-                               header=nifti.header)
-    nib.save(vechDmap, os.path.join(OutDir,'blmm_vox_D.nii'))
 
     # ----------------------------------------------------------------------
     # Calculate residual mean squares = e'e/(n_s - n_p)
@@ -941,58 +918,6 @@ def addBlockToNifti(fname, block, blockInds,dim=None,volc=None,aff=None,hdr=None
     nib.save(nifti, fname)
 
     del nifti, fname, data_out, affine
-
-
-
-# This function takes in two matrices of dimension
-# n_v_i by k and n_v_r by k and two sets of indices.
-def outputNifti(vol_i,vol_r,I_inds,R_inds,dimv,fpath):
-
-    # Work out n_v_r and n_v_i
-    n_v_r = R_inds.shape[0]
-    n_v_i = I_inds.shape[0]
-
-    # Work out number of volumes to be output
-    if ndim(vol_i)==2:
-        n_o = vol_i.shape[1]
-    else:
-        n_o = 1
-
-    # Number of voxels
-    n_v = np.prod(dimv)
-
-    # Initiate empty nifti
-    vol = np.zeros([n_v,n_o])
-
-    # Put vol_r and vol_i into the volume
-    if n_v_r:
-
-        vol[R_inds,:] = vol_r.reshape(vol[R_inds,:].shape)
-
-    if n_v_i:
-
-        vol[I_inds,:] = vol_i.reshape(vol[I_inds,:].shape)
-
-    
-    # Output volume
-    vol = vol.transpose()
-    vol_out = np.zeros([int(dimv[0]),
-                        int(dimv[1]),
-                        int(dimv[2]),
-                        vol.shape[0]])
-
-    # Cycle through individual niftis and output results.
-    for k in range(0,vechD.shape[0]):
-
-        vol_out[:,:,:,k] = vol[k,:].reshape(int(dimv[0]),
-                                            int(dimv[1]),
-                                            int(dimv[2]))
-
-    # Save final volume.
-    finalVol = nib.Nifti1Image(vol_out,
-                               nifti.affine,
-                               header=nifti.header)
-    nib.save(finalVol, fpath)
 
 def get_resms3D(YtX, YtY, XtX, beta,n):
 
