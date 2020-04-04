@@ -3,25 +3,19 @@ import warnings as w
 # be ignored for now.
 w.simplefilter(action = 'ignore', category = FutureWarning)
 import numpy as np
-import subprocess
-import warnings
-import resource
 import nibabel as nib
 import sys
 import os
 import glob
 import shutil
 import yaml
-import time
-import warnings
-import subprocess
 np.set_printoptions(threshold=np.nan)
 from scipy import stats
 from lib.npMatrix3d import *
 from lib.npMatrix2d import *
 from lib.fileio import *
-import lib.blmm_inference as blmm_inference
-import lib.blmm_estimate as blmm_estimate
+import src.blmm_inference as blmm_inference
+import src.blmm_estimate as blmm_estimate
 
 # Developer notes:
 # --------------------------------------------------------------------------
