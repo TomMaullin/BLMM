@@ -478,12 +478,6 @@ def main(*args):
         # Clear some memory
         del sumXtX_r, sumZtX_r, sumZtZ_r
 
-        #================================================================================
-        # Run parameter estimation
-        #================================================================================
-        paramVec_r = pSFS(XtX_r, XtY_r, ZtX_r, ZtY_r, ZtZ_r, XtZ_r, YtZ_r, YtY_r, YtX_r, nlevels, nparams, 1e-6,n_s_sv_r,reml=REML)
-
-
 
     # If we have indices where all studies are present, work out X'X and
     # X'Y for these studies.
@@ -517,7 +511,6 @@ def main(*args):
         # Clear some memory
         del sumXtX_i, sumZtX_i, sumZtZ_i
         del sumXtY, sumYtY, sumZtY
-
 
 
     # Complete parameter vector
