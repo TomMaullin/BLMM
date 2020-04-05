@@ -22,13 +22,13 @@ import src.blmm_estimate as blmm_estimate
 # In the following code I have used the following subscripts to indicate:
 #
 # _r - This means this is an array of values corresponding to voxels which
-#      are present in between k and n_s-1 studies (inclusive), where k is
+#      are present in between k and n-1 studies (inclusive), where k is
 #      decided by the user specified thresholds. These voxels will typically
 #      be on the edge of the brain and look like a "ring" around the brain,
 #      hence "_r" for ring.
 # 
 # _i - This means that this is an array of values corresponding to voxels 
-#      which are present in all n_s studies. These will usually look like
+#      which are present in all n studies. These will usually look like
 #      a smaller mask place inside the whole study mask. Hence "_i" for 
 #      inner.
 #
@@ -36,7 +36,7 @@ import src.blmm_estimate as blmm_estimate
 #       per voxel). 
 #
 # --------------------------------------------------------------------------
-# Author: Tom Maullin (04/02/2019)
+# Author: Tom Maullin (Last edited 04/04/2020)
 
 def main(*args):
 
@@ -127,8 +127,8 @@ def main(*args):
             os.remove(os.path.join(OutDir, file))
 
     # ----------------------------------------------------------------------
-    # Get n_s (number of subjects) and n_s_sv (spatially varying number of
-    # subjects)
+    # Get n (number of observations) and n_sv (spatially varying number of
+    # observations)
     # ----------------------------------------------------------------------
 
     # Work out number of batchs
@@ -136,9 +136,9 @@ def main(*args):
 
     if (len(args)==0) or (type(args[0]) is str):
 
-        # Read in n_s (spatially varying)
+        # Read in n (spatially varying)
         nmapb  = loadFile(os.path.join(OutDir,"tmp", "blmm_vox_n_batch1.nii"))
-        n_s_sv = nmapb.get_data()# Read in uniqueness Mask file
+        n_sv = nmapb.get_data()# Read in uniqueness Mask file
 
         # Remove files, don't need them anymore
         os.remove(os.path.join(OutDir,"tmp","blmm_vox_n_batch1.nii"))
@@ -147,27 +147,27 @@ def main(*args):
         for batchNo in range(2,(n_b+1)):
             
             # Obtain the full nmap.
-            n_s_sv = n_s_sv + loadFile(os.path.join(OutDir,"tmp", 
+            n_sv = n_sv + loadFile(os.path.join(OutDir,"tmp", 
                 "blmm_vox_n_batch" + str(batchNo) + ".nii")).get_data()
             
             # Remove file, don't need it anymore
             os.remove(os.path.join(OutDir, "tmp", "blmm_vox_n_batch" + str(batchNo) + ".nii"))
 
     else:
-        # Read in n_s_sv.
-        n_s_sv = args[4]
+        # Read in n_sv.
+        n_sv = args[4]
 
     # Save nmap
-    nmap = nib.Nifti1Image(n_s_sv,
+    nmap = nib.Nifti1Image(n_sv,
                            nifti.affine,
                            header=nifti.header)
     nib.save(nmap, os.path.join(OutDir,'blmm_vox_n.nii'))
-    n_s_sv = n_s_sv.reshape(n_v, 1)
+    n_sv = n_sv.reshape(n_v, 1)
     del nmap
 
     # Get ns.
     X = loadFile(inputs['X'])
-    n_s = X.shape[0]
+    n = X.shape[0]
 
     # ----------------------------------------------------------------------
     # Create Mask
@@ -200,7 +200,7 @@ def main(*args):
                                  '0 < ' + str(rmThresh) + ' < 1 violation')
 
             # Mask based on threshold.
-            Mask[n_s_sv<rmThresh*n_s]=0
+            Mask[n_sv<rmThresh*n]=0
 
         if ("MinN" in inputs["Missingness"]) or ("minn" in inputs["Missingness"]):
 
@@ -215,12 +215,12 @@ def main(*args):
                 amThresh = float(amThresh)
 
             # Mask based on threshold.
-            Mask[n_s_sv<amThresh]=0
+            Mask[n_sv<amThresh]=0
 
     # We remove anything with 1 degree of freedom (or less) by default.
     # 1 degree of freedom seems to cause broadcasting errors on a very
     # small percentage of voxels.
-    Mask[n_s_sv<=n_p+1]=0
+    Mask[n_sv<=n_p+1]=0
 
     if 'analysis_mask' in inputs:
 
@@ -244,12 +244,12 @@ def main(*args):
 
     # Get indices of voxels in ring around brain where there are
     # missing studies.
-    R_inds = np.where((Mask==1)*(n_s_sv<n_s))[0]
+    R_inds = np.where((Mask==1)*(n_sv<n))[0]
 
     # Get indices of the "inner" volume where all studies had information
     # present. I.e. the voxels (usually near the middle of the brain) where
     # every voxel has a reading for every study.
-    I_inds = np.where((Mask==1)*(n_s_sv==n_s))[0]
+    I_inds = np.where((Mask==1)*(n_sv==n))[0]
     del Mask
 
     # Number of voxels in ring
@@ -262,9 +262,9 @@ def main(*args):
     n_v_m = n_v_i + n_v_r
 
     # Create df map
-    df_r = n_s_sv[R_inds,:] - n_p
+    df_r = n_sv[R_inds,:] - n_p
     df_r = df_r.reshape([n_v_r])
-    df_i = n_s - n_p
+    df_i = n - n_p
 
     # Unmask df
     df = np.zeros([n_v])
@@ -467,7 +467,7 @@ def main(*args):
         XtZ_r = ZtX_r.transpose((0,2,1))
 
         # Spatially varying nv for ring
-        n_s_sv_r = n_s_sv[R_inds,:]
+        n_sv_r = n_sv[R_inds,:]
 
         # Clear some memory
         del sumXtX_r, sumZtX_r, sumZtZ_r
@@ -511,18 +511,18 @@ def main(*args):
     if n_v_r:
 
         # Run parameter estimation
-        beta_r, sigma2_r, D_r = blmm_estimate.main(inputs, R_inds, XtX_r, XtY_r, ZtX_r, ZtY_r, ZtZ_r, XtZ_r, YtZ_r, YtY_r, YtX_r, n_s_sv_r, nlevels, nparams)
+        beta_r, sigma2_r, D_r = blmm_estimate.main(inputs, R_inds, XtX_r, XtY_r, ZtX_r, ZtY_r, ZtZ_r, XtZ_r, YtZ_r, YtY_r, YtX_r, n_sv_r, nlevels, nparams)
 
         # Run inference
-        blmm_inference.main(inputs, nparams, nlevels, R_inds, beta_r, D_r, sigma2_r, n_s_sv_r, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r)       
+        blmm_inference.main(inputs, nparams, nlevels, R_inds, beta_r, D_r, sigma2_r, n_sv_r, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r)       
         
     if n_v_i:
 
         # Run parameter estimation
-        beta_i, sigma2_i, D_i = blmm_estimate.main(inputs, I_inds, XtX_i, XtY_i, ZtX_i, ZtY_i, ZtZ_i, XtZ_i, YtZ_i, YtY_i, YtX_i, n_s, nlevels, nparams)
+        beta_i, sigma2_i, D_i = blmm_estimate.main(inputs, I_inds, XtX_i, XtY_i, ZtX_i, ZtY_i, ZtZ_i, XtZ_i, YtZ_i, YtY_i, YtX_i, n, nlevels, nparams)
 
         # Run inference
-        blmm_inference.main(inputs, nparams, nlevels, I_inds, beta_i, D_i, sigma2_i, n_s, XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i)
+        blmm_inference.main(inputs, nparams, nlevels, I_inds, beta_i, D_i, sigma2_i, n, XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i)
 
     # Clean up files
     if len(args)==0:

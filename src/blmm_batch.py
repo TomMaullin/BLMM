@@ -43,11 +43,11 @@ def main(*args):
 
     OutDir = inputs['outdir']
 
-    # Get number of ffx parameters
-    c1 = blmm_eval(inputs['contrasts'][0]['c' + str(1)]['vector'])
-    c1 = np.array(c1)
-    n_p = c1.shape[0]
-    del c1
+    # Get number of fixed effects parameters
+    L1 = blmm_eval(inputs['contrasts'][0]['c' + str(1)]['vector'])
+    L1 = np.array(L1)
+    n_p = L1.shape[0]
+    del L1
 
     # Y volumes
     with open(inputs['Y_files']) as a:
@@ -166,37 +166,35 @@ def main(*args):
     # Verify input
     verifyInput(Y_files, M_files, Y0)
 
-    # Obtain Y, mask for Y and nmap. This mask is just for voxels
+    # Obtain Y, mask for Y and n_sv. This mask is just for voxels
     # with no studies present.
-    Y, Mask, nmap, M, Mmap = obtainY(Y_files, M_files, M_t, M_a)
+    Y, Mask, n_sv, M, Mmap = obtainY(Y_files, M_files, M_t, M_a)
 
     # Work out voxel specific designs
-    MX = blkMX(X, Y, M)
-    MZ = blkMX(Z, Y, M) # MIGHT NEED TO THINK ABOUT SPARSITY HERE LATER
-    
+    MX = applyMask(X, M)
+    MZ = applyMask(Z, M) 
+
     # Get X transpose Y, Z transpose Y and Y transpose Y.
     XtY = blkXtY(X, Y, Mask)
     YtY = blkYtY(Y, Mask)
-    ZtY = blkXtY(Z, Y, Mask) # REVISIT ONCE SPARSED
-
-    tmpXtX = X.transpose() @ X
+    ZtY = blkXtY(Z, Y, Mask) 
 
     # In a spatially varying design XtX has dimensions n_voxels
     # by n_parameters by n_parameters. We reshape to n_voxels by
     # n_parameters^2 so that we can save as a csv.
-    XtX = blkXtX(MX)
+    XtX = MX.transpose() @ MX
     XtX = XtX.reshape([XtX.shape[0], XtX.shape[1]*XtX.shape[2]])
 
     # In a spatially varying design ZtX has dimensions n_voxels
     # by n_q by n_parameters. We reshape to n_voxels by
     # n_parameters^2 so that we can save as a csv.
-    ZtX = blkZtX(MZ, MX)
+    ZtX = MZ.transpose() @ MX
     ZtX = ZtX.reshape([ZtX.shape[0], ZtX.shape[1]*ZtX.shape[2]])
     
     # In a spatially varying design ZtZ has dimensions n_voxels
     # by n_q by n_q. We reshape to n_voxels by n_q^2 so that we
     # can save as a csv.
-    ZtZ = blkXtX(MZ)
+    ZtZ = MZ.transpose() @ MZ
     ZtZ = ZtZ.reshape([ZtZ.shape[0], ZtZ.shape[1]*ZtZ.shape[2]])
 
     # ======================================================================
@@ -220,13 +218,16 @@ def main(*args):
     np.save(os.path.join(OutDir,"tmp","ZtZ" + str(batchNo)), 
                ZtZ) 
 
-    # Get map of number of scans at voxel.
-    nmap = nib.Nifti1Image(nmap,
+    # Get map of number of observations at voxel.
+    n_sv = nib.Nifti1Image(n_sv,
                            Y0.affine,
                            header=Y0.header)
-    nib.save(nmap, os.path.join(OutDir,'tmp',
+    nib.save(n_sv, os.path.join(OutDir,'tmp',
                     'blmm_vox_n_batch'+ str(batchNo) + '.nii'))
-    # Get map of number of scans at voxel.
+
+    # Get Mmap, indicating which design each voxel must use for analysis,
+    # using an integer representing the order in which X'X, Z'X and Z'Z 
+    # appear in the `XtX.npy`, `ZtX.npy` and `ZtZ.npy` files respectively.
     Mmap = nib.Nifti1Image(Mmap,
                            Y0.affine,
                            header=Y0.header)
@@ -238,7 +239,7 @@ def main(*args):
 
 def verifyInput(Y_files, M_files, Y0):
 
-    # Obtain information about zero-th scan
+    # Obtain information about zero-th observation
     d0 = Y0.get_data()
     Y0aff = Y0.affine
 
@@ -287,7 +288,7 @@ def verifyInput(Y_files, M_files, Y0):
                                  'different affine transformation to "' +
                                  Y0 + '"')
 
-def blkMX(X,Y,M):
+def applyMask(X,M):
 
     # Get M in a form where each voxel's mask is mutliplied
     # by X
@@ -307,16 +308,16 @@ def obtainY(Y_files, M_files, M_t, M_a):
     d = Y0.get_data()
     
     # Get number of voxels.
-    nvox = np.prod(d.shape)
+    v = np.prod(d.shape)
 
-    # Number of scans in block
-    nscan = len(Y_files)
+    # Number of observations in block
+    n = len(Y_files)
 
-    # Count number of scans contributing to voxels
-    nmap = np.zeros(d.shape)
+    # Count number of observations contributing to voxels
+    n_sv = np.zeros(d.shape)
 
     # Read in Y
-    Y = np.zeros([nscan, nvox])
+    Y = np.zeros([n, v])
     for i in range(0, len(Y_files)):
 
         # Read in each individual NIFTI.
@@ -344,13 +345,13 @@ def obtainY(Y_files, M_files, M_t, M_a):
         # NaN check
         d = np.nan_to_num(d)
 
-        # Count number of scans at each voxel
-        nmap = nmap + 1*(np.nan_to_num(d)!=0)
+        # Count number of observations at each voxel
+        n_sv = n_sv + 1*(np.nan_to_num(d)!=0)
 
         # Constructing Y matrix
-        Y[i, :] = d.reshape([1, nvox])
+        Y[i, :] = d.reshape([1, v])
     
-    Mask = np.zeros([nvox])
+    Mask = np.zeros([v])
     Mask[np.where(np.count_nonzero(Y, axis=0)>0)[0]] = 1
     
     Y = Y[:, np.where(np.count_nonzero(Y, axis=0)>0)[0]]
@@ -364,7 +365,7 @@ def obtainY(Y_files, M_files, M_t, M_a):
     unique_id_nifti = M_df['id'].values
     Mmap = np.zeros(Mask.shape)
     Mmap[np.flatnonzero(Mask)] = unique_id_nifti[:]
-    Mmap = Mmap.reshape(nmap.shape)
+    Mmap = Mmap.reshape(n_sv.shape)
 
     # Get the unique columns of M (Care must be taken here to retain
     # the original ordering, as unique_id_nifti is now based on said
@@ -374,23 +375,21 @@ def obtainY(Y_files, M_files, M_t, M_a):
 
 
 
-    return Y, Mask, nmap, M, Mmap
+    return Y, Mask, n_sv, M, Mmap
 
-# Note: this techniqcally calculates sum(Y.Y) for each voxel,
-# not Y transpose Y for all voxels
 def blkYtY(Y, Mask):
 
-    # Read in number of scans and voxels.
-    nscan = Y.shape[0]
-    nvox = Y.shape[1]
+    # Read in number of observations and voxels.
+    n = Y.shape[0]
+    v = Y.shape[1]
     
     # Reshape Y
-    Y_rs = Y.transpose().reshape(nvox, nscan, 1)
-    Yt_rs = Y.transpose().reshape(nvox, 1, nscan)
+    Y_rs = Y.transpose().reshape(v, n, 1)
+    Yt_rs = Y.transpose().reshape(v, 1, n)
     del Y
 
     # Calculate Y transpose Y.
-    YtY_m = np.matmul(Yt_rs,Y_rs).reshape([nvox, 1])
+    YtY_m = np.matmul(Yt_rs,Y_rs).reshape([v, 1])
 
     # Unmask YtY
     YtY = np.zeros([Mask.shape[0], 1])
@@ -402,73 +401,13 @@ def blkYtY(Y, Mask):
 def blkXtY(X, Y, Mask):
     
     # Calculate X transpose Y (Masked)
-    XtY_m = np.asarray(
-                np.dot(np.transpose(X), Y))
-
-    # Check the dimensions haven't been reduced
-    # (numpy will lower the dimension of the 
-    # array if the length in one dimension is
-    # one)
-    if np.ndim(XtY_m) == 0:
-        XtY_m = np.array([[XtY_m]])
-    elif np.ndim(XtY_m) == 1:
-        XtY_m = np.array([XtY_m])
+    XtY_m = X.transpose() @ Y
 
     # Unmask XtY
     XtY = np.zeros([XtY_m.shape[0], Mask.shape[0]])
     XtY[:,np.flatnonzero(Mask)] = XtY_m[:]
 
     return XtY
-
-
-def blkXtX(X):
-
-    if np.ndim(X) == 3:
-
-        Xt = X.transpose((0, 2, 1))
-        XtX = np.matmul(Xt, X)
-
-    else:
-
-        # Calculate XtX
-        XtX = np.asarray(
-                    np.dot(np.transpose(X), X))
-
-        # Check the dimensions haven't been reduced
-        # (numpy will lower the dimension of the 
-        # array if the length in one dimension is
-        # one)
-        if np.ndim(XtX) == 0:
-            XtX = np.array([XtX])
-        elif np.ndim(XtX) == 1:
-            XtX = np.array([XtX])
-
-    return XtX
-
-
-def blkZtX(Z,X):
-
-    if np.ndim(Z) == 3:
-
-        Zt = Z.transpose((0, 2, 1))
-        ZtX = np.matmul(Zt, X)
-
-    else:
-
-        # Calculate XtX
-        ZtX = Z.transpose() @ X
-
-        # Check the dimensions haven't been reduced
-        # (numpy will lower the dimension of the 
-        # array if the length in one dimension is
-        # one)
-        if np.ndim(ZtX) == 0:
-            ZtX = np.array([ZtX])
-        elif np.ndim(ZtX) == 1:
-            ZtX = np.array([ZtX])
-
-    return ZtX
-
 
 
 if __name__ == "__main__":
