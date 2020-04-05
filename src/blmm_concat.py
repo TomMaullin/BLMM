@@ -114,10 +114,10 @@ def main(*args):
     # Get number of rfx params
     nparams = np.array(nparams)
     nlevels = np.array(nlevels)
-    q = np.(nparams*nlevels)
+    q = np.sum(nparams*nlevels)
 
     # Get number of unique rfx params
-    q_u = np.(nparams*(nparams+1)//2)
+    q_u = np.sum(nparams*(nparams+1)//2)
     
     # Get number of parameters
     c1 = str2vec(inputs['contrasts'][0]['c' + str(1)]['vector'])
