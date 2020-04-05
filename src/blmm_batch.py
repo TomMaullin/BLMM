@@ -219,10 +219,16 @@ def main(*args):
     MX = applyMask(X, M)
     MZ = applyMask(Z, M) 
 
-    # Get X'Y, Z'Y and Y'Y.
-    XtY = blkXtY(X, Y, Mask)
-    YtY = blkYtY(Y, Mask)
-    ZtY = blkXtY(Z, Y, Mask) 
+    # Get X'Y, Z'Y and Y'Y. 
+    # ------------------------------------------------------------------
+    # Developer note: For these product matrices we do not need to worry
+    # about missing rows in X and Z. This is as the corresponding 
+    # elements in Y should already be set to 0 and, as such, won't have 
+    # any affect on these products.
+    # ------------------------------------------------------------------
+    XtY = unmasked_AtB(X, Y, Mask)
+    YtY = unmasked_AtA(Y, Mask)
+    ZtY = unmasked_AtB(Z, Y, Mask) 
 
     # In a spatially varying design XtX has dimensions n by p by p. We
     # reshape to n by p^2 so that we can save as a csv.
@@ -363,7 +369,7 @@ def verifyInput(Y_files, M_files, Y0):
 # ----------------------------------------------------------------------------
 #
 #  - `X`: The (2D) array of interest to be converted.
-#  - `M`: The (n by v) mask to be applied to X (essentially the matrix Y!=0,
+#  - `M`: The (n by v) mask to be applied to X (essentially the array Y!=0,
 #         reshaped where appropriate).
 #
 # ----------------------------------------------------------------------------
@@ -393,7 +399,7 @@ def applyMask(X,M):
 # 
 # The below function reads in the input files and thresholds and returns; Y
 # (as a numpy array), the overall mask (as a 3D numpy array), the spatially
-# varying number of subjects (as a 3D numpy array), the matrix Y!=0 (resized
+# varying number of subjects (as a 3D numpy array), the array Y!=0 (resized
 # appropriately for later computation) and a uniqueness map representing which
 # voxel has which design.
 #
@@ -418,7 +424,7 @@ def applyMask(X,M):
 #  - `Y`: The masked observations, reshaped to be of dimension n by v
 #  - `Mask`: The overall mask (as a 3D numpy array).
 #  - `n_sv`: The spatially varying number of subjects (as a 3D numpy array).
-#  - `M`: The matrix Y!=0 (resized appropriately for later computation).
+#  - `M`: The array Y!=0 (resized appropriately for later computation).
 #  - `Mmap`: A uniqueness map representing which voxel has which design.
 #
 # ============================================================================
@@ -469,7 +475,7 @@ def obtainY(Y_files, M_files, M_t, M_a):
         # Count number of observations at each voxel
         n_sv = n_sv + 1*(np.nan_to_num(d)!=0)
 
-        # Constructing Y matrix
+        # Constructing Y array
         Y[i, :] = d.reshape([1, v])
     
     # Work out mask
@@ -503,7 +509,9 @@ def obtainY(Y_files, M_files, M_t, M_a):
 
 # ============================================================================
 # 
-# The below function 
+# The below function takes in an array A and a 3D mask volume and returns a 
+# array AtA corresponding to A'A for all voxels inside the mask and zero for
+# all voxels outside the mask.
 #
 # ----------------------------------------------------------------------------
 #
@@ -511,7 +519,8 @@ def obtainY(Y_files, M_files, M_t, M_a):
 #
 # ----------------------------------------------------------------------------
 #
-#  - 
+#  - `A`: An (n by v) array.
+#  - `Mask`: The 3D mask array.
 #
 # ----------------------------------------------------------------------------
 #
@@ -519,33 +528,36 @@ def obtainY(Y_files, M_files, M_t, M_a):
 #
 # ----------------------------------------------------------------------------
 #
-#  - 
+#  - `AtA`: A array corresponding to A'A for all voxels inside the mask and
+#           zero for all voxels outside the mask.
 #
 # ============================================================================
-def blkYtY(Y, Mask):
+def unmasked_AtA(A, Mask):
 
     # Read in number of observations and voxels.
-    n = Y.shape[0]
-    v = Y.shape[1]
+    n = A.shape[0]
+    v = A.shape[1]
     
-    # Reshape Y
-    Y_rs = Y.transpose().reshape(v, n, 1)
-    Yt_rs = Y.transpose().reshape(v, 1, n)
-    del Y
+    # Reshape A
+    A_rs = A.transpose().reshape(v, n, 1)
+    At_rs = A.transpose().reshape(v, 1, n)
+    del A
 
-    # Calculate Y transpose Y.
-    YtY_m = np.matmul(Yt_rs,Y_rs).reshape([v, 1])
+    # Calculate A transpose A.
+    AtA_m = np.matmul(At_rs,A_rs).reshape([v, 1])
 
     # Unmask YtY
-    YtY = np.zeros([Mask.shape[0], 1])
-    YtY[np.flatnonzero(Mask),:] = YtY_m[:]
+    AtA = np.zeros([Mask.shape[0], 1])
+    AtA[np.flatnonzero(Mask),:] = AtA_m[:]
 
-    return YtY
+    return AtA
 
 
 # ============================================================================
 # 
-# The below function 
+# The below function takes in two matrices, A and B, and a 3D mask volume and
+# returns an array AtB corresponding to A'B for all voxels inside the mask
+# and zero for all voxels outside the mask.
 #
 # ----------------------------------------------------------------------------
 #
@@ -553,7 +565,9 @@ def blkYtY(Y, Mask):
 #
 # ----------------------------------------------------------------------------
 #
-#  - 
+#  - `A`: An (n by v) array.
+#  - `B`: An (v by n by p) array.
+#  - `Mask`: The 3D mask array.
 #
 # ----------------------------------------------------------------------------
 #
@@ -561,19 +575,20 @@ def blkYtY(Y, Mask):
 #
 # ----------------------------------------------------------------------------
 #
-#  - 
+#  - `AtB`: A array corresponding to A'B for all voxels inside the mask and
+#           zero for all voxels outside the mask.
 #
 # ============================================================================
-def blkXtY(X, Y, Mask):
+def unmasked_AtB(A, B, Mask):
     
-    # Calculate X transpose Y (Masked)
-    XtY_m = X.transpose() @ Y
+    # Calculate A transpose B (Masked)
+    AtY_m = A.transpose() @ B
 
     # Unmask XtY
-    XtY = np.zeros([XtY_m.shape[0], Mask.shape[0]])
-    XtY[:,np.flatnonzero(Mask)] = XtY_m[:]
+    AtB = np.zeros([AtB_m.shape[0], Mask.shape[0]])
+    AtB[:,np.flatnonzero(Mask)] = AtB_m[:]
 
-    return XtY
+    return AtB
 
 
 if __name__ == "__main__":
