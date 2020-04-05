@@ -3,7 +3,26 @@ import pandas as pd
 import nibabel as nib
 import numpy as np
 
-# This is a small function to load in a file based on it's prefix.
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# This file contains all miscellaneous file i/o functions used by BLMM. These
+# functions exist so that basic file handling does not take too much space in
+# the bulk of the main code.
+#
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# Author: Tom Maullin (Last edited 05/04/2020)
+#
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+# ============================================================================
+#
+# The below function is shorthand for reading in the following file formats:
+#
+#                csv, tsv, txt, dat, nii, nii.gz, img, img.gz 
+#
+# ============================================================================
 def loadFile(filepath):
 
     # If the file is text data in the form of csv, tsv, txt or dat
@@ -103,8 +122,13 @@ def loadFile(filepath):
 
     return data
 
-# This is a small function to help evaluate a string containing
-# a contrast vector
+
+# ============================================================================
+#
+# The below function takes in a string representing a contrast vector and 
+# returns the contrast vector as an array.
+#
+# ============================================================================
 def str2vec(c):
 
     c = str(c)
@@ -122,12 +146,40 @@ def str2vec(c):
     return(eval(cf))
 
 
-def addBlockToNifti(fname, block, blockInds,dim=None,volc=None,aff=None,hdr=None):
+# ============================================================================
+#
+# The below function adds a block of voxels to a pre-existing NIFTI or creates
+# a NIFTI of specified dimensions if not.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `fname`: An absolute path to the Nifti file.
+# - `block`: The block of values to write to the NIFTI.
+# - `blockInds`: The indices representing the 3D coordinates `block` should be 
+#                written to in the NIFTI. (Note: It is assumed if the NIFTI is
+#                4D we assume that the indices we want to write to in each 3D
+#                volume/slice are the same across all 3D volumes/slices).
+# - `dim` (optional): If creating the NIFTI image for the first time, the 
+#                     dimensions of the NIFTI image must be specified.
+# - `volInd` (optional): If we only want to write to one 3D volume/slice,
+#                        within a 4D file, this specifies the index of the
+#                        volume of interest.
+# - `aff` (optional): If creating the NIFTI image for the first time, the 
+#                     affine of the NIFTI image must be specified.
+# - `hdr` (optional): If creating the NIFTI image for the first time, the 
+#                     header of the NIFTI image must be specified.
+#
+# ============================================================================
+def addBlockToNifti(fname, block, blockInds,dim=None,volInd=None,aff=None,hdr=None):
 
-    # Check volc is correct datatype
-    if volc is not None:
+    # Check volInd is correct datatype
+    if volInd is not None:
 
-        volc = int(volc)
+        volInd = int(volInd)
 
     # Check whether the NIFTI exists already
     if os.path.isfile(fname):
@@ -185,7 +237,7 @@ def addBlockToNifti(fname, block, blockInds,dim=None,volc=None,aff=None,hdr=None
     data = data.reshape([n_vox, n_vol])
 
     # Add all the volumes
-    if volc is None:
+    if volInd is None:
 
         # Add block
         data[blockInds,:] = block.reshape(data[blockInds,:].shape)
@@ -201,13 +253,13 @@ def addBlockToNifti(fname, block, blockInds,dim=None,volc=None,aff=None,hdr=None
     else:
 
         # We're only looking at this volume
-        data = data[:,volc].reshape((n_vox,1))
+        data = data[:,volInd].reshape((n_vox,1))
 
         # Add block
         data[blockInds,:] = block.reshape(data[blockInds,:].shape)
         
         # Put in the volume
-        data_out[:,:,:,volc] = data[:,0].reshape(int(dim[0]),
+        data_out[:,:,:,volInd] = data[:,0].reshape(int(dim[0]),
                                                  int(dim[1]),
                                                  int(dim[2]))
 

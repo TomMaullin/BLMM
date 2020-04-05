@@ -1,5 +1,9 @@
 import numpy as np
 import scipy.sparse
+
+# Currently, PLS is for the mostpart unused. As such I have left the imports 
+# here for completeness but do not run them. Perhaps this will change in 
+# future.
 mode='notPLS'
 if mode=='PLS':
   import cvxopt

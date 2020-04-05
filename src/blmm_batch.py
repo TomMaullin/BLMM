@@ -582,7 +582,7 @@ def unmasked_AtA(A, Mask):
 def unmasked_AtB(A, B, Mask):
     
     # Calculate A transpose B (Masked)
-    AtY_m = A.transpose() @ B
+    AtB_m = A.transpose() @ B
 
     # Unmask XtY
     AtB = np.zeros([AtB_m.shape[0], Mask.shape[0]])
