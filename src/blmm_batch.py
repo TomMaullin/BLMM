@@ -101,6 +101,7 @@ def main(*args):
     except Exception as error:
         raise ValueError('The NIFTI "' + Y_files[0] + '"does not exist')
 
+    # Read in some data as a default nifti
     d0 = Y0.get_data()
 
     # Get the maximum memory a NIFTI could take in storage. 
@@ -225,17 +226,17 @@ def main(*args):
 
     # In a spatially varying design XtX has dimensions n by p by p. We
     # reshape to n by p^2 so that we can save as a csv.
-    XtX = MX.transpose() @ MX
+    XtX = MX.transpose(0,2,1) @ MX
     XtX = XtX.reshape([XtX.shape[0], XtX.shape[1]*XtX.shape[2]])
 
     # In a spatially varying design ZtX has dimensions n by q by p. We
     # reshape to n by q*p so that we can save as a csv.
-    ZtX = MZ.transpose() @ MX
+    ZtX = MZ.transpose(0,2,1) @ MX
     ZtX = ZtX.reshape([ZtX.shape[0], ZtX.shape[1]*ZtX.shape[2]])
     
     # In a spatially varying design ZtZ has dimensions n by q by q. We 
     # reshape to n by q^2 so that we can save as a csv.
-    ZtZ = MZ.transpose() @ MZ
+    ZtZ = MZ.transpose(0,2,1) @ MZ
     ZtZ = ZtZ.reshape([ZtZ.shape[0], ZtZ.shape[1]*ZtZ.shape[2]])
 
     # Pandas reads and writes files much more quickly with nrows <<
@@ -276,6 +277,22 @@ def main(*args):
     w.resetwarnings()
 
 
+# ============================================================================
+# 
+# The below function performs some basic checks on the dimensions of the input
+# NIFTI files and verifies that they all exist.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - `Y_files`: A list of input NIFTI volumes.
+#  - `M_files`: A list of input NIFTI mask volumes.
+#  - `Y0`: An example NIFTI to check all others against.
+#
+# ============================================================================
 def verifyInput(Y_files, M_files, Y0):
 
     # Obtain information about zero-th observation
@@ -331,6 +348,33 @@ def verifyInput(Y_files, M_files, Y0):
                                  'different affine transformation to "' +
                                  Y0 + '"')
 
+
+# ============================================================================
+# 
+# The below function takes in a (2D) array, X, and applies a mask to it, 
+# resulting in a 3D array, MX, where whenever data was missing at voxel v for
+# observations i1, i2,... etc, MX[v,:,:] is X but with rows i1, i2,... i3
+# replaced with zeros.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - `X`: The (2D) array of interest to be converted.
+#  - `M`: The (n by v) mask to be applied to X (essentially the matrix Y!=0,
+#         reshaped where appropriate).
+#
+# ----------------------------------------------------------------------------
+#
+# This function gives as outputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - `MX`: The (3D) "Masked" version of X.
+#
+# ============================================================================
 def applyMask(X,M):
 
     # Get M in a form where each voxel's mask is mutliplied
@@ -338,12 +382,34 @@ def applyMask(X,M):
     M = M.transpose().reshape([M.shape[1], 1, M.shape[0]])
     Xt=X.transpose()
 
-    # Obtain design for each voxel
+    # Obtain X for each voxel
     MXt = np.multiply(M, Xt)
     MX = MXt.transpose(0,2,1)
 
     return MX
 
+
+# ============================================================================
+# 
+# The below function 
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - 
+#
+# ----------------------------------------------------------------------------
+#
+# This function gives as outputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - 
+#
+# ============================================================================
 def obtainY(Y_files, M_files, M_t, M_a):
 
     # Load in one nifti to check NIFTI size
@@ -418,6 +484,28 @@ def obtainY(Y_files, M_files, M_t, M_a):
 
     return Y, Mask, n_sv, M, Mmap
 
+
+# ============================================================================
+# 
+# The below function 
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - 
+#
+# ----------------------------------------------------------------------------
+#
+# This function gives as outputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - 
+#
+# ============================================================================
 def blkYtY(Y, Mask):
 
     # Read in number of observations and voxels.
@@ -439,6 +527,27 @@ def blkYtY(Y, Mask):
     return YtY
 
 
+# ============================================================================
+# 
+# The below function 
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - 
+#
+# ----------------------------------------------------------------------------
+#
+# This function gives as outputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - 
+#
+# ============================================================================
 def blkXtY(X, Y, Mask):
     
     # Calculate X transpose Y (Masked)
