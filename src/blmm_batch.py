@@ -40,8 +40,8 @@ import pandas as pd
 #
 # The code takes the following inputs:
 #
-#  - batchNo: An integer (`batch number`) representing which batch of subjects should
-#             be considered here.
+#  - batch number: An integer (`batch number`) representing which batch of subjects
+#                  should be considered here.
 #  - input path (optional): If specified, the second argument will be assumed to be a
 #                           path to an `inputs` yml file, following the same 
 #                           formatting guidelines as `blmm_config.yml`. If not 
@@ -54,8 +54,10 @@ def main(*args):
     # Change to blm directory
     os.chdir(os.path.dirname(os.path.realpath(__file__)))    
 
+    # Obtain batch number
     batchNo = args[0]
 
+    # Work out if which file to look at for inputs
     if len(args)==1 or (not args[1]):
         # Load in inputs
         with open(os.path.join(os.getcwd(),'..','blmm_config.yml'), 'r') as stream:
@@ -69,15 +71,17 @@ def main(*args):
             # In this case inputs structure is first argument.
             inputs = args[1]
 
+    # Work out the maximum memory limit
     if 'MAXMEM' in inputs:
         MAXMEM = eval(inputs['MAXMEM'])
     else:
         MAXMEM = 2**32
 
+    # Output directory
     OutDir = inputs['outdir']
 
     # Get number of fixed effects parameters
-    L1 = blmm_eval(inputs['contrasts'][0]['c' + str(1)]['vector'])
+    L1 = str2vec(inputs['contrasts'][0]['c' + str(1)]['vector'])
     L1 = np.array(L1)
     n_p = L1.shape[0]
     del L1
@@ -100,11 +104,11 @@ def main(*args):
     d0 = Y0.get_data()
 
     # Get the maximum memory a NIFTI could take in storage. 
-    NIFTIsize = sys.getsizeof(np.zeros(d0.shape,dtype='uint64'))
+    NIFTImem = sys.getsizeof(np.zeros(d0.shape,dtype='uint64'))
 
     # Similar to blksize in SwE, we divide by 8 times the size of a nifti
     # to work out how many blocks we use.
-    blksize = int(np.floor(MAXMEM/8/NIFTIsize/n_p));
+    blksize = int(np.floor(MAXMEM/8/NIFTImem/n_p));
 
     # Reduce X to X for this block.
     X = loadFile(inputs['X'])
@@ -117,7 +121,11 @@ def main(*args):
     # Read in each factor
     for i in range(0,n_f):
 
+        # Read in the "factor vector" representing which level each observation
+        # belongs to
         Zi_factor = loadFile(inputs['Z'][i]['f' + str(i+1)]['factor'])
+
+        # Read the random effects design in
         Zi_design = loadFile(inputs['Z'][i]['f' + str(i+1)]['design'])
 
         # Number of levels for factor i
@@ -151,6 +159,7 @@ def main(*args):
     # Mask volumes (if they are given)
     if 'data_mask_files' in inputs:
 
+        # Rrad in mask files, making sure to avoid the newline characters
         with open(inputs['data_mask_files']) as a:
 
             M_files = []
@@ -167,6 +176,8 @@ def main(*args):
 
         else:
 
+            # If we haven't the same number of masks and observations then
+            # something must be mispecified.
             if len(M_files) > len(Y_files):
 
                 raise ValueError('Too many data_masks specified!')
@@ -199,41 +210,36 @@ def main(*args):
     # Verify input
     verifyInput(Y_files, M_files, Y0)
 
-    # Obtain Y, mask for Y and n_sv. This mask is just for voxels
-    # with no studies present.
+    # Obtain Y, mask for Y, M (essentially the array Y!=0) n_sv and Mmap.
+    # This mask is just for voxels with no studies present.
     Y, Mask, n_sv, M, Mmap = obtainY(Y_files, M_files, M_t, M_a)
 
     # Work out voxel specific designs
     MX = applyMask(X, M)
     MZ = applyMask(Z, M) 
 
-    # Get X transpose Y, Z transpose Y and Y transpose Y.
+    # Get X'Y, Z'Y and Y'Y.
     XtY = blkXtY(X, Y, Mask)
     YtY = blkYtY(Y, Mask)
     ZtY = blkXtY(Z, Y, Mask) 
 
-    # In a spatially varying design XtX has dimensions n_voxels
-    # by n_parameters by n_parameters. We reshape to n_voxels by
-    # n_parameters^2 so that we can save as a csv.
+    # In a spatially varying design XtX has dimensions n by p by p. We
+    # reshape to n by p^2 so that we can save as a csv.
     XtX = MX.transpose() @ MX
     XtX = XtX.reshape([XtX.shape[0], XtX.shape[1]*XtX.shape[2]])
 
-    # In a spatially varying design ZtX has dimensions n_voxels
-    # by n_q by n_parameters. We reshape to n_voxels by
-    # n_parameters^2 so that we can save as a csv.
+    # In a spatially varying design ZtX has dimensions n by q by p. We
+    # reshape to n by q*p so that we can save as a csv.
     ZtX = MZ.transpose() @ MX
     ZtX = ZtX.reshape([ZtX.shape[0], ZtX.shape[1]*ZtX.shape[2]])
     
-    # In a spatially varying design ZtZ has dimensions n_voxels
-    # by n_q by n_q. We reshape to n_voxels by n_q^2 so that we
-    # can save as a csv.
+    # In a spatially varying design ZtZ has dimensions n by q by q. We 
+    # reshape to n by q^2 so that we can save as a csv.
     ZtZ = MZ.transpose() @ MZ
     ZtZ = ZtZ.reshape([ZtZ.shape[0], ZtZ.shape[1]*ZtZ.shape[2]])
 
-    # ======================================================================
-
     # Pandas reads and writes files much more quickly with nrows <<
-    # number of columns
+    # number of columns, so we transpose
     XtY = XtY.transpose()
     ZtY = ZtY.transpose()
 
@@ -279,8 +285,10 @@ def verifyInput(Y_files, M_files, Y0):
     # Initial checks for NIFTI compatability for Y.
     for i in range(0, len(Y_files)):
 
+        # Look at i^th observation
         Y_file = Y_files[i]
 
+        # Check the file exists
         try:
             Y = loadFile(Y_file)
         except Exception as error:
@@ -302,8 +310,10 @@ def verifyInput(Y_files, M_files, Y0):
     if M_files is not None:
         for i in range(0, len(M_files)):
 
+            # Look at i^th mask
             M_file = M_files[i]
 
+            # Check the file exists
             try:
                 M = loadFile(M_file)
             except Exception as error:
