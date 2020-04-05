@@ -16,7 +16,7 @@ from lib.fileio import *
 import scipy.sparse
 import pandas as pd
 
-# ------------------------------------------------------------------------------------
+# ====================================================================================
 #
 # This file is the second stage of the BLMM pipeline. Following the execution of 
 # `blmm_setup.py`, the input images/observations (e.g. subjects, timepoints, etc) are
@@ -48,7 +48,7 @@ import pandas as pd
 #                           specified, the default file `blmm_config.yml` will be 
 #                           assumed to contain the inputs.
 #
-# ------------------------------------------------------------------------------------
+# ====================================================================================
 def main(*args):
 
     # Change to blm directory

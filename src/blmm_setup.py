@@ -8,7 +8,7 @@ import os
 import yaml
 from lib.fileio import loadFile, str2vec
 
-# ------------------------------------------------------------------------------------
+# ====================================================================================
 #
 # This file is the first stage of the BLMM pipeline. It reads in the inputs file and
 # reformats it where necessary, then works out how many batches should be used for 
@@ -29,7 +29,7 @@ from lib.fileio import loadFile, str2vec
 #                           specified, the default file `blmm_config.yml` will be 
 #                           assumed to contain the inputs.
 #
-# ------------------------------------------------------------------------------------
+# ====================================================================================
 def main(*args):
 
     # Change to blmm directory

@@ -12,9 +12,13 @@ from lib.fileio import *
 from lib.est3D import *
 
 
-# ------------------------------------------------------------------------------------
+# ====================================================================================
 #
-# This file is the fourth stage of the BLMM pipeline. 
+# This file is the fourth stage of the BLMM pipeline. Here, the parameters beta, 
+# sigma2 and D are estimated from the product matrices. By default the estimation 
+# method is set to pSFS (which has been observed to be the quickest), but all 3D 
+# Fisher Scoring methods have been included as options for completeness. The parameter
+# estimates are also output as NIFTI images here.
 #
 # ------------------------------------------------------------------------------------
 #
@@ -23,6 +27,8 @@ from lib.est3D import *
 # ------------------------------------------------------------------------------------
 #
 # The code takes the following inputs:
+#
+# ------------------------------------------------------------------------------------
 #
 #  - `inputs`: The contents of the `inputs.yml` file, loaded using the `yaml` python 
 #              package.
@@ -43,9 +49,25 @@ from lib.est3D import *
 #           varying).
 #  - `n`: The number of observations (can be spatially varying or non-spatially 
 #         varying). 
+#  - `nlevels`: A vector containing the number of levels for each factor, e.g. 
+#               `nlevels=[3,4]` would mean the first factor has 3 levels and the
+#               second factor has 4 levels.
+#  - `nparams`: A vector containing the number of parameters for each factor, e.g.
+#               `nlevels=[2,1]` would mean the first factor has 2 parameters and the
+#               second factor has 1 parameter.
 #
 # ------------------------------------------------------------------------------------
-def main(inputs, inds, XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, n, nlevels, nparams):
+#
+# And returns as outputs:
+#
+# ------------------------------------------------------------------------------------
+#
+# - `beta`: The fixed effects parameter estimates for each voxel.
+# - `sigma2`: The fixed effects variance estimate for each voxel.
+# - `D`: The random effects covariance matrix estimate for each voxel.
+#
+# ====================================================================================
+def main(inputs, inds, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, n, nlevels, nparams):
 
     # ----------------------------------------------------------------------
     #  Read in one input nifti to get size, affines, etc.

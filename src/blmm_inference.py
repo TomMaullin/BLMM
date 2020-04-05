@@ -3,19 +3,57 @@ import warnings as w
 # be ignored for now.
 w.simplefilter(action = 'ignore', category = FutureWarning)
 import numpy as np
-import sys
 import os
-import glob
-import shutil
-import yaml
 np.set_printoptions(threshold=np.nan)
-from lib.npMatrix3d import *
-from lib.npMatrix2d import *
 from lib.fileio import *
 
-# --------------------------------------------------------------------------
-# Author: Tom Maullin (04/04/2020)
-
+# ====================================================================================
+#
+# This file is the fifth and final stage of the BLMM pipeline. This file takes in all
+# parameter estimates and product matrices and outputs statistic images for the 
+# contrasts specified. A full list of output files can be found in the `ReadMe.md` 
+# file at the top of the repository.
+#
+# ------------------------------------------------------------------------------------
+#
+# Author: Tom Maullin (Last edited: 04/04/2020)
+#
+# ------------------------------------------------------------------------------------
+#
+# The code takes the following inputs:
+#
+# ------------------------------------------------------------------------------------
+#
+# - `inputs`: The contents of the `inputs.yml` file, loaded using the `yaml` python 
+#              package.
+# - `nparams`: A vector containing the number of parameters for each factor, e.g.
+#              `nlevels=[2,1]` would mean the first factor has 2 parameters and the
+#              second factor has 1 parameter.
+# - `nlevels`: A vector containing the number of levels for each factor, e.g. 
+#              `nlevels=[3,4]` would mean the first factor has 3 levels and the
+#              second factor has 4 levels.
+#  - `inds`: The (flattened) indices of the voxels we wish to perform parameter
+#            estimation for.
+#  - `beta`: The fixed effects parameter estimates for each voxel.
+#  - `sigma2`: The fixed effects variance estimate for each voxel.
+#  - `D`: The random effects covariance matrix estimate for each voxel.
+#  - `XtX`: X transpose multiplied by X (can be spatially varying or non-spatially 
+#           varying). 
+#  - `XtY`: X transpose multiplied by Y (spatially varying.
+#  - `XtZ`: X transpose multiplied by Z (can be spatially varying or non-spatially 
+#           varying).
+#  - `YtX`: Y transpose multiplied by X (spatially varying.
+#  - `YtY`: Y transpose multiplied by Y (spatially varying.
+#  - `YtZ`: Y transpose multiplied by Z (spatially varying.
+#  - `ZtX`: Z transpose multiplied by X (can be spatially varying or non-spatially 
+#           varying).
+#  - `ZtY`: Z transpose multiplied by Y (spatially varying.
+#  - `ZtZ`: Z transpose multiplied by Z (can be spatially varying or non-spatially 
+#           varying).
+#  - `n`: The number of observations (can be spatially varying or non-spatially 
+#         varying). 
+#
+# ====================================================================================
 def main(inputs, nparams, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ):
 
     # ----------------------------------------------------------------------

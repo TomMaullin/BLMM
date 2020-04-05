@@ -10,14 +10,13 @@ import glob
 import shutil
 import yaml
 np.set_printoptions(threshold=np.nan)
-from scipy import stats
 from lib.npMatrix3d import *
 from lib.npMatrix2d import *
 from lib.fileio import *
 import src.blmm_inference as blmm_inference
 import src.blmm_estimate as blmm_estimate
 
-# ------------------------------------------------------------------------------------
+# ====================================================================================
 #
 # This file is the third stage of the BLMM pipeline. This stage reads in the product
 # matrices output by each of the `blmm_batch` jobs during the second stage and s 
@@ -65,7 +64,7 @@ import src.blmm_estimate as blmm_estimate
 # _sv - This means this variable is spatially varying (There is a reading
 #       per voxel). 
 #
-# ------------------------------------------------------------------------------------
+# ====================================================================================
 def main(*args):
 
     # --------------------------------------------------------------------------------
@@ -522,7 +521,7 @@ def main(*args):
     if v_r:
 
         # Run parameter estimation
-        beta_r, sigma2_r, D_r = blmm_estimate.main(inputs, R_inds, XtX_r, XtY_r, ZtX_r, ZtY_r, ZtZ_r, XtZ_r, YtZ_r, YtY_r, YtX_r, n_sv_r, nlevels, nparams)
+        beta_r, sigma2_r, D_r = blmm_estimate.main(inputs, R_inds, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ,_r, n_sv_r, nlevels, nparams)
 
         # Run inference
         blmm_inference.main(inputs, nparams, nlevels, R_inds, beta_r, D_r, sigma2_r, n_sv_r, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r)       
@@ -530,7 +529,7 @@ def main(*args):
     if v_i:
 
         # Run parameter estimation
-        beta_i, sigma2_i, D_i = blmm_estimate.main(inputs, I_inds, XtX_i, XtY_i, ZtX_i, ZtY_i, ZtZ_i, XtZ_i, YtZ_i, YtY_i, YtX_i, n, nlevels, nparams)
+        beta_i, sigma2_i, D_i = blmm_estimate.main(inputs, I_inds,  XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i, n, nlevels, nparams)
 
         # Run inference
         blmm_inference.main(inputs, nparams, nlevels, I_inds, beta_i, D_i, sigma2_i, n, XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i)
