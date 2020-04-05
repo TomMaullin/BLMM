@@ -460,9 +460,11 @@ def obtainY(Y_files, M_files, M_t, M_a):
         # Constructing Y matrix
         Y[i, :] = d.reshape([1, v])
     
+    # Work out mask
     Mask = np.zeros([v])
     Mask[np.where(np.count_nonzero(Y, axis=0)>0)[0]] = 1
     
+    # Apply mask to Y
     Y = Y[:, np.where(np.count_nonzero(Y, axis=0)>0)[0]]
 
     # Work out the mask.
@@ -472,6 +474,8 @@ def obtainY(Y_files, M_files, M_t, M_a):
     M_df = pd.DataFrame(M.transpose())
     M_df['id'] = M_df.groupby(M_df.columns.tolist(), sort=False).ngroup() + 1
     unique_id_nifti = M_df['id'].values
+
+    # Make a nifti which will act as a "key" telling us which voxel had which design
     Mmap = np.zeros(Mask.shape)
     Mmap[np.flatnonzero(Mask)] = unique_id_nifti[:]
     Mmap = Mmap.reshape(n_sv.shape)

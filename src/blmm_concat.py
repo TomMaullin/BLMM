@@ -93,7 +93,7 @@ def main(*args):
     n_q_u = np.sum(nparams*(nparams+1)//2)
     
     # Get number of parameters
-    c1 = blmm_eval(inputs['contrasts'][0]['c' + str(1)]['vector'])
+    c1 = str2vec(inputs['contrasts'][0]['c' + str(1)]['vector'])
     c1 = np.array(c1)
     n_p = c1.shape[0]
     del c1
