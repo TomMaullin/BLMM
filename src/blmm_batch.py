@@ -16,6 +16,39 @@ from lib.fileio import *
 import scipy.sparse
 import pandas as pd
 
+# ------------------------------------------------------------------------------------
+#
+# This file is the second stage of the BLMM pipeline. Following the execution of 
+# `blmm_setup.py`, the input images/observations (e.g. subjects, timepoints, etc) are
+# partitioned into groups, or batches. The below code is then executed, in parallel,
+# on each batch. The product matrices, X'X, X'Y, X'Z, Y'Y, Y'Z and Z'Z are calculated
+# across all voxels for the batch and saved as numpy data files. As, in practice, many
+# voxels share the same designs (with spatially varying designs typically only
+# occuring near the edge of the brain, where missingness may occur due to mask
+# variability) we only record the unique X'X, X'Z and Z'Z in the npy files. For later
+# code to determine which voxels had which design we also output the "uniqueness" 
+# map, which acts as a key, telling us which voxels had which designs. This whole 
+# process is crucial to save storage space. We also keep record of the number of
+# input images which had data at each voxel, so that we have the "spatially varying n"
+# for later computation.
+#
+# ------------------------------------------------------------------------------------
+#
+# Author: Tom Maullin (Last edited: 04/04/2020)
+#
+# ------------------------------------------------------------------------------------
+#
+# The code takes the following inputs:
+#
+#  - batchNo: An integer (`batch number`) representing which batch of subjects should
+#             be considered here.
+#  - input path (optional): If specified, the second argument will be assumed to be a
+#                           path to an `inputs` yml file, following the same 
+#                           formatting guidelines as `blmm_config.yml`. If not 
+#                           specified, the default file `blmm_config.yml` will be 
+#                           assumed to contain the inputs.
+#
+# ------------------------------------------------------------------------------------
 def main(*args):
 
     # Change to blm directory
@@ -372,8 +405,6 @@ def obtainY(Y_files, M_files, M_t, M_a):
     # ordering)
     _, idx = np.unique(M, axis=1, return_index=True)
     M = M[:,np.sort(idx)]
-
-
 
     return Y, Mask, n_sv, M, Mmap
 

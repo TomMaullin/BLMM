@@ -112,7 +112,7 @@ def main(*args):
     OutDir = inputs['outdir']
 
     # Get number of parameters
-    c1 = blmm_eval(inputs['contrasts'][0]['c' + str(1)]['vector'])
+    c1 = str2vec(inputs['contrasts'][0]['c' + str(1)]['vector'])
     c1 = np.array(c1)
     n_p = c1.shape[0]
     del c1
@@ -156,7 +156,7 @@ def main(*args):
     for i in range(0,n_c):
 
         # Read in contrast vector
-        cvec = blmm_eval(inputs['contrasts'][i]['c' + str(i+1)]['vector'])
+        cvec = str2vec(inputs['contrasts'][i]['c' + str(i+1)]['vector'])
         cvec = np.array(cvec)
 
         if cvec.ndim>1:
