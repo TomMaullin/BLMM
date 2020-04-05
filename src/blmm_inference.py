@@ -118,7 +118,7 @@ def main(inputs, nparams, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX,
     for i in range(0,c):
 
         # Read in contrast vector
-        L = blmm_eval(inputs['contrasts'][i]['c' + str(i+1)]['vector'])
+        L = str2vec(inputs['contrasts'][i]['c' + str(i+1)]['vector'])
         L = np.array(L)
 
         if L.ndim == 1:
@@ -134,7 +134,7 @@ def main(inputs, nparams, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX,
     for i in range(0,c):
 
         # Read in contrast vector
-        L = blmm_eval(inputs['contrasts'][i]['c' + str(i+1)]['vector'])
+        L = str2vec(inputs['contrasts'][i]['c' + str(i+1)]['vector'])
         L = np.array(L)
     
         # Work out if it is a T or an F contrast NTS: FIX THIS

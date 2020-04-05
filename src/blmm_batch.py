@@ -391,7 +391,11 @@ def applyMask(X,M):
 
 # ============================================================================
 # 
-# The below function 
+# The below function reads in the input files and thresholds and returns; Y
+# (as a numpy array), the overall mask (as a 3D numpy array), the spatially
+# varying number of subjects (as a 3D numpy array), the matrix Y!=0 (resized
+# appropriately for later computation) and a uniqueness map representing which
+# voxel has which design.
 #
 # ----------------------------------------------------------------------------
 #
@@ -399,7 +403,11 @@ def applyMask(X,M):
 #
 # ----------------------------------------------------------------------------
 #
-#  - 
+#  - `Y_files`: A list of input NIFTI volumes.
+#  - `M_files`: A list of input NIFTI mask volumes.
+#  - `M_t`: A numerical threshold k. Any voxel with less than k input volumes
+#           present will be discarded. Can be set to None.
+#  - `M_a`: An overall analysis mask 3D numpy array. Can be set to None.
 #
 # ----------------------------------------------------------------------------
 #
@@ -407,7 +415,11 @@ def applyMask(X,M):
 #
 # ----------------------------------------------------------------------------
 #
-#  - 
+#  - `Y`: The masked observations, reshaped to be of dimension n by v
+#  - `Mask`: The overall mask (as a 3D numpy array).
+#  - `n_sv`: The spatially varying number of subjects (as a 3D numpy array).
+#  - `M`: The matrix Y!=0 (resized appropriately for later computation).
+#  - `Mmap`: A uniqueness map representing which voxel has which design.
 #
 # ============================================================================
 def obtainY(Y_files, M_files, M_t, M_a):
