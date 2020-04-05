@@ -5,6 +5,7 @@ w.simplefilter(action = 'ignore', category = FutureWarning)
 import numpy as np
 import os
 np.set_printoptions(threshold=np.nan)
+from lib.npMatrix3d import *
 from lib.fileio import *
 
 
