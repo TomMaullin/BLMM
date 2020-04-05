@@ -479,11 +479,6 @@ def main(*args):
         # Calculate masked Z'Y for ring
         ZtY_r = ZtY[R_inds,:,:]
 
-        # We rename these for convinience
-        XtX_r = XtX_r
-        ZtZ_r = ZtZ_r
-        ZtX_r = ZtX_r
-
         # We calculate these by transposing
         YtX_r = XtY_r.transpose((0,2,1))
         YtZ_r = ZtY_r.transpose((0,2,1))
@@ -491,9 +486,6 @@ def main(*args):
 
         # Spatially varying nv for ring
         n_sv_r = n_sv[R_inds,:]
-
-        # Clear some memory
-        del XtX_r, ZtX_r, ZtZ_r
 
 
     # If we have indices where all studies are present, work out X'X and
@@ -524,10 +516,6 @@ def main(*args):
         YtX_i = XtY_i.transpose((0,2,1))
         YtZ_i = ZtY_i.transpose((0,2,1))
         XtZ_i = ZtX_i.transpose((0,2,1))
-
-        # Clear some memory
-        del XtX_i, ZtX_i, ZtZ_i
-        del XtY, YtY, ZtY
 
 
     # Complete parameter vector
