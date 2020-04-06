@@ -13,7 +13,8 @@ np.set_printoptions(threshold=sys.maxsize)
 
 # Add lib to the python path.
 sys.path.insert(1, os.path.join(sys.argv[0],'..','..','..','lib'))
-from lib.tools2d import *
+from lib.npMatrix2d import *
+from lib.cvxMatrix2d import *
 
 # =============================================================================
 # This file contains all unit tests for the functions given in the tools2D.py

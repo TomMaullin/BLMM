@@ -15,8 +15,8 @@ np.set_printoptions(threshold=sys.maxsize)
 
 # Add lib to the python path.
 sys.path.insert(1, os.path.join(sys.argv[0],'..','..','..','lib'))
-from lib.tools2d import *
-from lib.tools3d import *
+from lib.npMatrix2d import *
+from lib.npMatrix3d import *
 # =============================================================================
 # This file contains all unit tests for the functions given in the tools3D.py
 # file.
@@ -805,7 +805,7 @@ def test_initDk3D():
     invDupMatdict = dict()
     for i in np.arange(len(nparams)):
       
-      invDupMatdict[i] = invDupMat2D(nparams[i])
+      invDupMatdict[i] = invDupMat2D(nparams[i]).toarray()
 
     # Work out Z'e
     Zte = ZtY - ZtX @ beta
@@ -1108,14 +1108,14 @@ def test_get_dldDk3D():
 
     # First test spatially varying
     dldDk_sv_test = get_dldDk3D(k, nlevels, nparams, ZtZ_sv, Zte_sv, sigma2, DinvIplusZtZD_sv)[testv,:,:]
-    dldDk_sv_expected = get_dldDk2D(k, nlevels, nparams, ZtZ_sv[testv,:,:], Zte_sv[testv,:,:], sigma2[testv], DinvIplusZtZD_sv[testv,:,:])
+    dldDk_sv_expected = get_dldDk2D(k, nlevels, nparams, ZtZ_sv[testv,:,:], Zte_sv[testv,:,:], sigma2[testv], DinvIplusZtZD_sv[testv,:,:])[0]
 
     # Check if results are all close.
     sv_testVal = np.allclose(dldDk_sv_test,dldDk_sv_expected)
 
     # Now test non spatially varying
     dldDk_nsv_test = get_dldDk3D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD)[testv,:,:]
-    dldDk_nsv_expected = get_dldDk2D(k, nlevels, nparams, ZtZ[0,:,:], Zte[testv,:,:], sigma2[testv], DinvIplusZtZD[testv,:,:])
+    dldDk_nsv_expected = get_dldDk2D(k, nlevels, nparams, ZtZ[0,:,:], Zte[testv,:,:], sigma2[testv], DinvIplusZtZD[testv,:,:])[0]
     
     # Check if results are all close.
     nsv_testVal = np.allclose(dldDk_nsv_test,dldDk_nsv_expected)
@@ -1227,14 +1227,14 @@ def test_get_covdldDkdsigma23D():
 
     # First test spatially varying
     covdldDsigma2_sv_test = get_covdldDkdsigma23D(k, sigma2, nlevels, nparams, ZtZ_sv, DinvIplusZtZD_sv, invDupMatdict)[testv,:,:]
-    covdldDsigma2_sv_expected = get_covdldDkdsigma22D(k, sigma2[testv], nlevels, nparams, ZtZ_sv[testv,:,:], DinvIplusZtZD_sv[testv,:,:], invDupMatdict)
+    covdldDsigma2_sv_expected,_ = get_covdldDkdsigma22D(k, sigma2[testv], nlevels, nparams, ZtZ_sv[testv,:,:], DinvIplusZtZD_sv[testv,:,:], invDupMatdict)
 
     # Check if results are all close.
     sv_testVal = np.allclose(covdldDsigma2_sv_test,covdldDsigma2_sv_expected)
 
     # Now test non spatially varying
     covdldDsigma2_nsv_test = get_covdldDkdsigma23D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict)[testv,:,:]
-    covdldDsigma2_nsv_expected = get_covdldDkdsigma22D(k, sigma2[testv], nlevels, nparams, ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], invDupMatdict)
+    covdldDsigma2_nsv_expected,_ = get_covdldDkdsigma22D(k, sigma2[testv], nlevels, nparams, ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], invDupMatdict)
 
     # Check if results are all close.
     nsv_testVal = np.allclose(covdldDsigma2_nsv_test,covdldDsigma2_nsv_expected)
@@ -1292,14 +1292,14 @@ def test_get_covdldDk1Dk23D():
 
     # First test spatially varying
     covdldD_sv_test = get_covdldDk1Dk23D(k1, k2, nlevels, nparams, ZtZ_sv, DinvIplusZtZD_sv, invDupMatdict)[testv,:,:]
-    covdldD_sv_expected = get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ_sv[testv,:,:], DinvIplusZtZD_sv[testv,:,:], invDupMatdict)
+    covdldD_sv_expected = get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ_sv[testv,:,:], DinvIplusZtZD_sv[testv,:,:], invDupMatdict)[0]
   
     # Check if results are all close.
     sv_testVal = np.allclose(covdldD_sv_test,covdldD_sv_expected)
 
     # Now test non spatially varying
     covdldD_nsv_test = get_covdldDk1Dk23D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict)[testv,:,:]
-    covdldD_nsv_expected = get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], invDupMatdict)
+    covdldD_nsv_expected = get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], invDupMatdict)[0]
     
     # Check if results are all close.
     nsv_testVal = np.allclose(covdldD_nsv_test,covdldD_nsv_expected)
@@ -1567,6 +1567,816 @@ def test_sumAijKronBij3D():
     print('Result: ', result)
     return(result)
 
+
+# =============================================================================
+#
+# The below function tests the function `resms3D`. It does this by simulating
+# random test data and testing against niave computation using `ssr2D` from 
+# tools2d.py.
+#
+# =============================================================================
+def test_resms3D():
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData()
+    v = Y.shape[0]
+    n = X.shape[0]
+    p = X.shape[1]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # First test spatially varying
+    resms_sv_test = resms3D(YtX_sv, YtY, XtX_sv, beta, n_sv, p)[testv,:,:]
+    resms_sv_expected = ssr2D(YtX_sv[testv,:,:], YtY[testv,:,:], XtX_sv[testv,:,:], beta[testv,:,:])/(n_sv[testv,:,:]-p)
+
+    # Check if results are all close.
+    sv_testVal = np.allclose(resms_sv_test,resms_sv_expected)
+
+    # Now test non spatially varying
+    resms_nsv_test = resms3D(YtX, YtY, XtX, beta, n, p)[testv,:,:]
+    resms_nsv_expected = ssr2D(YtX[testv,:,:], YtY[testv,:,:], XtX, beta[testv,:,:])/(n-p)
+
+    # Check if results are all close.
+    nsv_testVal = np.allclose(resms_nsv_test,resms_nsv_expected)
+
+    # Check against 2D version.
+    testVal = nsv_testVal and sv_testVal
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: resms3D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+    
+    return(result)
+    
+
+# =============================================================================
+#
+# The below function tests the function `covB3D`. It does this by simulating
+# random test data and testing against niave calculation.
+#
+# =============================================================================
+def test_covB3D():
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData(v=10)
+    v = Y.shape[0]
+    q = np.sum(np.dot(nparams,nlevels))
+    p = X.shape[1]
+    n = X.shape[0]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Test contrast vector
+    L = np.random.binomial(1,0.5,size=(1,p))
+    L[:,0]=1
+
+    # Expected, niave calculation.
+    # ----------------------------------------------------------------------
+
+    # rank of L
+    rL = np.linalg.matrix_rank(L)
+
+    # L times beta
+    LB = L @ beta[testv,:,:]
+
+    # V^(-1)
+    IplusZDZt = np.eye(n) + Z @ D[testv,:,:] @ Z.transpose()
+    invV = np.linalg.inv(IplusZDZt)
+
+    covB_expected = np.linalg.inv(X.transpose() @ invV @ X/sigma2[testv])
+
+    # Using function
+    # ----------------------------------------------------------------------
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+
+    # Run F test
+    covB_test = get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2)[testv,:]
+
+    # Check if results are all close.
+    testVal = np.allclose(covB_test,covB_expected)
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: covB3D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+    
+    return(result)
+
+
+# =============================================================================
+#
+# The below function tests the function `varLB3D`. It does this by simulating
+# random test data and testing against niave calculation.
+#
+# =============================================================================
+def test_varLB3D():
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData(v=10)
+    v = Y.shape[0]
+    q = np.sum(np.dot(nparams,nlevels))
+    p = X.shape[1]
+    n = X.shape[0]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Test contrast vector
+    L = np.random.binomial(1,0.5,size=(1,p))
+    L[:,0]=1
+
+    # Expected, niave calculation.
+    # ----------------------------------------------------------------------
+
+    # rank of L
+    rL = np.linalg.matrix_rank(L)
+
+    # L times beta
+    LB = L @ beta[testv,:,:]
+
+    # V^(-1)
+    IplusZDZt = np.eye(n) + Z @ D[testv,:,:] @ Z.transpose()
+    invV = np.linalg.inv(IplusZDZt)
+
+    covB = np.linalg.inv(X.transpose() @ invV @ X/sigma2[testv])
+    
+    # Variance of L times beta
+    varLB_expected = L @ covB @ L.transpose()
+
+    # Using function
+    # ----------------------------------------------------------------------
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+
+    # Run F test
+    varLB_test = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2)[testv,:]
+
+    # Check if results are all close.
+    testVal = np.allclose(varLB_test,varLB_expected)
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: varLB3D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+    
+    return(result)
+
+
+# =============================================================================
+#
+# The below function tests the function `get_T3D`. It does this by simulating
+# random test data and testing against niave calculation.
+#
+# =============================================================================
+def test_get_T3D():
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData(v=10)
+    v = Y.shape[0]
+    q = np.sum(np.dot(nparams,nlevels))
+    p = X.shape[1]
+    n = X.shape[0]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Test contrast vector
+    L = np.random.binomial(1,0.5,size=(1,p))
+    L[:,0]=1
+
+    # Expected, niave calculation.
+    # ----------------------------------------------------------------------
+
+    # rank of L
+    rL = np.linalg.matrix_rank(L)
+
+    # L times beta
+    LB = L @ beta[testv,:,:]
+
+    # V^(-1)
+    IplusZDZt = np.eye(n) + Z @ D[testv,:,:] @ Z.transpose()
+    invV = np.linalg.inv(IplusZDZt)
+
+    covB = np.linalg.inv(X.transpose() @ invV @ X/sigma2[testv])
+    
+    # Variance of L times beta
+    varLB = L @ covB @ L.transpose()
+
+    # Work out T
+    T_expected = LB/np.sqrt(varLB) 
+
+    # Using function
+    # ----------------------------------------------------------------------
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+
+    # Run F test
+    T_test = get_T3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2)[testv,:]
+
+    # Check if results are all close.
+    testVal = np.allclose(T_test,T_expected)
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: get_T3D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+    
+    return(result)
+
+
+# =============================================================================
+#
+# The below function tests the function `get_F3D`. It does this by simulating
+# random test data and testing against niave calculation.
+#
+# =============================================================================
+def test_get_F3D():
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData(v=10)
+    v = Y.shape[0]
+    q = np.sum(np.dot(nparams,nlevels))
+    p = X.shape[1]
+    n = X.shape[0]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Test contrast vector
+    L = np.eye(p)
+    L[:,0]=1
+
+    # Expected, niave calculation.
+    # ----------------------------------------------------------------------
+
+    # rank of L
+    rL = np.linalg.matrix_rank(L)
+
+    # L times beta
+    LB = L @ beta[testv,:,:]
+
+    # V^(-1)
+    IplusZDZt = np.eye(n) + Z @ D[testv,:,:] @ Z.transpose()
+    invV = np.linalg.inv(IplusZDZt)
+
+    covB = np.linalg.inv(X.transpose() @ invV @ X/sigma2[testv])
+    
+    # Variance of L times beta
+    varLB = L @ covB @ L.transpose()
+
+    # Work out F
+    F_expected = LB.transpose() @ np.linalg.inv(varLB) @ LB/rL
+
+    # Using function
+    # ----------------------------------------------------------------------
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+
+    # Run F test
+    F_test = get_F3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2)[testv,:]
+
+    # Check if results are all close.
+    testVal = np.allclose(F_test,F_expected)
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: get_F3D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+    
+    return(result)
+
+
+# =============================================================================
+#
+# The below function tests the function `get_R23D`. It does this by simulating
+# a random example and testing against niave calculation.
+#
+# =============================================================================
+def test_get_R23D():
+
+    # Random number of voxels
+    v = np.random.randint(200)
+
+    # Random "F" statistics
+    F = np.random.randn(v).reshape(v,1)**2
+
+    # Test contrast vector
+    L = np.random.binomial(1,0.5,size=(1,np.random.randint(2,10)))
+    L[0,0]=1
+
+    # Rank of contrast vector
+    rL = np.linalg.matrix_rank(L)
+
+    # Random degrees of freedom
+    df_denom = np.random.binomial(100,0.7,size=(v,1))+1
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Expected R^2
+    R2_expected = (rL*F[testv,:])/(rL*F[testv,:] + df_denom[testv,:])
+
+    # Test R^2
+    R2_test = get_R23D(L, F[testv,:], df_denom[testv,:])
+
+    # Check if results are all close.
+    testVal = np.allclose(R2_test,R2_expected)
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: get_R23D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+    
+    return(result)
+
+
+# =============================================================================
+#
+# The below function tests the function `T2P3D`. It does this by simulating
+# a random example and testing against niave calculation.
+#
+# =============================================================================
+def test_T2P3D():
+
+    # Random number of voxels
+    v = np.random.randint(200)
+
+    # Random "T" statistics
+    T = np.random.randn(v).reshape(v,1)
+
+    # Random minlog value
+    minlog = -np.random.randint(500,1000)
+
+    # Random degrees of freedom
+    df = np.random.binomial(100,0.7,size=(v,1))+1
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Expected P value
+    P_expected = -np.log10(1-stats.t.cdf(T[testv,:], df[testv,:]))
+
+    # Remove infs
+    if np.isinf(P_expected) and P_expected<0:
+
+        P_expected = minlog
+
+    P_test = T2P3D(T,df,minlog)[testv,:]
+
+    # Check if results are all close.
+    testVal = np.allclose(P_test,P_expected)
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: T2P3D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+    
+    return(result)
+
+
+# =============================================================================
+#
+# The below function tests the function `F2P3D`. It does this by simulating
+# a random example and testing against niave calculation.
+#
+# =============================================================================
+def test_F2P3D():
+
+    # Random number of voxels
+    v = np.random.randint(200)
+
+    # Random "F" statistics
+    F = np.random.randn(v).reshape(v,1)**2
+
+    # Test contrast vector
+    L = np.random.binomial(1,0.5,size=(1,np.random.randint(2,10)))
+    L[0,0]=1
+
+    # Random minlog value
+    minlog = -np.random.randint(500,1000)
+
+    # Random degrees of freedom
+    df_denom = np.random.binomial(100,0.7,size=(v,1))+1
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Expected P value
+    P_expected = -np.log10(1-stats.f.cdf(F[testv,:], np.linalg.matrix_rank(L), df_denom[testv,:]))
+
+    # Remove infs
+    if np.isinf(P_expected) and P_expected<0:
+
+        P_expected = minlog
+
+    P_test = F2P3D(F, L, df_denom, minlog)[testv,:]
+
+    # Check if results are all close.
+    testVal = np.allclose(P_test,P_expected)
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: F2P3D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+    
+    return(result)
+
+
+# =============================================================================
+#
+# The below function tests the function `get_swdf_T3D`. It does this by
+# simulating random test data and testing against niave calculation.
+#
+# Note: This test assumes the correctness of the functions `get_InfoMat3D` and
+# `get_dS2`.
+#
+# =============================================================================
+def test_get_swdf_T3D():
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData(v=10)
+    v = Y.shape[0]
+    q = np.sum(np.dot(nparams,nlevels))
+    p = X.shape[1]
+    n = X.shape[0]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Test contrast vector
+    L = np.random.binomial(1,0.5,size=(1,p))
+    L[0,0]=1
+
+    # Get D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+
+    # Get S^2 (= Var(L\beta))
+    S2 = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2)[testv,:,:]
+    
+    # Get derivative of S^2
+    dS2 = get_dS23D(nparams, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2)[testv,:,:]
+
+    # Get Fisher information matrix
+    InfoMat = get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nparams, ZtZ)[testv,:,:]
+
+    # Calculate df estimator
+    swdf_expected = 2*(S2**2)/(dS2.transpose() @ np.linalg.inv(InfoMat) @ dS2)
+
+
+    swdf_test = get_swdf_T3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nparams)[testv,:,:]
+
+    # Check if results are all close.
+    testVal = np.allclose(swdf_test,swdf_expected)
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: get_swdf_T3D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+    
+    return(result)
+
+
+# =============================================================================
+#
+# The below function tests the function `get_swdf_F3D`. It does this by
+# simulating random test data and testing against niave calculation.
+#
+# Note: This test assumes the correctness of the functions `get_swdf_T3D`.
+#
+# =============================================================================
+def test_get_swdf_F3D():
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData(v=10)
+    v = Y.shape[0]
+    q = np.sum(np.dot(nparams,nlevels))
+    p = X.shape[1]
+    n = X.shape[0]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Test contrast vector
+    L = np.random.binomial(1,0.5,size=(1,p))
+    L[0,0]=1
+
+    # L is rL in rank
+    rL = np.linalg.matrix_rank(L)
+
+    # Initialize empty sum.
+    sum_swdf_adj = 0
+
+    # Loop through first rL rows of L
+    for i in np.arange(rL):
+
+        # Work out the swdf for each row of L
+        swdf_row = get_swdf_T3D(L[i:(i+1),:], D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nparams)[testv,:,:]
+
+        # Work out adjusted df = df/(df-2)
+        swdf_adj = swdf_row/(swdf_row-2)
+
+        # Add to running sum
+        sum_swdf_adj = sum_swdf_adj + swdf_adj[0]
+
+    # Work out final df
+    swdf_expected = 2*sum_swdf_adj/(sum_swdf_adj-rL)
+
+    # Function version 
+    swdf_test = get_swdf_F3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nparams)[testv]
+
+    # Check if results are all close.
+    testVal = np.allclose(swdf_test,swdf_expected)
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: get_swdf_F3D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+    
+    return(result)
+
+
+# =============================================================================
+#
+# The below function tests the function `get_dS23D`. It does this by
+# simulating random test data and testing against niave calculation.
+#
+# =============================================================================
+def test_get_dS23D():
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData(v=10)
+    v = Y.shape[0]
+    q = np.sum(np.dot(nparams,nlevels))
+    p = X.shape[1]
+    n = X.shape[0]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Test contrast vector
+    L = np.random.binomial(1,0.5,size=(1,p))
+    L[0,0]=1
+
+    # Niave calculation for one voxel.
+    # ----------------------------------------------------------------------------------
+    IplusZDZt = np.eye(n) + Z @ D[testv,:,:] @ Z.transpose()
+    invV = np.linalg.inv(IplusZDZt)
+
+    # Calculate X'V^{-1}X
+    XtiVX = X.transpose() @ invV @ X 
+
+    # New empty array for differentiating S^2 wrt (sigma2, vech(D1),...vech(Dr)).
+    dS2_expected = np.zeros((1+np.int32(np.sum(nparams*(nparams+1)/2)),1))
+
+    # Work out indices for each start of each component of vector 
+    # i.e. [dS2/dsigm2, dS2/vechD1,...dS2/vechDr]
+    DerivInds = np.int32(np.cumsum(nparams*(nparams+1)/2) + 1)
+    DerivInds = np.insert(DerivInds,0,1)
+
+    # Work of derivative wrt to sigma^2
+    dS2dsigma2 = L @ np.linalg.inv(XtiVX) @ L.transpose()
+
+    # Add to dS2
+    dS2_expected[0:1] = dS2dsigma2.reshape(dS2_expected[0:1].shape)
+
+    # Now we need to work out ds2dVech(Dk)
+    for k in np.arange(len(nparams)):
+
+        # Initialize an empty zeros matrix
+        dS2dvechDk = np.zeros((np.int32(nparams[k]*(nparams[k]+1)/2),1))
+
+        for j in np.arange(nlevels[k]):
+
+            # Get the indices for this level and factor.
+            Ikj = faclev_indices2D(k, j, nlevels, nparams)
+                    
+            # Work out Z_(k,j)'
+            Zkjt = Z[:,Ikj].transpose()
+
+            # Work out Z_(k,j)'V^{-1}X
+            ZkjtiVX = Zkjt @ invV @ X
+
+            # Work out the term to put into the kronecker product
+            # K = Z_(k,j)'V^{-1}X(X'V^{-1})^{-1}L'
+            K = ZkjtiVX @ np.linalg.inv(XtiVX) @ L.transpose()
+            
+            # Sum terms
+            dS2dvechDk = dS2dvechDk + mat2vech2D(np.kron(K,K.transpose()))
+
+        # Multiply by sigma^2
+        dS2dvechDk = sigma2[testv]*dS2dvechDk
+
+        # Add to dS2
+        dS2_expected[DerivInds[k]:DerivInds[k+1]] = dS2dvechDk.reshape(dS2_expected[DerivInds[k]:DerivInds[k+1]].shape)
+
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+
+    # Obtain result from function
+    dS2_test = get_dS23D(nparams, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2)[testv,:,:]
+
+    # Check if results are all close.
+    testVal = np.allclose(dS2_test,dS2_expected)
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: get_dS23D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+    
+    return(result)
+
+
+# =============================================================================
+#
+# The below function tests the function `get_InfoMat3D`. It does this by
+# simulating random test data and testing against niave calculation.
+#
+# =============================================================================
+def test_get_InfoMat3D():
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData(v=10)
+    v = Y.shape[0]
+    q = np.sum(np.dot(nparams,nlevels))
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats(Y,Z,X,Z_sv,X_sv)
+    n = X.shape[0]
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+
+    # Duplication matrices
+    # ------------------------------------------------------------------------------
+    invDupMatdict = dict()
+    for i in np.arange(len(nparams)):
+
+        invDupMatdict[i] = np.asarray(invDupMat2D(nparams[i]).todense())
+
+    # Index variables
+    # ------------------------------------------------------------------------------
+    # Work out the total number of paramateres
+    tnp = np.int32(1 + np.sum(nparams*(nparams+1)/2))
+
+    # Indices for submatrics corresponding to Dks
+    FishIndsDk = np.int32(np.cumsum(nparams*(nparams+1)/2) + 1)
+    FishIndsDk = np.insert(FishIndsDk,0,1)
+
+    # Initialize FIsher Information matrix
+    FI_expected = np.zeros((tnp,tnp))
+    
+    # Covariance of dl/dsigma2
+    covdldsigma2 = n/(2*(sigma2[testv]**2))
+    
+    # Add dl/dsigma2 covariance
+    FI_expected[0,0] = covdldsigma2
+
+    # Add dl/dsigma2 dl/dD covariance
+    for k in np.arange(len(nparams)):
+
+        # Get covariance of dldsigma and dldD      
+        covdldsigmadD = get_covdldDkdsigma22D(k, sigma2[testv], nlevels, nparams, ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], invDupMatdict)[0].reshape(FishIndsDk[k+1]-FishIndsDk[k])
+
+        # Assign to the relevant block
+        FI_expected[0, FishIndsDk[k]:FishIndsDk[k+1]] = covdldsigmadD
+        FI_expected[FishIndsDk[k]:FishIndsDk[k+1],0:1] = FI_expected[0:1, FishIndsDk[k]:FishIndsDk[k+1]].transpose()
+      
+    # Add dl/dD covariance
+    for k1 in np.arange(len(nparams)):
+
+        for k2 in np.arange(k1+1):
+
+            IndsDk1 = np.arange(FishIndsDk[k1],FishIndsDk[k1+1])
+            IndsDk2 = np.arange(FishIndsDk[k2],FishIndsDk[k2+1])
+
+            # Get covariance between D_k1 and D_k2 
+            covdldDk1dDk2 = get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], invDupMatdict)[0]
+
+            # Add to FImat
+            FI_expected[np.ix_(IndsDk1, IndsDk2)] = covdldDk1dDk2
+            FI_expected[np.ix_(IndsDk2, IndsDk1)] = FI_expected[np.ix_(IndsDk1, IndsDk2)].transpose()
+
+    FI_test = get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nparams, ZtZ)[testv,:,:]
+
+    # Check if results are all close.
+    testVal = np.allclose(FI_test,FI_expected)
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: get_InfoMat3D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+    
+    return(result)
+
+
 # =============================================================================
 #
 # The below function runs all unit tests and outputs the results.
@@ -1793,6 +2603,117 @@ def run_all3D():
         passedTests = np.append(passedTests, name)
     if result=='Failed':
         failedTests = np.append(failedTests, name)
+
+
+    # Test covB3D
+    name = 'covB3D'
+    result = test_covB3D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test varLB3D
+    name = 'varLB3D'
+    result = test_varLB3D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test get_T3D
+    name = 'get_T3D'
+    result = test_get_T3D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test get_F3D
+    name = 'get_F3D'
+    result = test_get_F3D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test get_R23D
+    name = 'get_R23D'
+    result = test_get_R23D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test T2P3D
+    name = 'T2P3D'
+    result = test_T2P3D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test F2P3D
+    name = 'F2P3D'
+    result = test_F2P3D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test get_swdf_T3D
+    name = 'get_swdf_T3D'
+    result = test_get_swdf_T3D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test get_swdf_F3D
+    name = 'get_swdf_F3D'
+    result = test_get_swdf_F3D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test get_dS23D
+    name = 'get_dS23D'
+    result = test_get_dS23D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test get_InfoMat3D
+    name = 'get_InfoMat3D'
+    result = test_get_InfoMat3D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
 
     print('=============================================================')
 
