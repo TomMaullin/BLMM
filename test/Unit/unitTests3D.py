@@ -1570,12 +1570,12 @@ def test_sumAijKronBij3D():
 
 # =============================================================================
 #
-# The below function tests the function `resms3D`. It does this by simulating
+# The below function tests the function `get_resms3D`. It does this by simulating
 # random test data and testing against niave computation using `ssr2D` from 
 # tools2d.py.
 #
 # =============================================================================
-def test_resms3D():
+def test_get_resms3D():
 
     # Generate a random mass univariate linear mixed model.
     Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData()
@@ -1590,14 +1590,14 @@ def test_resms3D():
     testv = np.random.randint(0,v)
 
     # First test spatially varying
-    resms_sv_test = resms3D(YtX_sv, YtY, XtX_sv, beta, n_sv, p)[testv,:,:]
-    resms_sv_expected = ssr2D(YtX_sv[testv,:,:], YtY[testv,:,:], XtX_sv[testv,:,:], beta[testv,:,:])/(n_sv[testv,:,:]-p)
+    resms_sv_test = get_resms3D(YtX_sv, YtY, XtX_sv, beta, n_sv, p)[testv,:,:]
+    resms_sv_expected = ssr2D(YtX_sv[testv,:,:], YtY[testv,:,:], XtX_sv[testv,:,:], beta[testv,:,:])/(n_sv[testv]-p)
 
     # Check if results are all close.
     sv_testVal = np.allclose(resms_sv_test,resms_sv_expected)
 
     # Now test non spatially varying
-    resms_nsv_test = resms3D(YtX, YtY, XtX, beta, n, p)[testv,:,:]
+    resms_nsv_test = get_resms3D(YtX, YtY, XtX, beta, n, p)[testv,:,:]
     resms_nsv_expected = ssr2D(YtX[testv,:,:], YtY[testv,:,:], XtX, beta[testv,:,:])/(n-p)
 
     # Check if results are all close.
@@ -1613,7 +1613,7 @@ def test_resms3D():
         result = 'Failed'
 
     print('=============================================================')
-    print('Unit test for: resms3D')
+    print('Unit test for: get_resms3D')
     print('-------------------------------------------------------------')
     print('Result: ', result)
     
@@ -2397,6 +2397,7 @@ def run_all3D():
     if result=='Failed':
         failedTests = np.append(failedTests, name)
 
+
     # Test mat2vec3D
     name = 'mat2vec3D'
     result = test_mat2vec3D()
@@ -2415,6 +2416,7 @@ def run_all3D():
     if result=='Failed':
         failedTests = np.append(failedTests, name)
 
+
     # Test vec2mat3D
     name = 'vec2mat3D'
     result = test_vec2mat3D()
@@ -2423,6 +2425,7 @@ def run_all3D():
         passedTests = np.append(passedTests, name)
     if result=='Failed':
         failedTests = np.append(failedTests, name)
+
 
     # Test vech2mat3D
     name = 'vech2mat3D'
@@ -2433,6 +2436,7 @@ def run_all3D():
     if result=='Failed':
         failedTests = np.append(failedTests, name)
 
+
     # Test forceSym3D
     name = 'forceSym3D'
     result = test_forceSym3D()
@@ -2441,6 +2445,7 @@ def run_all3D():
         passedTests = np.append(passedTests, name)
     if result=='Failed':
         failedTests = np.append(failedTests, name)
+
 
     # Test ssr3D
     name = 'ssr3D'
@@ -2451,6 +2456,7 @@ def run_all3D():
     if result=='Failed':
         failedTests = np.append(failedTests, name)
 
+
     # Test getDfromDict3D
     name = 'getDfromDict3D'
     result = test_getDfromDict3D()
@@ -2459,6 +2465,7 @@ def run_all3D():
         passedTests = np.append(passedTests, name)
     if result=='Failed':
         failedTests = np.append(failedTests, name)
+
 
     # Test initBeta3D
     name = 'initBeta3D'
@@ -2469,6 +2476,7 @@ def run_all3D():
     if result=='Failed':
         failedTests = np.append(failedTests, name)
 
+
     # Test initSigma23D
     name = 'initSigma23D'
     result = test_initSigma23D()
@@ -2478,6 +2486,7 @@ def run_all3D():
     if result=='Failed':
         failedTests = np.append(failedTests, name)
 
+
     # Test initDk3D
     name = 'initDk3D'
     result = test_initDk3D()
@@ -2486,6 +2495,7 @@ def run_all3D():
         passedTests = np.append(passedTests, name)
     if result=='Failed':
         failedTests = np.append(failedTests, name)
+
 
     # Test makeDnnd3D
     name = 'makeDnnd3D'
@@ -2505,6 +2515,7 @@ def run_all3D():
     if result=='Failed':
         failedTests = np.append(failedTests, name)
 
+
     # Test get_dldB3D
     name = 'get_dldB3D'
     result = test_get_dldB3D()
@@ -2513,6 +2524,7 @@ def run_all3D():
         passedTests = np.append(passedTests, name)
     if result=='Failed':
         failedTests = np.append(failedTests, name)
+
 
     # Test get_dldsigma23D
     name = 'get_dldsigma23D'
@@ -2523,6 +2535,7 @@ def run_all3D():
     if result=='Failed':
         failedTests = np.append(failedTests, name)
 
+
     # Test get_dldDk3D
     name = 'get_dldDk3D'
     result = test_get_dldDk3D()
@@ -2532,6 +2545,7 @@ def run_all3D():
     if result=='Failed':
         failedTests = np.append(failedTests, name)
 
+
     # Test get_covdldbeta3D
     name = 'get_covdldbeta3D'
     result = test_get_covdldbeta3D()
@@ -2540,6 +2554,7 @@ def run_all3D():
         passedTests = np.append(passedTests, name)
     if result=='Failed':
         failedTests = np.append(failedTests, name)
+
 
     # Test get_covdldDkdsigma23D
     name = 'get_covdldDkdsigma23D'
@@ -2559,6 +2574,7 @@ def run_all3D():
     if result=='Failed':
         failedTests = np.append(failedTests, name)
 
+
     # Test getCovergedIndices
     name = 'getCovergedIndices'
     result = test_getCovergedIndices()
@@ -2567,6 +2583,7 @@ def run_all3D():
         passedTests = np.append(passedTests, name)
     if result=='Failed':
         failedTests = np.append(failedTests, name)
+
 
     # Test block2stacked3D
     name = 'block2stacked3D'
@@ -2577,6 +2594,7 @@ def run_all3D():
     if result=='Failed':
         failedTests = np.append(failedTests, name)
 
+
     # Test mat2vecb3D
     name = 'mat2vecb3D'
     result = test_mat2vecb3D()
@@ -2586,6 +2604,7 @@ def run_all3D():
     if result=='Failed':
         failedTests = np.append(failedTests, name)
 
+
     # Test sumAijBijt3D
     name = 'sumAijBijt3D'
     result = test_sumAijBijt3D()
@@ -2594,6 +2613,7 @@ def run_all3D():
         passedTests = np.append(passedTests, name)
     if result=='Failed':
         failedTests = np.append(failedTests, name)
+
 
     # Test sumAijKronBij3D
     name = 'sumAijKronBij3D'
@@ -2605,6 +2625,16 @@ def run_all3D():
         failedTests = np.append(failedTests, name)
 
 
+    # Test get_resms3D
+    name = 'get_resms3D'
+    result = test_get_resms3D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+        
     # Test covB3D
     name = 'covB3D'
     result = test_covB3D()
