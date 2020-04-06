@@ -40,8 +40,8 @@ import pandas as pd
 #
 # The code takes the following inputs:
 #
-#  - batch number: An integer (`batch number`) representing which batch of subjects
-#                  should be considered here.
+#  - batch number: An integer (`batch number`) representing which batch of
+#                  observations should be considered here.
 #  - input path (optional): If specified, the second argument will be assumed to be a
 #                           path to an `inputs` yml file, following the same 
 #                           formatting guidelines as `blmm_config.yml`. If not 
@@ -399,9 +399,9 @@ def applyMask(X,M):
 # 
 # The below function reads in the input files and thresholds and returns; Y
 # (as a numpy array), the overall mask (as a 3D numpy array), the spatially
-# varying number of subjects (as a 3D numpy array), the array Y!=0 (resized
-# appropriately for later computation) and a uniqueness map representing which
-# voxel has which design.
+# varying number of observationss (as a 3D numpy array), the array Y!=0 
+# (resized appropriately for later computation) and a uniqueness map 
+# representing which voxel has which design.
 #
 # ----------------------------------------------------------------------------
 #
@@ -423,7 +423,8 @@ def applyMask(X,M):
 #
 #  - `Y`: The masked observations, reshaped to be of dimension n by v
 #  - `Mask`: The overall mask (as a 3D numpy array).
-#  - `n_sv`: The spatially varying number of subjects (as a 3D numpy array).
+#  - `n_sv`: The spatially varying number of observations (as a 3D numpy
+#            array).
 #  - `M`: The array Y!=0 (resized appropriately for later computation).
 #  - `Mmap`: A uniqueness map representing which voxel has which design.
 #
