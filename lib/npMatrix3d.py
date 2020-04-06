@@ -1241,14 +1241,6 @@ def sumAijKronBij3D(A, B, p, perm=None):
   return(S,perm)
 
 
-
-
-# TO TEST
-
-
-
-
-
 # ============================================================================
 #
 # The below function calculates the residual mean squares for a beta estimate
