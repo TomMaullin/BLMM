@@ -1,9 +1,7 @@
 import os
 import sys
 import numpy as np
-import cvxopt
 import pandas as pd
-import os
 import time
 import scipy.sparse
 import scipy.sparse.linalg
@@ -14,278 +12,16 @@ np.set_printoptions(threshold=sys.maxsize)
 # Add lib to the python path.
 sys.path.insert(1, os.path.join(sys.argv[0],'..','..','..','lib'))
 from lib.npMatrix2d import *
-from lib.cvxMatrix2d import *
+from genTestDat import prodMats2D, genTestData2D
 
 # =============================================================================
-# This file contains all unit tests for the functions given in the tools2D.py
-# file.
+# This file contains all unit tests for the functions given in the 
+# npMatrix2D.py file.
 #
 # Author: Tom Maullin
 # Last edited: 21/03/2020
 #
 # =============================================================================
-
-
-# =============================================================================
-#
-# The below function generates a random testcase according to the linear mixed
-# model:
-#
-#   Y = X\beta + Zb + \epsilon
-#
-# Where b~N(0,D) and \epsilon ~ N(0,\sigma^2 I)
-#
-# -----------------------------------------------------------------------------
-#
-# It takes the following inputs:
-#
-# -----------------------------------------------------------------------------
-#
-#   - n (optional): Number of subjects. If not provided, a random n will be
-#                   selected between 800 and 1200.
-#   - p (optional): Number of fixed effects parameters. If not provided, a
-#                   random p will be selected between 2 and 10 (an intercept is
-#                   automatically included).
-#   - nlevels (optional): A vector containing the number of levels for each
-#                         random factor, e.g. `nlevels=[3,4]` would mean the
-#                         first factor has 3 levels and the second factor has
-#                         4 levels. If not provided, default values will be
-#                         between 8 and 40.
-#   - nparams (optional): A vector containing the number of parameters for each
-#                         factor, e.g. `nlevels=[2,1]` would mean the first
-#                         factor has 2 parameters and the second factor has 1
-#                         parameter. If not provided, default values will be
-#                         between 2 and 5.
-#
-# -----------------------------------------------------------------------------
-#
-# And gives the following outputs:
-#
-# -----------------------------------------------------------------------------
-#
-#   - X: A fixed effects design matrix of dimensions (n x p) including a random
-#        intercept column (the first column).
-#   - Y: A response vector of dimension (n x 1).
-#   - Z: A random effects design matrix of size (n x q) where q is equal to the
-#        product of nlevels and nparams.
-#   - nlevels: A vector containing the number of levels for each random factor,
-#              e.g. `nlevels=[3,4]` would mean the first factor has 3 levels
-#              and the second factor has 4 levels.
-#   - nparams: A vector containing the number of parameters for each factor,
-#              e.g. `nlevels=[2,1]` would mean the first factor has 2
-#              parameters and the second factor has 1 parameter.
-#   - beta: The true values of beta used to simulate the response vector.
-#   - sigma2: The true value of sigma2 used to simulate the response vector.
-#   - D: The random covariance matrix used to simulate b and the response vector.
-#   - b: The random effects vector used to simulate the response vector.
-#
-# -----------------------------------------------------------------------------
-def genTestData(n=None, p=None, nlevels=None, nparams=None):
-
-    # Check if we have n
-    if n is None:
-
-        # If not generate a random n
-        n = np.random.randint(800,1200)
-    
-    # Check if we have p
-    if p is None:
-
-        # If not generate a random p
-        p = np.random.randint(2,10)
-
-    # Work out number of random factors.
-    if nlevels is None and nparams is None:
-
-        # If we have neither nlevels or nparams, decide on a number of
-        # random factors, r.
-        r = np.random.randint(2,4)
-
-    elif nlevels is None:
-
-        # Work out number of random factors, r
-        r = np.shape(nparams)[0]
-
-    else:
-
-        # Work out number of random factors, r
-        r = np.shape(nlevels)[0]
-
-    # Check if we need to generate nlevels.
-    if nlevels is None:
-        
-        # Generate random number of levels.
-        nlevels = np.random.randint(8,40,r)
-
-    # Check if we need to generate nparams.
-    if nparams is None:
-        
-        # Generate random number of levels.
-        nparams = np.random.randint(2,5,r)
-
-    # Generate random X.
-    X = np.random.randn(n,p)
-    
-    # Make the first column an intercept
-    X[:,0]=1
-
-    # Generate beta (used integers to make test results clear).
-    beta = np.random.randint(-10,10,p)
-
-    # Create Z
-    # We need to create a block of Z for each level of each factor
-    for i in np.arange(r):
-
-        Zdata_factor = np.random.randn(n,nparams[i])
-
-        if i==0:
-
-            #The first factor should be block diagonal, so the factor indices are grouped
-            factorVec = np.repeat(np.arange(nlevels[i]), repeats=np.floor(n/max(nlevels[i],1)))
-
-            if len(factorVec) < n:
-
-                # Quick fix incase rounding leaves empty columns
-                factorVecTmp = np.zeros(n)
-                factorVecTmp[0:len(factorVec)] = factorVec
-                factorVecTmp[len(factorVec):n] = nlevels[i]-1
-                factorVec = np.int64(factorVecTmp)
-
-
-                # Crop the factor vector - otherwise have a few too many
-                factorVec = factorVec[0:n]
-
-                # Give the data an intercept
-                Zdata_factor[:,0]=1
-
-        else:
-
-            # The factor is randomly arranged across subjects
-            factorVec = np.random.randint(0,nlevels[i],size=n) 
-
-        # Build a matrix showing where the elements of Z should be
-        indicatorMatrix_factor = np.zeros((n,nlevels[i]))
-        indicatorMatrix_factor[np.arange(n),factorVec] = 1
-
-        # Need to repeat for each parameter the factor has 
-        indicatorMatrix_factor = np.repeat(indicatorMatrix_factor, nparams[i], axis=1)
-
-        # Enter the Z values
-        indicatorMatrix_factor[indicatorMatrix_factor==1]=Zdata_factor.reshape(Zdata_factor.shape[0]*Zdata_factor.shape[1])
-
-        # Make sparse
-        Zfactor = scipy.sparse.csr_matrix(indicatorMatrix_factor)
-
-        # Put all the factors together
-        if i == 0:
-            Z = Zfactor
-        else:
-            Z = scipy.sparse.hstack((Z, Zfactor))
-
-    # Convert Z to dense
-    Z = Z.toarray()
-
-    # Make random beta
-    beta = np.random.randint(-5,5,p).reshape(p,1)
-
-    # Make random sigma2
-    sigma2 = 0.5*np.random.randn()**2
-
-    # Make epsilon.
-    epsilon = sigma2*np.random.randn(n).reshape(n,1)
-
-    # Make random D
-    Ddict = dict()
-    Dhalfdict = dict()
-    for k in np.arange(r):
-      
-        # Create a random matrix
-        randMat = np.random.randn(nparams[k],nparams[k])
-
-        # Record it as D^{1/2}
-        Dhalfdict[k] = randMat
-
-        # Work out D = D^{1/2} @ D^{1/2}'
-        Ddict[k] = randMat @ randMat.transpose()
-
-    # Matrix version
-    D = np.array([])
-    Dhalf = np.array([])
-    for i in np.arange(r):
-      
-        for j in np.arange(nlevels[i]):
-        
-            if i == 0 and j == 0:
-
-                D = Ddict[i]
-                Dhalf = Dhalfdict[i]
-
-            else:
-
-                D = scipy.linalg.block_diag(D, Ddict[i])
-                Dhalf = scipy.linalg.block_diag(Dhalf, Dhalfdict[i])
-
-
-    # Make random b
-    q = np.sum(nlevels*nparams)
-    b = np.random.randn(q).reshape(q,1)
-
-    # Give b the correct covariance structure
-    b = Dhalf @ b
-
-    # Generate the response vector
-    Y = X @ beta + Z @ b + epsilon
-
-    # Return values
-    return(Y,X,Z,nlevels,nparams,beta,sigma2,b,D)
-
-
-# =============================================================================
-#
-# The below function generates the product matrices from matrices X, Y and Z.
-#
-# -----------------------------------------------------------------------------
-#
-# It takes as inputs:
-#
-# -----------------------------------------------------------------------------
-#
-#  - `X`: The design matrix of dimension n times p.
-#  - `Y`: The response vector of dimension n times 1.
-#  - `Z`: The random effects design matrix of dimension n times q.
-#
-# -----------------------------------------------------------------------------
-#
-# It returns as outputs:
-#
-# -----------------------------------------------------------------------------
-#
-#  - `XtX`: X transposed multiplied by X.
-#  - `XtY`: X transposed multiplied by Y.
-#  - `XtZ`: X transposed multiplied by Z.
-#  - `YtX`: Y transposed multiplied by X.
-#  - `YtY`: Y transposed multiplied by Y.
-#  - `YtZ`: Y transposed multiplied by Z.
-#  - `ZtX`: Z transposed multiplied by X.
-#  - `ZtY`: Z transposed multiplied by Y.
-#  - `ZtZ`: Z transposed multiplied by Z.
-#
-# =============================================================================
-def prodMats(Y,Z,X):
-
-    # Work out the product matrices
-    XtX = X.transpose() @ X
-    XtY = X.transpose() @ Y
-    XtZ = X.transpose() @ Z
-    YtX = XtY.transpose()
-    YtY = Y.transpose() @ Y
-    YtZ = Y.transpose() @ Z
-    ZtX = XtZ.transpose()
-    ZtY = YtZ.transpose()
-    ZtZ = Z.transpose() @ Z
-
-    # Return product matrices
-    return(XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ)
 
 
 # =============================================================================
@@ -621,7 +357,7 @@ def test_blockInverse2D():
 def test_recursiveInverse2D():
 
     # Generate some test data
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData()
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData2D()
 
     # Work out q
     q = np.sum(nlevels*nparams)
@@ -1099,11 +835,11 @@ def test_forceSym2D():
 def test_ssr2D():
 
     # Generate some test data
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData()
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData2D()
     n = X.shape[0]
 
     # Get the product matrices
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats(Y,Z,X)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats2D(Y,Z,X)
 
     # Work out the sum of squared residuals we would expect
     ssr_expected = (Y - X @ beta).transpose() @ (Y - X @ beta)
@@ -1205,13 +941,13 @@ def test_faclev_indices2D():
 def test_initBeta2D():
 
     # Generate some test data
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData()
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData2D()
 
     # Calculate OLS estimate using test data.
     expected = np.linalg.inv(X.transpose() @ X) @ X.transpose() @ Y
 
     # Get the product matrices
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats(Y,Z,X)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats2D(Y,Z,X)
 
     # Get the initial beta value
     betahat = initBeta2D(XtX,XtY)
@@ -1243,11 +979,11 @@ def test_initBeta2D():
 def test_initSigma22D():
 
     # Generate some test data
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData()
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData2D()
     n = X.shape[0]
 
     # Get the product matrices
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats(Y,Z,X)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats2D(Y,Z,X)
 
     # Get the initial beta value
     betahat = initBeta2D(XtX,XtY)
@@ -1288,11 +1024,11 @@ def test_initSigma22D():
 def test_initDk2D():
 
     # Generate some test data
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData()
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData2D()
     n = X.shape[0]
 
     # Get the product matrices
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats(Y,Z,X)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats2D(Y,Z,X)
 
     # Get the initial beta value
     betahat = initBeta2D(XtX,XtY)
@@ -1418,12 +1154,12 @@ def test_makeDnnd2D():
 def test_llh2D():
 
     # Generate some test data
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData()
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData2D()
     n = X.shape[0]
     q = np.sum(nlevels*nparams)
 
     # Get the product matrices
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats(Y,Z,X)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats2D(Y,Z,X)
 
     # Obtain Z'e and e'e
     Zte = ZtY - ZtX @ beta
@@ -1467,12 +1203,12 @@ def test_llh2D():
 def test_get_dldB2D():
 
     # Generate some test data
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData()
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData2D()
     n = X.shape[0]
     q = np.sum(nlevels*nparams)
 
     # Get the product matrices
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats(Y,Z,X)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats2D(Y,Z,X)
 
     # Obtain Z'e and X'e
     Zte = ZtY - ZtX @ beta
@@ -1515,12 +1251,12 @@ def test_get_dldB2D():
 def test_get_dldsigma22D():
 
     # Generate some test data
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData()
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData2D()
     n = X.shape[0]
     q = np.sum(nlevels*nparams)
 
     # Get the product matrices
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats(Y,Z,X)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats2D(Y,Z,X)
 
     # Obtain Z'e and X'e
     Zte = ZtY - ZtX @ beta
@@ -1564,12 +1300,12 @@ def test_get_dldsigma22D():
 def test_get_dldDk2D():
 
     # Generate some test data
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData()
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData2D()
     n = X.shape[0]
     q = np.sum(nlevels*nparams)
 
     # Get the product matrices
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats(Y,Z,X)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats2D(Y,Z,X)
 
     # Obtain Z'e
     Zte = ZtY - ZtX @ beta
@@ -1650,12 +1386,12 @@ def test_get_dldDk2D():
 def test_get_covdldbeta2D():
 
     # Generate some test data
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData()
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData2D()
     n = X.shape[0]
     q = np.sum(nlevels*nparams)
 
     # Get the product matrices
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats(Y,Z,X)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats2D(Y,Z,X)
 
     # Obtain Z'e
     Zte = ZtY - ZtX @ beta
@@ -1697,12 +1433,12 @@ def test_get_covdldbeta2D():
 def test_get_covdldDkdsigma22D():
 
     # Generate some test data
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData()
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData2D()
     n = X.shape[0]
     q = np.sum(nlevels*nparams)
 
     # Get the product matrices
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats(Y,Z,X)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats2D(Y,Z,X)
 
     # Obtain D(I+Z'ZD)^(-1)
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
@@ -1774,12 +1510,12 @@ def test_get_covdldDkdsigma22D():
 def test_get_covdldDk1Dk22D():
     
     # Generate some test data
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData()
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData2D()
     n = X.shape[0]
     q = np.sum(nlevels*nparams)
 
     # Get the product matrices
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats(Y,Z,X)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats2D(Y,Z,X)
 
     # Obtain D(I+Z'ZD)^(-1)
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
@@ -1858,151 +1594,6 @@ def test_get_covdldDk1Dk22D():
 
     print('=============================================================')
     print('Unit test for: get_covdldDk1Dk22D')
-    print('-------------------------------------------------------------')
-    print('Result: ', result)
-
-    return(result)
-
-
-
-# =============================================================================
-#
-# The below function tests the function `mapping2D`. It does this by checking
-# the function against a predefined example.
-#
-# =============================================================================
-def test_mapping2D():
-
-    # Theta values to put in the array
-    theta = np.array([1,2,3,4])
-
-    # Theta indices
-    theta_inds = np.array([0,1,2,0,1,2,0,1,2,3,3,3])
-
-    # Row and column indices
-    r_inds = np.array([0,1,1,2,3,3,4,5,5,6,7,8])
-    c_inds = np.array([0,0,1,2,2,3,4,4,5,6,7,8])
-
-    # Matrix we expect
-    expected = np.array([[1,0,0,0,0,0,0,0,0],
-                         [2,3,0,0,0,0,0,0,0],
-                         [0,0,1,0,0,0,0,0,0],
-                         [0,0,2,3,0,0,0,0,0],
-                         [0,0,0,0,1,0,0,0,0],
-                         [0,0,0,0,2,3,0,0,0],
-                         [0,0,0,0,0,0,4,0,0],
-                         [0,0,0,0,0,0,0,4,0],
-                         [0,0,0,0,0,0,0,0,4]])
-
-    # Test result
-    test = np.array(cvxopt.matrix(mapping2D(theta, theta_inds, r_inds, c_inds)))
-
-    # Check if the function gives as expected
-    testVal = np.allclose(test,expected)
-
-    # Result
-    if testVal:
-        result = 'Passed'
-    else:
-        result = 'Failed'
-
-    print('=============================================================')
-    print('Unit test for: mapping2D')
-    print('-------------------------------------------------------------')
-    print('Result: ', result)
-
-    return(result)
-
-
-# =============================================================================
-#
-# The below function tests the function `sparse_chol2D`. It does this by 
-# generating random matrices and checking the output has the correct
-# properties.
-#
-# =============================================================================
-def test_sparse_chol2D():
-
-    # We need to set the cholmod options to 2
-    cholmod.options['supernodal']=2
-
-    # Random matrix dimensions
-    n = np.random.randint(5,20)
-
-    # Random sparse positive definite matrix
-    M = np.random.randn(n,n)
-    M = M @ M.transpose() + np.eye(n)*0.05
-    M[M<0]=0
-
-    # Convert M to cvxopt
-    M = cvxopt.sparse(cvxopt.matrix(M))
-    
-    # Obtain cholesky factorization
-    cholObject = sparse_chol2D(M, perm=None, retF=False, retP=True, retL=True)
-
-    # Lower cholesky
-    L = cholObject['L']
-
-    # Permutation
-    P = cholObject['P']
-
-    # Estimated M given sparse cholesky
-    M_est = L*L.trans()
-    M_est = np.array(cvxopt.matrix(M_est))
-
-    # Permuted M 
-    M_permuted = np.array(cvxopt.matrix(M[P,P]))
-
-    # Check if the function give a valid sparse cholesky decomposition
-    testVal = np.allclose(M_est,M_permuted)
-
-    # Result
-    if testVal:
-        result = 'Passed'
-    else:
-        result = 'Failed'
-
-    print('=============================================================')
-    print('Unit test for: sparse_chol2D')
-    print('-------------------------------------------------------------')
-    print('Result: ', result)
-
-    return(result)
-
-
-# =============================================================================
-#
-# The below function tests the function `get_mapping2D`. It does this by
-# checking the function against a predefined example.
-#
-# =============================================================================
-def test_get_mapping2D():
-
-    # Example nlevels and nparams
-    nlevels = np.array([3,3])
-    nparams = np.array([2,1])
-
-    # Expected theta indices
-    t_inds_expected = np.array([0,1,2,0,1,2,0,1,2,3,3,3])
-
-    # Expected row and column indices
-    r_inds_expected = np.array([0,1,1,2,3,3,4,5,5,6,7,8])
-    c_inds_expected = np.array([0,0,1,2,2,3,4,4,5,6,7,8])
-
-    # Get the functions output
-    t_inds_test, r_inds_test, c_inds_test =get_mapping2D(nlevels, nparams)
-
-    # Check if the function gives as expected
-    testVal = np.allclose(t_inds_test,t_inds_expected) and np.allclose(r_inds_test,r_inds_expected) and np.allclose(c_inds_test,c_inds_expected)
-
-    # Result
-    if testVal:
-        result = 'Passed'
-    else:
-        result = 'Failed'
-
-    print('=============================================================')
-    print('Unit test for: get_mapping2D')
     print('-------------------------------------------------------------')
     print('Result: ', result)
 
@@ -2345,36 +1936,6 @@ def run_all2D():
     # Test get_covdldDk1Dk22D
     name = 'get_covdldDk1Dk22D'
     result = test_get_covdldDk1Dk22D()
-    # Add result to arrays.
-    if result=='Passed':
-        passedTests = np.append(passedTests, name)
-    if result=='Failed':
-        failedTests = np.append(failedTests, name)
-
-
-    # Test mapping2D
-    name = 'mapping2D'
-    result = test_mapping2D()
-    # Add result to arrays.
-    if result=='Passed':
-        passedTests = np.append(passedTests, name)
-    if result=='Failed':
-        failedTests = np.append(failedTests, name)
-
-
-    # Test sparse_chol2D
-    name = 'sparse_chol2D'
-    result = test_sparse_chol2D()
-    # Add result to arrays.
-    if result=='Passed':
-        passedTests = np.append(passedTests, name)
-    if result=='Failed':
-        failedTests = np.append(failedTests, name)
-
-
-    # Test get_mapping2D
-    name = 'get_mapping2D'
-    result = test_get_mapping2D()
     # Add result to arrays.
     if result=='Passed':
         passedTests = np.append(passedTests, name)

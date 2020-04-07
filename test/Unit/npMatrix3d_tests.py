@@ -17,340 +17,15 @@ np.set_printoptions(threshold=sys.maxsize)
 sys.path.insert(1, os.path.join(sys.argv[0],'..','..','..','lib'))
 from lib.npMatrix2d import *
 from lib.npMatrix3d import *
+from genTestDat import prodMats3D, genTestData3D
 # =============================================================================
-# This file contains all unit tests for the functions given in the tools3D.py
+# This file contains all unit tests for the functions given in the npMatrix3D.py
 # file.
 #
 # Author: Tom Maullin
 # Last edited: 22/03/2020
 #
 # =============================================================================
-
-# =============================================================================
-#
-# The below function generates a random testcase according to the mass 
-# univariate linear mixed model:
-#
-#   Y_v = X_v\beta_v + Z_vb_v + \epsilon_v
-#
-# Where b_v~N(0,D_v) and \epsilon_v ~ N(0,\sigma_v^2 I) and the subscript 
-# v reprsents that we have one such model for every voxel.
-#
-# -----------------------------------------------------------------------------
-#
-# It takes the following inputs:
-#
-# -----------------------------------------------------------------------------
-#
-#   - n (optional): Number of subjects. If not provided, a random n will be
-#                   selected between 800 and 1200.
-#   - p (optional): Number of fixed effects parameters. If not provided, a
-#                   random p will be selected between 2 and 10 (an intercept is
-#                   automatically included).
-#   - nlevels (optional): A vector containing the number of levels for each
-#                         random factor, e.g. `nlevels=[3,4]` would mean the
-#                         first factor has 3 levels and the second factor has
-#                         4 levels. If not provided, default values will be
-#                         between 8 and 40.
-#   - nparams (optional): A vector containing the number of parameters for each
-#                         factor, e.g. `nlevels=[2,1]` would mean the first
-#                         factor has 2 parameters and the second factor has 1
-#                         parameter. If not provided, default values will be
-#                         between 2 and 5.
-#   - v (optional): Number of voxels. If not provided a random v will be 
-#                   selected between 100 and 250.
-#
-# -----------------------------------------------------------------------------
-#
-# And gives the following outputs:
-#
-# -----------------------------------------------------------------------------
-#
-#   - X: A fixed effects design matrix of dimensions (n x p) including a random
-#        intercept column (the first column).
-#   - Y: A response vector of dimension (n x 1).
-#   - Z: A random effects design matrix of size (n x q) where q is equal to the
-#        product of nlevels and nparams.
-#   - nlevels: A vector containing the number of levels for each random factor,
-#              e.g. `nlevels=[3,4]` would mean the first factor has 3 levels
-#              and the second factor has 4 levels.
-#   - nparams: A vector containing the number of parameters for each factor,
-#              e.g. `nlevels=[2,1]` would mean the first factor has 2
-#              parameters and the second factor has 1 parameter.
-#   - beta: The true values of beta used to simulate the response vector.
-#   - sigma2: The true value of sigma2 used to simulate the response vector.
-#   - D: The random covariance matrix used to simulate b and the response vector.
-#   - b: The random effects vector used to simulate the response vector.
-#   - X_sv: A spatially varying design (X with random rows removed across 
-#           voxels).
-#   - Z_sv: A spatially varying random effects design (Z with random rows
-#           removed across voxels).
-#   - n_sv: Spatially varying number of subjects.
-#
-# -----------------------------------------------------------------------------
-def genTestData(n=None, p=None, nlevels=None, nparams=None, v=None):
-
-    # Check if we have n
-    if n is None:
-
-        # If not generate a random n
-        n = np.random.randint(800,1200)
-    
-    # Check if we have v
-    if v is None:
-
-        # If not generate a random n
-        v = np.random.randint(100,250)
-
-    # Check if we have p
-    if p is None:
-
-        # If not generate a random p
-        p = np.random.randint(2,10)
-
-    # Work out number of random factors.
-    if nlevels is None and nparams is None:
-
-        # If we have neither nlevels or nparams, decide on a number of
-        # random factors, r.
-        r = np.random.randint(2,4)
-
-    elif nlevels is None:
-
-        # Work out number of random factors, r
-        r = np.shape(nparams)[0]
-
-    else:
-
-        # Work out number of random factors, r
-        r = np.shape(nlevels)[0]
-
-    # Check if we need to generate nlevels.
-    if nlevels is None:
-        
-        # Generate random number of levels.
-        nlevels = np.random.randint(8,40,r)
-
-    # Check if we need to generate nparams.
-    if nparams is None:
-        
-        # Generate random number of levels.
-        nparams = np.random.randint(2,5,r)
-
-    # Generate random X.
-    X = np.random.randn(n,p)
-
-    # Work out q
-    q = np.sum(nlevels*nparams)
-    
-    # Make the first column an intercept
-    X[:,0]=1
-
-    # Create Z
-    # We need to create a block of Z for each level of each factor
-    for i in np.arange(r):
-
-        Zdata_factor = np.random.randn(n,nparams[i])
-
-        if i==0:
-
-            #The first factor should be block diagonal, so the factor indices are grouped
-            factorVec = np.repeat(np.arange(nlevels[i]), repeats=np.floor(n/max(nlevels[i],1)))
-
-            if len(factorVec) < n:
-
-                # Quick fix incase rounding leaves empty columns
-                factorVecTmp = np.zeros(n)
-                factorVecTmp[0:len(factorVec)] = factorVec
-                factorVecTmp[len(factorVec):n] = nlevels[i]-1
-                factorVec = np.int64(factorVecTmp)
-
-
-                # Crop the factor vector - otherwise have a few too many
-                factorVec = factorVec[0:n]
-
-                # Give the data an intercept
-                Zdata_factor[:,0]=1
-
-        else:
-
-            # The factor is randomly arranged across subjects
-            factorVec = np.random.randint(0,nlevels[i],size=n) 
-
-        # Build a matrix showing where the elements of Z should be
-        indicatorMatrix_factor = np.zeros((n,nlevels[i]))
-        indicatorMatrix_factor[np.arange(n),factorVec] = 1
-
-        # Need to repeat for each parameter the factor has 
-        indicatorMatrix_factor = np.repeat(indicatorMatrix_factor, nparams[i], axis=1)
-
-        # Enter the Z values
-        indicatorMatrix_factor[indicatorMatrix_factor==1]=Zdata_factor.reshape(Zdata_factor.shape[0]*Zdata_factor.shape[1])
-
-        # Make sparse
-        Zfactor = scipy.sparse.csr_matrix(indicatorMatrix_factor)
-
-        # Put all the factors together
-        if i == 0:
-            Z = Zfactor
-        else:
-            Z = scipy.sparse.hstack((Z, Zfactor))
-
-    # Convert Z to dense
-    Z = Z.toarray()
-
-    # Make random beta
-    beta = np.random.randint(-5,5,v*p).reshape(v,p,1)
-
-    # Make random sigma2
-    sigma2 = (0.5*np.random.randn(v)**2).reshape(v,1,1)
-
-    # Make epsilon.
-    epsilon = sigma2*np.random.randn(n).reshape(n,1)
-
-    # Reshape sigma2
-    sigma2 = sigma2.reshape(v)
-
-    # Empty Ddict and Dhalfdict
-    Ddict = dict()
-    Dhalfdict = dict()
-
-
-    # Work out indices (there is one block of D per level)
-    inds = np.zeros(np.sum(nlevels)+1)
-    counter = 0
-
-    for k in np.arange(len(nparams)):
-
-        # Generate random D block for this factor
-        Dhalfdict[k] = np.random.randn(v,nparams[k],nparams[k])
-        Ddict[k] = Dhalfdict[k] @ Dhalfdict[k].transpose(0,2,1)
-
-        for j in np.arange(nlevels[k]):
-
-            # Work out indices in D corresponding to each level of the factor.
-            inds[counter] = np.concatenate((np.array([0]), np.cumsum(nlevels*nparams)))[k] + nparams[k]*j
-            counter = counter + 1
-
-
-    # Last index will be missing so add it
-    inds[len(inds)-1]=inds[len(inds)-2]+nparams[-1]
-
-    # Make sure indices are ints
-    inds = np.int64(inds)
-
-    # Initial D and Dhalf
-    Dhalf = np.zeros((v,q,q))
-    D = np.zeros((v,q,q))
-
-    # Fill in the blocks of D and Dhalf
-    counter = 0
-    for k in np.arange(len(nparams)):
-
-        for j in np.arange(nlevels[k]):
-
-            # Fill in blocks of Dhalf and D
-            Dhalf[:, inds[counter]:inds[counter+1], inds[counter]:inds[counter+1]] = Dhalfdict[k]
-            D[:, inds[counter]:inds[counter+1], inds[counter]:inds[counter+1]] = Ddict[k]
-
-            # Increment counter
-            counter=counter+1
-
-    # Make random b
-    b = np.random.randn(v*q).reshape(v,q,1)
-
-    # Give b the correct covariance structure
-    b = Dhalf @ b
-
-    # Generate a mask based on voxels
-    mask = np.random.binomial(1,0.9,size=(v,n,1))
-
-    # Spatially varying n
-    n_sv = np.sum(mask,axis=1)
-
-    # Work out spatially varying Z and X
-    X_sv = mask*X
-    Z_sv = mask*Z
-
-    # Generate the response vector
-    Y = X_sv @ beta + Z_sv @ b + epsilon
-
-    # Return values
-    return(Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv)
-
-
-# =============================================================================
-#
-# The below function generates the product matrices from matrices X, Y and Z.
-#
-# -----------------------------------------------------------------------------
-#
-# It takes as inputs:
-#
-# -----------------------------------------------------------------------------
-#
-#  - `X`: The design matrix of dimension n times p.
-#  - `Y`: The response vector of dimension v times n times 1*.
-#  - `Z`: The random effects design matrix of dimension n times q.
-#  - `X_sv`: The spatially varying design matrix of dimension v times n times 
-#            p.
-#  - `Z_sv`: The spatially varying random effects design matrix of dimension v 
-#         times n times q.
-#
-#  *Note: Y is always assumed to vary across voxels so we do not bother with the
-#         `_sv` subscript for Y.
-#
-# -----------------------------------------------------------------------------
-#
-# It returns as outputs:
-#
-# -----------------------------------------------------------------------------
-#
-#  - `XtX`: X transposed multiplied by X.
-#  - `XtY`: X transposed multiplied by Y.
-#  - `XtZ`: X transposed multiplied by Z.
-#  - `YtX`: Y transposed multiplied by X.
-#  - `YtY`: Y transposed multiplied by Y.
-#  - `YtZ`: Y transposed multiplied by Z.
-#  - `ZtX`: Z transposed multiplied by X.
-#  - `ZtY`: Z transposed multiplied by Y.
-#  - `ZtZ`: Z transposed multiplied by Z.
-#  - `XtX_sv`: X_sv transposed multiplied by X_sv.
-#  - `XtY_sv`: X_sv transposed multiplied by Y.
-#  - `XtZ_sv`: X_sv transposed multiplied by Z_sv.
-#  - `YtX_sv`: Y transposed multiplied by X_sv.
-#  - `YtZ_sv`: Y transposed multiplied by Z_sv.
-#  - `ZtX_sv`: Z_sv transposed multiplied by X_sv.
-#  - `ZtY_sv`: Z_sv transposed multiplied by Y.
-#  - `ZtZ_sv`: Z_sv transposed multiplied by Z_sv.
-#
-# =============================================================================
-def prodMats(Y,Z,X,Z_sv,X_sv):
-
-    # Work out the product matrices (non spatially varying)
-    XtX = (X.transpose() @ X).reshape(1, X.shape[1], X.shape[1])
-    XtY = X.transpose() @ Y
-    XtZ = (X.transpose() @ Z).reshape(1, X.shape[1], Z.shape[1])
-    YtX = XtY.transpose(0,2,1)
-    YtY = Y.transpose(0,2,1) @ Y
-    YtZ = Y.transpose(0,2,1) @ Z
-    ZtX = XtZ.transpose(0,2,1)
-    ZtY = YtZ.transpose(0,2,1)
-    ZtZ = (Z.transpose() @ Z).reshape(1, Z.shape[1], Z.shape[1])
-
-    # Spatially varying product matrices
-    XtX_sv = X_sv.transpose(0,2,1) @ X_sv
-    XtY_sv = X_sv.transpose(0,2,1) @ Y
-    XtZ_sv = X_sv.transpose(0,2,1) @ Z_sv
-    YtX_sv = XtY_sv.transpose(0,2,1)
-    YtZ_sv = Y.transpose(0,2,1) @ Z_sv
-    ZtX_sv = XtZ_sv.transpose(0,2,1)
-    ZtY_sv = YtZ_sv.transpose(0,2,1)
-    ZtZ_sv = Z_sv.transpose(0,2,1) @ Z_sv
-
-    # Return product matrices
-    return(XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv)
-
 
 # =============================================================================
 #
@@ -406,7 +81,7 @@ def test_kron3D():
 # =============================================================================
 #
 # The below function tests the function `mat2vec3D`. It does this by generating
-# a random example and testing against it's 2D counterpart from tools2d.py.
+# a random example and testing against it's 2D counterpart from npMatrix2d.py.
 #
 # =============================================================================
 def test_mat2vec3D():
@@ -443,7 +118,7 @@ def test_mat2vec3D():
 #
 # The below function tests the function `mat2vech3D`. It does this by 
 # generating a random example and testing against it's 2D counterpart from 
-# tools2d.py.
+# npMatrix2d.py.
 #
 # =============================================================================
 def test_mat2vech3D():
@@ -479,7 +154,7 @@ def test_mat2vech3D():
 #
 # The below function tests the function `vec2mat3D`. It does this by 
 # generating a random example and testing against it's 2D counterpart from 
-# tools2d.py.
+# npMatrix2d.py.
 #
 # =============================================================================
 def test_vec2mat3D():
@@ -515,7 +190,7 @@ def test_vec2mat3D():
 #
 # The below function tests the function `vech2mat3D`. It does this by 
 # generating a random example and testing against it's 2D counterpart from 
-# tools2d.py.
+# npMatrix2d.py.
 #
 # =============================================================================
 def test_vech2mat3D():
@@ -551,7 +226,7 @@ def test_vech2mat3D():
 #
 # The below function tests the function `forceSym3D`. It does this by 
 # generating a random example and testing against it's 2D counterpart from 
-# tools2d.py.
+# npMatrix2d.py.
 #
 # =============================================================================
 def test_forceSym3D():
@@ -586,17 +261,17 @@ def test_forceSym3D():
 # =============================================================================
 #
 # The below function tests the function `ssr3D`. It does this by simulating
-# random test data and testing against it's 2D counterpart from tools2d.py.
+# random test data and testing against it's 2D counterpart from npMatrix2d.py.
 #
 # =============================================================================
 def test_ssr3D():
 
     # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData()
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D()
     v = Y.shape[0]
 
     # Generate product matrices
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats(Y,Z,X,Z_sv,X_sv)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
 
     # Choose random voxel to check worked correctly
     testv = np.random.randint(0,v)
@@ -642,7 +317,7 @@ def test_ssr3D():
 def test_getDfromDict3D():
 
     # Simulate some random data
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData()
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D()
 
     # Work out the indices in D where a new block Dk appears
     Dinds = np.cumsum(nlevels*nparams)
@@ -680,17 +355,17 @@ def test_getDfromDict3D():
 #
 # The below function tests the function `initBeta3D`. It does this by
 # simulating random test data and testing against it's 2D counterpart from
-# tools2d.py.
+# npMatrix2d.py.
 #
 # =============================================================================
 def test_initBeta3D():
 
     # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData()
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D()
     v = Y.shape[0]
 
     # Generate product matrices
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats(Y,Z,X,Z_sv,X_sv)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
 
     # Choose random voxel to check worked correctly
     testv = np.random.randint(0,v)
@@ -729,18 +404,18 @@ def test_initBeta3D():
 #
 # The below function tests the function `initSigma23D`. It does this by
 # simulating random test data and testing against it's 2D counterpart from
-# tools2d.py.
+# npMatrix2d.py.
 #
 # =============================================================================
 def test_initSigma23D():
 
     # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData()
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D()
     v = Y.shape[0]
     n = Y.shape[1]
 
     # Generate product matrices
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats(Y,Z,X,Z_sv,X_sv)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
 
     # Choose random voxel to check worked correctly
     testv = np.random.randint(0,v)
@@ -785,18 +460,18 @@ def test_initSigma23D():
 # =============================================================================
 #
 # The below function tests the function `initDk3D`. It does this by simulating
-# random test data and testing against it's 2D counterpart from tools2d.py.
+# random test data and testing against it's 2D counterpart from npMatrix2d.py.
 #
 # =============================================================================
 def test_initDk3D():
 
     # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData()
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D()
     v = Y.shape[0]
     n = Y.shape[1]
 
     # Generate product matrices
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats(Y,Z,X,Z_sv,X_sv)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
 
     # Choose random voxel to check worked correctly
     testv = np.random.randint(0,v)
@@ -849,13 +524,13 @@ def test_initDk3D():
 #
 # The below function tests the function `makeDnnd3D`. It does this by 
 # simulating random test data and testing against it's 2D counterpart from
-# tools2d.py.
+# npMatrix2d.py.
 #
 # =============================================================================
 def test_makeDnnd3D():
 
     # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData()
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D()
     v = Y.shape[0]
 
     # Choose random voxel to check worked correctly
@@ -887,19 +562,19 @@ def test_makeDnnd3D():
 # =============================================================================
 #
 # The below function tests the function `llh3D`. It does this by simulating
-# random test data and testing against it's 2D counterpart from tools2d.py.
+# random test data and testing against it's 2D counterpart from npMatrix2d.py.
 #
 # =============================================================================
 def test_llh3D():
 
     # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData()
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D()
     v = Y.shape[0]
     n = Y.shape[1]
     q = Z.shape[1]
 
     # Generate product matrices
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats(Y,Z,X,Z_sv,X_sv)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
 
     # Choose random voxel to check worked correctly
     testv = np.random.randint(0,v)
@@ -950,19 +625,19 @@ def test_llh3D():
 #
 # The below function tests the function `get_dldB3D`. It does this by
 # simulating random test data and testing against it's 2D counterpart from
-# tools2d.py.
+# npMatrix2d.py.
 #
 # =============================================================================
 def test_get_dldB3D():
 
     # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData()
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D()
     v = Y.shape[0]
     n = Y.shape[1]
     q = Z.shape[1]
 
     # Generate product matrices
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats(Y,Z,X,Z_sv,X_sv)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
 
     # Choose random voxel to check worked correctly
     testv = np.random.randint(0,v)
@@ -1014,19 +689,19 @@ def test_get_dldB3D():
 #
 # The below function tests the function `get_dldsigma23D`. It does this by
 # simulating random test data and testing against it's 2D counterpart from
-# tools2d.py.
+# npMatrix2d.py.
 #
 # =============================================================================
 def test_get_dldsigma23D():
 
     # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData()
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D()
     v = Y.shape[0]
     n = Y.shape[1]
     q = Z.shape[1]
 
     # Generate product matrices
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats(Y,Z,X,Z_sv,X_sv)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
 
     # Choose random voxel to check worked correctly
     testv = np.random.randint(0,v)
@@ -1078,19 +753,19 @@ def test_get_dldsigma23D():
 #
 # The below function tests the function `get_dldDk3D`. It does this by
 # simulating random test data and testing against it's 2D counterpart from
-# tools2d.py.
+# npMatrix2d.py.
 #
 # =============================================================================
 def test_get_dldDk3D():
 
     # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData()
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D()
     v = Y.shape[0]
     n = Y.shape[1]
     q = Z.shape[1]
 
     # Generate product matrices
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats(Y,Z,X,Z_sv,X_sv)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
 
     # Choose random voxel to check worked correctly
     testv = np.random.randint(0,v)
@@ -1141,18 +816,18 @@ def test_get_dldDk3D():
 #
 # The below function tests the function `get_covdldbeta3D`. It does this by
 # simulating random test data and testing against it's 2D counterpart from
-# tools2d.py.
+# npMatrix2d.py.
 #
 # =============================================================================
 def test_get_covdldbeta3D():
 
     # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData()
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D()
     v = Y.shape[0]
     q = Z.shape[1]
 
     # Generate product matrices
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats(Y,Z,X,Z_sv,X_sv)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
 
     # Choose random voxel to check worked correctly
     testv = np.random.randint(0,v)
@@ -1196,18 +871,18 @@ def test_get_covdldbeta3D():
 #
 # The below function tests the function `get_covdldDkdsigma23D`. It does this
 # by simulating random test data and testing against it's 2D counterpart from
-# tools2d.py.
+# npMatrix2d.py.
 #
 # =============================================================================
 def test_get_covdldDkdsigma23D():
 
     # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData()
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D()
     v = Y.shape[0]
     q = Z.shape[1]
 
     # Generate product matrices
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats(Y,Z,X,Z_sv,X_sv)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
 
     # Choose random voxel to check worked correctly
     testv = np.random.randint(0,v)
@@ -1260,18 +935,18 @@ def test_get_covdldDkdsigma23D():
 #
 # The below function tests the function `get_covdldDk1Dk23D`. It does this by
 # simulating random test data and testing against it's 2D counterpart from
-# tools2d.py.
+# npMatrix2d.py.
 #
 # =============================================================================
 def test_get_covdldDk1Dk23D():
 
     # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData()
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D()
     v = Y.shape[0]
     q = Z.shape[1]
 
     # Generate product matrices
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats(Y,Z,X,Z_sv,X_sv)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
 
     # Choose random voxel to check worked correctly
     testv = np.random.randint(0,v)
@@ -1388,7 +1063,7 @@ def test_getCovergedIndices():
 #
 # The below function tests the function `block2stacked3D`. It does this by
 # generating a random example and testing against it's 2D counterpart from
-# tools2d.py.
+# npMatrix2d.py.
 #
 # =============================================================================
 def test_block2stacked3D():
@@ -1433,7 +1108,7 @@ def test_block2stacked3D():
 #
 # The below function tests the function `mat2vecb3D`. It does this by
 # generating a random example and testing against it's 2D counterpart from
-# tools2d.py.
+# npMatrix2d.py.
 #
 # =============================================================================
 def test_mat2vecb3D():
@@ -1478,7 +1153,7 @@ def test_mat2vecb3D():
 #
 # The below function tests the function `sumAijBijt3D`. It does this by
 # generating a random example and testing against it's 2D counterpart from
-# tools2d.py.
+# npMatrix2d.py.
 #
 # =============================================================================
 def test_sumAijBijt3D():
@@ -1526,7 +1201,7 @@ def test_sumAijBijt3D():
 #
 # The below function tests the function `sumAijBijt3D`. It does this by
 # generating a random example and testing against it's 2D counterpart from
-# tools2d.py.
+# npMatrix2d.py.
 #
 # =============================================================================
 def test_sumAijKronBij3D():
@@ -1572,19 +1247,19 @@ def test_sumAijKronBij3D():
 #
 # The below function tests the function `get_resms3D`. It does this by simulating
 # random test data and testing against niave computation using `ssr2D` from 
-# tools2d.py.
+# npMatrix2d.py.
 #
 # =============================================================================
 def test_get_resms3D():
 
     # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData()
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D()
     v = Y.shape[0]
     n = X.shape[0]
     p = X.shape[1]
 
     # Generate product matrices
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats(Y,Z,X,Z_sv,X_sv)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
 
     # Choose random voxel to check worked correctly
     testv = np.random.randint(0,v)
@@ -1629,14 +1304,14 @@ def test_get_resms3D():
 def test_covB3D():
 
     # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData(v=10)
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=10)
     v = Y.shape[0]
     q = np.sum(np.dot(nparams,nlevels))
     p = X.shape[1]
     n = X.shape[0]
 
     # Generate product matrices
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats(Y,Z,X,Z_sv,X_sv)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
 
     # Choose random voxel to check worked correctly
     testv = np.random.randint(0,v)
@@ -1695,14 +1370,14 @@ def test_covB3D():
 def test_varLB3D():
 
     # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData(v=10)
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=10)
     v = Y.shape[0]
     q = np.sum(np.dot(nparams,nlevels))
     p = X.shape[1]
     n = X.shape[0]
 
     # Generate product matrices
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats(Y,Z,X,Z_sv,X_sv)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
 
     # Choose random voxel to check worked correctly
     testv = np.random.randint(0,v)
@@ -1764,14 +1439,14 @@ def test_varLB3D():
 def test_get_T3D():
 
     # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData(v=10)
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=10)
     v = Y.shape[0]
     q = np.sum(np.dot(nparams,nlevels))
     p = X.shape[1]
     n = X.shape[0]
 
     # Generate product matrices
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats(Y,Z,X,Z_sv,X_sv)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
 
     # Choose random voxel to check worked correctly
     testv = np.random.randint(0,v)
@@ -1836,14 +1511,14 @@ def test_get_T3D():
 def test_get_F3D():
 
     # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData(v=10)
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=10)
     v = Y.shape[0]
     q = np.sum(np.dot(nparams,nlevels))
     p = X.shape[1]
     n = X.shape[0]
 
     # Generate product matrices
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats(Y,Z,X,Z_sv,X_sv)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
 
     # Choose random voxel to check worked correctly
     testv = np.random.randint(0,v)
@@ -2065,14 +1740,14 @@ def test_F2P3D():
 def test_get_swdf_T3D():
 
     # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData(v=10)
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=10)
     v = Y.shape[0]
     q = np.sum(np.dot(nparams,nlevels))
     p = X.shape[1]
     n = X.shape[0]
 
     # Generate product matrices
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats(Y,Z,X,Z_sv,X_sv)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
 
     # Choose random voxel to check worked correctly
     testv = np.random.randint(0,v)
@@ -2127,14 +1802,14 @@ def test_get_swdf_T3D():
 def test_get_swdf_F3D():
 
     # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData(v=10)
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=10)
     v = Y.shape[0]
     q = np.sum(np.dot(nparams,nlevels))
     p = X.shape[1]
     n = X.shape[0]
 
     # Generate product matrices
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats(Y,Z,X,Z_sv,X_sv)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
 
     # Choose random voxel to check worked correctly
     testv = np.random.randint(0,v)
@@ -2193,14 +1868,14 @@ def test_get_swdf_F3D():
 def test_get_dS23D():
 
     # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData(v=10)
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=10)
     v = Y.shape[0]
     q = np.sum(np.dot(nparams,nlevels))
     p = X.shape[1]
     n = X.shape[0]
 
     # Generate product matrices
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats(Y,Z,X,Z_sv,X_sv)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
 
     # Choose random voxel to check worked correctly
     testv = np.random.randint(0,v)
@@ -2294,12 +1969,12 @@ def test_get_dS23D():
 def test_get_InfoMat3D():
 
     # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData(v=10)
+    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=10)
     v = Y.shape[0]
     q = np.sum(np.dot(nparams,nlevels))
 
     # Generate product matrices
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats(Y,Z,X,Z_sv,X_sv)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
     n = X.shape[0]
 
     # Choose random voxel to check worked correctly
