@@ -14,7 +14,7 @@ np.set_printoptions(threshold=sys.maxsize)
 # Add lib to the python path.
 sys.path.insert(1, os.path.join(sys.argv[0],'..','..','..','lib'))
 from genTestDat import genTestData2D, prodMats2D
-from lib.est2D import *
+from lib.est2d import *
 from lib.npMatrix2d import *
 from lib.cvxMatrix2d import *
 from lib.PLS import PLS2D, PLS2D_getSigma2, PLS2D_getBeta, PLS2D_getD
@@ -73,6 +73,7 @@ def test2D():
     print('nlevels: ', nlevels)
     print('nparams: ', nparams)
     print('n: ', n, ', p: ', p, ', r: ', r, ', q: ', q, ', tol: ', tol)
+    print('--------------------------------------------------------------------------')
 
     # -----------------------------------------------------------------------------
     # Create empty data frame for results:

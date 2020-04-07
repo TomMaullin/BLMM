@@ -27,6 +27,10 @@ The following fields are mandatory:
 
  - `Y_files`: Text file containing a list of response variable images in NIFTI format.
  - `X`: CSV file of the design matrix (no column header, no ID row).
+ - `Z`: Random factors in the design. They should be listed as `f1,f2,...` etc and each random factor should contain the fields:
+   - `name`: Name of the random factor.
+   - `factor`: CSV file containing a vector of indices representing which level of the factor each image belongs to. e.g. if the first factor is `subject` and the second image belonged to subject 5, the second entry in this file should be 5.
+   - `design`: CSV file containing the design matrix for this random factor.
  - `outdir`: Path to the output directory.
  - `contrasts`: Contrast vectors to be tested. They should be listed as `c1,c2,...` etc and each contrast should contain the fields:
    - `name`: A name for the contrast. i.e. `AwesomelyNamedContrast1`.
@@ -48,6 +52,8 @@ The following fields are optional:
  - `OutputCovB`: If set to `True` this will output between beta covariance maps. For studies with a large number of paramters this may not be desirable as, for example, 30 analysis paramters will create 30x30=900 between beta covariance maps. By default this is set to `True`.
  - `data_mask_thresh`: Any voxel with value below this threshold will be treated as missing data. (By default, no such thresholding  is done, i.e. `data_mask_thresh` is essentially -infinity). 
  - `minlog`: Any `-inf` values in the `-log10(p)` maps will be converted to the value of `minlog`. Currently, a default value of `-323.3062153431158` is used as this is the most negative value which was seen during testing before `-inf` was encountered (see [this thread](https://github.com/TomMaullin/BLMM/issues/76) for more details).
+ - `method`: (Beta option). Which method to use for parameter estimation. Options are: `pSFS` (pseudo Simplified Fisher Scoring), `SFS` (Simplified Fisher Scoring), `pFS` (pseudo Fisher Scoring) and `FS` (Fisher Scoring). The (recommended) default is `pSFS`.
+ - `tol`: Tolerance for convergence for the parameter estimation. Estimates will be output once the log-likelihood changes by less than `tol` from iteration to iteration. The default value is `1e-6`. 
 
 
  
@@ -60,6 +66,11 @@ Example 1: A minimal configuration.
 ```
 Y_files: /path/to/data/Y.txt
 X: /path/to/data/X.csv
+Z:
+  - f1: 
+      name: factorName
+      factor: /path/to/data/Z1factorVector.csv
+      design: /path/to/data/Z1DesignMatrix.csv
 outdir: /path/to/output/directory/
 contrasts:
   - c1:
@@ -75,6 +86,15 @@ Y_files: /path/to/data/Y.txt
 data_mask_files: /path/to/data/M_.txt
 data_mask_thresh: 0.1
 X: /path/to/data/X.csv
+Z:
+  - f1: 
+      name: factorName
+      factor: /path/to/data/Z1factorVector.csv
+      design: /path/to/data/Z1DesignMatrix.csv
+  - f2: 
+      name: factorName2
+      factor: /path/to/data/Z2factorVector.csv
+      design: /path/to/data/Z2DesignMatrix.csv
 outdir: /path/to/output/directory/
 contrasts:
   - c1:
@@ -159,4 +179,61 @@ Currently, only unit tests are available for `BLMM`. These can be accessed by in
 
 Throughout the code, the following notation is universal.
 
+ - `Y`: The response vector at each voxel.
+ - `X`: The fixed effects design matrix.
+ - `Z`: The random effects design matrix.
+ - `sigma2`: (An estimate of) The fixed effects variance.
+ - `beta`: (An estimate of) The fixed effects parameter vector.
+ - `D`: (An estimate of) The random effects covariance matrix (in full).
+ - `Ddict`: A dictionary containing the unique blocks of `D`. For example, `Ddict[k]` is the block of `D` representing within-factor covariance for the kth random factor. 
  - `XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ`: These are the product matrices (i.e. X transposed multiplied by X, X transposed multiplied by Y, etc...).
+ - `n`: Number of observations/input images.
+ - `r`: Number of Random Factors in the design.
+ - `q`: Total number of Random Effects (duplicates included), i.e. the second dimension of, Z, the random effects design matrix.
+ - `qu`: Total number of unique Random effects (`vech(D_1),...vech(D_r)`).
+ - `p`: Number of Fixed Effects parameters in the design.
+ - `nraneffs`: A vector containing the number of random effects for each factor, e.g. `nraneffs=[2,1]` would mean the first factor has 2 random effects and the second factor has 1 random effect.
+ - `nlevels`: A vector containing the number of levels for each factor, e.g. `nlevels=[3,4]` would mean the first factor has 3 levels and the second factor has 4 levels.
+ - `inputs`: A dictionary containing all the inputs from the `blmm_config.yml`.
+ - 
+
+The following subscripts are also common throughout the code:
+
+ - `_sv`: Spatially varying. `a_sv` means we have a value of `a` for every voxel we are considers, or rather, `a` "varies" across space.
+ - `_i`: "Inner" voxels. This refers to the set of voxels which do not have missingness caused by mask variability in their designs. Typically, these make up the vast majority of the brain and tend not to lie near the edge of the brain, hence "inner".
+ - `_r`: "Ring" voxels. This refers to the set of voxels which have missingness caused by mask variability in their designs. Special care must be taken with these voxels as `X` and `Z` are not the same across this set. Typically, these make up a small minority of the brain and tend to lie near the edge of the brain; they look like a "ring" around the edge of the brain.
+ - `2D`: A function or file with this suffix will contain code designed to work analysis only on one voxel. As `X`,`Y` and `Z` are all 2 dimensional, all arrays considered for one voxel are 2D, hence the suffix.
+ - `3D`: A function or file with this suffix will contain code designed to work analysis on multiple voxels. As `X`,`Y` and `Z` are all 3 dimensional (an extra dimension has been added for "voxel number"), all arrays considered are 3D, hence the suffix.
+
+### Structure of the repository
+
+The repository contains 5 main folders, plus 3 files at the head of the repository. These are:
+
+ - `README.md`: This file.
+ - `blmm_config.yml`: The file the user must enter their design into.
+ - `blmm_cluster.sh`: The shell scipt used to run blmm (see previous).
+ - `lib`: Helper functions:
+   - `npMatrix2d.py`: Helper functions for 2d numpy array operations.
+   - `npMatrix3d.py`: Helper functions for 3d numpy array operations.
+   - `cvxMatrix2d.py`: Helper functions for 2d cvxopt matrix operations (used only by `PLS`).
+   - `PLS.py`: Code for the PLS method (only for benchmarking, currently unavailable in BLMM).
+   - `fileio.py`: Miscellenous functions for handling files.
+   - `est2d.py`: Parameter estimation methods for inference on one voxel.
+   - `est3d.py`: Parameter estimation methods for inference on multiple voxels.
+ - `src`: The 5 main stages of the blmm pipeline:
+   - `blmm_setup`: Formats inputs and works out the number of batches needed.
+   - `blmm_batch`: Calculates the product matrices for individual batches of images.
+   - `blmm_concat`: Sums the product matrices across batches, to obtain the product matrices for the overall model. Seperate voxels into "Inner" and "Ring".
+   - `blmm_estimate`: Estimates the parameters beta, sigma^2 and D.
+   - `blmm_inference`: Performs statistical inference on parameters and outputs results.
+ - `test`: Test functions:
+   - `Functional`: (WIP) Adapted from sister project `BLM`. Dummy analyses to check the changes to the code haven't affected the output.
+   - `Unit`: Unit tests for individual parts of the code:
+     - `genTestDat.py`: Functions to generate test datasets and product matrices.
+     - `npMatrix2d_tests.py`: Unit tests for all functions in `npMatrix2d.py`.
+     - `npMatrix3d_tests.py`: Unit tests for all functions in `npMatrix3d.py`.
+     - `cvxMatrix2d_tests.py`: Unit tests for all functions in `cvxMatrix2d.py`.
+     - `est2d_tests.py`: A function for comparing results of all methods in `est2d.py`, as well as `PLS.py`.
+     - `est3d_tests.py`: Functions for comparing results of all methods in `est3d.py`
+ - `sim`: (WIP) Simulations. This will likely be deleted in future. It only remains currently as it has some useful code that does not yet exist elsewhere.
+ - `scipts`: Bash scripts which run each individual stage of the BLMM pipeline.

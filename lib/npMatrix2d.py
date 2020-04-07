@@ -231,7 +231,7 @@ def blockInverse2D(matrix, blockSize):
 #
 #  - `M`: The symmetric matrix, with structure similar to Z'Z, to be inverted.
 #  - `nparams`: A vector containing the number of parameters for each
-#               factor, e.g. `nlevels=[2,1]` would mean the first factor
+#               factor, e.g. `nparams=[2,1]` would mean the first factor
 #               has 2 parameters and the second factor has 1 parameter.
 #  - `nlevels`: A vector containing the number of levels for each factor,
 #               e.g. `nlevels=[3,4]` would mean the first factor has 3
