@@ -1,5 +1,5 @@
 # BLMM-py
-This repository contains the code for Big Linear Models for Neuroimaging cluster and local usage.
+This repository contains the code for Big Linear Mixed Models for Neuroimaging cluster and local usage.
 
 ## Requirements
 To use the BLMM-py code, `fsl 5.0.10` or greater must be installed and `fslpython` must be configured correctly. Alternatively the following python packages must be installed:
@@ -17,7 +17,7 @@ subprocess
 If running `BLMM-py` on a cluster, `fsl_sub` must also be configured correctly.
 
 ## Usage
-To run `BLMM-py` first specify your design using `blmm_config.yml` and then run the job either in serial or in parallel by following the below guidelines.
+To run `BLMM-py` first specify your design using `blmm_config.yml` and then run your analysis by following the below guidelines.
 
 ### Specifying your model
 The regression model for BLMM must be specified in `blmm_config.yml`. Below is a complete list of possible inputs to this file.
@@ -27,6 +27,10 @@ The following fields are mandatory:
 
  - `Y_files`: Text file containing a list of response variable images in NIFTI format.
  - `X`: CSV file of the design matrix (no column header, no ID row).
+ - `Z`: Random factors in the design. They should be listed as `f1,f2,...` etc and each random factor should contain the fields:
+   - `name`: Name of the random factor.
+   - `factor`: CSV file containing a vector of indices representing which level of the factor each image belongs to. e.g. if the first factor is `subject` and the second image belonged to subject 5, the second entry in this file should be 5.
+   - `design`: CSV file containing the design matrix for this random factor.
  - `outdir`: Path to the output directory.
  - `contrasts`: Contrast vectors to be tested. They should be listed as `c1,c2,...` etc and each contrast should contain the fields:
    - `name`: A name for the contrast. i.e. `AwesomelyNamedContrast1`.
@@ -48,6 +52,8 @@ The following fields are optional:
  - `OutputCovB`: If set to `True` this will output between beta covariance maps. For studies with a large number of paramters this may not be desirable as, for example, 30 analysis paramters will create 30x30=900 between beta covariance maps. By default this is set to `True`.
  - `data_mask_thresh`: Any voxel with value below this threshold will be treated as missing data. (By default, no such thresholding  is done, i.e. `data_mask_thresh` is essentially -infinity). 
  - `minlog`: Any `-inf` values in the `-log10(p)` maps will be converted to the value of `minlog`. Currently, a default value of `-323.3062153431158` is used as this is the most negative value which was seen during testing before `-inf` was encountered (see [this thread](https://github.com/TomMaullin/BLMM/issues/76) for more details).
+ - `method`: (Beta option). Which method to use for parameter estimation. Options are: `pSFS` (pseudo Simplified Fisher Scoring), `SFS` (Simplified Fisher Scoring), `pFS` (pseudo Fisher Scoring) and `FS` (Fisher Scoring). The (recommended) default is `pSFS`.
+ - `tol`: Tolerance for convergence for the parameter estimation. Estimates will be output once the log-likelihood changes by less than `tol` from iteration to iteration. The default value is `1e-6`. 
 
 
  
@@ -60,6 +66,11 @@ Example 1: A minimal configuration.
 ```
 Y_files: /path/to/data/Y.txt
 X: /path/to/data/X.csv
+Z:
+  - f1: 
+      name: factorName
+      factor: /path/to/data/Z1factorVector.csv
+      design: /path/to/data/Z1DesignMatrix.csv
 outdir: /path/to/output/directory/
 contrasts:
   - c1:
@@ -75,6 +86,15 @@ Y_files: /path/to/data/Y.txt
 data_mask_files: /path/to/data/M_.txt
 data_mask_thresh: 0.1
 X: /path/to/data/X.csv
+Z:
+  - f1: 
+      name: factorName
+      factor: /path/to/data/Z1factorVector.csv
+      design: /path/to/data/Z1DesignMatrix.csv
+  - f2: 
+      name: factorName2
+      factor: /path/to/data/Z2factorVector.csv
+      design: /path/to/data/Z2DesignMatrix.csv
 outdir: /path/to/output/directory/
 contrasts:
   - c1:
@@ -97,11 +117,10 @@ analysis_mask: /path/to/data/MNI152_T1_2mm_brain_mask.nii.gz
 
 ### Running the Analysis
 
-An analysis can either be run in parallel on a computing cluster or in serial (one block after another). The below sections describe both scenarios.
 
 #### Running an analysis in parallel
 
-To run an analysis in parallel, log into the cluster you wish to run it on and ensure that `fsl` and `fsl_sub` are in the environment. On the `rescomp` cluster this can be done like so:
+To run an analysis in parallel, log into the cluster you wish to run it on and ensure that `fsl` and `fsl_sub` are loaded in the environment. On the `rescomp` cluster this can be done like so:
 
 ```
 module add fsl
@@ -119,16 +138,6 @@ After running this you will see text printed to the commandline telling you the 
  - `setup`: This will be working out the number of batches/blocks the analysis needs to be split into.
  - `batch*`: There may be several jobs with names of this format. These are the "chunks" the analysis has been split into. These are run in parallel to one another and typically don't take very long.
  - `results`: This code is combining the output of each batch to obtain statistical analyses. This will run once all `batch*` jobs have been completed. Please note this code has been streamlined for large numbers of subjects but not large number of parameters; therefore this job may take some time for large numbers of parameters.
- 
-#### Running an analysis in serial
-
-To run an analysis in serial, ensure you are in the `BLMM-py` directory and once you are happy with the analysis you have specified in `blmm_config.yml`, run the following command:
-
-```
-fslpython -c "import blmm_serial; blmm_serial.main()"
-```
-
-The commandline will then tell you how much progress is being made as it runs each block.
 
 ### Analysis Output
 
@@ -138,65 +147,95 @@ Below is a full list of NIFTI files output after a BLMM analysis.
 |---|---|
 | `blmm_vox_mask` | This is the analysis mask. |
 | `blmm_vox_n` | This is a map of the number of subjects which contributed to each voxel in the final analysis. |
-| `blmm_vox_edf` | This is the spatially varying error degrees of freedom mask. |
-| `blmm_vox_beta`  | These are the beta estimates.  |
+| `blmm_vox_edf` | This is the spatially varying niave degrees of freedom\*. |
+| `blmm_vox_beta`  | These are the beta (fixed effects parameter) estimates.  |
+| `blmm_vox_sigma2`  | These are the sigma2 (fixed effects variance) estimates.  |
+| `blmm_vox_D`  | These are the D (random effects variance) estimates\*\*. |
 | `blmm_vox_con`  | These are the contrasts multiplied by the estimate of beta (this is the same as `COPE` in FSL).  |
 | `blmm_vox_cov`  | These are the between-beta covariance estimates.  |
 | `blmm_vox_conSE` | These are the standard error of the contrasts multiplied by beta (only available for T contrasts). |
 | `blmm_vox_conR2` | These are the partial R^2 maps for the contrasts (only available for F contrasts). |
-| `blmm_vox_resms` | This is the residual mean squares map for the analysis. |
+| `blmm_vox_resms` | This is the residual mean squares map for the analysis\*\*\*. |
 | `blmm_vox_conT` | These are the T statistics for the contrasts (only available for T contrasts). |
 | `blmm_vox_conF` | These are the F statistics for the contrasts (only available for F contrasts). |
 | `blmm_vox_conTlp` | These are the maps of -log10 of the uncorrected P values for the contrasts (T contrast). |
+| `blmm_vox_conT_swedf` | These are the maps of Sattherthwaithe degrees of freedom estimates for the contrasts (T contrast). |
 | `blmm_vox_conFlp` | These are the maps of -log10 of the uncorrected P values for the contrasts (F contrast). |
+| `blmm_vox_conF_swedf` | These are the maps of Sattherthwaithe degrees of freedom estimates for the contrasts (F contrast). |
 
 The maps are given the same ordering as the inputs. For example, in `blmm_vox_con`, the `0`th volume corresponds to the `1`st contrast, the `1`st volume corresponds to the `2`nd contrast and so on. For covariances, the ordering is of a similar form with covariance between beta 1 and  beta 1 (variance of beta 1) being the `0`th volume, covariance between beta 1 and  beta 2 being the `1`st volume and so on. In addition, a copy of the design is saved in the output directory as `inputs.yml`. It is recommended that this be kept for data provenance purposes.
 
-## Testing
+\* These degrees of freedom are not used in inference and are only given as reference. The degrees of freedom used in inference are the Sattherthwaite approximations given in `blmm_vox_conT_swedf`  and `blmm_vox_conF_swedf` .
+\*\* The `D` estimates are ordered as `vech(D1)`,...,`vech(Dr)` where `Dk` is the Random effects covariance matrix for the `k`th random factor, `r` is the total number of random factors in the design and `vech` represents ["half-vectorisation"](https://en.wikipedia.org/wiki/Vectorization_(mathematics)#Half-vectorization).
+\*\*\* This may differ from the estimate of `sigma2`, which accounts for the random effects variance.
 
-Note: All the below tests require access to test data. To ask access, please ask @TomMaullin directly.
+## Developer Notes
 
-### In parallel, against ground truth
+### Testing
 
-To generate test cases:
+Currently, only unit tests are available for `BLMM`. These can be accessed by in the `tests/Unit` folder and must be run from the top of the directory.
 
-```
-bash ./generate_test_cases.sh $outdir $datadir
-```
+### Notation
 
-(Where `$datadir` is a data directory containg all data needed for analyses `test_cfg01.yml`, `test_cfg02.yml`,... `test_cfg10.yml` and `$outdir` is the desired output directory)
+Throughout the code, the following notation is universal.
 
-To check the logs:
+ - `Y`: The response vector at each voxel.
+ - `X`: The fixed effects design matrix.
+ - `Z`: The random effects design matrix.
+ - `sigma2`: (An estimate of) The fixed effects variance.
+ - `beta`: (An estimate of) The fixed effects parameter vector.
+ - `D`: (An estimate of) The random effects covariance matrix (in full).
+ - `Ddict`: A dictionary containing the unique blocks of `D`. For example, `Ddict[k]` is the block of `D` representing within-factor covariance for the kth random factor. 
+ - `XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ`: These are the product matrices (i.e. X transposed multiplied by X, X transposed multiplied by Y, etc...).
+ - `n`: Number of observations/input images.
+ - `r`: Number of Random Factors in the design.
+ - `q`: Total number of Random Effects (duplicates included), i.e. the second dimension of, Z, the random effects design matrix.
+ - `qu`: Total number of unique Random effects (`vech(D_1),...vech(D_r)`).
+ - `p`: Number of Fixed Effects parameters in the design.
+ - `nraneffs`: A vector containing the number of random effects for each factor, e.g. `nraneffs=[2,1]` would mean the first factor has 2 random effects and the second factor has 1 random effect.
+ - `nlevels`: A vector containing the number of levels for each factor, e.g. `nlevels=[3,4]` would mean the first factor has 3 levels and the second factor has 4 levels.
+ - `inputs`: A dictionary containing all the inputs from the `blmm_config.yml`.
+ - `e`: The residual vector (i.e. `e=Y-X @ beta`)
+ - `V`: The matrix `I+ZDZ'` where `I` is the identity matrix.
+ - `DinvIplusZtZD`: The matrix `D(I+Z'ZD)^(-1)`.
 
-```
-bash ./check_logs.sh
-```
+The following subscripts are also common throughout the code:
 
-To verify the test cases against ground truth:
+ - `_sv`: Spatially varying. `a_sv` means we have a value of `a` for every voxel we are considers, or rather, `a` "varies" across space.
+ - `_i`: "Inner" voxels. This refers to the set of voxels which do not have missingness caused by mask variability in their designs. Typically, these make up the vast majority of the brain and tend not to lie near the edge of the brain, hence "inner".
+ - `_r`: "Ring" voxels. This refers to the set of voxels which have missingness caused by mask variability in their designs. Special care must be taken with these voxels as `X` and `Z` are not the same across this set. Typically, these make up a small minority of the brain and tend to lie near the edge of the brain; they look like a "ring" around the edge of the brain.
+ - `2D`: A function or file with this suffix will contain code designed to work analysis only on one voxel. As `X`,`Y` and `Z` are all 2 dimensional, all arrays considered for one voxel are 2D, hence the suffix.
+ - `3D`: A function or file with this suffix will contain code designed to work analysis on multiple voxels. As `X`,`Y` and `Z` are all 3 dimensional (an extra dimension has been added for "voxel number"), all arrays considered are 3D, hence the suffix.
 
-```
-bash ./verify_test_cases.sh $GTDIR
-```
+### Structure of the repository
 
-(Where `$GTDIR` is a directory containing ground truth data from a previous run, i.e. inside `$GTDIR` are the folders `test_cfg01.yml`, `test_cfg02.yml`, ... ect).
+The repository contains 5 main folders, plus 3 files at the head of the repository. These are:
 
-### In serial
-
-To test in serial, first run the parallel testing suite, and then afterwards simply run the following 3 test cases from the main `BLMM-py` folder:
-
-```
-fslpython -c "import blmm_serial; blmm_serial.main('./test/cfg/test_cfg01_copy.yml')
-fslpython -c "import blmm_serial; blmm_serial.main('./test/cfg/test_cfg02_copy.yml')
-fslpython -c "import blmm_serial; blmm_serial.main('./test/cfg/test_cfg03_copy.yml')
-```
-
-# BLMMM
-This repository contains all code for the BLMMM toolbox. It is currently a WIP.
-
-#### Running simulations
-
-```
-$FSLDIR/fslpython/bin/conda config --append channels conda-forge
-$FSLDIR/fslpython/bin/conda create python=3.6 nilearn sparse -p ./blmmmenv
-
-```
+ - `README.md`: This file.
+ - `blmm_config.yml`: The file the user must enter their design into.
+ - `blmm_cluster.sh`: The shell scipt used to run blmm (see previous).
+ - `lib`: Helper functions:
+   - `npMatrix2d.py`: Helper functions for 2d numpy array operations.
+   - `npMatrix3d.py`: Helper functions for 3d numpy array operations.
+   - `cvxMatrix2d.py`: Helper functions for 2d cvxopt matrix operations (used only by `PLS`).
+   - `PLS.py`: Code for the PLS method (only for benchmarking, currently unavailable in BLMM).
+   - `fileio.py`: Miscellenous functions for handling files.
+   - `est2d.py`: Parameter estimation methods for inference on one voxel.
+   - `est3d.py`: Parameter estimation methods for inference on multiple voxels.
+ - `src`: The 5 main stages of the blmm pipeline:
+   - `blmm_setup`: Formats inputs and works out the number of batches needed.
+   - `blmm_batch`: Calculates the product matrices for individual batches of images.
+   - `blmm_concat`: Sums the product matrices across batches, to obtain the product matrices for the overall model. Seperate voxels into "Inner" and "Ring".
+   - `blmm_estimate`: Estimates the parameters beta, sigma^2 and D.
+   - `blmm_inference`: Performs statistical inference on parameters and outputs results.
+ - `test`: Test functions:
+   - `Functional`: (WIP) Adapted from sister project `BLM`. Dummy analyses to check the changes to the code haven't affected the output.
+   - `Unit`: Unit tests for individual parts of the code:
+     - `genTestDat.py`: Functions to generate test datasets and product matrices.
+     - `npMatrix2d_tests.py`: Unit tests for all functions in `npMatrix2d.py`.
+     - `npMatrix3d_tests.py`: Unit tests for all functions in `npMatrix3d.py`.
+     - `cvxMatrix2d_tests.py`: Unit tests for all functions in `cvxMatrix2d.py`.
+     - `est2d_tests.py`: A function for comparing results of all methods in `est2d.py`, as well as `PLS.py`.
+     - `est3d_tests.py`: Functions for comparing results of all methods in `est3d.py`
+ - `sim`: (WIP) Simulations. This will likely be deleted in future. It only remains currently as it has some useful code that does not yet exist elsewhere.
+ - `scipts`: Bash scripts which run each individual stage of the BLMM pipeline.

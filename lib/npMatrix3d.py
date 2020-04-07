@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.sparse
-from lib.tools2d import faclev_indices2D, permOfIkKkI2D
+from scipy import stats
+from lib.npMatrix2d import faclev_indices2D, permOfIkKkI2D, invDupMat2D
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
@@ -20,8 +21,8 @@ from lib.tools2d import faclev_indices2D, permOfIkKkI2D
 #   By 3D, I mean, where `2dtools.py` would take a matrix as input and do 
 #   something to it, `3dtools.py` will take as input a 3D array (stack of 
 #   matrices) and perform the operation to all matrices in the last 2 
-#   dimensions. (Note: The documentation below is identical to 2dtools so 
-#   beware this distinction!).
+#   dimensions. (Note: A lot of the documentation below is identical to 
+#   2dtools so beware this distinction!).
 #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -68,13 +69,13 @@ def mat2vec3D(matrix):
 # ============================================================================
 def mat2vech3D(matrix):
   
-  # Number of voxels, nv
-  nv = matrix.shape[0]
+  # Number of voxels, v
+  v = matrix.shape[0]
   
   # Get lower triangular indices
   rowinds, colinds = np.tril_indices(matrix.shape[1]) 
   
-  # Number of covariance parameters, nc
+  # Number of unique elements, nc
   nc = len(rowinds)
   
   # They're in the wrong order so we need to order them
@@ -85,7 +86,7 @@ def mat2vech3D(matrix):
   perm=np.argsort(indhash)
   
   # Return vectorised half-matrix
-  return(matrix[:,rowinds[perm],colinds[perm]].reshape((nv,nc,1)))
+  return(matrix[:,rowinds[perm],colinds[perm]].reshape((v,nc,1)))
 
 
 # ============================================================================
@@ -98,11 +99,11 @@ def mat2vech3D(matrix):
 def vech2mat3D(vech):
   
   # Number of voxels
-  nv = vech.shape[0]
+  v = vech.shape[0]
   
   # dimension of matrix
   n = np.int64((-1+np.sqrt(1+8*vech.shape[1]))/2)
-  matrix = np.zeros((nv,n,n))
+  matrix = np.zeros((v,n,n))
   
   # Get lower triangular indices
   rowinds, colinds = np.tril_indices(n)
@@ -189,31 +190,31 @@ def ssr3D(YtX, YtY, XtX, beta):
 # of the kth diagonal block for every voxel.
 #
 # ============================================================================
-def getDfromDict3D(Ddict, nparams, nlevels):
+def getDfromDict3D(Ddict, nraneffs, nlevels):
   
   # Get number of voxels
-  nv = Ddict[0].shape[0]
+  v = Ddict[0].shape[0]
   
   # Work out indices (there is one block of D per level)
   inds = np.zeros(np.sum(nlevels)+1)
   counter = 0
-  for k in np.arange(len(nparams)):
+  for k in np.arange(len(nraneffs)):
     for j in np.arange(nlevels[k]):
-      inds[counter] = np.concatenate((np.array([0]), np.cumsum(nlevels*nparams)))[k] + nparams[k]*j
+      inds[counter] = np.concatenate((np.array([0]), np.cumsum(nlevels*nraneffs)))[k] + nraneffs[k]*j
       counter = counter + 1
       
   
   # Last index will be missing so add it
-  inds[len(inds)-1]=inds[len(inds)-2]+nparams[-1]
+  inds[len(inds)-1]=inds[len(inds)-2]+nraneffs[-1]
   
   # Make sure indices are ints
   inds = np.int64(inds)
   
   # Initial D
-  D = np.zeros((nv,np.sum(nparams*nlevels),np.sum(nparams*nlevels)))
+  D = np.zeros((v,np.sum(nraneffs*nlevels),np.sum(nraneffs*nlevels)))
 
   counter = 0
-  for k in np.arange(len(nparams)):
+  for k in np.arange(len(nraneffs)):
     for j in np.arange(nlevels[k]):
 
       D[:, inds[counter]:inds[counter+1], inds[counter]:inds[counter+1]] = Ddict[k]
@@ -273,7 +274,7 @@ def initBeta3D(XtX, XtY):
 # ----------------------------------------------------------------------------
 #
 # - `ete`: The sum of square residuals (e'e in the above notation).
-# - `n`: The total number of observations (n in the above notation).
+# - `n`: The total number of observations (potentially spatially varying).
 #
 # ----------------------------------------------------------------------------
 #
@@ -337,7 +338,7 @@ def initSigma23D(ete, n):
 # - `Dkest`: The inital estimate of D_k (Dhat_k in the above notation).
 #
 # ============================================================================
-def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nparams, invDupMatdict):
+def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict):
   
   # Small check on sigma2
   if len(sigma2.shape) > 1:
@@ -345,12 +346,12 @@ def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nparams, invDupMatdict):
     sigma2 = sigma2.reshape(sigma2.shape[0])
 
   # Initalize D to zeros
-  invSig2ZteetZminusZtZ = np.zeros((Zte.shape[0],nparams[k],nparams[k]))
+  invSig2ZteetZminusZtZ = np.zeros((Zte.shape[0],nraneffs[k],nraneffs[k]))
 
   # First we work out the derivative we require.
   for j in np.arange(nlevels[k]):
     
-    Ikj = faclev_indices2D(k, j, nlevels, nparams)
+    Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
 
     # Work out Z_(k, j)'Z_(k, j)
     ZkjtZkj = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ikj,Ikj)]
@@ -373,8 +374,8 @@ def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nparams, invDupMatdict):
 
     for i in np.arange(nlevels[k]):
       
-      Iki = faclev_indices2D(k, i, nlevels, nparams)
-      Ikj = faclev_indices2D(k, j, nlevels, nparams)
+      Iki = faclev_indices2D(k, i, nlevels, nraneffs)
+      Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
 
       # Work out Z_(k, j)'Z_(k, j)
       ZkitZkj = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Iki,Ikj)]
@@ -471,7 +472,7 @@ def makeDnnd3D(D):
 #
 # ----------------------------------------------------------------------------
 #
-# - `n`: The total number of observations.
+# - `n`: The total number of observations (potentially spatially varying).
 # - `ZtZ`: The Z matrix transposed and then multiplied by Z (Z'Z in the above
 #          notation).
 # - `Zte`: The Z matrix transposed and then multiplied by the OLS residuals
@@ -582,7 +583,7 @@ def get_dldB3D(sigma2, Xte, XtZ, DinvIplusZtZD, Zte):
 #
 # ----------------------------------------------------------------------------
 #
-# - `n`: The number of observations.
+# - `n`: The number of observations (potentially spatially varying).
 # - `ete`: The OLS residuals transposed and then multiplied by themselves
 #         (e'e=(Y-X\beta)'(Y-X\beta) in the above notation).
 # - `Zte`: The Z matrix transposed and then multiplied by the OLS residuals
@@ -647,9 +648,9 @@ def get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD):
 # - `nlevels`: A vector containing the number of levels for each factor, e.g.
 #              `nlevels=[3,4]` would mean the first factor has 3 levels and
 #              the second factor has 4 levels.
-# - `nparams`: A vector containing the number of parameters for each factor,
-#              e.g. `nlevels=[2,1]` would mean the first factor has 2
-#              parameters and the second factor has 1 parameter.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 # - `ZtZ`: The Z matrix transposed and then multiplied by itself (Z'Z in the
 #          above notation).
 # - `Zte`: The Z matrix transposed and then multiplied by the OLS residuals
@@ -666,19 +667,19 @@ def get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD):
 # - `dldDk`: The derivative of l with respect to D_k.
 #
 # ============================================================================
-def get_dldDk3D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD,reml=False, ZtX=0, XtX=0):
+def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,reml=False, ZtX=0, XtX=0):
 
   # Number of voxels
-  nv = Zte.shape[0]
+  v = Zte.shape[0]
   
   # Initalize the derivative to zeros
-  dldDk = np.zeros((nv, nparams[k],nparams[k]))
+  dldDk = np.zeros((v, nraneffs[k],nraneffs[k]))
   
   # For each level j we need to add a term
   for j in np.arange(nlevels[k]):
 
     # Get the indices for the kth factor jth level
-    Ikj = faclev_indices2D(k, j, nlevels, nparams)
+    Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
     
     # Get (the kj^th columns of Z)^T multiplied by Z
     Z_kjtZ = ZtZ[:,Ikj,:]
@@ -710,7 +711,7 @@ def get_dldDk3D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD,reml=False,
     for j in np.arange(nlevels[k]):
 
       # Get the indices for the kth factor jth level
-      Ikj = faclev_indices2D(k, j, nlevels, nparams)
+      Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
 
       Z_kjtZ = ZtZ[:,Ikj,:]
       Z_kjtX = ZtX[:,Ikj,:]
@@ -783,9 +784,9 @@ def get_covdldbeta3D(XtZ, XtX, ZtZ, DinvIplusZtZD, sigma2):
 # - `nlevels`: A vector containing the number of levels for each factor, e.g.
 #              `nlevels=[3,4]` would mean the first factor has 3 levels and 
 #              the second factor has 4 levels.
-# - `nparams`: A vector containing the number of parameters for each factor, 
-#              e.g. `nlevels=[2,1]` would mean the first factor has 2 
-#              parameters and the second factor has 1 parameter.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 # - `ZtZ`: Z transpose multiplied by Z.
 # - `DinvIplusZtZD`: D(I+Z'ZD)^(-1) in the above notation.
 # - `invDupMatdict`: A dictionary of inverse duplication matrices such that 
@@ -805,18 +806,18 @@ def get_covdldbeta3D(XtZ, XtX, ZtZ, DinvIplusZtZD, sigma2):
 #                       derivative with respect to \sigma^2.
 #
 # ============================================================================
-def get_covdldDkdsigma23D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False):
+def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False):
   
   # Number of voxels
-  nv = DinvIplusZtZD.shape[0]
+  v = DinvIplusZtZD.shape[0]
   
   # Sum of R_(k, j) over j
-  RkSum = np.zeros((nv,nparams[k],nparams[k]))
+  RkSum = np.zeros((v,nraneffs[k],nraneffs[k]))
 
   for j in np.arange(nlevels[k]):
 
     # Get the indices for the kth factor jth level
-    Ikj = faclev_indices2D(k, j, nlevels, nparams)
+    Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
 
     # Work out R_(k, j)
     Rkj = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ikj,Ikj)] - forceSym3D(ZtZ[:,Ikj,:] @ DinvIplusZtZD @ ZtZ[:,:,Ikj])
@@ -857,9 +858,9 @@ def get_covdldDkdsigma23D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDu
 # - `nlevels`: A vector containing the number of levels for each factor, e.g.
 #              `nlevels=[3,4]` would mean the first factor has 3 levels and
 #              the second factor has 4 levels.
-# - `nparams`: A vector containing the number of parameters for each factor,
-#              e.g. `nlevels=[2,1]` would mean the first factor has 2 
-#              parameters and the second factor has 1 parameter.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 # - `ZtZ`: Z transpose multiplied by Z.
 # - `DinvIplusZtZD`: D(I+Z'ZD)^(-1) in the above notation.
 # - `invDupMatdict`: A dictionary of inverse duplication matrices such that 
@@ -879,7 +880,7 @@ def get_covdldDkdsigma23D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDu
 #                     derivative with respect to vech(D_(k2)).
 #
 # ============================================================================
-def get_covdldDk1Dk23D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False):
+def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False):
   
   # Sum of R_(k1, k2, i, j) kron R_(k1, k2, i, j) over i and j 
   for i in np.arange(nlevels[k1]):
@@ -887,8 +888,8 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdi
     for j in np.arange(nlevels[k2]):
       
       # Get the indices for the k1th factor jth level
-      Ik1i = faclev_indices2D(k1, i, nlevels, nparams)
-      Ik2j = faclev_indices2D(k2, j, nlevels, nparams)
+      Ik1i = faclev_indices2D(k1, i, nlevels, nraneffs)
+      Ik2j = faclev_indices2D(k2, j, nlevels, nraneffs)
       
       # Work out R_(k1, k2, i, j)
       Rk1k2ij = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ik1i,Ik2j)] - (ZtZ[:,Ik1i,:] @ DinvIplusZtZD @ ZtZ[:,:,Ik2j])
@@ -1238,3 +1239,702 @@ def sumAijKronBij3D(A, B, p, perm=None):
   S = S_noreshape.reshape(v,n2**2,n1**2).transpose((0,2,1))
 
   return(S,perm)
+
+
+# ============================================================================
+#
+# The below function calculates the residual mean squares for a beta estimate
+# give by:
+#
+#   resms = (Y-X\beta)'(Y-X\beta)/(n-p)'
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `YtX`: Y transpose multiplied by X (Y'X in the above notation).
+# - `YtY`: Y transpose multiplied by Y (Y'Y in the above notation).
+# - `XtX`: X transpose multiplied by X (X'X in the above notation).
+# - `beta`: An estimate of the parameter vector (\beta in the above notation).
+# - `n`: The number of observations/input niftis (potentially spatially
+#        varying)
+# - `p`: The number of fixed effects parameters.
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `resms`: The residual mean squares.
+#
+# ============================================================================
+def get_resms3D(YtX, YtY, XtX, beta, n, p):
+
+    ete = ssr3D(YtX, YtY, XtX, beta)
+
+    # Reshape n if necessary
+    if isinstance(n,np.ndarray):
+
+        # Check first that n isn't a single value
+        if np.prod(n.shape)>1:
+    
+            n = n.reshape(ete.shape)
+
+    return(ete/(n-p))
+
+
+# ============================================================================
+#
+# The below function gives the covariance matrix of the beta estimates.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `XtX`: X transpose multiplied by X (X'X in the previous notation).
+# - `XtZ`: X transpose multiplied by Z (X'Z in the previous notation).
+# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1).
+# - `sigma2`: The fixed effects variance (\sigma^2 in the previous notation).
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `covB`: The covariance of the beta estimates.
+#
+# ============================================================================
+def get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2):
+
+    # Reshape n if necessary
+    if isinstance(sigma2,np.ndarray):
+
+        # Check first that n isn't a single value
+        if np.prod(sigma2.shape)>1:
+    
+            sigma2 = sigma2.reshape(sigma2.shape[0])
+
+    # Work out X'V^{-1}X = X'X - X'ZD(I+Z'ZD)^{-1}Z'X
+    XtinvVX = XtX - XtZ @ DinvIplusZtZD @ XtZ.transpose((0,2,1))
+
+    # Work out var(LB) = L'(X'V^{-1}X)^{-1}L
+    covB = np.linalg.inv(XtinvVX)
+
+    # Calculate sigma^2(X'V^{-1}X)^(-1)
+    covB = np.einsum('i,ijk->ijk',sigma2,covB)
+
+    # Return result
+    return(covB)
+
+
+# ============================================================================
+#
+# The below function calculates the (in most applications, scalar) variance
+# of L\beta.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `L`: A contrast vector (L can also be a matrix, but this isn't often the
+#        case in practice when using this function).
+# - `XtX`: X transpose multiplied by X (X'X in the previous notation).
+# - `XtZ`: X transpose multiplied by Z (X'Z in the previous notation).
+# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1).
+# - `sigma2`: The fixed effects variance (\sigma^2 in the previous notation).
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `varLB`: The (usually scalar) variance of L\beta.
+#
+# ============================================================================
+def get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2):
+
+    # Reshape n if necessary
+    if isinstance(sigma2,np.ndarray):
+
+        # Check first that n isn't a single value
+        if np.prod(sigma2.shape)>1:
+    
+            sigma2 = sigma2.reshape(sigma2.shape[0])
+
+    # Work out var(LB) = L'(X'V^{-1}X)^{-1}L
+    varLB = L @ get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2) @ L.transpose()
+
+    # Return result
+    return(varLB)
+
+
+# ============================================================================
+#
+# The below function calculates the partial R^2 statistic given, in terms of
+# an F statistic by:
+#
+#    R^2 = df1*F/(df1*F+df2)
+#
+# Where df1 and df2 and the numerator and denominator degrees of freedom of
+# F respectively.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `L`: A contrast matrix.
+# - `F`: A matrix of F statistics.
+# - `df`: The denominator degrees of freedom of the F statistic (can be 
+#         spatially varying).
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `R2`: A matrix of R^2 statistics.
+#
+# ============================================================================
+def get_R23D(L, F, df):
+
+    # Work out the rank of L
+    rL = np.linalg.matrix_rank(L)
+
+    # Convert F to R2
+    R2 = (rL*F)/(rL*F + df)
+    
+    # Return R2
+    return(R2)
+
+
+# ============================================================================
+#
+# The below function calculates the approximate T statistic for a null
+# hypothesis test, H0:L\beta == 0 vs H1: L\beta != 0. The T statistic is given
+# by:
+#
+#     T = L\beta/s.e.(L\beta)
+#
+# Where s.e. represents standard error.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `L`: A contrast vector.
+# - `XtX`: X transpose multiplied by X (X'X in the previous notation).
+# - `XtZ`: X transpose multiplied by Z (X'Z in the previous notation).
+# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1).
+# - `beta`: The estimate of the fixed effects parameters.
+# - `sigma2`: The fixed effects variance (\sigma^2 in the previous notation).
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `T`: A matrix of T statistics.
+#
+# ============================================================================
+def get_T3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2):
+
+    # Work out the rank of L
+    rL = np.linalg.matrix_rank(L)
+
+    # Work out Lbeta
+    LB = L @ beta
+
+    # Work out se(T)
+    varLB = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
+
+    # Work out T
+    T = LB/np.sqrt(varLB)
+
+    # Return T
+    return(T)
+
+
+
+# ============================================================================
+#
+# The below function calculates the approximate F staistic given by:
+#
+#    F = (L\beta)'(L(X'V^(-1)X)^(-1)L')^(-1)(L\beta)/rank(L)
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `L`: A contrast matrix.
+# - `XtX`: X transpose multiplied by X (X'X in the previous notation).
+# - `XtZ`: X transpose multiplied by Z (X'Z in the previous notation).
+# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1).
+# - `beta`: The estimate of the fixed effects parameters.
+# - `sigma2`: The fixed effects variance (\sigma^2 in the previous notation).
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `F`: A matrix of F statistics.
+#
+# ============================================================================
+def get_F3D(L, XtX, XtZ, DinvIplusZtZD, betahat, sigma2):
+
+    # Work out the rank of L
+    rL = np.linalg.matrix_rank(L)
+
+    # Work out Lbeta
+    LB = L @ betahat
+
+    # Work out se(F)
+    varLB = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
+
+    # Work out F
+    F = LB.transpose(0,2,1) @ np.linalg.inv(varLB) @ LB/rL
+
+    # Return T
+    return(F)
+
+
+# ============================================================================
+#
+# The below function converts T statistics to -log10(P) values. `-inf` values
+# are replace by minlog.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `T`: A matrix of T statistics.
+# - `df`: The degrees of freedom of the T statistic (can be spatially varying).
+# - `minlog`: A value to replace `-inf` p-values with.
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `P`: The matrix of -log10(p) values.
+#
+# ============================================================================
+def T2P3D(T,df,minlog):
+
+    # Initialize empty P
+    P = np.zeros(np.shape(T))
+
+    # Do this seperately for >0 and <0 to avoid underflow
+    P[T < 0] = -np.log10(1-stats.t.cdf(T[T < 0], df[T < 0]))
+    P[T >= 0] = -np.log10(stats.t.cdf(-T[T >= 0], df[T >= 0]))
+
+    # Remove infs
+    P[np.logical_and(np.isinf(P), P<0)]=minlog
+
+    return(P)
+
+
+# ============================================================================
+#
+# The below function converts F statistics to -log10(P) values. `-inf` values
+# are replace by minlog.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `F`: A matrix of F statistics.
+# - `L`: A contrast matrix.
+# - `df_denom`: The denominator degrees of freedom of the F statistic (can be 
+#               spatially varying).
+# - `minlog`: A value to replace `-inf` p-values with.
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `P`: The matrix of -log10(p) values.
+#
+# ============================================================================
+def F2P3D(F, L, df_denom, minlog):
+    
+    # Get the rank of L
+    df_num = np.linalg.matrix_rank(L)
+
+    # Work out P
+    P = -np.log10(1-stats.f.cdf(F, df_num, df_denom))
+
+    # Remove infs
+    P[np.logical_and(np.isinf(P), P<0)]=minlog
+
+    return(P)
+
+
+# ============================================================================
+#
+# The below function estimates the degrees of freedom for an F statistic using
+# a Sattherthwaite approximation method. For, a contrast matrix L, this 
+# estimate is given by:
+#
+#      v = (sum_{i=0}^rank(L) v_{l_i})/((sum_{i=0}^rank(L) v_{l_i}) - rank(L))
+#
+# Where l_i is the i^th row of L and v_{l_i} is the sattherthwaithe estimate
+# of the degrees of freedom of a T statistic with contrast l_i (see 
+# `get_swdf_T3D` below). 
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `L`: A contrast matrix.
+# - `D`: The random effects variance-covariance matrix estimate.
+# - `sigma2`: The fixed effects variance estimate.
+# - `XtX`: X transpose multiplied by X (X'X in the previous notation).
+# - `XtZ`: X transpose multiplied by Z (X'Z in the previous notation).
+# - `ZtX`: Z transpose multiplied by X (Z'X in the previous notation).
+# - `ZtZ`: Z transpose multiplied by Z (Z'Z in the previous notation).
+# - `n`: The number of observations/input niftis (potentially spatially
+#        varying)
+# - `nlevels`: A vector containing the number of levels for each factor, e.g.
+#              `nlevels=[3,4]` would mean the first factor has 3 levels and
+#              the second factor has 4 levels.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `df`: The spatially varying Sattherthwaithe degrees of freedom estimate.
+#
+# ============================================================================
+def get_swdf_F3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs): 
+
+    # Reshape sigma2 if necessary
+    sigma2 = sigma2.reshape(sigma2.shape[0])
+
+    # Reshape n if necessary
+    if isinstance(n,np.ndarray):
+
+        # Check first that n isn't a single value
+        if np.prod(n.shape)>1:
+    
+            n = n.reshape(sigma2.shape)
+
+    # L is rL in rank
+    rL = np.linalg.matrix_rank(L)
+
+    # Initialize empty sum.
+    sum_swdf_adj = np.zeros(sigma2.shape)
+
+    # Loop through first rL rows of L
+    for i in np.arange(rL):
+
+        # Work out the swdf for each row of L
+        swdf_row = get_swdf_T3D(L[i:(i+1),:], D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs)
+
+        # Work out adjusted df = df/(df-2)
+        swdf_adj = swdf_row/(swdf_row-2)
+
+        # Add to running sum
+        sum_swdf_adj = sum_swdf_adj + swdf_adj.reshape(sum_swdf_adj.shape)
+
+    # Work out final df
+    df = 2*sum_swdf_adj/(sum_swdf_adj-rL)
+
+    # Return df
+    return(df)
+
+
+# ============================================================================
+#
+# The below function estimates the degrees of freedom for an T statistic using
+# a Sattherthwaite approximation method. For, a contrast matrix L, this 
+# estimate is given by:
+#
+#    v = 2(Var(L\beta)^2)/(d'I^{-1}d)
+#
+# Where d is the derivative of Var(L\beta) with respect to the variance 
+# parameter vector \theta = (\sigma^2, vech(D_1),..., vech(D_r)) and I is the
+# Fisher Information matrix of \theta.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `L`: A contrast vector.
+# - `D`: The random effects variance-covariance matrix estimate.
+# - `sigma2`: The fixed effects variance estimate.
+# - `XtX`: X transpose multiplied by X (X'X in the previous notation).
+# - `XtZ`: X transpose multiplied by Z (X'Z in the previous notation).
+# - `ZtX`: Z transpose multiplied by X (Z'X in the previous notation).
+# - `ZtZ`: Z transpose multiplied by Z (Z'Z in the previous notation).
+# - `n`: The number of observations/input niftis (potentially spatially
+#        varying)
+# - `nlevels`: A vector containing the number of levels for each factor, e.g.
+#              `nlevels=[3,4]` would mean the first factor has 3 levels and
+#              the second factor has 4 levels.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `df`: The spatially varying Sattherthwaithe degrees of freedom estimate.
+#
+# ============================================================================
+def get_swdf_T3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs): 
+
+    # Reshape sigma2 if necessary
+    sigma2 = sigma2.reshape(sigma2.shape[0])
+
+    # Reshape n if necessary
+    if isinstance(n,np.ndarray):
+
+        # Check first that n isn't a single value
+        if np.prod(n.shape)>1:
+    
+            n = n.reshape(sigma2.shape)
+
+    # Get D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(ZtZ.shape[1]) + ZtZ @ D)
+
+    # Get S^2 (= Var(L\beta))
+    S2 = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
+    
+    # Get derivative of S^2
+    dS2 = get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2)
+
+    # Get Fisher information matrix
+    InfoMat = get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nraneffs, ZtZ)
+
+    # Calculate df estimator
+    df = 2*(S2**2)/(dS2.transpose(0,2,1) @ np.linalg.inv(InfoMat) @ dS2)
+
+    # Return df
+    return(df)
+
+
+# ============================================================================
+#
+# The below function calculates the derivative of Var(L\beta) with respect to
+# the variance parameter vector \theta = (\sigma^2, vech(D_1),..., vech(D_r)).
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `nlevels`: A vector containing the number of levels for each factor, e.g.
+#              `nlevels=[3,4]` would mean the first factor has 3 levels and
+#              the second factor has 4 levels.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
+# - `L`: A contrast vector.
+# - `XtX`: X transpose multiplied by X (X'X in the previous notation).
+# - `XtZ`: X transpose multiplied by Z (X'Z in the previous notation).
+# - `ZtZ`: Z transpose multiplied by Z (Z'Z in the previous notation).
+# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1).
+# - `sigma2`: The fixed effects variance estimate.
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `dS2`: The derivative of var(L\beta) with respect to \theta.
+#
+# ============================================================================
+def get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
+
+    # ZtX
+    ZtX = XtZ.transpose(0,2,1)
+
+    # Number of voxels
+    v = DinvIplusZtZD.shape[0]
+
+    # Calculate X'V^{-1}X=X'(I+ZDZ')^{-1}X=X'X-X'Z(I+DZ'Z)^{-1}DZ'X
+    XtiVX = XtX - XtZ @  DinvIplusZtZD @ ZtX
+
+    # New empty array for differentiating S^2 wrt (sigma2, vech(D1),...vech(Dr)).
+    dS2 = np.zeros((v, 1+np.int32(np.sum(nraneffs*(nraneffs+1)/2)),1))
+
+    # Work out indices for each start of each component of vector 
+    # i.e. [dS2/dsigm2, dS2/vechD1,...dS2/vechDr]
+    DerivInds = np.int32(np.cumsum(nraneffs*(nraneffs+1)/2) + 1)
+    DerivInds = np.insert(DerivInds,0,1)
+
+    # Work of derivative wrt to sigma^2
+    dS2dsigma2 = L @ np.linalg.inv(XtiVX) @ L.transpose()
+
+    # Add to dS2
+    dS2[:,0:1] = dS2dsigma2.reshape(dS2[:,0:1].shape)
+
+    # Now we need to work out ds2dVech(Dk)
+    for k in np.arange(len(nraneffs)):
+
+        # Initialize an empty zeros matrix
+        dS2dvechDk = np.zeros((np.int32(nraneffs[k]*(nraneffs[k]+1)/2),1))#...
+
+        for j in np.arange(nlevels[k]):
+
+            # Get the indices for this level and factor.
+            Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
+                    
+            # Work out Z_(k,j)'Z
+            ZkjtZ = ZtZ[:,Ikj,:]
+
+            # Work out Z_(k,j)'X
+            ZkjtX = ZtX[:,Ikj,:]
+
+            # Work out Z_(k,j)'V^{-1}X
+            ZkjtiVX = ZkjtX - ZkjtZ @ DinvIplusZtZD @ ZtX
+
+            # Work out the term to put into the kronecker product
+            # K = Z_(k,j)'V^{-1}X(X'V^{-1})^{-1}L'
+            K = ZkjtiVX @ np.linalg.inv(XtiVX) @ L.transpose()
+            
+            # Sum terms
+            dS2dvechDk = dS2dvechDk + mat2vech3D(kron3D(K,K.transpose(0,2,1)))
+
+        # Multiply by sigma^2
+        dS2dvechDk = np.einsum('i,ijk->ijk',sigma2,dS2dvechDk)
+
+        # Add to dS2
+        dS2[:,DerivInds[k]:DerivInds[k+1]] = dS2dvechDk.reshape(dS2[:,DerivInds[k]:DerivInds[k+1]].shape)
+
+    return(dS2)
+
+
+# ============================================================================
+#
+# The below function calculates the derivative of Var(L\beta) with respect to
+# the variance parameter vector \theta = (\sigma^2, vech(D_1),..., vech(D_r)).
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1).
+# - `sigma2`: The fixed effects variance estimate.
+# - `n`: The total number of observations (potentially spatially varying).
+# - `nlevels`: A vector containing the number of levels for each factor, e.g.
+#              `nlevels=[3,4]` would mean the first factor has 3 levels and
+#              the second factor has 4 levels.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
+# - `ZtZ`: Z transpose multiplied by Z (Z'Z in the previous notation).
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `FisherInfoMat`: The Fisher information matrix of \theta.
+#
+# ============================================================================
+def get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nraneffs, ZtZ):
+
+    # Number of random effects, q
+    q = np.sum(np.dot(nraneffs,nlevels))
+
+    # Number of voxels 
+    v = sigma2.shape[0]
+
+    # Duplication matrices
+    # ------------------------------------------------------------------------------
+    invDupMatdict = dict()
+    for i in np.arange(len(nraneffs)):
+
+        invDupMatdict[i] = np.asarray(invDupMat2D(nraneffs[i]).todense())
+
+    # Index variables
+    # ------------------------------------------------------------------------------
+    # Work out the total number of paramateres
+    tnp = np.int32(1 + np.sum(nraneffs*(nraneffs+1)/2))
+
+    # Indices for submatrics corresponding to Dks
+    FishIndsDk = np.int32(np.cumsum(nraneffs*(nraneffs+1)/2) + 1)
+    FishIndsDk = np.insert(FishIndsDk,0,1)
+
+    # Initialize FIsher Information matrix
+    FisherInfoMat = np.zeros((v,tnp,tnp))
+    
+    # Covariance of dl/dsigma2
+    covdldsigma2 = n/(2*(sigma2**2))
+    
+    # Add dl/dsigma2 covariance
+    FisherInfoMat[:,0,0] = covdldsigma2
+
+    
+    # Add dl/dsigma2 dl/dD covariance
+    for k in np.arange(len(nraneffs)):
+
+        # Get covariance of dldsigma and dldD      
+        covdldsigmadD = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict).reshape(v,FishIndsDk[k+1]-FishIndsDk[k])
+
+        # Assign to the relevant block
+        FisherInfoMat[:,0, FishIndsDk[k]:FishIndsDk[k+1]] = covdldsigmadD
+        FisherInfoMat[:,FishIndsDk[k]:FishIndsDk[k+1],0:1] = FisherInfoMat[:,0:1, FishIndsDk[k]:FishIndsDk[k+1]].transpose((0,2,1))
+      
+    # Add dl/dD covariance
+    for k1 in np.arange(len(nraneffs)):
+
+        for k2 in np.arange(k1+1):
+
+            IndsDk1 = np.arange(FishIndsDk[k1],FishIndsDk[k1+1])
+            IndsDk2 = np.arange(FishIndsDk[k2],FishIndsDk[k2+1])
+
+            # Get covariance between D_k1 and D_k2 
+            covdldDk1dDk2 = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict)
+
+            # Add to FImat
+            FisherInfoMat[np.ix_(np.arange(v), IndsDk1, IndsDk2)] = covdldDk1dDk2
+            FisherInfoMat[np.ix_(np.arange(v), IndsDk2, IndsDk1)] = FisherInfoMat[np.ix_(np.arange(v), IndsDk1, IndsDk2)].transpose((0,2,1))
+
+
+    # Return result
+    return(FisherInfoMat)
