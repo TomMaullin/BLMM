@@ -5,7 +5,7 @@ import scipy
 from lib.npMatrix3d import *
 from lib.npMatrix2d import *
 
-def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, init_paramVector):
+def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, init_paramVector=None):
   
   # Useful scalars
   # ------------------------------------------------------------------------------
@@ -151,7 +151,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
     # Change current likelihood to previous
     llhprev = llhcurr
 
-    #print(nit)
+    # Update number of iterations
     nit = nit+1
 
     #---------------------------------------------------------------------------
@@ -191,12 +191,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
       # Update D_k and chol
       cholDict[k] = vechTri2mat2D(mat2vechTri2D(cholDict[k]) + update)
 
-      #print('cholDict',k)
-      #print(cholDict[k])
       Ddict[k] = cholDict[k] @ cholDict[k].transpose()
-
-      #print('D',k)
-      #print(Ddict[k])
 
       # Add D_k back into D and recompute DinvIplusZtZD
       for j in np.arange(nlevels[k]):
@@ -206,14 +201,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
       
       # Inverse of (I+Z'ZD) multiplied by D
       IplusZtZD = np.eye(q) + (ZtZ @ D)
-      t1 = time.time()
       DinvIplusZtZD = forceSym2D(D @ scipy.sparse.linalg.inv(scipy.sparse.csc_matrix(IplusZtZD)))
-      t2 = time.time()
-      #print('Inversion time:', t2-t1)
-      #t1 = time.time()
-      #DinvIplusZtZD = forceSym2D(D @ recursiveInverse2D(scipy.sparse.csc_matrix(IplusZtZD),nparams,nlevels))
-      #t2 = time.time()
-      #print('Inversion time2:', t2-t1)
 
     # Update the step size
     llhcurr = llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D)[0,0]
@@ -225,13 +213,11 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
     paramVector = np.concatenate((paramVector, mat2vech2D(Ddict[k])))
 
   bvals = DinvIplusZtZD @ Zte
-  
-  print('nit',nit)
 
-  return(paramVector, bvals)
+  return(paramVector, bvals, nit)
 
 
-def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, init_paramVector):
+def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, init_paramVector=None):
   
   # Useful scalars
   # ------------------------------------------------------------------------------
@@ -349,11 +335,11 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, 
     for k2 in np.arange(len(nparams)):
       permdict[str(k1)+str(k2)] = None
 
-  counter = 0
+  nit = 0
   while np.abs(llhprev-llhcurr)>tol:
     
     #print('nit', counter)
-    counter = counter+1
+    nit = nit+1
     
     # Change current likelihood to previous
     llhprev = llhcurr
@@ -447,11 +433,6 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, 
     FisherInfoMat = forceSym2D(FisherInfoMat)
 
     paramVector = paramVector + lam*(np.linalg.inv(FisherInfoMat) @ derivVector)
-    
-    if sigma2<0:
-
-      sigspos[z]=1
-      sigma2 = np.maximum(sigma2,1e-6)
 
     #print(paramVector)
     beta = paramVector[0:p]
@@ -481,10 +462,10 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, 
       
   bvals = DinvIplusZtZD @ Zte
   
-  return(paramVector, bvals)
+  return(paramVector, bvals, nit)
 
 
-def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, init_paramVector):
+def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, init_paramVector=None):
   
   # Useful scalars
   # ------------------------------------------------------------------------------
@@ -601,11 +582,11 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
     for k2 in np.arange(len(nparams)):
       permdict[str(k1)+str(k2)] = None
 
-  counter = 0
+  nit = 0
   while np.abs(llhprev-llhcurr)>tol:
     
-    #print('nit', counter)
-    counter = counter+1
+
+    nit = nit+1
     
     # Change current likelihood to previous
     llhprev = llhcurr
@@ -732,8 +713,20 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
       lam = lam/2
       
   bvals = DinvIplusZtZD @ Zte
+
+  # Convert to vech representation.
+  # Indices for submatrics corresponding to Dks
+  IndsDk = np.int32(np.cumsum(nparams*(nparams+1)//2) + p + 1)
+  IndsDk = np.insert(IndsDk,0,p+1)
+
+  paramVector_reshaped = np.zeros((np.sum(nparams*(nparams+1)//2) + p + 1,1))
+  paramVector_reshaped[0:(p+1)]=paramVector[0:(p+1)].reshape(p+1,1)
+  for k in np.arange(len(nlevels)):
+
+    paramVector_reshaped[IndsDk[k]:IndsDk[k+1]] = vec2vech2D(paramVector[FishIndsDk[k]:FishIndsDk[k+1]]).reshape(paramVector_reshaped[IndsDk[k]:IndsDk[k+1]].shape)
+
   
-  return(paramVector, bvals)
+  return(paramVector_reshaped, bvals, nit)
 
 
 def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, init_paramVector=None):
@@ -827,7 +820,6 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
       
     # Matrix version
     D = scipy.sparse.lil_matrix((q,q))
-    t1 = time.time()
     counter = 0
     for k in np.arange(len(nparams)):
       for j in np.arange(nlevels[k]):
@@ -835,17 +827,11 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
         D[Dinds[counter]:Dinds[counter+1], Dinds[counter]:Dinds[counter+1]] = Ddict[k]
         counter = counter + 1
 
-    t2 = time.time()
-    print('toDict time: ', t2-t1)
-
   Zte = ZtY - (ZtX @ beta)
 
   # Inverse of (I+Z'ZD) multiplied by DIplusDZtZ 
   IplusZtZD = np.eye(q) + ZtZ @ D
-  t1 = time.time()
   DinvIplusZtZD = forceSym2D(D @ scipy.sparse.linalg.inv(scipy.sparse.csc_matrix(IplusZtZD)))
-  t2 = time.time()
-  print('inv time: ', t2-t1)
 
   # Step size lambda
   lam = 1
@@ -929,13 +915,11 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
     paramVector = np.concatenate((paramVector, mat2vech2D(Ddict[k])))
 
   bvals = DinvIplusZtZD @ Zte
-
-  print('nit',nit)
     
-  return(paramVector, bvals)
+  return(paramVector, bvals, nit)
 
 
-def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, init_paramVector):
+def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, init_paramVector=None):
   
   # Useful scalars
   # ------------------------------------------------------------------------------
@@ -1066,7 +1050,11 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
   for k in np.arange(len(nparams)):
     permdict[str(k)] = None
 
+  nit = 0
+
   while np.abs(llhprev-llhcurr)>tol:
+
+    nit = nit + 1
 
     # Change current likelihood to previous
     llhprev = llhcurr
@@ -1124,4 +1112,4 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
 
   bvals = DinvIplusZtZD @ Zte
   
-  return(paramVector, bvals)
+  return(paramVector, bvals, nit)

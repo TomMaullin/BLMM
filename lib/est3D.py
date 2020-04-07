@@ -7,9 +7,6 @@ from lib.npMatrix2d import *
 
 def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
   
-  t1_total = time.time()
-  t1 = time.time()
-  
   # Useful scalars
   # ------------------------------------------------------------------------------
 
@@ -86,13 +83,9 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
   # Vector of saved parameters which have converged
   savedparams = np.zeros((nv, np.int32(np.sum(nparams*(nparams+1)/2) + p + 1),1))
   
-  t2 = time.time()
-  print('Setup time: ', t2-t1)
-  
   nit=0
   while np.any(np.abs(llhprev-llhcurr)>tol):
     
-    t1 = time.time()
     # Change current likelihood to previous
     llhprev = llhcurr
     
@@ -216,6 +209,31 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     ete = ete[localnotconverged, :, :]
     DinvIplusZtZD = DinvIplusZtZD[localnotconverged, :, :]
 
+    # Spatially varying design
+    if XtX.shape[0] > 1:
+
+      XtX = XtX[localnotconverged, :, :]
+      ZtX = ZtX[localnotconverged, :, :]
+      ZtZ = ZtZ[localnotconverged, :, :]
+      XtZ = XtZ[localnotconverged, :, :]
+      
+    if hasattr(n, "ndim"):
+      
+      # Check if n varies with voxel
+      if n.shape[0] > 1:
+
+        if n.ndim == 1:
+
+          n = n[localnotconverged]
+
+        if n.ndim == 2:
+
+          n = n[localnotconverged,:]
+
+        if n.ndim == 3:
+
+          n = n[localnotconverged,:,:]
+
     lam = lam[localnotconverged]
     llhprev = llhprev[localnotconverged]
     llhcurr = llhcurr[localnotconverged]
@@ -247,9 +265,6 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
 
 
 def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
-  
-  t1_total = time.time()
-  t1 = time.time()
   
   # Useful scalars
   # ------------------------------------------------------------------------------
@@ -332,7 +347,6 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
   nit=0
   while np.any(np.abs(llhprev-llhcurr)>tol):
     
-    t1 = time.time()
     # Change current likelihood to previous
     llhprev = llhcurr
     
@@ -455,6 +469,31 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     YtZ = YtZ[localnotconverged, :, :]
     ete = ete[localnotconverged, :, :]
     DinvIplusZtZD = DinvIplusZtZD[localnotconverged, :, :]
+
+    # Spatially varying design
+    if XtX.shape[0] > 1:
+
+      XtX = XtX[localnotconverged, :, :]
+      ZtX = ZtX[localnotconverged, :, :]
+      ZtZ = ZtZ[localnotconverged, :, :]
+      XtZ = XtZ[localnotconverged, :, :]
+      
+    if hasattr(n, "ndim"):
+      
+      # Check if n varies with voxel
+      if n.shape[0] > 1:
+
+        if n.ndim == 1:
+
+          n = n[localnotconverged]
+
+        if n.ndim == 2:
+
+          n = n[localnotconverged,:]
+
+        if n.ndim == 3:
+
+          n = n[localnotconverged,:,:]
 
     lam = lam[localnotconverged]
     llhprev = llhprev[localnotconverged]
@@ -658,6 +697,31 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     YtZ = YtZ[localnotconverged, :, :]
     ete = ete[localnotconverged, :, :]
     DinvIplusZtZD = DinvIplusZtZD[localnotconverged, :, :]
+
+    # Spatially varying design
+    if XtX.shape[0] > 1:
+
+      XtX = XtX[localnotconverged, :, :]
+      ZtX = ZtX[localnotconverged, :, :]
+      ZtZ = ZtZ[localnotconverged, :, :]
+      XtZ = XtZ[localnotconverged, :, :]
+      
+    if hasattr(n, "ndim"):
+      
+      # Check if n varies with voxel
+      if n.shape[0] > 1:
+
+        if n.ndim == 1:
+
+          n = n[localnotconverged]
+
+        if n.ndim == 2:
+
+          n = n[localnotconverged,:]
+
+        if n.ndim == 3:
+
+          n = n[localnotconverged,:,:]
 
     lam = lam[localnotconverged]
     llhprev = llhprev[localnotconverged]
@@ -889,7 +953,17 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
       # Check if n varies with voxel
       if n.shape[0] > 1:
 
-        n = n[localnotconverged, :, :]
+        if n.ndim == 1:
+
+          n = n[localnotconverged]
+
+        if n.ndim == 2:
+
+          n = n[localnotconverged,:]
+
+        if n.ndim == 3:
+
+          n = n[localnotconverged,:,:]
         
     DinvIplusZtZD = DinvIplusZtZD[localnotconverged, :, :]
 

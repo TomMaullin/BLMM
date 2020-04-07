@@ -2,22 +2,6 @@ import numpy as np
 import cvxopt
 from cvxopt import cholmod, umfpack, amd, matrix, spmatrix, lapack
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#
-# Developers Notes:
-#
-# - Tom Maullin (12/11/2019)
-#   Apologies for the poorly typeset equations. Once I got into this project 
-#   it really helped me having some form of the equations handy but I 
-#   understand this may not be as readable for developers new to the code. For
-#   nice latexed versions of the documentation here please see the google 
-#   colab notebooks here:
-#     - PLS: https://colab.research.google.com/drive/1add6pX26d32WxfMUTXNz4wixYR1nOGi0
-#     - FS: https://colab.research.google.com/drive/12CzYZjpuLbENSFgRxLi9WZfF5oSwiy-e
-#     - GS: https://colab.research.google.com/drive/1sjfyDF_EhSZY60ziXoKGh4lfb737LFPD
-#
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 # ============================================================================
 #
 # The below function applies a mapping to a vector of parameters. (Used in PLS
