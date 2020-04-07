@@ -9,7 +9,7 @@ from scipy import stats
 from lib.npMatrix3d import *
 from lib.npMatrix2d import *
 from lib.fileio import *
-from lib.est3D import *
+from lib.est3d import *
 
 
 # ====================================================================================
