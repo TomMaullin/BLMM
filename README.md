@@ -195,7 +195,9 @@ Throughout the code, the following notation is universal.
  - `nraneffs`: A vector containing the number of random effects for each factor, e.g. `nraneffs=[2,1]` would mean the first factor has 2 random effects and the second factor has 1 random effect.
  - `nlevels`: A vector containing the number of levels for each factor, e.g. `nlevels=[3,4]` would mean the first factor has 3 levels and the second factor has 4 levels.
  - `inputs`: A dictionary containing all the inputs from the `blmm_config.yml`.
- - 
+ - `e`: The residual vector (i.e. `e=Y-X @ beta`)
+ - `V`: The matrix `I+ZDZ'` where `I` is the identity matrix.
+ - `DinvIplusZtZD`: The matrix `D(I+Z'ZD)^(-1)`.
 
 The following subscripts are also common throughout the code:
 
