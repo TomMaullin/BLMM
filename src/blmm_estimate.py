@@ -36,15 +36,15 @@ from lib.est3d import *
 #            estimation for.
 #  - `XtX`: X transpose multiplied by X (can be spatially varying or non-spatially 
 #           varying). 
-#  - `XtY`: X transpose multiplied by Y (spatially varying.
+#  - `XtY`: X transpose multiplied by Y (spatially varying).
 #  - `XtZ`: X transpose multiplied by Z (can be spatially varying or non-spatially 
 #           varying).
-#  - `YtX`: Y transpose multiplied by X (spatially varying.
-#  - `YtY`: Y transpose multiplied by Y (spatially varying.
-#  - `YtZ`: Y transpose multiplied by Z (spatially varying.
+#  - `YtX`: Y transpose multiplied by X (spatially varying).
+#  - `YtY`: Y transpose multiplied by Y (spatially varying).
+#  - `YtZ`: Y transpose multiplied by Z (spatially varying).
 #  - `ZtX`: Z transpose multiplied by X (can be spatially varying or non-spatially 
 #           varying).
-#  - `ZtY`: Z transpose multiplied by Y (spatially varying.
+#  - `ZtY`: Z transpose multiplied by Y (spatially varying).
 #  - `ZtZ`: Z transpose multiplied by Z (can be spatially varying or non-spatially 
 #           varying).
 #  - `n`: The number of observations (can be spatially varying or non-spatially 
@@ -121,13 +121,13 @@ def main(inputs, inds, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, n, nlevels, 
         paramVec = pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6, n, reml=REML)
     
     if method=='FS': 
-        paramVec = FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6, n, reml=REML)
+        paramVec = FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6, n)
 
     if method=='SFS': 
-        paramVec = SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6, n, reml=REML)
+        paramVec = SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6, n)
 
     if method=='pFS': 
-        paramVec = pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6, n, reml=REML)
+        paramVec = pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6, n)
 
     # ----------------------------------------------------------------------
     # Parameter outputting

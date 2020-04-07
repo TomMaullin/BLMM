@@ -5,7 +5,7 @@ import scipy
 from lib.npMatrix3d import *
 from lib.npMatrix2d import *
 
-# ================================================================================
+# ============================================================================
 #
 # This file contains all parameter estimation methods used by BLMM for sets of 
 # multiple voxels (as oppose to `est2d.py`, which is written for parameter 
@@ -17,14 +17,14 @@ from lib.npMatrix2d import *
 # - `pFS`: Pseudo-Simplified Fisher Scoring
 #
 # *Note: cSFS (cholesky Simplified Fisher Scoring), which is available in 
-# `est2d.py` is not available here as it was slower than the above and including
-# it would have added little to the code.
+# `est2d.py` is not available here as it was slower than the above and 
+# including it would have added little to the code.
 #
-# --------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 #
 # Author: Tom Maullin (Last edited 07/04/2020)
 #
-# ================================================================================
+# ============================================================================
 
 
 # ============================================================================
@@ -45,29 +45,29 @@ from lib.npMatrix2d import *
 #
 # ----------------------------------------------------------------------------
 #
-#  - `XtX`: X transpose multiplied by X (can be spatially varying or non-spatially 
-#           varying). 
-#  - `XtY`: X transpose multiplied by Y (spatially varying.
-#  - `XtZ`: X transpose multiplied by Z (can be spatially varying or non-spatially 
-#           varying).
-#  - `YtX`: Y transpose multiplied by X (spatially varying.
-#  - `YtY`: Y transpose multiplied by Y (spatially varying.
-#  - `YtZ`: Y transpose multiplied by Z (spatially varying.
-#  - `ZtX`: Z transpose multiplied by X (can be spatially varying or non-spatially 
-#           varying).
-#  - `ZtY`: Z transpose multiplied by Y (spatially varying.
-#  - `ZtZ`: Z transpose multiplied by Z (can be spatially varying or non-spatially 
-#           varying).
-# - `nlevels`: A vector containing the number of levels for each factor, e.g. 
-#              `nlevels=[3,4]` would mean the first factor has 3 levels and the
-#              second factor has 4 levels.
-# - `nparams`: A vector containing the number of parameters for each factor, e.g.
-#              `nlevels=[2,1]` would mean the first factor has 2 parameters and the
-#              second factor has 1 parameter.
+#  - `XtX`: X transpose multiplied by X (can be spatially varying or non
+#           -spatially varying). 
+#  - `XtY`: X transpose multiplied by Y (spatially varying).
+#  - `XtZ`: X transpose multiplied by Z (can be spatially varying or non
+#           -spatially varying).
+#  - `YtX`: Y transpose multiplied by X (spatially varying).
+#  - `YtY`: Y transpose multiplied by Y (spatially varying).
+#  - `YtZ`: Y transpose multiplied by Z (spatially varying).
+#  - `ZtX`: Z transpose multiplied by X (can be spatially varying or non
+#           -spatially varying).
+#  - `ZtY`: Z transpose multiplied by Y (spatially varying).
+#  - `ZtZ`: Z transpose multiplied by Z (can be spatially varying or non
+#           -spatially varying).
+# - `nlevels`: A vector containing the number of levels for each factor, 
+#              e.g. `nlevels=[3,4]` would mean the first factor has 3 levels
+#              and the second factor has 4 levels.
+# - `nparams`: A vector containing the number of parameters for each factor,
+#              e.g. `nlevels=[2,1]` would mean the first factor has 2
+#              parameters and the second factor has 1 parameter.
 #  - `tol`: A scalar tolerance value. Iteration stops once successive 
 #           log-likelihood values no longer exceed `tol`.
-#  - `n`: The number of observations (can be spatially varying or non-spatially 
-#         varying). 
+#  - `n`: The number of observations (can be spatially varying or non
+#         -spatially varying). 
 #
 # ----------------------------------------------------------------------------
 #
@@ -141,7 +141,6 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     # Indices for submatrics corresponding to Dks
     FishIndsDk = np.int32(np.cumsum(nparams*(nparams+1)/2) + p + 1)
     FishIndsDk = np.insert(FishIndsDk,0,p+1)
-    
 
     # ------------------------------------------------------------------------------
     # Obtain D(I+Z'ZD)^(-1)
@@ -260,7 +259,6 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
         # --------------------------------------------------------------------------
         # Update step
         # --------------------------------------------------------------------------
-        
         paramVector = paramVector + np.einsum('i,ijk->ijk',lam,(np.linalg.inv(FisherInfoMat) @ derivVector))
         
         # --------------------------------------------------------------------------
@@ -339,6 +337,9 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
                 if n.ndim == 3:
                     n = n[localnotconverged,:,:]
 
+        # --------------------------------------------------------------------------
+        # Update step size and likelihoods
+        # --------------------------------------------------------------------------
         # Update step size
         lam = lam[localnotconverged]
 
@@ -390,29 +391,29 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
 #
 # ----------------------------------------------------------------------------
 #
-#  - `XtX`: X transpose multiplied by X (can be spatially varying or non-spatially 
-#           varying). 
-#  - `XtY`: X transpose multiplied by Y (spatially varying.
-#  - `XtZ`: X transpose multiplied by Z (can be spatially varying or non-spatially 
-#           varying).
-#  - `YtX`: Y transpose multiplied by X (spatially varying.
-#  - `YtY`: Y transpose multiplied by Y (spatially varying.
-#  - `YtZ`: Y transpose multiplied by Z (spatially varying.
-#  - `ZtX`: Z transpose multiplied by X (can be spatially varying or non-spatially 
-#           varying).
-#  - `ZtY`: Z transpose multiplied by Y (spatially varying.
-#  - `ZtZ`: Z transpose multiplied by Z (can be spatially varying or non-spatially 
-#           varying).
-# - `nlevels`: A vector containing the number of levels for each factor, e.g. 
-#              `nlevels=[3,4]` would mean the first factor has 3 levels and the
-#              second factor has 4 levels.
-# - `nparams`: A vector containing the number of parameters for each factor, e.g.
-#              `nlevels=[2,1]` would mean the first factor has 2 parameters and the
-#              second factor has 1 parameter.
+#  - `XtX`: X transpose multiplied by X (can be spatially varying or non
+#           -spatially varying). 
+#  - `XtY`: X transpose multiplied by Y (spatially varying).
+#  - `XtZ`: X transpose multiplied by Z (can be spatially varying or non
+#           -spatially varying).
+#  - `YtX`: Y transpose multiplied by X (spatially varying).
+#  - `YtY`: Y transpose multiplied by Y (spatially varying).
+#  - `YtZ`: Y transpose multiplied by Z (spatially varying).
+#  - `ZtX`: Z transpose multiplied by X (can be spatially varying or non
+#           -spatially varying).
+#  - `ZtY`: Z transpose multiplied by Y (spatially varying).
+#  - `ZtZ`: Z transpose multiplied by Z (can be spatially varying or non
+#           -spatially varying).
+# - `nlevels`: A vector containing the number of levels for each factor, 
+#              e.g. `nlevels=[3,4]` would mean the first factor has 3 levels
+#              and the second factor has 4 levels.
+# - `nparams`: A vector containing the number of parameters for each factor,
+#              e.g. `nlevels=[2,1]` would mean the first factor has 2
+#              parameters and the second factor has 1 parameter.
 #  - `tol`: A scalar tolerance value. Iteration stops once successive 
 #           log-likelihood values no longer exceed `tol`.
-#  - `n`: The number of observations (can be spatially varying or non-spatially 
-#         varying). 
+#  - `n`: The number of observations (can be spatially varying or non
+#         -spatially varying). 
 #
 # ----------------------------------------------------------------------------
 #
@@ -596,10 +597,8 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
         derivVector = np.concatenate((dldB, dldsigma2.reshape(v_iter,1,1)),axis=1)
 
         for k in np.arange(len(nparams)):
-
             paramVector = np.concatenate((paramVector, mat2vec3D(Ddict[k])),axis=1)
             derivVector = np.concatenate((derivVector, mat2vec3D(dldDdict[k])),axis=1)
-        
         
         # --------------------------------------------------------------------------
         # Update step
@@ -713,18 +712,18 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
 # This below function performs Simplified Fisher Scoring for the Mass
 # Univariate Linear Mixed Model. It is based on the update rules:
 #
-#             beta = (X'V^(-1)X)^(-1)(X'V^(-1)Y)
+#                    beta = (X'V^(-1)X)^(-1)(X'V^(-1)Y)
 #
-#                 sigma2 = e'V^(-1)e/n
+#                           sigma2 = e'V^(-1)e/n
 #
-#     vh(D) = \theta_f + lam*I(vh(D))^(-1) (dl/dvh(D))
+#                            for k in {1,...,r};
+#           vech(D_k) = \theta_f + lam*I(vech(D_k))^(-1) (dl/dvech(D_k))
 #
 # Where:
-#  - vh(D) is the vector (vech(D1),...vech(Dr)).
 #  - lam is a scalar stepsize.
-#  - I(vh(D)) is the Fisher Information matrix of vh(D).
-#  - dl/dvh(D) is the derivative of the log likelihood of vh(D) with
-#    respect to vh(D). 
+#  - I(vech(D_k)) is the Fisher Information matrix of vech(D_k).
+#  - dl/dvech(D_k) is the derivative of the log likelihood of vech(D_k) with
+#    respect to vech(D_k). 
 #  - e is the residual vector (e=Y-X\beta)
 #  - V is the matrix (I+ZDZ')
 #
@@ -737,29 +736,29 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
 #
 # ----------------------------------------------------------------------------
 #
-#  - `XtX`: X transpose multiplied by X (can be spatially varying or non-spatially 
-#           varying). 
-#  - `XtY`: X transpose multiplied by Y (spatially varying.
-#  - `XtZ`: X transpose multiplied by Z (can be spatially varying or non-spatially 
-#           varying).
-#  - `YtX`: Y transpose multiplied by X (spatially varying.
-#  - `YtY`: Y transpose multiplied by Y (spatially varying.
-#  - `YtZ`: Y transpose multiplied by Z (spatially varying.
-#  - `ZtX`: Z transpose multiplied by X (can be spatially varying or non-spatially 
-#           varying).
-#  - `ZtY`: Z transpose multiplied by Y (spatially varying.
-#  - `ZtZ`: Z transpose multiplied by Z (can be spatially varying or non-spatially 
-#           varying).
-# - `nlevels`: A vector containing the number of levels for each factor, e.g. 
-#              `nlevels=[3,4]` would mean the first factor has 3 levels and the
-#              second factor has 4 levels.
-# - `nparams`: A vector containing the number of parameters for each factor, e.g.
-#              `nlevels=[2,1]` would mean the first factor has 2 parameters and the
-#              second factor has 1 parameter.
+#  - `XtX`: X transpose multiplied by X (can be spatially varying or non
+#           -spatially varying). 
+#  - `XtY`: X transpose multiplied by Y (spatially varying).
+#  - `XtZ`: X transpose multiplied by Z (can be spatially varying or non
+#           -spatially varying).
+#  - `YtX`: Y transpose multiplied by X (spatially varying).
+#  - `YtY`: Y transpose multiplied by Y (spatially varying).
+#  - `YtZ`: Y transpose multiplied by Z (spatially varying).
+#  - `ZtX`: Z transpose multiplied by X (can be spatially varying or non
+#           -spatially varying).
+#  - `ZtY`: Z transpose multiplied by Y (spatially varying).
+#  - `ZtZ`: Z transpose multiplied by Z (can be spatially varying or non
+#           -spatially varying).
+# - `nlevels`: A vector containing the number of levels for each factor, 
+#              e.g. `nlevels=[3,4]` would mean the first factor has 3 levels
+#              and the second factor has 4 levels.
+# - `nparams`: A vector containing the number of parameters for each factor,
+#              e.g. `nlevels=[2,1]` would mean the first factor has 2
+#              parameters and the second factor has 1 parameter.
 #  - `tol`: A scalar tolerance value. Iteration stops once successive 
 #           log-likelihood values no longer exceed `tol`.
-#  - `n`: The number of observations (can be spatially varying or non-spatially 
-#         varying). 
+#  - `n`: The number of observations (can be spatially varying or non
+#         -spatially varying). 
 #
 # ----------------------------------------------------------------------------
 #
@@ -1028,21 +1027,21 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
 
 # ============================================================================
 # 
-# This below function performs Simplified Fisher Scoring for the Mass
+# This below function performs pseudo-Simplified Fisher Scoring for the Mass
 # Univariate Linear Mixed Model. It is based on the update rules:
 #
-#             beta = (X'V^(-1)X)^(-1)(X'V^(-1)Y)
+#                       beta = (X'V^(-1)X)^(-1)(X'V^(-1)Y)
 #
-#                 sigma2 = e'V^(-1)e/n
+#                             sigma2 = e'V^(-1)e/n
 #
-#     vf(D) = \theta_f + lam*I(vf(D))^+ (dl/dvf(D))
+#                              for k in {1,...,r};
+#              vec(D_k) = \theta_f + lam*I(vec(D_k))^+ (dl/dvec(D_k))
 #
 # Where:
-#  - vf(D) is the vector (vec(D1),...vec(Dr)).
 #  - lam is a scalar stepsize.
-#  - I(vf(D)) is the Fisher Information matrix of vf(D).
-#  - dl/dvf(D) is the derivative of the log likelihood of vf(D) with
-#    respect to vf(D). 
+#  - I(vec(D_k)) is the Fisher Information matrix of vec(D_k).
+#  - dl/dvec(D_k) is the derivative of the log likelihood of vec(D_k) with
+#    respect to vec(D_k). 
 #  - e is the residual vector (e=Y-X\beta)
 #  - V is the matrix (I+ZDZ')
 #
@@ -1061,33 +1060,34 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
 #
 # ----------------------------------------------------------------------------
 #
-#  - `XtX`: X transpose multiplied by X (can be spatially varying or non-spatially 
-#           varying). 
-#  - `XtY`: X transpose multiplied by Y (spatially varying.
-#  - `XtZ`: X transpose multiplied by Z (can be spatially varying or non-spatially 
-#           varying).
-#  - `YtX`: Y transpose multiplied by X (spatially varying.
-#  - `YtY`: Y transpose multiplied by Y (spatially varying.
-#  - `YtZ`: Y transpose multiplied by Z (spatially varying.
-#  - `ZtX`: Z transpose multiplied by X (can be spatially varying or non-spatially 
-#           varying).
-#  - `ZtY`: Z transpose multiplied by Y (spatially varying.
-#  - `ZtZ`: Z transpose multiplied by Z (can be spatially varying or non-spatially 
-#           varying).
-# - `nlevels`: A vector containing the number of levels for each factor, e.g. 
-#              `nlevels=[3,4]` would mean the first factor has 3 levels and the
-#              second factor has 4 levels.
-# - `nparams`: A vector containing the number of parameters for each factor, e.g.
-#              `nlevels=[2,1]` would mean the first factor has 2 parameters and the
-#              second factor has 1 parameter.
+#  - `XtX`: X transpose multiplied by X (can be spatially varying or non
+#           -spatially varying). 
+#  - `XtY`: X transpose multiplied by Y (spatially varying).
+#  - `XtZ`: X transpose multiplied by Z (can be spatially varying or non
+#           -spatially varying).
+#  - `YtX`: Y transpose multiplied by X (spatially varying).
+#  - `YtY`: Y transpose multiplied by Y (spatially varying).
+#  - `YtZ`: Y transpose multiplied by Z (spatially varying).
+#  - `ZtX`: Z transpose multiplied by X (can be spatially varying or non
+#           -spatially varying).
+#  - `ZtY`: Z transpose multiplied by Y (spatially varying).
+#  - `ZtZ`: Z transpose multiplied by Z (can be spatially varying or non
+#           -spatially varying).
+# - `nlevels`: A vector containing the number of levels for each factor, 
+#              e.g. `nlevels=[3,4]` would mean the first factor has 3 levels
+#              and the second factor has 4 levels.
+# - `nparams`: A vector containing the number of parameters for each factor,
+#              e.g. `nlevels=[2,1]` would mean the first factor has 2
+#              parameters and the second factor has 1 parameter.
 #  - `tol`: A scalar tolerance value. Iteration stops once successive 
 #           log-likelihood values no longer exceed `tol`.
-#  - `n`: The number of observations (can be spatially varying or non-spatially 
-#         varying). 
+#  - `n`: The number of observations (can be spatially varying or non
+#         -spatially varying). 
+#
 #  - `reml`: This a backdoor option for restricted maximum likelihood 
-#            estimation. As BLMM is aimed at the high n setting it is unlikely 
-#            this option will be useful and therefore isn't implemented 
-#            everywhere or offered to users as an option.
+#            estimation. As BLMM is aimed at the high n setting it is 
+#            unlikely this option will be useful and therefore isn't
+#            implemented everywhere or offered to users as an option.
 #
 # ----------------------------------------------------------------------------
 #
