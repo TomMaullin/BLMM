@@ -94,8 +94,8 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     # Number of fixed effects, p
     p = XtX.shape[1]
 
-    # Number of voxels, nv
-    nv = XtY.shape[0]
+    # Number of voxels, v
+    v = XtY.shape[0]
     
     # ------------------------------------------------------------------------------
     # Initial estimates
@@ -154,7 +154,7 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     # Initial lambda and likelihoods
     # ------------------------------------------------------------------------------
     # Step size lambda
-    lam = np.ones(nv)
+    lam = np.ones(v)
 
     # Initial log likelihoods
     llhprev = -10*np.ones(XtY.shape[0])
@@ -164,10 +164,10 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     # Converged voxels and parameter saving
     # ------------------------------------------------------------------------------
     # Vector checking if all voxels converged
-    converged_global = np.zeros(nv)
+    converged_global = np.zeros(v)
     
     # Vector of saved parameters which have converged
-    savedparams = np.zeros((nv, np.int32(np.sum(nparams*(nparams+1)/2) + p + 1),1))
+    savedparams = np.zeros((v, np.int32(np.sum(nparams*(nparams+1)/2) + p + 1),1))
     
     # Number of iterations
     nit=0
@@ -184,7 +184,7 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
         llhprev = llhcurr
         
         # Work out how many voxels are left
-        nv_iter = XtY.shape[0]
+        v_iter = XtY.shape[0]
         
         # --------------------------------------------------------------------------
         # Derivatives
@@ -206,7 +206,7 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
         # Covariances
         # --------------------------------------------------------------------------
         # Construct the Fisher Information matrix
-        FisherInfoMat = np.zeros((nv_iter,tnp,tnp))
+        FisherInfoMat = np.zeros((v_iter,tnp,tnp))
         
         # Covariance of dl/dsigma2
         covdldsigma2 = n/(2*(sigma2**2))
@@ -216,13 +216,13 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
         
         # Add dl/dbeta covariance
         covdldB = get_covdldbeta3D(XtZ, XtX, ZtZ, DinvIplusZtZD, sigma2)
-        FisherInfoMat[np.ix_(np.arange(nv_iter), np.arange(p),np.arange(p))] = covdldB
+        FisherInfoMat[np.ix_(np.arange(v_iter), np.arange(p),np.arange(p))] = covdldB
         
         # Add dl/dsigma2 dl/dD covariance
         for k in np.arange(len(nparams)):
 
             # Get covariance of dldsigma and dldD      
-            covdldsigmadD = get_covdldDkdsigma23D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict).reshape(nv_iter,FishIndsDk[k+1]-FishIndsDk[k])
+            covdldsigmadD = get_covdldDkdsigma23D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict).reshape(v_iter,FishIndsDk[k+1]-FishIndsDk[k])
             
             # Assign to the relevant block
             FisherInfoMat[:,p, FishIndsDk[k]:FishIndsDk[k+1]] = covdldsigmadD
@@ -240,8 +240,8 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
                 covdldDk1dDk2 = get_covdldDk1Dk23D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict)
                 
                 # Add to FImat
-                FisherInfoMat[np.ix_(np.arange(nv_iter), IndsDk1, IndsDk2)] = covdldDk1dDk2
-                FisherInfoMat[np.ix_(np.arange(nv_iter), IndsDk2, IndsDk1)] = FisherInfoMat[np.ix_(np.arange(nv_iter), IndsDk1, IndsDk2)].transpose((0,2,1))
+                FisherInfoMat[np.ix_(np.arange(v_iter), IndsDk1, IndsDk2)] = covdldDk1dDk2
+                FisherInfoMat[np.ix_(np.arange(v_iter), IndsDk2, IndsDk1)] = FisherInfoMat[np.ix_(np.arange(v_iter), IndsDk1, IndsDk2)].transpose((0,2,1))
 
         # Check Fisher Information matrix is symmetric
         FisherInfoMat = forceSym3D(FisherInfoMat)
@@ -249,8 +249,8 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
         # --------------------------------------------------------------------------
         # Concatenate paramaters and derivatives together
         # --------------------------------------------------------------------------
-        paramVector = np.concatenate((beta, sigma2.reshape(nv_iter,1,1)),axis=1)
-        derivVector = np.concatenate((dldB, dldsigma2.reshape(nv_iter,1,1)),axis=1)
+        paramVector = np.concatenate((beta, sigma2.reshape(v_iter,1,1)),axis=1)
+        derivVector = np.concatenate((dldB, dldsigma2.reshape(v_iter,1,1)),axis=1)
 
         for k in np.arange(len(nparams)):
 
@@ -439,8 +439,8 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     # Number of fixed effects, p
     p = XtX.shape[1]
 
-    # Number of voxels, nv
-    nv = XtY.shape[0]
+    # Number of voxels, v
+    v = XtY.shape[0]
     
     # ------------------------------------------------------------------------------
     # Initial estimates
@@ -497,7 +497,7 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     # Initial lambda and likelihoods
     # ------------------------------------------------------------------------------
     # Step size lambda
-    lam = np.ones(nv)
+    lam = np.ones(v)
 
     # Initial log likelihoods
     llhprev = -10*np.ones(XtY.shape[0])
@@ -507,10 +507,10 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     # Converged voxels and parameter saving
     # ------------------------------------------------------------------------------
     # Vector checking if all voxels converged
-    converged_global = np.zeros(nv)
+    converged_global = np.zeros(v)
     
     # Vector of saved parameters which have converged
-    savedparams = np.zeros((nv, np.int32(np.sum(nparams**2) + p + 1),1))
+    savedparams = np.zeros((v, np.int32(np.sum(nparams**2) + p + 1),1))
     
     # Number of iterations
     nit=0
@@ -530,7 +530,7 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
         llhprev = llhcurr
         
         # Work out how many voxels are left
-        nv_iter = XtY.shape[0]
+        v_iter = XtY.shape[0]
         
         # --------------------------------------------------------------------------
         # Derivatives
@@ -551,7 +551,7 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
         # Covariances
         # --------------------------------------------------------------------------
         # Construct the Fisher Information matrix
-        FisherInfoMat = np.zeros((nv_iter,tnp,tnp))
+        FisherInfoMat = np.zeros((v_iter,tnp,tnp))
         
         # Covariance of dl/dsigma2
         covdldsigma2 = n/(2*(sigma2**2))
@@ -561,13 +561,13 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
         
         # Add dl/dbeta covariance
         covdldB = get_covdldbeta3D(XtZ, XtX, ZtZ, DinvIplusZtZD, sigma2)
-        FisherInfoMat[np.ix_(np.arange(nv_iter), np.arange(p),np.arange(p))] = covdldB
+        FisherInfoMat[np.ix_(np.arange(v_iter), np.arange(p),np.arange(p))] = covdldB
         
         # Add dl/dsigma2 dl/dD covariance
         for k in np.arange(len(nparams)):
 
             # Get covariance of dldsigma and dldD      
-            covdldsigmadD = get_covdldDkdsigma23D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True).reshape(nv_iter,FishIndsDk[k+1]-FishIndsDk[k])
+            covdldsigmadD = get_covdldDkdsigma23D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True).reshape(v_iter,FishIndsDk[k+1]-FishIndsDk[k])
             
             # Assign to the relevant block
             FisherInfoMat[:,p, FishIndsDk[k]:FishIndsDk[k+1]] = covdldsigmadD
@@ -585,15 +585,15 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
                 covdldDk1dDk2 = get_covdldDk1Dk23D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True)
                 
                 # Add to FImat
-                FisherInfoMat[np.ix_(np.arange(nv_iter), IndsDk1, IndsDk2)] = covdldDk1dDk2
-                FisherInfoMat[np.ix_(np.arange(nv_iter), IndsDk2, IndsDk1)] = FisherInfoMat[np.ix_(np.arange(nv_iter), IndsDk1, IndsDk2)].transpose((0,2,1))
+                FisherInfoMat[np.ix_(np.arange(v_iter), IndsDk1, IndsDk2)] = covdldDk1dDk2
+                FisherInfoMat[np.ix_(np.arange(v_iter), IndsDk2, IndsDk1)] = FisherInfoMat[np.ix_(np.arange(v_iter), IndsDk1, IndsDk2)].transpose((0,2,1))
                      
 
         # --------------------------------------------------------------------------
         # Concatenate paramaters and derivatives together
         # --------------------------------------------------------------------------
-        paramVector = np.concatenate((beta, sigma2.reshape(nv_iter,1,1)),axis=1)
-        derivVector = np.concatenate((dldB, dldsigma2.reshape(nv_iter,1,1)),axis=1)
+        paramVector = np.concatenate((beta, sigma2.reshape(v_iter,1,1)),axis=1)
+        derivVector = np.concatenate((dldB, dldsigma2.reshape(v_iter,1,1)),axis=1)
 
         for k in np.arange(len(nparams)):
 
@@ -786,8 +786,8 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     # Number of fixed effects, p
     p = XtX.shape[1]
 
-    # Number of voxels, nv
-    nv = XtY.shape[0]
+    # Number of voxels, v
+    v = XtY.shape[0]
     
     # ------------------------------------------------------------------------------
     # Initial estimates
@@ -847,7 +847,7 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     # Initial lambda and likelihoods
     # ------------------------------------------------------------------------------
     # Step size lambda
-    lam = np.ones(nv)
+    lam = np.ones(v)
 
     # Initial log likelihoods
     llhprev = -10*np.ones(XtY.shape[0])
@@ -857,10 +857,10 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     # Converged voxels and parameter saving
     # ------------------------------------------------------------------------------
     # Vector checking if all voxels converged
-    converged_global = np.zeros(nv)
+    converged_global = np.zeros(v)
     
     # Vector of saved parameters which have converged
-    savedparams = np.zeros((nv, np.int32(np.sum(nparams*(nparams+1)/2) + p + 1),1))
+    savedparams = np.zeros((v, np.int32(np.sum(nparams*(nparams+1)/2) + p + 1),1))
     
     # ------------------------------------------------------------------------------
     # Work out D indices (there is one block of D per level)
@@ -896,7 +896,7 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
         llhprev = llhcurr
         
         # Work out how many voxels are left
-        nv_iter = XtY.shape[0]
+        v_iter = XtY.shape[0]
         
         # --------------------------------------------------------------------------
         # Update beta
@@ -911,7 +911,7 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
         Zte = ZtY - (ZtX @ beta)
 
         # Work out sigma^2
-        sigma2 = 1/n*(ete - Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte).reshape(nv_iter)
+        sigma2 = 1/n*(ete - Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte).reshape(v_iter)
 
         # --------------------------------------------------------------------------
         # Update D
@@ -1114,8 +1114,8 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
     # Number of fixed effects, p
     p = XtX.shape[1]
 
-    # Number of voxels, nv
-    nv = XtY.shape[0]
+    # Number of voxels, v
+    v = XtY.shape[0]
     
     # ------------------------------------------------------------------------------
     # Initial estimates
@@ -1174,7 +1174,7 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
     # Step size and log likelihoods
     # ------------------------------------------------------------------------------
     # Step size lambda
-    lam = np.ones(nv)
+    lam = np.ones(v)
 
     # Initial log likelihoods
     llhprev = -10*np.ones(XtY.shape[0])
@@ -1184,10 +1184,10 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
     # Converged voxels and parameter saving
     # ------------------------------------------------------------------------------
     # Vector checking if all voxels converged
-    converged_global = np.zeros(nv)
+    converged_global = np.zeros(v)
     
     # Vector of saved parameters which have converged
-    savedparams = np.zeros((nv, np.int32(np.sum(nparams*(nparams+1)/2) + p + 1),1))
+    savedparams = np.zeros((v, np.int32(np.sum(nparams*(nparams+1)/2) + p + 1),1))
     
     # ------------------------------------------------------------------------------
     # Work out D indices (there is one block of D per level)
@@ -1223,7 +1223,7 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
         llhprev = llhcurr
         
         # Work out how many voxels are left
-        nv_iter = XtY.shape[0]
+        v_iter = XtY.shape[0]
         
         # --------------------------------------------------------------------------
         # Update beta
@@ -1243,9 +1243,9 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
         # REML update to sigma2
         # --------------------------------------------------------------------------
         if reml == False:
-            sigma2 = (1/n*(ete - Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte)).reshape(nv_iter)
+            sigma2 = (1/n*(ete - Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte)).reshape(v_iter)
         else:
-            sigma2 = (1/(n-p)*(ete - Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte)).reshape(nv_iter)
+            sigma2 = (1/(n-p)*(ete - Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte)).reshape(v_iter)
         
         # --------------------------------------------------------------------------
         # Update D
