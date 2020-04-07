@@ -40,11 +40,10 @@ np.set_printoptions(threshold=sys.maxsize)
 #                         first factor has 3 levels and the second factor has
 #                         4 levels. If not provided, default values will be
 #                         between 8 and 40.
-#   - nparams (optional): A vector containing the number of parameters for each
-#                         factor, e.g. `nlevels=[2,1]` would mean the first
-#                         factor has 2 parameters and the second factor has 1
-#                         parameter. If not provided, default values will be
-#                         between 2 and 5.
+#   - nraneffs (optional): A vector containing the number of random effects for
+#                          each factor, e.g. `nraneffs=[2,1]` would mean the 
+#                          first factor has random effects and the second
+#                          factor has 1 random effect.
 #
 # -----------------------------------------------------------------------------
 #
@@ -56,20 +55,20 @@ np.set_printoptions(threshold=sys.maxsize)
 #        intercept column (the first column).
 #   - Y: A response vector of dimension (n x 1).
 #   - Z: A random effects design matrix of size (n x q) where q is equal to the
-#        product of nlevels and nparams.
+#        product of nlevels and nraneffs.
 #   - nlevels: A vector containing the number of levels for each random factor,
 #              e.g. `nlevels=[3,4]` would mean the first factor has 3 levels
 #              and the second factor has 4 levels.
-#   - nparams: A vector containing the number of parameters for each factor,
-#              e.g. `nlevels=[2,1]` would mean the first factor has 2
-#              parameters and the second factor has 1 parameter.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 #   - beta: The true values of beta used to simulate the response vector.
 #   - sigma2: The true value of sigma2 used to simulate the response vector.
 #   - D: The random covariance matrix used to simulate b and the response vector.
 #   - b: The random effects vector used to simulate the response vector.
 #
 # -----------------------------------------------------------------------------
-def genTestData2D(n=None, p=None, nlevels=None, nparams=None):
+def genTestData2D(n=None, p=None, nlevels=None, nraneffs=None):
 
     # Check if we have n
     if n is None:
@@ -84,16 +83,16 @@ def genTestData2D(n=None, p=None, nlevels=None, nparams=None):
         p = np.random.randint(2,10)
 
     # Work out number of random factors.
-    if nlevels is None and nparams is None:
+    if nlevels is None and nraneffs is None:
 
-        # If we have neither nlevels or nparams, decide on a number of
+        # If we have neither nlevels or nraneffs, decide on a number of
         # random factors, r.
         r = np.random.randint(2,4)
 
     elif nlevels is None:
 
         # Work out number of random factors, r
-        r = np.shape(nparams)[0]
+        r = np.shape(nraneffs)[0]
 
     else:
 
@@ -106,11 +105,11 @@ def genTestData2D(n=None, p=None, nlevels=None, nparams=None):
         # Generate random number of levels.
         nlevels = np.random.randint(8,40,r)
 
-    # Check if we need to generate nparams.
-    if nparams is None:
+    # Check if we need to generate nraneffs.
+    if nraneffs is None:
         
         # Generate random number of levels.
-        nparams = np.random.randint(2,5,r)
+        nraneffs = np.random.randint(2,5,r)
 
     # Generate random X.
     X = np.random.randn(n,p)
@@ -125,7 +124,7 @@ def genTestData2D(n=None, p=None, nlevels=None, nparams=None):
     # We need to create a block of Z for each level of each factor
     for i in np.arange(r):
 
-        Zdata_factor = np.random.randn(n,nparams[i])
+        Zdata_factor = np.random.randn(n,nraneffs[i])
 
         if i==0:
 
@@ -156,8 +155,8 @@ def genTestData2D(n=None, p=None, nlevels=None, nparams=None):
         indicatorMatrix_factor = np.zeros((n,nlevels[i]))
         indicatorMatrix_factor[np.arange(n),factorVec] = 1
 
-        # Need to repeat for each parameter the factor has 
-        indicatorMatrix_factor = np.repeat(indicatorMatrix_factor, nparams[i], axis=1)
+        # Need to repeat for each random effect the factor has 
+        indicatorMatrix_factor = np.repeat(indicatorMatrix_factor, nraneffs[i], axis=1)
 
         # Enter the Z values
         indicatorMatrix_factor[indicatorMatrix_factor==1]=Zdata_factor.reshape(Zdata_factor.shape[0]*Zdata_factor.shape[1])
@@ -189,7 +188,7 @@ def genTestData2D(n=None, p=None, nlevels=None, nparams=None):
     for k in np.arange(r):
       
         # Create a random matrix
-        randMat = np.random.randn(nparams[k],nparams[k])
+        randMat = np.random.randn(nraneffs[k],nraneffs[k])
 
         # Record it as D^{1/2}
         Dhalfdict[k] = randMat
@@ -216,7 +215,7 @@ def genTestData2D(n=None, p=None, nlevels=None, nparams=None):
 
 
     # Make random b
-    q = np.sum(nlevels*nparams)
+    q = np.sum(nlevels*nraneffs)
     b = np.random.randn(q).reshape(q,1)
 
     # Give b the correct covariance structure
@@ -226,7 +225,7 @@ def genTestData2D(n=None, p=None, nlevels=None, nparams=None):
     Y = X @ beta + Z @ b + epsilon
 
     # Return values
-    return(Y,X,Z,nlevels,nparams,beta,sigma2,b,D)
+    return(Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D)
 
 
 # =============================================================================
@@ -303,11 +302,10 @@ def prodMats2D(Y,Z,X):
 #                         first factor has 3 levels and the second factor has
 #                         4 levels. If not provided, default values will be
 #                         between 8 and 40.
-#   - nparams (optional): A vector containing the number of parameters for each
-#                         factor, e.g. `nlevels=[2,1]` would mean the first
-#                         factor has 2 parameters and the second factor has 1
-#                         parameter. If not provided, default values will be
-#                         between 2 and 5.
+#   - nraneffs (optional): A vector containing the number of random effects for
+#                          each factor, e.g. `nraneffs=[2,1]` would mean the
+#                          first factor has random effects and the second 
+#                          factor has 1 random effect.
 #   - v (optional): Number of voxels. If not provided a random v will be 
 #                   selected between 100 and 250.
 #
@@ -321,13 +319,13 @@ def prodMats2D(Y,Z,X):
 #        intercept column (the first column).
 #   - Y: A response vector of dimension (n x 1).
 #   - Z: A random effects design matrix of size (n x q) where q is equal to the
-#        product of nlevels and nparams.
+#        product of nlevels and nraneffs.
 #   - nlevels: A vector containing the number of levels for each random factor,
 #              e.g. `nlevels=[3,4]` would mean the first factor has 3 levels
 #              and the second factor has 4 levels.
-#   - nparams: A vector containing the number of parameters for each factor,
-#              e.g. `nlevels=[2,1]` would mean the first factor has 2
-#              parameters and the second factor has 1 parameter.
+#   - `nraneffs`: A vector containing the number of random effects for each
+#                 factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#                 random effects and the second factor has 1 random effect.
 #   - beta: The true values of beta used to simulate the response vector.
 #   - sigma2: The true value of sigma2 used to simulate the response vector.
 #   - D: The random covariance matrix used to simulate b and the response vector.
@@ -339,7 +337,7 @@ def prodMats2D(Y,Z,X):
 #   - n_sv: Spatially varying number of subjects.
 #
 # -----------------------------------------------------------------------------
-def genTestData3D(n=None, p=None, nlevels=None, nparams=None, v=None):
+def genTestData3D(n=None, p=None, nlevels=None, nraneffs=None, v=None):
 
     # Check if we have n
     if n is None:
@@ -360,16 +358,16 @@ def genTestData3D(n=None, p=None, nlevels=None, nparams=None, v=None):
         p = np.random.randint(2,10)
 
     # Work out number of random factors.
-    if nlevels is None and nparams is None:
+    if nlevels is None and nraneffs is None:
 
-        # If we have neither nlevels or nparams, decide on a number of
+        # If we have neither nlevels or nraneffs, decide on a number of
         # random factors, r.
         r = np.random.randint(2,4)
 
     elif nlevels is None:
 
         # Work out number of random factors, r
-        r = np.shape(nparams)[0]
+        r = np.shape(nraneffs)[0]
 
     else:
 
@@ -382,17 +380,17 @@ def genTestData3D(n=None, p=None, nlevels=None, nparams=None, v=None):
         # Generate random number of levels.
         nlevels = np.random.randint(8,40,r)
 
-    # Check if we need to generate nparams.
-    if nparams is None:
+    # Check if we need to generate nraneffs.
+    if nraneffs is None:
         
         # Generate random number of levels.
-        nparams = np.random.randint(2,5,r)
+        nraneffs = np.random.randint(2,5,r)
 
     # Generate random X.
     X = np.random.randn(n,p)
 
     # Work out q
-    q = np.sum(nlevels*nparams)
+    q = np.sum(nlevels*nraneffs)
     
     # Make the first column an intercept
     X[:,0]=1
@@ -401,7 +399,7 @@ def genTestData3D(n=None, p=None, nlevels=None, nparams=None, v=None):
     # We need to create a block of Z for each level of each factor
     for i in np.arange(r):
 
-        Zdata_factor = np.random.randn(n,nparams[i])
+        Zdata_factor = np.random.randn(n,nraneffs[i])
 
         if i==0:
 
@@ -432,8 +430,8 @@ def genTestData3D(n=None, p=None, nlevels=None, nparams=None, v=None):
         indicatorMatrix_factor = np.zeros((n,nlevels[i]))
         indicatorMatrix_factor[np.arange(n),factorVec] = 1
 
-        # Need to repeat for each parameter the factor has 
-        indicatorMatrix_factor = np.repeat(indicatorMatrix_factor, nparams[i], axis=1)
+        # Need to repeat for each random effect the factor has 
+        indicatorMatrix_factor = np.repeat(indicatorMatrix_factor, nraneffs[i], axis=1)
 
         # Enter the Z values
         indicatorMatrix_factor[indicatorMatrix_factor==1]=Zdata_factor.reshape(Zdata_factor.shape[0]*Zdata_factor.shape[1])
@@ -471,21 +469,21 @@ def genTestData3D(n=None, p=None, nlevels=None, nparams=None, v=None):
     inds = np.zeros(np.sum(nlevels)+1)
     counter = 0
 
-    for k in np.arange(len(nparams)):
+    for k in np.arange(len(nraneffs)):
 
         # Generate random D block for this factor
-        Dhalfdict[k] = np.random.randn(v,nparams[k],nparams[k])
+        Dhalfdict[k] = np.random.randn(v,nraneffs[k],nraneffs[k])
         Ddict[k] = Dhalfdict[k] @ Dhalfdict[k].transpose(0,2,1)
 
         for j in np.arange(nlevels[k]):
 
             # Work out indices in D corresponding to each level of the factor.
-            inds[counter] = np.concatenate((np.array([0]), np.cumsum(nlevels*nparams)))[k] + nparams[k]*j
+            inds[counter] = np.concatenate((np.array([0]), np.cumsum(nlevels*nraneffs)))[k] + nraneffs[k]*j
             counter = counter + 1
 
 
     # Last index will be missing so add it
-    inds[len(inds)-1]=inds[len(inds)-2]+nparams[-1]
+    inds[len(inds)-1]=inds[len(inds)-2]+nraneffs[-1]
 
     # Make sure indices are ints
     inds = np.int64(inds)
@@ -496,7 +494,7 @@ def genTestData3D(n=None, p=None, nlevels=None, nparams=None, v=None):
 
     # Fill in the blocks of D and Dhalf
     counter = 0
-    for k in np.arange(len(nparams)):
+    for k in np.arange(len(nraneffs)):
 
         for j in np.arange(nlevels[k]):
 
@@ -527,7 +525,7 @@ def genTestData3D(n=None, p=None, nlevels=None, nparams=None, v=None):
     Y = X_sv @ beta + Z_sv @ b + epsilon
 
     # Return values
-    return(Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv)
+    return(Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv)
 
 
 # =============================================================================

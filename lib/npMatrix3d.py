@@ -69,13 +69,13 @@ def mat2vec3D(matrix):
 # ============================================================================
 def mat2vech3D(matrix):
   
-  # Number of voxels, nv
-  nv = matrix.shape[0]
+  # Number of voxels, v
+  v = matrix.shape[0]
   
   # Get lower triangular indices
   rowinds, colinds = np.tril_indices(matrix.shape[1]) 
   
-  # Number of covariance parameters, nc
+  # Number of unique elements, nc
   nc = len(rowinds)
   
   # They're in the wrong order so we need to order them
@@ -86,7 +86,7 @@ def mat2vech3D(matrix):
   perm=np.argsort(indhash)
   
   # Return vectorised half-matrix
-  return(matrix[:,rowinds[perm],colinds[perm]].reshape((nv,nc,1)))
+  return(matrix[:,rowinds[perm],colinds[perm]].reshape((v,nc,1)))
 
 
 # ============================================================================
@@ -99,11 +99,11 @@ def mat2vech3D(matrix):
 def vech2mat3D(vech):
   
   # Number of voxels
-  nv = vech.shape[0]
+  v = vech.shape[0]
   
   # dimension of matrix
   n = np.int64((-1+np.sqrt(1+8*vech.shape[1]))/2)
-  matrix = np.zeros((nv,n,n))
+  matrix = np.zeros((v,n,n))
   
   # Get lower triangular indices
   rowinds, colinds = np.tril_indices(n)
@@ -190,31 +190,31 @@ def ssr3D(YtX, YtY, XtX, beta):
 # of the kth diagonal block for every voxel.
 #
 # ============================================================================
-def getDfromDict3D(Ddict, nparams, nlevels):
+def getDfromDict3D(Ddict, nraneffs, nlevels):
   
   # Get number of voxels
-  nv = Ddict[0].shape[0]
+  v = Ddict[0].shape[0]
   
   # Work out indices (there is one block of D per level)
   inds = np.zeros(np.sum(nlevels)+1)
   counter = 0
-  for k in np.arange(len(nparams)):
+  for k in np.arange(len(nraneffs)):
     for j in np.arange(nlevels[k]):
-      inds[counter] = np.concatenate((np.array([0]), np.cumsum(nlevels*nparams)))[k] + nparams[k]*j
+      inds[counter] = np.concatenate((np.array([0]), np.cumsum(nlevels*nraneffs)))[k] + nraneffs[k]*j
       counter = counter + 1
       
   
   # Last index will be missing so add it
-  inds[len(inds)-1]=inds[len(inds)-2]+nparams[-1]
+  inds[len(inds)-1]=inds[len(inds)-2]+nraneffs[-1]
   
   # Make sure indices are ints
   inds = np.int64(inds)
   
   # Initial D
-  D = np.zeros((nv,np.sum(nparams*nlevels),np.sum(nparams*nlevels)))
+  D = np.zeros((v,np.sum(nraneffs*nlevels),np.sum(nraneffs*nlevels)))
 
   counter = 0
-  for k in np.arange(len(nparams)):
+  for k in np.arange(len(nraneffs)):
     for j in np.arange(nlevels[k]):
 
       D[:, inds[counter]:inds[counter+1], inds[counter]:inds[counter+1]] = Ddict[k]
@@ -338,7 +338,7 @@ def initSigma23D(ete, n):
 # - `Dkest`: The inital estimate of D_k (Dhat_k in the above notation).
 #
 # ============================================================================
-def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nparams, invDupMatdict):
+def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict):
   
   # Small check on sigma2
   if len(sigma2.shape) > 1:
@@ -346,12 +346,12 @@ def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nparams, invDupMatdict):
     sigma2 = sigma2.reshape(sigma2.shape[0])
 
   # Initalize D to zeros
-  invSig2ZteetZminusZtZ = np.zeros((Zte.shape[0],nparams[k],nparams[k]))
+  invSig2ZteetZminusZtZ = np.zeros((Zte.shape[0],nraneffs[k],nraneffs[k]))
 
   # First we work out the derivative we require.
   for j in np.arange(nlevels[k]):
     
-    Ikj = faclev_indices2D(k, j, nlevels, nparams)
+    Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
 
     # Work out Z_(k, j)'Z_(k, j)
     ZkjtZkj = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ikj,Ikj)]
@@ -374,8 +374,8 @@ def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nparams, invDupMatdict):
 
     for i in np.arange(nlevels[k]):
       
-      Iki = faclev_indices2D(k, i, nlevels, nparams)
-      Ikj = faclev_indices2D(k, j, nlevels, nparams)
+      Iki = faclev_indices2D(k, i, nlevels, nraneffs)
+      Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
 
       # Work out Z_(k, j)'Z_(k, j)
       ZkitZkj = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Iki,Ikj)]
@@ -648,9 +648,9 @@ def get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD):
 # - `nlevels`: A vector containing the number of levels for each factor, e.g.
 #              `nlevels=[3,4]` would mean the first factor has 3 levels and
 #              the second factor has 4 levels.
-# - `nparams`: A vector containing the number of parameters for each factor,
-#              e.g. `nlevels=[2,1]` would mean the first factor has 2
-#              parameters and the second factor has 1 parameter.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 # - `ZtZ`: The Z matrix transposed and then multiplied by itself (Z'Z in the
 #          above notation).
 # - `Zte`: The Z matrix transposed and then multiplied by the OLS residuals
@@ -667,19 +667,19 @@ def get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD):
 # - `dldDk`: The derivative of l with respect to D_k.
 #
 # ============================================================================
-def get_dldDk3D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD,reml=False, ZtX=0, XtX=0):
+def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,reml=False, ZtX=0, XtX=0):
 
   # Number of voxels
-  nv = Zte.shape[0]
+  v = Zte.shape[0]
   
   # Initalize the derivative to zeros
-  dldDk = np.zeros((nv, nparams[k],nparams[k]))
+  dldDk = np.zeros((v, nraneffs[k],nraneffs[k]))
   
   # For each level j we need to add a term
   for j in np.arange(nlevels[k]):
 
     # Get the indices for the kth factor jth level
-    Ikj = faclev_indices2D(k, j, nlevels, nparams)
+    Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
     
     # Get (the kj^th columns of Z)^T multiplied by Z
     Z_kjtZ = ZtZ[:,Ikj,:]
@@ -711,7 +711,7 @@ def get_dldDk3D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD,reml=False,
     for j in np.arange(nlevels[k]):
 
       # Get the indices for the kth factor jth level
-      Ikj = faclev_indices2D(k, j, nlevels, nparams)
+      Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
 
       Z_kjtZ = ZtZ[:,Ikj,:]
       Z_kjtX = ZtX[:,Ikj,:]
@@ -784,9 +784,9 @@ def get_covdldbeta3D(XtZ, XtX, ZtZ, DinvIplusZtZD, sigma2):
 # - `nlevels`: A vector containing the number of levels for each factor, e.g.
 #              `nlevels=[3,4]` would mean the first factor has 3 levels and 
 #              the second factor has 4 levels.
-# - `nparams`: A vector containing the number of parameters for each factor, 
-#              e.g. `nlevels=[2,1]` would mean the first factor has 2 
-#              parameters and the second factor has 1 parameter.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 # - `ZtZ`: Z transpose multiplied by Z.
 # - `DinvIplusZtZD`: D(I+Z'ZD)^(-1) in the above notation.
 # - `invDupMatdict`: A dictionary of inverse duplication matrices such that 
@@ -806,18 +806,18 @@ def get_covdldbeta3D(XtZ, XtX, ZtZ, DinvIplusZtZD, sigma2):
 #                       derivative with respect to \sigma^2.
 #
 # ============================================================================
-def get_covdldDkdsigma23D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False):
+def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False):
   
   # Number of voxels
-  nv = DinvIplusZtZD.shape[0]
+  v = DinvIplusZtZD.shape[0]
   
   # Sum of R_(k, j) over j
-  RkSum = np.zeros((nv,nparams[k],nparams[k]))
+  RkSum = np.zeros((v,nraneffs[k],nraneffs[k]))
 
   for j in np.arange(nlevels[k]):
 
     # Get the indices for the kth factor jth level
-    Ikj = faclev_indices2D(k, j, nlevels, nparams)
+    Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
 
     # Work out R_(k, j)
     Rkj = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ikj,Ikj)] - forceSym3D(ZtZ[:,Ikj,:] @ DinvIplusZtZD @ ZtZ[:,:,Ikj])
@@ -858,9 +858,9 @@ def get_covdldDkdsigma23D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDu
 # - `nlevels`: A vector containing the number of levels for each factor, e.g.
 #              `nlevels=[3,4]` would mean the first factor has 3 levels and
 #              the second factor has 4 levels.
-# - `nparams`: A vector containing the number of parameters for each factor,
-#              e.g. `nlevels=[2,1]` would mean the first factor has 2 
-#              parameters and the second factor has 1 parameter.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 # - `ZtZ`: Z transpose multiplied by Z.
 # - `DinvIplusZtZD`: D(I+Z'ZD)^(-1) in the above notation.
 # - `invDupMatdict`: A dictionary of inverse duplication matrices such that 
@@ -880,7 +880,7 @@ def get_covdldDkdsigma23D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDu
 #                     derivative with respect to vech(D_(k2)).
 #
 # ============================================================================
-def get_covdldDk1Dk23D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False):
+def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False):
   
   # Sum of R_(k1, k2, i, j) kron R_(k1, k2, i, j) over i and j 
   for i in np.arange(nlevels[k1]):
@@ -888,8 +888,8 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdi
     for j in np.arange(nlevels[k2]):
       
       # Get the indices for the k1th factor jth level
-      Ik1i = faclev_indices2D(k1, i, nlevels, nparams)
-      Ik2j = faclev_indices2D(k2, j, nlevels, nparams)
+      Ik1i = faclev_indices2D(k1, i, nlevels, nraneffs)
+      Ik2j = faclev_indices2D(k2, j, nlevels, nraneffs)
       
       # Work out R_(k1, k2, i, j)
       Rk1k2ij = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ik1i,Ik2j)] - (ZtZ[:,Ik1i,:] @ DinvIplusZtZD @ ZtZ[:,:,Ik2j])
@@ -1625,9 +1625,9 @@ def F2P3D(F, L, df_denom, minlog):
 # - `nlevels`: A vector containing the number of levels for each factor, e.g.
 #              `nlevels=[3,4]` would mean the first factor has 3 levels and
 #              the second factor has 4 levels.
-# - `nparams`: A vector containing the number of parameters for each factor,
-#              e.g. `nlevels=[2,1]` would mean the first factor has 2
-#              parameters and the second factor has 1 parameter.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 #
 # ----------------------------------------------------------------------------
 #
@@ -1638,7 +1638,7 @@ def F2P3D(F, L, df_denom, minlog):
 # - `df`: The spatially varying Sattherthwaithe degrees of freedom estimate.
 #
 # ============================================================================
-def get_swdf_F3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nparams): 
+def get_swdf_F3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs): 
 
     # Reshape sigma2 if necessary
     sigma2 = sigma2.reshape(sigma2.shape[0])
@@ -1661,7 +1661,7 @@ def get_swdf_F3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nparams):
     for i in np.arange(rL):
 
         # Work out the swdf for each row of L
-        swdf_row = get_swdf_T3D(L[i:(i+1),:], D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nparams)
+        swdf_row = get_swdf_T3D(L[i:(i+1),:], D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs)
 
         # Work out adjusted df = df/(df-2)
         swdf_adj = swdf_row/(swdf_row-2)
@@ -1706,9 +1706,9 @@ def get_swdf_F3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nparams):
 # - `nlevels`: A vector containing the number of levels for each factor, e.g.
 #              `nlevels=[3,4]` would mean the first factor has 3 levels and
 #              the second factor has 4 levels.
-# - `nparams`: A vector containing the number of parameters for each factor,
-#              e.g. `nlevels=[2,1]` would mean the first factor has 2
-#              parameters and the second factor has 1 parameter.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 #
 # ----------------------------------------------------------------------------
 #
@@ -1719,7 +1719,7 @@ def get_swdf_F3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nparams):
 # - `df`: The spatially varying Sattherthwaithe degrees of freedom estimate.
 #
 # ============================================================================
-def get_swdf_T3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nparams): 
+def get_swdf_T3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs): 
 
     # Reshape sigma2 if necessary
     sigma2 = sigma2.reshape(sigma2.shape[0])
@@ -1739,10 +1739,10 @@ def get_swdf_T3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nparams):
     S2 = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
     
     # Get derivative of S^2
-    dS2 = get_dS23D(nparams, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2)
+    dS2 = get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2)
 
     # Get Fisher information matrix
-    InfoMat = get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nparams, ZtZ)
+    InfoMat = get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nraneffs, ZtZ)
 
     # Calculate df estimator
     df = 2*(S2**2)/(dS2.transpose(0,2,1) @ np.linalg.inv(InfoMat) @ dS2)
@@ -1765,9 +1765,9 @@ def get_swdf_T3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nparams):
 # - `nlevels`: A vector containing the number of levels for each factor, e.g.
 #              `nlevels=[3,4]` would mean the first factor has 3 levels and
 #              the second factor has 4 levels.
-# - `nparams`: A vector containing the number of parameters for each factor,
-#              e.g. `nlevels=[2,1]` would mean the first factor has 2
-#              parameters and the second factor has 1 parameter.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 # - `L`: A contrast vector.
 # - `XtX`: X transpose multiplied by X (X'X in the previous notation).
 # - `XtZ`: X transpose multiplied by Z (X'Z in the previous notation).
@@ -1784,23 +1784,23 @@ def get_swdf_T3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nparams):
 # - `dS2`: The derivative of var(L\beta) with respect to \theta.
 #
 # ============================================================================
-def get_dS23D(nparams, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
+def get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
 
     # ZtX
     ZtX = XtZ.transpose(0,2,1)
 
     # Number of voxels
-    nv = DinvIplusZtZD.shape[0]
+    v = DinvIplusZtZD.shape[0]
 
     # Calculate X'V^{-1}X=X'(I+ZDZ')^{-1}X=X'X-X'Z(I+DZ'Z)^{-1}DZ'X
     XtiVX = XtX - XtZ @  DinvIplusZtZD @ ZtX
 
     # New empty array for differentiating S^2 wrt (sigma2, vech(D1),...vech(Dr)).
-    dS2 = np.zeros((nv, 1+np.int32(np.sum(nparams*(nparams+1)/2)),1))
+    dS2 = np.zeros((v, 1+np.int32(np.sum(nraneffs*(nraneffs+1)/2)),1))
 
     # Work out indices for each start of each component of vector 
     # i.e. [dS2/dsigm2, dS2/vechD1,...dS2/vechDr]
-    DerivInds = np.int32(np.cumsum(nparams*(nparams+1)/2) + 1)
+    DerivInds = np.int32(np.cumsum(nraneffs*(nraneffs+1)/2) + 1)
     DerivInds = np.insert(DerivInds,0,1)
 
     # Work of derivative wrt to sigma^2
@@ -1810,15 +1810,15 @@ def get_dS23D(nparams, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
     dS2[:,0:1] = dS2dsigma2.reshape(dS2[:,0:1].shape)
 
     # Now we need to work out ds2dVech(Dk)
-    for k in np.arange(len(nparams)):
+    for k in np.arange(len(nraneffs)):
 
         # Initialize an empty zeros matrix
-        dS2dvechDk = np.zeros((np.int32(nparams[k]*(nparams[k]+1)/2),1))#...
+        dS2dvechDk = np.zeros((np.int32(nraneffs[k]*(nraneffs[k]+1)/2),1))#...
 
         for j in np.arange(nlevels[k]):
 
             # Get the indices for this level and factor.
-            Ikj = faclev_indices2D(k, j, nlevels, nparams)
+            Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
                     
             # Work out Z_(k,j)'Z
             ZkjtZ = ZtZ[:,Ikj,:]
@@ -1862,9 +1862,9 @@ def get_dS23D(nparams, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
 # - `nlevels`: A vector containing the number of levels for each factor, e.g.
 #              `nlevels=[3,4]` would mean the first factor has 3 levels and
 #              the second factor has 4 levels.
-# - `nparams`: A vector containing the number of parameters for each factor,
-#              e.g. `nlevels=[2,1]` would mean the first factor has 2
-#              parameters and the second factor has 1 parameter.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 # - `ZtZ`: Z transpose multiplied by Z (Z'Z in the previous notation).
 #
 # ----------------------------------------------------------------------------
@@ -1876,32 +1876,32 @@ def get_dS23D(nparams, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
 # - `FisherInfoMat`: The Fisher information matrix of \theta.
 #
 # ============================================================================
-def get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nparams, ZtZ):
+def get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nraneffs, ZtZ):
 
     # Number of random effects, q
-    q = np.sum(np.dot(nparams,nlevels))
+    q = np.sum(np.dot(nraneffs,nlevels))
 
     # Number of voxels 
-    nv = sigma2.shape[0]
+    v = sigma2.shape[0]
 
     # Duplication matrices
     # ------------------------------------------------------------------------------
     invDupMatdict = dict()
-    for i in np.arange(len(nparams)):
+    for i in np.arange(len(nraneffs)):
 
-        invDupMatdict[i] = np.asarray(invDupMat2D(nparams[i]).todense())
+        invDupMatdict[i] = np.asarray(invDupMat2D(nraneffs[i]).todense())
 
     # Index variables
     # ------------------------------------------------------------------------------
     # Work out the total number of paramateres
-    tnp = np.int32(1 + np.sum(nparams*(nparams+1)/2))
+    tnp = np.int32(1 + np.sum(nraneffs*(nraneffs+1)/2))
 
     # Indices for submatrics corresponding to Dks
-    FishIndsDk = np.int32(np.cumsum(nparams*(nparams+1)/2) + 1)
+    FishIndsDk = np.int32(np.cumsum(nraneffs*(nraneffs+1)/2) + 1)
     FishIndsDk = np.insert(FishIndsDk,0,1)
 
     # Initialize FIsher Information matrix
-    FisherInfoMat = np.zeros((nv,tnp,tnp))
+    FisherInfoMat = np.zeros((v,tnp,tnp))
     
     # Covariance of dl/dsigma2
     covdldsigma2 = n/(2*(sigma2**2))
@@ -1911,17 +1911,17 @@ def get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nparams, ZtZ):
 
     
     # Add dl/dsigma2 dl/dD covariance
-    for k in np.arange(len(nparams)):
+    for k in np.arange(len(nraneffs)):
 
         # Get covariance of dldsigma and dldD      
-        covdldsigmadD = get_covdldDkdsigma23D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict).reshape(nv,FishIndsDk[k+1]-FishIndsDk[k])
+        covdldsigmadD = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict).reshape(v,FishIndsDk[k+1]-FishIndsDk[k])
 
         # Assign to the relevant block
         FisherInfoMat[:,0, FishIndsDk[k]:FishIndsDk[k+1]] = covdldsigmadD
         FisherInfoMat[:,FishIndsDk[k]:FishIndsDk[k+1],0:1] = FisherInfoMat[:,0:1, FishIndsDk[k]:FishIndsDk[k+1]].transpose((0,2,1))
       
     # Add dl/dD covariance
-    for k1 in np.arange(len(nparams)):
+    for k1 in np.arange(len(nraneffs)):
 
         for k2 in np.arange(k1+1):
 
@@ -1929,11 +1929,11 @@ def get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nparams, ZtZ):
             IndsDk2 = np.arange(FishIndsDk[k2],FishIndsDk[k2+1])
 
             # Get covariance between D_k1 and D_k2 
-            covdldDk1dDk2 = get_covdldDk1Dk23D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict)
+            covdldDk1dDk2 = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict)
 
             # Add to FImat
-            FisherInfoMat[np.ix_(np.arange(nv), IndsDk1, IndsDk2)] = covdldDk1dDk2
-            FisherInfoMat[np.ix_(np.arange(nv), IndsDk2, IndsDk1)] = FisherInfoMat[np.ix_(np.arange(nv), IndsDk1, IndsDk2)].transpose((0,2,1))
+            FisherInfoMat[np.ix_(np.arange(v), IndsDk1, IndsDk2)] = covdldDk1dDk2
+            FisherInfoMat[np.ix_(np.arange(v), IndsDk2, IndsDk1)] = FisherInfoMat[np.ix_(np.arange(v), IndsDk1, IndsDk2)].transpose((0,2,1))
 
 
     # Return result

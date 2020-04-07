@@ -140,9 +140,9 @@ def test_sparse_chol2D():
 # =============================================================================
 def test_get_mapping2D():
 
-    # Example nlevels and nparams
+    # Example nlevels and nraneffs
     nlevels = np.array([3,3])
-    nparams = np.array([2,1])
+    nraneffs = np.array([2,1])
 
     # Expected theta indices
     t_inds_expected = np.array([0,1,2,0,1,2,0,1,2,3,3,3])
@@ -152,7 +152,7 @@ def test_get_mapping2D():
     c_inds_expected = np.array([0,0,1,2,2,3,4,4,5,6,7,8])
 
     # Get the functions output
-    t_inds_test, r_inds_test, c_inds_test =get_mapping2D(nlevels, nparams)
+    t_inds_test, r_inds_test, c_inds_test =get_mapping2D(nlevels, nraneffs)
 
     # Check if the function gives as expected
     testVal = np.allclose(t_inds_test,t_inds_expected) and np.allclose(r_inds_test,r_inds_expected) and np.allclose(c_inds_test,c_inds_expected)

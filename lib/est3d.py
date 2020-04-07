@@ -61,9 +61,9 @@ from lib.npMatrix2d import *
 # - `nlevels`: A vector containing the number of levels for each factor, 
 #              e.g. `nlevels=[3,4]` would mean the first factor has 3 levels
 #              and the second factor has 4 levels.
-# - `nparams`: A vector containing the number of parameters for each factor,
-#              e.g. `nlevels=[2,1]` would mean the first factor has 2
-#              parameters and the second factor has 1 parameter.
+# - `nraneffs`: A vector containing the number of random effects for each
+#              factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#              random effects and the second factor has 1 random effect.
 #  - `tol`: A scalar tolerance value. Iteration stops once successive 
 #           log-likelihood values no longer exceed `tol`.
 #  - `n`: The number of observations (can be spatially varying or non
@@ -79,7 +79,7 @@ from lib.npMatrix2d import *
 #                   sigma2, vech(D1),...vech(Dr)) for every voxel.
 #
 # ============================================================================
-def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
+def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n):
     
     # ------------------------------------------------------------------------------
     # Useful scalars
@@ -89,7 +89,7 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     r = len(nlevels)
 
     # Number of random effects, q
-    q = np.sum(np.dot(nparams,nlevels))
+    q = np.sum(np.dot(nraneffs,nlevels))
 
     # Number of fixed effects, p
     p = XtX.shape[1]
@@ -116,30 +116,30 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     # Duplication matrices
     # ------------------------------------------------------------------------------
     invDupMatdict = dict()
-    for i in np.arange(len(nparams)):
+    for i in np.arange(len(nraneffs)):
 
-        invDupMatdict[i] = np.asarray(invDupMat2D(nparams[i]).todense())
+        invDupMatdict[i] = np.asarray(invDupMat2D(nraneffs[i]).todense())
         
     # ------------------------------------------------------------------------------
     # Inital D
     # ------------------------------------------------------------------------------
     # Dictionary version
     Ddict = dict()
-    for k in np.arange(len(nparams)):
+    for k in np.arange(len(nraneffs)):
 
-        Ddict[k] = makeDnnd3D(initDk3D(k, ZtZ, Zte, sigma2, nlevels, nparams, invDupMatdict))
+        Ddict[k] = makeDnnd3D(initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict))
     
     # Full version of D
-    D = getDfromDict3D(Ddict, nparams, nlevels)
+    D = getDfromDict3D(Ddict, nraneffs, nlevels)
     
     # ------------------------------------------------------------------------------
     # Index variables
     # ------------------------------------------------------------------------------
     # Work out the total number of paramateres
-    tnp = np.int32(p + 1 + np.sum(nparams*(nparams+1)/2))
+    tnp = np.int32(p + 1 + np.sum(nraneffs*(nraneffs+1)/2))
 
     # Indices for submatrics corresponding to Dks
-    FishIndsDk = np.int32(np.cumsum(nparams*(nparams+1)/2) + p + 1)
+    FishIndsDk = np.int32(np.cumsum(nraneffs*(nraneffs+1)/2) + p + 1)
     FishIndsDk = np.insert(FishIndsDk,0,p+1)
 
     # ------------------------------------------------------------------------------
@@ -166,7 +166,7 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     converged_global = np.zeros(v)
     
     # Vector of saved parameters which have converged
-    savedparams = np.zeros((v, np.int32(np.sum(nparams*(nparams+1)/2) + p + 1),1))
+    savedparams = np.zeros((v, np.int32(np.sum(nraneffs*(nraneffs+1)/2) + p + 1),1))
     
     # Number of iterations
     nit=0
@@ -197,9 +197,9 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
         
         # For each factor, factor k, work out dl/dD_k
         dldDdict = dict()
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
             # Store it in the dictionary
-            dldDdict[k] = get_dldDk3D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD)
+            dldDdict[k] = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD)
         
         # --------------------------------------------------------------------------
         # Covariances
@@ -218,17 +218,17 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
         FisherInfoMat[np.ix_(np.arange(v_iter), np.arange(p),np.arange(p))] = covdldB
         
         # Add dl/dsigma2 dl/dD covariance
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
 
             # Get covariance of dldsigma and dldD      
-            covdldsigmadD = get_covdldDkdsigma23D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict).reshape(v_iter,FishIndsDk[k+1]-FishIndsDk[k])
+            covdldsigmadD = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict).reshape(v_iter,FishIndsDk[k+1]-FishIndsDk[k])
             
             # Assign to the relevant block
             FisherInfoMat[:,p, FishIndsDk[k]:FishIndsDk[k+1]] = covdldsigmadD
             FisherInfoMat[:,FishIndsDk[k]:FishIndsDk[k+1],p:(p+1)] = FisherInfoMat[:,p:(p+1), FishIndsDk[k]:FishIndsDk[k+1]].transpose((0,2,1))
             
         # Add dl/dD covariance for each pair (k1,k2) of random factors
-        for k1 in np.arange(len(nparams)):
+        for k1 in np.arange(len(nraneffs)):
             for k2 in np.arange(k1+1):
 
                 # Work out indices corresponding to random factor k1 and random factor k2
@@ -236,7 +236,7 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
                 IndsDk2 = np.arange(FishIndsDk[k2],FishIndsDk[k2+1])
 
                 # Get covariance between D_k1 and D_k2 
-                covdldDk1dDk2 = get_covdldDk1Dk23D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict)
+                covdldDk1dDk2 = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict)
                 
                 # Add to FImat
                 FisherInfoMat[np.ix_(np.arange(v_iter), IndsDk1, IndsDk2)] = covdldDk1dDk2
@@ -251,7 +251,7 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
         paramVector = np.concatenate((beta, sigma2.reshape(v_iter,1,1)),axis=1)
         derivVector = np.concatenate((dldB, dldsigma2.reshape(v_iter,1,1)),axis=1)
 
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
 
             paramVector = np.concatenate((paramVector, mat2vech3D(Ddict[k])),axis=1)
             derivVector = np.concatenate((derivVector, mat2vech3D(dldDdict[k])),axis=1)
@@ -268,12 +268,12 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
         sigma2 = paramVector[:,p:(p+1)][:,0,0]
         
         # D as a dictionary
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
 
             Ddict[k] = makeDnnd3D(vech2mat3D(paramVector[:,FishIndsDk[k]:FishIndsDk[k+1],:]))
             
         # Full version of D
-        D = getDfromDict3D(Ddict, nparams, nlevels)
+        D = getDfromDict3D(Ddict, nraneffs, nlevels)
         
         # --------------------------------------------------------------------------
         # Matrices for next iteration
@@ -354,7 +354,7 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
         sigma2 = sigma2[localnotconverged]
         D = D[localnotconverged, :, :]
 
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
             Ddict[k] = Ddict[k][localnotconverged, :, :]
             
         # --------------------------------------------------------------------------
@@ -407,9 +407,9 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
 # - `nlevels`: A vector containing the number of levels for each factor, 
 #              e.g. `nlevels=[3,4]` would mean the first factor has 3 levels
 #              and the second factor has 4 levels.
-# - `nparams`: A vector containing the number of parameters for each factor,
-#              e.g. `nlevels=[2,1]` would mean the first factor has 2
-#              parameters and the second factor has 1 parameter.
+# - `nraneffs`: A vector containing the number of random effects for each
+#              factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#              random effects and the second factor has 1 random effect.
 #  - `tol`: A scalar tolerance value. Iteration stops once successive 
 #           log-likelihood values no longer exceed `tol`.
 #  - `n`: The number of observations (can be spatially varying or non
@@ -425,7 +425,7 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
 #                   sigma2, vech(D1),...vech(Dr)) for every voxel.
 #
 # ============================================================================
-def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
+def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n):
     
     # ------------------------------------------------------------------------------
     # Useful scalars
@@ -435,7 +435,7 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     r = len(nlevels)
 
     # Number of random effects, q
-    q = np.sum(np.dot(nparams,nlevels))
+    q = np.sum(np.dot(nraneffs,nlevels))
 
     # Number of fixed effects, p
     p = XtX.shape[1]
@@ -462,30 +462,30 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     # Duplication matrices
     # ------------------------------------------------------------------------------
     invDupMatdict = dict()
-    for i in np.arange(len(nparams)):
+    for i in np.arange(len(nraneffs)):
 
-        invDupMatdict[i] = np.asarray(invDupMat2D(nparams[i]).todense())
+        invDupMatdict[i] = np.asarray(invDupMat2D(nraneffs[i]).todense())
 
     # ------------------------------------------------------------------------------
     # Inital D
     # ------------------------------------------------------------------------------
     # Dictionary version
     Ddict = dict()
-    for k in np.arange(len(nparams)):
+    for k in np.arange(len(nraneffs)):
 
-        Ddict[k] = makeDnnd3D(initDk3D(k, ZtZ, Zte, sigma2, nlevels, nparams, invDupMatdict))
+        Ddict[k] = makeDnnd3D(initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict))
     
     # Full version of D
-    D = getDfromDict3D(Ddict, nparams, nlevels)
+    D = getDfromDict3D(Ddict, nraneffs, nlevels)
     
     # ------------------------------------------------------------------------------
     # Index variables
     # ------------------------------------------------------------------------------
     # Work out the total number of paramateres
-    tnp = np.int32(p + 1 + np.sum(nparams**2))
+    tnp = np.int32(p + 1 + np.sum(nraneffs**2))
 
     # Indices for submatrics corresponding to Dks
-    FishIndsDk = np.int32(np.cumsum(nparams**2) + p + 1)
+    FishIndsDk = np.int32(np.cumsum(nraneffs**2) + p + 1)
     FishIndsDk = np.insert(FishIndsDk,0,p+1)
     
     # ------------------------------------------------------------------------------
@@ -511,7 +511,7 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     converged_global = np.zeros(v)
     
     # Vector of saved parameters which have converged
-    savedparams = np.zeros((v, np.int32(np.sum(nparams**2) + p + 1),1))
+    savedparams = np.zeros((v, np.int32(np.sum(nraneffs**2) + p + 1),1))
     
     # Number of iterations
     nit=0
@@ -544,9 +544,9 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
         
         # For each factor, factor k, work out dl/dD_k
         dldDdict = dict()
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
             # Store it in the dictionary
-            dldDdict[k] = get_dldDk3D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD)
+            dldDdict[k] = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD)
         
         # --------------------------------------------------------------------------
         # Covariances
@@ -565,17 +565,17 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
         FisherInfoMat[np.ix_(np.arange(v_iter), np.arange(p),np.arange(p))] = covdldB
         
         # Add dl/dsigma2 dl/dD covariance
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
 
             # Get covariance of dldsigma and dldD      
-            covdldsigmadD = get_covdldDkdsigma23D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True).reshape(v_iter,FishIndsDk[k+1]-FishIndsDk[k])
+            covdldsigmadD = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True).reshape(v_iter,FishIndsDk[k+1]-FishIndsDk[k])
             
             # Assign to the relevant block
             FisherInfoMat[:,p, FishIndsDk[k]:FishIndsDk[k+1]] = covdldsigmadD
             FisherInfoMat[:,FishIndsDk[k]:FishIndsDk[k+1],p:(p+1)] = FisherInfoMat[:,p:(p+1), FishIndsDk[k]:FishIndsDk[k+1]].transpose((0,2,1))
             
         # Add dl/dD covariance for each pair (k1,k2) of random factors k1 and k2.
-        for k1 in np.arange(len(nparams)):
+        for k1 in np.arange(len(nraneffs)):
             for k2 in np.arange(k1+1):
 
                 # Work out indices of random factor k1 and random factor k2
@@ -583,7 +583,7 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
                 IndsDk2 = np.arange(FishIndsDk[k2],FishIndsDk[k2+1])
 
                 # Get covariance between D_k1 and D_k2 
-                covdldDk1dDk2 = get_covdldDk1Dk23D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True)
+                covdldDk1dDk2 = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True)
                 
                 # Add to FImat
                 FisherInfoMat[np.ix_(np.arange(v_iter), IndsDk1, IndsDk2)] = covdldDk1dDk2
@@ -596,7 +596,7 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
         paramVector = np.concatenate((beta, sigma2.reshape(v_iter,1,1)),axis=1)
         derivVector = np.concatenate((dldB, dldsigma2.reshape(v_iter,1,1)),axis=1)
 
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
             paramVector = np.concatenate((paramVector, mat2vec3D(Ddict[k])),axis=1)
             derivVector = np.concatenate((derivVector, mat2vec3D(dldDdict[k])),axis=1)
         
@@ -612,12 +612,12 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
         sigma2 = paramVector[:,p:(p+1)][:,0,0]
         
         # D as a dictionary
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
 
             Ddict[k] = makeDnnd3D(vec2mat3D(paramVector[:,FishIndsDk[k]:FishIndsDk[k+1],:]))
             
         # Full version of D
-        D = getDfromDict3D(Ddict, nparams, nlevels)
+        D = getDfromDict3D(Ddict, nraneffs, nlevels)
         
         # --------------------------------------------------------------------------
         # Recalculate matrices
@@ -694,7 +694,7 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
         sigma2 = sigma2[localnotconverged]
         D = D[localnotconverged, :, :]
 
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
             Ddict[k] = Ddict[k][localnotconverged, :, :]
             
         # --------------------------------------------------------------------------
@@ -752,9 +752,9 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
 # - `nlevels`: A vector containing the number of levels for each factor, 
 #              e.g. `nlevels=[3,4]` would mean the first factor has 3 levels
 #              and the second factor has 4 levels.
-# - `nparams`: A vector containing the number of parameters for each factor,
-#              e.g. `nlevels=[2,1]` would mean the first factor has 2
-#              parameters and the second factor has 1 parameter.
+# - `nraneffs`: A vector containing the number of random effects for each
+#              factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#              random effects and the second factor has 1 random effect.
 #  - `tol`: A scalar tolerance value. Iteration stops once successive 
 #           log-likelihood values no longer exceed `tol`.
 #  - `n`: The number of observations (can be spatially varying or non
@@ -770,7 +770,7 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
 #                   sigma2, vech(D1),...vech(Dr)) for every voxel.
 #
 # ============================================================================
-def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
+def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n):
     
     # ------------------------------------------------------------------------------
     # Useful scalars
@@ -780,7 +780,7 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     r = len(nlevels)
 
     # Number of random effects, q
-    q = np.sum(np.dot(nparams,nlevels))
+    q = np.sum(np.dot(nraneffs,nlevels))
 
     # Number of fixed effects, p
     p = XtX.shape[1]
@@ -809,30 +809,30 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     invDupMatdict = dict()
     dupInvDupMatdict = dict()
     dupDuptMatdict = dict()
-    for i in np.arange(len(nparams)):
+    for i in np.arange(len(nraneffs)):
 
-        invDupMatdict[i] = np.asarray(invDupMat2D(nparams[i]).todense())
+        invDupMatdict[i] = np.asarray(invDupMat2D(nraneffs[i]).todense())
         
     # ------------------------------------------------------------------------------
     # Inital D
     # ------------------------------------------------------------------------------
     # Dictionary version
     Ddict = dict()
-    for k in np.arange(len(nparams)):
+    for k in np.arange(len(nraneffs)):
 
-        Ddict[k] = makeDnnd3D(initDk3D(k, ZtZ, Zte, sigma2, nlevels, nparams, invDupMatdict))
+        Ddict[k] = makeDnnd3D(initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict))
     
     # Full version of D
-    D = getDfromDict3D(Ddict, nparams, nlevels)
+    D = getDfromDict3D(Ddict, nraneffs, nlevels)
     
     # ------------------------------------------------------------------------------
     # Index variables
     # ------------------------------------------------------------------------------
     # Work out the total number of paramateres
-    tnp = np.int32(p + 1 + np.sum(nparams*(nparams+1)/2))
+    tnp = np.int32(p + 1 + np.sum(nraneffs*(nraneffs+1)/2))
 
     # Indices for submatrics corresponding to Dks
-    FishIndsDk = np.int32(np.cumsum(nparams*(nparams+1)/2) + p + 1)
+    FishIndsDk = np.int32(np.cumsum(nraneffs*(nraneffs+1)/2) + p + 1)
     FishIndsDk = np.insert(FishIndsDk,0,p+1)
 
 
@@ -859,7 +859,7 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
     converged_global = np.zeros(v)
     
     # Vector of saved parameters which have converged
-    savedparams = np.zeros((v, np.int32(np.sum(nparams*(nparams+1)/2) + p + 1),1))
+    savedparams = np.zeros((v, np.int32(np.sum(nraneffs*(nraneffs+1)/2) + p + 1),1))
     
     # ------------------------------------------------------------------------------
     # Work out D indices (there is one block of D per level)
@@ -868,13 +868,13 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
 
     # Loop through and add each index
     counter = 0
-    for k in np.arange(len(nparams)):
+    for k in np.arange(len(nraneffs)):
         for j in np.arange(nlevels[k]):
-            Dinds[counter] = np.concatenate((np.array([0]), np.cumsum(nlevels*nparams)))[k] + nparams[k]*j
+            Dinds[counter] = np.concatenate((np.array([0]), np.cumsum(nlevels*nraneffs)))[k] + nraneffs[k]*j
             counter = counter + 1
             
     # Last index will be missing so add it
-    Dinds[len(Dinds)-1]=Dinds[len(Dinds)-2]+nparams[-1]
+    Dinds[len(Dinds)-1]=Dinds[len(Dinds)-2]+nraneffs[-1]
     
     # Make sure indices are ints
     Dinds = np.int64(Dinds)
@@ -917,10 +917,10 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
         # --------------------------------------------------------------------------
         counter = 0
         # Loop though unique blocks of D updating one at a time
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
             
             # Work out update amount
-            update = forceSym3D(np.linalg.inv(get_covdldDk1Dk23D(k, k, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict))) @ mat2vech3D(get_dldDk3D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD))
+            update = forceSym3D(np.linalg.inv(get_covdldDk1Dk23D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict))) @ mat2vech3D(get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD))
             
             # Multiply by stepsize
             update = np.einsum('i,ijk->ijk',lam, update)
@@ -959,13 +959,14 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
         savedparams[indices_ConDuringIt,0:p,:]=beta[localconverged,:,:]
         savedparams[indices_ConDuringIt,p:(p+1),:]=sigma2[localconverged].reshape(sigma2[localconverged].shape[0],1,1)
         
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
             
             # Get vech form of D_k
             vech_Dk = mat2vech3D(Ddict[k][localconverged,:,:])
             
-            # Make sure it has correct shape (i.e. shape (num voxels converged, num params for factor k squared, 1))
-            vech_Dk = vech_Dk.reshape(len(localconverged),nparams[k]*(nparams[k]+1)//2,1)
+            # Make sure it has correct shape (i.e. shape (num voxels converged, num
+            # random effectss for factor k squared, 1))
+            vech_Dk = vech_Dk.reshape(len(localconverged),nraneffs[k]*(nraneffs[k]+1)//2,1)
             savedparams[indices_ConDuringIt,FishIndsDk[k]:FishIndsDk[k+1],:]=vech_Dk
             
         # --------------------------------------------------------------------------
@@ -1012,7 +1013,7 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
         sigma2 = sigma2[localnotconverged]
         D = D[localnotconverged, :, :]
 
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
             Ddict[k] = Ddict[k][localnotconverged, :, :]
             
         # --------------------------------------------------------------------------
@@ -1076,9 +1077,9 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
 # - `nlevels`: A vector containing the number of levels for each factor, 
 #              e.g. `nlevels=[3,4]` would mean the first factor has 3 levels
 #              and the second factor has 4 levels.
-# - `nparams`: A vector containing the number of parameters for each factor,
-#              e.g. `nlevels=[2,1]` would mean the first factor has 2
-#              parameters and the second factor has 1 parameter.
+# - `nraneffs`: A vector containing the number of random effects for each
+#              factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#              random effects and the second factor has 1 random effect.
 #  - `tol`: A scalar tolerance value. Iteration stops once successive 
 #           log-likelihood values no longer exceed `tol`.
 #  - `n`: The number of observations (can be spatially varying or non
@@ -1099,7 +1100,7 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol,n):
 #                   sigma2, vech(D1),...vech(Dr)) for every voxel.
 #
 # ============================================================================
-def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, reml=False):
+def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=False):
 
     # ------------------------------------------------------------------------------
     # Useful scalars
@@ -1109,7 +1110,7 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
     r = len(nlevels)
 
     # Number of random effects, q
-    q = np.sum(np.dot(nparams,nlevels))
+    q = np.sum(np.dot(nraneffs,nlevels))
 
     # Number of fixed effects, p
     p = XtX.shape[1]
@@ -1138,30 +1139,30 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
     invDupMatdict = dict()
     dupInvDupMatdict = dict()
     dupDuptMatdict = dict()
-    for i in np.arange(len(nparams)):
+    for i in np.arange(len(nraneffs)):
 
-        invDupMatdict[i] = np.asarray(invDupMat2D(nparams[i]).todense())
+        invDupMatdict[i] = np.asarray(invDupMat2D(nraneffs[i]).todense())
         
     # ------------------------------------------------------------------------------
     # Inital D
     # ------------------------------------------------------------------------------
     # Dictionary version
     Ddict = dict()
-    for k in np.arange(len(nparams)):
+    for k in np.arange(len(nraneffs)):
 
-        Ddict[k] = makeDnnd3D(initDk3D(k, ZtZ, Zte, sigma2, nlevels, nparams, invDupMatdict))
+        Ddict[k] = makeDnnd3D(initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict))
     
     # Full version of D
-    D = getDfromDict3D(Ddict, nparams, nlevels)
+    D = getDfromDict3D(Ddict, nraneffs, nlevels)
     
     # ------------------------------------------------------------------------------
     # Index variables
     # ------------------------------------------------------------------------------
     # Work out the total number of paramateres
-    tnp = np.int32(p + 1 + np.sum(nparams*(nparams+1)/2))
+    tnp = np.int32(p + 1 + np.sum(nraneffs*(nraneffs+1)/2))
 
     # Indices for submatrics corresponding to Dks
-    FishIndsDk = np.int32(np.cumsum(nparams*(nparams+1)/2) + p + 1)
+    FishIndsDk = np.int32(np.cumsum(nraneffs*(nraneffs+1)/2) + p + 1)
     FishIndsDk = np.insert(FishIndsDk,0,p+1)
     
     # ------------------------------------------------------------------------------
@@ -1187,7 +1188,7 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
     converged_global = np.zeros(v)
     
     # Vector of saved parameters which have converged
-    savedparams = np.zeros((v, np.int32(np.sum(nparams*(nparams+1)/2) + p + 1),1))
+    savedparams = np.zeros((v, np.int32(np.sum(nraneffs*(nraneffs+1)/2) + p + 1),1))
     
     # ------------------------------------------------------------------------------
     # Work out D indices (there is one block of D per level)
@@ -1196,13 +1197,13 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
     counter = 0
 
     # Loop through and add an index for each block of D.
-    for k in np.arange(len(nparams)):
+    for k in np.arange(len(nraneffs)):
         for j in np.arange(nlevels[k]):
-            Dinds[counter] = np.concatenate((np.array([0]), np.cumsum(nlevels*nparams)))[k] + nparams[k]*j
+            Dinds[counter] = np.concatenate((np.array([0]), np.cumsum(nlevels*nraneffs)))[k] + nraneffs[k]*j
             counter = counter + 1
             
     # Last index will be missing so add it
-    Dinds[len(Dinds)-1]=Dinds[len(Dinds)-2]+nparams[-1]
+    Dinds[len(Dinds)-1]=Dinds[len(Dinds)-2]+nraneffs[-1]
     
     # Make sure indices are ints
     Dinds = np.int64(Dinds)
@@ -1251,10 +1252,10 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
         # Update D
         # --------------------------------------------------------------------------
         counter = 0
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
             
             # Work out update amount
-            update_p = forceSym3D(np.linalg.inv(get_covdldDk1Dk23D(k, k, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict,vec=True))) @ mat2vec3D(get_dldDk3D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD))
+            update_p = forceSym3D(np.linalg.inv(get_covdldDk1Dk23D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict,vec=True))) @ mat2vec3D(get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD))
             
             # Multiply by stepsize
             update_p = np.einsum('i,ijk->ijk',lam, update_p)
@@ -1295,13 +1296,14 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
         savedparams[indices_ConDuringIt,0:p,:]=beta[localconverged,:,:]
         savedparams[indices_ConDuringIt,p:(p+1),:]=sigma2[localconverged].reshape(sigma2[localconverged].shape[0],1,1)
         
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
             
             # Get vech form of D_k
             vech_Dk = mat2vech3D(Ddict[k][localconverged,:,:])
             
-            # Make sure it has correct shape (i.e. shape (num voxels converged, num params for factor k squared, 1))
-            vech_Dk = vech_Dk.reshape(len(localconverged),nparams[k]*(nparams[k]+1)//2,1)
+            # Make sure it has correct shape (i.e. shape (num voxels converged, num 
+            # random effects for factor k squared, 1))
+            vech_Dk = vech_Dk.reshape(len(localconverged),nraneffs[k]*(nraneffs[k]+1)//2,1)
             savedparams[indices_ConDuringIt,FishIndsDk[k]:FishIndsDk[k+1],:]=vech_Dk
             
         # --------------------------------------------------------------------------
@@ -1349,7 +1351,7 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
         sigma2 = sigma2[localnotconverged]
         D = D[localnotconverged, :, :]
 
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
             Ddict[k] = Ddict[k][localnotconverged, :, :]
             
         # --------------------------------------------------------------------------

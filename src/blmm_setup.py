@@ -112,10 +112,10 @@ def main(*args):
     OutDir = inputs['outdir']
 
     # Get number of parameters
-    c1 = str2vec(inputs['contrasts'][0]['c' + str(1)]['vector'])
-    c1 = np.array(c1)
-    n_p = c1.shape[0]
-    del c1
+    L1 = str2vec(inputs['contrasts'][0]['c' + str(1)]['vector'])
+    L1 = np.array(L1)
+    p = L1.shape[0]
+    del L1
 
     # Make output directory and tmp
     if not os.path.isdir(OutDir):
@@ -147,7 +147,7 @@ def main(*args):
     # Similar to blksize in SwE, we divide by 8 times the size of a nifti
     # to work out how many blocks we use. We also divide though everything
     # by the number of parameters in the analysis.
-    blksize = np.floor(MAXMEM/8/NIFTImem/n_p)
+    blksize = np.floor(MAXMEM/8/NIFTImem/p)
     if blksize == 0:
         raise ValueError('Blocksize too small.')
 

@@ -143,9 +143,9 @@ def sparse_chol2D(M, perm=None, retF=False, retP=True, retL=True):
 # - `nlevels`: a vector of the number of levels for each grouping factor. 
 #              e.g. nlevels=[10,2] means there are 10 levels for factor 1 and 
 #              2 levels for factor 2.
-# - `nparams`: a vector of the number of variables for each grouping factor. 
-#              e.g. nparams=[3,4] means there are 3 variables for factor 1 and
-#              4 variables for factor 2.
+# - `nraneffs`: A vector containing the number of random effects for each
+#              factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#              random effects and the second factor has 1 random effect.
 #
 # All arrays must be np arrays.
 #
@@ -167,17 +167,17 @@ def sparse_chol2D(M, perm=None, retF=False, retP=True, retL=True):
 #          of Lambda.
 #
 # ============================================================================
-def get_mapping2D(nlevels, nparams):
+def get_mapping2D(nlevels, nraneffs):
 
     # Work out how many factors there are
     n_f = len(nlevels)
 
-    # Quick check that nlevels and nparams are the same length
-    if len(nlevels)!=len(nparams):
-        raise Exception('The number of parameters and number of levels should be recorded for every grouping factor.')
+    # Quick check that nlevels and nraneffs are the same length
+    if len(nlevels)!=len(nraneffs):
+        raise Exception('The number of random effects and number of levels should be recorded for every grouping factor.')
 
     # Work out how many lambda components needed for each factor
-    n_lamcomps = (np.multiply(nparams,(nparams+1))/2).astype(np.int64)
+    n_lamcomps = (np.multiply(nraneffs,(nraneffs+1))/2).astype(np.int64)
 
     # Block index is the index of the next un-indexed diagonal element
     # of Lambda
@@ -196,7 +196,7 @@ def get_mapping2D(nlevels, nparams):
 
         # Work out the indices of a lower triangular matrix
         # of size #variables(factor) by #variables(factor)
-        row_inds_tri, col_inds_tri = np.tril_indices(nparams[i])
+        row_inds_tri, col_inds_tri = np.tril_indices(nraneffs[i])
 
         # Work out theta for this block
         theta_current_inds = np.arange(np.sum(n_lamcomps[0:i]),np.sum(n_lamcomps[0:(i+1)]))
@@ -213,7 +213,7 @@ def get_mapping2D(nlevels, nparams):
             col_indices = np.hstack((col_indices, (col_inds_tri+block_index)))
 
             # Move onto the next block
-            block_index = block_index + nparams[i]
+            block_index = block_index + nraneffs[i]
 
     # Create lambda as a sparse matrix
     #lambda_theta = spmatrix(theta_repeated.tolist(), row_indices.astype(np.int64), col_indices.astype(np.int64))

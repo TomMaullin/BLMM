@@ -357,10 +357,10 @@ def test_blockInverse2D():
 def test_recursiveInverse2D():
 
     # Generate some test data
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData2D()
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D = genTestData2D()
 
     # Work out q
-    q = np.sum(nlevels*nparams)
+    q = np.sum(nlevels*nraneffs)
 
     # Work out I+Z'ZD
     ZtZ = Z.transpose() @ Z 
@@ -369,7 +369,7 @@ def test_recursiveInverse2D():
     ZtZ_sp = scipy.sparse.csr_matrix(ZtZ)
 
     # Recursive inverse
-    ZtZinv_test = recursiveInverse2D(ZtZ_sp, nparams, nlevels)
+    ZtZinv_test = recursiveInverse2D(ZtZ_sp, nraneffs, nlevels)
 
     # Regular inverse
     ZtZinv_expected = np.linalg.inv(ZtZ)
@@ -835,7 +835,7 @@ def test_forceSym2D():
 def test_ssr2D():
 
     # Generate some test data
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData2D()
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D = genTestData2D()
     n = X.shape[0]
 
     # Get the product matrices
@@ -872,16 +872,16 @@ def test_ssr2D():
 # =============================================================================
 def test_fac_indices2D():
 
-    # Test nlevels, nparams,k
+    # Test nlevels, nraneffs,k
     k = 2
     nlevels = np.array([3,4,2,8])
-    nparams = np.array([1,2,3,4])
+    nraneffs = np.array([1,2,3,4])
 
     # Expected output
     expected = np.arange(11,17)
 
     # Check if the function gives as expected
-    testVal = np.allclose(fac_indices2D(k,nlevels,nparams),expected)
+    testVal = np.allclose(fac_indices2D(k,nlevels,nraneffs),expected)
 
     # Result
     if testVal:
@@ -905,17 +905,17 @@ def test_fac_indices2D():
 # =============================================================================
 def test_faclev_indices2D():
 
-    # Test nlevels, nparams,k
+    # Test nlevels, nraneffs,k
     k = 2
     j = 1
     nlevels = np.array([3,4,2,8])
-    nparams = np.array([1,2,3,4])
+    nraneffs = np.array([1,2,3,4])
 
     # Expected output
     expected = np.arange(14,17)
 
     # Check if the function gives as expected
-    testVal = np.allclose(faclev_indices2D(k,j,nlevels,nparams),expected)
+    testVal = np.allclose(faclev_indices2D(k,j,nlevels,nraneffs),expected)
 
     # Result
     if testVal:
@@ -941,7 +941,7 @@ def test_faclev_indices2D():
 def test_initBeta2D():
 
     # Generate some test data
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData2D()
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D = genTestData2D()
 
     # Calculate OLS estimate using test data.
     expected = np.linalg.inv(X.transpose() @ X) @ X.transpose() @ Y
@@ -979,7 +979,7 @@ def test_initBeta2D():
 def test_initSigma22D():
 
     # Generate some test data
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData2D()
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D = genTestData2D()
     n = X.shape[0]
 
     # Get the product matrices
@@ -1024,7 +1024,7 @@ def test_initSigma22D():
 def test_initDk2D():
 
     # Generate some test data
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData2D()
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D = genTestData2D()
     n = X.shape[0]
 
     # Get the product matrices
@@ -1043,14 +1043,14 @@ def test_initDk2D():
     e = Y - X @ betahat
 
     # Decide on a random factor
-    k = np.random.randint(0,nparams.shape[0])
+    k = np.random.randint(0,nraneffs.shape[0])
 
     # Work out derivative term (niave calculation):
-    deriv = np.zeros((nparams[k]*(nparams[k]+1)//2,1))
+    deriv = np.zeros((nraneffs[k]*(nraneffs[k]+1)//2,1))
     for j in np.arange(nlevels[k]):
 
         # Get indices for factor k level j
-        Ikj = faclev_indices2D(k, j, nlevels, nparams)
+        Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
 
         # Get Z_(k,j)'ee'Z_(k,j)
         ZkjteetZkj = Z[:,Ikj].transpose() @ e @ e.transpose() @ Z[:,Ikj]
@@ -1062,17 +1062,17 @@ def test_initDk2D():
         deriv = deriv + mat2vech2D(1/sigma2hat*ZkjteetZkj - ZkjtZkj)
 
     # Work out Fisher information matrix (niave calculation)
-    fishInfo = np.zeros((nparams[k]*(nparams[k]+1)//2,nparams[k]*(nparams[k]+1)//2))
-    iDupMat = invDupMat2D(nparams[k])
+    fishInfo = np.zeros((nraneffs[k]*(nraneffs[k]+1)//2,nraneffs[k]*(nraneffs[k]+1)//2))
+    iDupMat = invDupMat2D(nraneffs[k])
     for j in np.arange(nlevels[k]):
 
         for i in np.arange(nlevels[k]):
 
             # Get indices for factor k level j
-            Ikj = faclev_indices2D(k, j, nlevels, nparams)
+            Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
 
             # Get indices for factor k level i
-            Iki = faclev_indices2D(k, i, nlevels, nparams)
+            Iki = faclev_indices2D(k, i, nlevels, nraneffs)
 
             # Get Z_(k,i)'Z_(k,j)
             ZkitZkj = Z[:,Iki].transpose() @ Z[:,Ikj]
@@ -1084,15 +1084,15 @@ def test_initDk2D():
 
     # Work out the inverse duplication matrices we need.
     invDupMatdict = dict()
-    for i in np.arange(len(nparams)):
+    for i in np.arange(len(nraneffs)):
       
-      invDupMatdict[i] = invDupMat2D(nparams[i])
+      invDupMatdict[i] = invDupMat2D(nraneffs[i])
 
     # Obtain Z'e and e'e
     Zte = ZtY - ZtX @ betahat
 
     # Now try to obtain the same using the function
-    vecInitDk_test = initDk2D(k, ZtZ, Zte, sigma2hat, nlevels, nparams, invDupMatdict)
+    vecInitDk_test = initDk2D(k, ZtZ, Zte, sigma2hat, nlevels, nraneffs, invDupMatdict)
 
     # Check if the function gives as expected
     testVal = np.allclose(vecInitDk_test,vecInitDk_expected)
@@ -1154,9 +1154,9 @@ def test_makeDnnd2D():
 def test_llh2D():
 
     # Generate some test data
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData2D()
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D = genTestData2D()
     n = X.shape[0]
-    q = np.sum(nlevels*nparams)
+    q = np.sum(nlevels*nraneffs)
 
     # Get the product matrices
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats2D(Y,Z,X)
@@ -1203,9 +1203,9 @@ def test_llh2D():
 def test_get_dldB2D():
 
     # Generate some test data
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData2D()
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D = genTestData2D()
     n = X.shape[0]
-    q = np.sum(nlevels*nparams)
+    q = np.sum(nlevels*nraneffs)
 
     # Get the product matrices
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats2D(Y,Z,X)
@@ -1251,9 +1251,9 @@ def test_get_dldB2D():
 def test_get_dldsigma22D():
 
     # Generate some test data
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData2D()
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D = genTestData2D()
     n = X.shape[0]
-    q = np.sum(nlevels*nparams)
+    q = np.sum(nlevels*nraneffs)
 
     # Get the product matrices
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats2D(Y,Z,X)
@@ -1300,9 +1300,9 @@ def test_get_dldsigma22D():
 def test_get_dldDk2D():
 
     # Generate some test data
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData2D()
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D = genTestData2D()
     n = X.shape[0]
-    q = np.sum(nlevels*nparams)
+    q = np.sum(nlevels*nraneffs)
 
     # Get the product matrices
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats2D(Y,Z,X)
@@ -1311,21 +1311,21 @@ def test_get_dldDk2D():
     Zte = ZtY - ZtX @ beta
 
     # Decide on a random factor
-    k = np.random.randint(0,nparams.shape[0])
+    k = np.random.randint(0,nraneffs.shape[0])
 
     # Obtain D(I+Z'ZD)^(-1)
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
     
     # Obtain dldDk
-    dldDk_test,ZtZmat = get_dldDk2D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD)
-    dldDk_test,_ = get_dldDk2D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat)
+    dldDk_test,ZtZmat = get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD)
+    dldDk_test,_ = get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat)
 
     # (Niave) calculation of dl/dDk
     sqrtinvIplusZDZt = forceSym2D(scipy.linalg.sqrtm(np.eye(n) - Z @ DinvIplusZtZD @ Z.transpose()))
     for j in np.arange(nlevels[k]):
 
         # Indices for factor and level
-        Ikj = faclev_indices2D(k, j, nlevels, nparams)
+        Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
 
         # Work out Z_(k,j)'
         Z_kjt = Z[:,Ikj].transpose()
@@ -1386,9 +1386,9 @@ def test_get_dldDk2D():
 def test_get_covdldbeta2D():
 
     # Generate some test data
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData2D()
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D = genTestData2D()
     n = X.shape[0]
-    q = np.sum(nlevels*nparams)
+    q = np.sum(nlevels*nraneffs)
 
     # Get the product matrices
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats2D(Y,Z,X)
@@ -1433,9 +1433,9 @@ def test_get_covdldbeta2D():
 def test_get_covdldDkdsigma22D():
 
     # Generate some test data
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData2D()
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D = genTestData2D()
     n = X.shape[0]
-    q = np.sum(nlevels*nparams)
+    q = np.sum(nlevels*nraneffs)
 
     # Get the product matrices
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats2D(Y,Z,X)
@@ -1445,19 +1445,19 @@ def test_get_covdldDkdsigma22D():
 
     # Work out the inverse duplication matrices we need.
     invDupMatdict = dict()
-    for i in np.arange(len(nparams)):
+    for i in np.arange(len(nraneffs)):
       
-      invDupMatdict[i] = invDupMat2D(nparams[i])
+      invDupMatdict[i] = invDupMat2D(nraneffs[i])
 
     # Decide on a random factor
-    k = np.random.randint(0,nparams.shape[0])
+    k = np.random.randint(0,nraneffs.shape[0])
 
     # (Niave) computation of the covariance 
     sqrtinvIplusZDZt = forceSym2D(scipy.linalg.sqrtm(np.eye(n) - Z @ DinvIplusZtZD @ Z.transpose()))
     for j in np.arange(nlevels[k]):
 
         # Indices for factor and level
-        Ikj = faclev_indices2D(k, j, nlevels, nparams)
+        Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
 
         # Work out Z_(k,j)'
         Z_kjt = Z[:,Ikj].transpose()
@@ -1481,7 +1481,7 @@ def test_get_covdldDkdsigma22D():
     covdldDkdsigma2_expected = 1/(2*sigma2)*(invDupMatdict[k] @ mat2vec2D(sumTTt))
 
     # Computation using the function
-    covdldDkdsigma2_test = get_covdldDkdsigma22D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False,ZtZmat=None)[0]
+    covdldDkdsigma2_test = get_covdldDkdsigma22D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False,ZtZmat=None)[0]
   
     # Check if the function gives as expected
     testVal = np.allclose(covdldDkdsigma2_test,covdldDkdsigma2_expected)
@@ -1510,9 +1510,9 @@ def test_get_covdldDkdsigma22D():
 def test_get_covdldDk1Dk22D():
     
     # Generate some test data
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D = genTestData2D()
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D = genTestData2D()
     n = X.shape[0]
-    q = np.sum(nlevels*nparams)
+    q = np.sum(nlevels*nraneffs)
 
     # Get the product matrices
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats2D(Y,Z,X)
@@ -1526,26 +1526,26 @@ def test_get_covdldDk1Dk22D():
     invhalfIplusZDZt = scipy.linalg.sqrtm(np.linalg.inv(IplusZDZt))
 
     # Decide on a random factor
-    k1 = np.random.randint(0,nparams.shape[0])
+    k1 = np.random.randint(0,nraneffs.shape[0])
 
     # Decide on another random factor
-    k2 = np.random.randint(0,nparams.shape[0])
+    k2 = np.random.randint(0,nraneffs.shape[0])
 
     # Work out the inverse duplication matrices we need.
     invDupMatdict = dict()
-    for i in np.arange(len(nparams)):
+    for i in np.arange(len(nraneffs)):
       
-      invDupMatdict[i] = invDupMat2D(nparams[i])
+      invDupMatdict[i] = invDupMat2D(nraneffs[i])
 
     # Test the function
-    covdldDk1Dk2_test,perm = get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict)
-    covdldDk1Dk2_test,_ = get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict,perm=perm)
+    covdldDk1Dk2_test,perm = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict)
+    covdldDk1Dk2_test,_ = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict,perm=perm)
 
     # Perform the same calculation niavely
     for j in np.arange(nlevels[k1]):
 
         # Obtain indices for factor k level j
-        Ikj = faclev_indices2D(k1, j, nlevels, nparams)
+        Ikj = faclev_indices2D(k1, j, nlevels, nraneffs)
 
         # Work out T_(k,j) = Z_(k,j)(I+ZDZ')^(-1/2)
         Tkj = Z[:,Ikj].transpose() @ invhalfIplusZDZt 
@@ -1563,7 +1563,7 @@ def test_get_covdldDk1Dk22D():
     for j in np.arange(nlevels[k2]):
 
         # Obtain indices for factor k level j
-        Ikj = faclev_indices2D(k2, j, nlevels, nparams)
+        Ikj = faclev_indices2D(k2, j, nlevels, nraneffs)
 
         # Work out T_(k,j) = Z_(k,j)(I+ZDZ')^(-1/2)
         Tkj = Z[:,Ikj].transpose() @ invhalfIplusZDZt 

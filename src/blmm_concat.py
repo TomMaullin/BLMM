@@ -97,8 +97,8 @@ def main(*args):
     # Number of random effects
     r = len(rfxmats)
 
-    # Number of variables in each factor, q
-    nparams = []
+    # Number of random effects for each factor, q
+    nraneffs = []
 
     # Number of levels for each factor, l
     nlevels = []
@@ -108,22 +108,22 @@ def main(*args):
         rfxdes = loadFile(rfxmats[k]['f' + str(k+1)]['design'])
         rfxfac = loadFile(rfxmats[k]['f' + str(k+1)]['factor'])
 
-        nparams = nparams + [rfxdes.shape[1]]
+        nraneffs = nraneffs + [rfxdes.shape[1]]
         nlevels = nlevels + [len(np.unique(rfxfac))]
 
-    # Get number of rfx params
-    nparams = np.array(nparams)
+    # Get number of random effects
+    nraneffs = np.array(nraneffs)
     nlevels = np.array(nlevels)
-    q = np.sum(nparams*nlevels)
+    q = np.sum(nraneffs*nlevels)
 
-    # Get number of unique rfx params
-    q_u = np.sum(nparams*(nparams+1)//2)
+    # Get number of unique random effects
+    q_u = np.sum(nraneffs*(nraneffs+1)//2)
     
     # Get number of parameters
-    c1 = str2vec(inputs['contrasts'][0]['c' + str(1)]['vector'])
-    c1 = np.array(c1)
-    p = c1.shape[0]
-    del c1
+    L1 = str2vec(inputs['contrasts'][0]['c' + str(1)]['vector'])
+    L1 = np.array(L1)
+    p = L1.shape[0]
+    del L1
     
     # Read in the nifti size and work out number of voxels.
     with open(inputs['Y_files']) as a:
@@ -521,18 +521,18 @@ def main(*args):
     if v_r:
 
         # Run parameter estimation
-        beta_r, sigma2_r, D_r = blmm_estimate.main(inputs, R_inds, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r, n_sv_r, nlevels, nparams)
+        beta_r, sigma2_r, D_r = blmm_estimate.main(inputs, R_inds, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r, n_sv_r, nlevels, nraneffs)
 
         # Run inference
-        blmm_inference.main(inputs, nparams, nlevels, R_inds, beta_r, D_r, sigma2_r, n_sv_r, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r)       
+        blmm_inference.main(inputs, nraneffs, nlevels, R_inds, beta_r, D_r, sigma2_r, n_sv_r, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r)       
         
     if v_i:
 
         # Run parameter estimation
-        beta_i, sigma2_i, D_i = blmm_estimate.main(inputs, I_inds,  XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i, n, nlevels, nparams)
+        beta_i, sigma2_i, D_i = blmm_estimate.main(inputs, I_inds,  XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i, n, nlevels, nraneffs)
 
         # Run inference
-        blmm_inference.main(inputs, nparams, nlevels, I_inds, beta_i, D_i, sigma2_i, n, XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i)
+        blmm_inference.main(inputs, nraneffs, nlevels, I_inds, beta_i, D_i, sigma2_i, n, XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i)
 
     # Clean up files
     if len(args)==0:

@@ -28,9 +28,9 @@ from lib.fileio import *
 #
 # - `inputs`: The contents of the `inputs.yml` file, loaded using the `yaml` python 
 #              package.
-# - `nparams`: A vector containing the number of parameters for each factor, e.g.
-#              `nlevels=[2,1]` would mean the first factor has 2 parameters and the
-#              second factor has 1 parameter.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 # - `nlevels`: A vector containing the number of levels for each factor, e.g. 
 #              `nlevels=[3,4]` would mean the first factor has 3 levels and the
 #              second factor has 4 levels.
@@ -56,7 +56,7 @@ from lib.fileio import *
 #         varying). 
 #
 # ====================================================================================
-def main(inputs, nparams, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ):
+def main(inputs, nraneffs, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ):
 
     # ----------------------------------------------------------------------
     #  Read in one input nifti to get size, affines, etc.
@@ -87,8 +87,8 @@ def main(inputs, nparams, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX,
     # Scalar quantities
     v = np.prod(inds.shape) # (Number of voxels we are looking at)
     p = XtX.shape[1] # (Number of Fixed Effects parameters)
-    q = np.sum(nparams*nlevels) # (Total number of random effects)
-    qu = np.sum(nparams*(nparams+1)//2) # (Number of unique random effects)
+    q = np.sum(nraneffs*nlevels) # (Total number of random effects)
+    qu = np.sum(nraneffs*(nraneffs+1)//2) # (Number of unique random effects)
     c = len(inputs['contrasts']) # (Number of contrasts)
 
     # Reshape n if necessary
@@ -202,7 +202,7 @@ def main(inputs, nparams, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX,
 
 
             # Calculate sattherwaite estimate of the degrees of freedom of this statistic
-            swdfc = get_swdf_T3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nparams).reshape(v)
+            swdfc = get_swdf_T3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs).reshape(v)
             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT_swedf.nii'), swdfc, inds,volInd=current_nt,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
             # Obtain and output T statistic
@@ -225,7 +225,7 @@ def main(inputs, nparams, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX,
             dimF = (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],nf)
 
             # Calculate sattherthwaite degrees of freedom for the inner.
-            swdfc = get_swdf_F3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nparams).reshape(v)
+            swdfc = get_swdf_F3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs).reshape(v)
             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conF_swedf.nii'), swdfc, inds,volInd=current_nf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
 
             # Calculate F statistic.

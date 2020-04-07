@@ -199,7 +199,7 @@ def blockInverse2D(matrix, blockSize):
   # For each level, invert the corresponding block on the diagonal
   for i in range(numBlocks):
     
-    # The block is nparams by nparams
+    # The block is nraneffs by nraneffs
     blockInds = np.ix_(np.arange(i*blockSize,(i+1)*blockSize),np.arange(i*blockSize,(i+1)*blockSize))
     
     # Get the block
@@ -230,9 +230,9 @@ def blockInverse2D(matrix, blockSize):
 # ----------------------------------------------------------------------------
 #
 #  - `M`: The symmetric matrix, with structure similar to Z'Z, to be inverted.
-#  - `nparams`: A vector containing the number of parameters for each
-#               factor, e.g. `nparams=[2,1]` would mean the first factor
-#               has 2 parameters and the second factor has 1 parameter.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 #  - `nlevels`: A vector containing the number of levels for each factor,
 #               e.g. `nlevels=[3,4]` would mean the first factor has 3
 #               levels and the second factor has 4 levels.
@@ -251,13 +251,13 @@ def blockInverse2D(matrix, blockSize):
 # sense, in practice it was slow and is left here only for future reference.
 #
 # ============================================================================
-def recursiveInverse2D(M, nparams, nlevels):
+def recursiveInverse2D(M, nraneffs, nlevels):
   
   # Check if we have a matrix we can partition into more than 1 block
-  if len(nparams) > 1:
+  if len(nraneffs) > 1:
   
     # Work out qc (current q)
-    qc = nparams[-1]*nlevels[-1]
+    qc = nraneffs[-1]*nlevels[-1]
     # Make q
     q = M.shape[0]
 
@@ -275,13 +275,13 @@ def recursiveInverse2D(M, nparams, nlevels):
     C = M[C_inds].toarray() # C is small and now only involved in dense mutliplys
 
     # Recursive inverse A
-    if nparams[:-1].shape[0] > 1:
+    if nraneffs[:-1].shape[0] > 1:
 
-      Ainv = scipy.sparse.csr_matrix(recursiveInverse2D(A, nparams[:-1], nlevels[:-1])).toarray()
+      Ainv = scipy.sparse.csr_matrix(recursiveInverse2D(A, nraneffs[:-1], nlevels[:-1])).toarray()
 
     else:
 
-      #Ainv = blockInverse(A, nparams[0], nlevels[0]) - much slower
+      #Ainv = blockInverse(A, nraneffs[0], nlevels[0]) - much slower
       Ainv = scipy.sparse.csr_matrix(scipy.sparse.linalg.inv(scipy.sparse.csc_matrix(A))).toarray()
 
     # Schur complement
@@ -773,9 +773,9 @@ def ssr2D(YtX, YtY, XtX, beta):
 # - `nlevels`: A vector containing the number of levels for each factor,
 #              e.g. `nlevels=[3,4]` would mean the first factor has 3
 #              levels and the second factor has 4 levels.
-# - `nparams`: A vector containing the number of parameters for each
-#              factor, e.g. `nlevels=[2,1]` would mean the first factor
-#              has 2 parameters and the second factor has 1 parameter.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 #
 # ---------------------------------------------------------------------------- 
 #
@@ -788,10 +788,10 @@ def ssr2D(YtX, YtY, XtX, beta):
 # *(k is zero indexed)
 #
 # ============================================================================
-def fac_indices2D(k, nlevels, nparams):
+def fac_indices2D(k, nlevels, nraneffs):
   
   # Get indices for all factors
-  allInds = np.concatenate((np.array([0]),np.cumsum(nlevels*nparams)))
+  allInds = np.concatenate((np.array([0]),np.cumsum(nlevels*nraneffs)))
 
   # Work out the first index
   start = allInds[k]
@@ -817,9 +817,9 @@ def fac_indices2D(k, nlevels, nparams):
 # - `nlevels`: A vector containing the number of levels for each factor,
 #              e.g. `nlevels=[3,4]` would mean the first factor has 3
 #              levels and the second factor has 4 levels.
-# - `nparams`: A vector containing the number of parameters for each
-#              factor, e.g. `nlevels=[2,1]` would mean the first factor
-#              has 2 parameters and the second factor has 1 parameter.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 #
 # ---------------------------------------------------------------------------- 
 #
@@ -833,13 +833,13 @@ def fac_indices2D(k, nlevels, nparams):
 # *(k and j are both zero indexed)
 #
 # ============================================================================
-def faclev_indices2D(k, j, nlevels, nparams):
+def faclev_indices2D(k, j, nlevels, nraneffs):
   
   # Work out the starting point of the indices
-  start = np.concatenate((np.array([0]), np.cumsum(nlevels*nparams)))[k] + nparams[k]*j
+  start = np.concatenate((np.array([0]), np.cumsum(nlevels*nraneffs)))[k] + nraneffs[k]*j
   
   # work out the end point of the indices
-  end = start + nparams[k]
+  end = start + nraneffs[k]
   
   return(np.arange(start, end))
 
@@ -949,25 +949,25 @@ def initSigma22D(ete, n):
 # - `Dkest`: The inital estimate of D_k (Dhat_k in the above notation).
 #
 # ============================================================================
-def initDk2D(k, ZtZ, Zte, sigma2, nlevels, nparams, invDupMatdict):
+def initDk2D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict):
   
   # Initalize to zeros
-  ZkjtZkj = np.zeros((nparams[k],nparams[k]))
+  ZkjtZkj = np.zeros((nraneffs[k],nraneffs[k]))
 
   # First we work out the derivative we require.
   for j in np.arange(nlevels[k]):
     
-    Ikj = faclev_indices2D(k, j, nlevels, nparams)
+    Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
 
     # Work out Z_(k, j)'Z_(k, j)
     ZkjtZkj = ZkjtZkj + ZtZ[np.ix_(Ikj,Ikj)]
     
   # Work out block size
-  qk = nparams[k]
+  qk = nraneffs[k]
   p = np.array([qk,1])
 
   # Get indices
-  Ik = fac_indices2D(k, nlevels, nparams)
+  Ik = fac_indices2D(k, nlevels, nraneffs)
 
   # Work out the sum of Z_{(k,j)}'ee'Z_{(k,j)}
   ZteetZ = sumAijBijt2D(Zte[Ik,:],Zte[Ik,:],p,p)
@@ -976,7 +976,7 @@ def initDk2D(k, ZtZ, Zte, sigma2, nlevels, nparams, invDupMatdict):
   invSig2ZteetZminusZtZ = 1/sigma2*ZteetZ - ZkjtZkj
   
   # Second we need to work out the double sum of Z_(k,j)'Z_(k,j)
-  p = np.array([nparams[k],nparams[k]])
+  p = np.array([nraneffs[k],nraneffs[k]])
 
   # Get sum of Z_{(k,j)}'Z_{(k,j)} kron Z_{(k,j)}'Z_{(k,j)}
   ZtZkronZtZ,_ = sumAijKronBij2D(ZtZ[np.ix_(Ik,Ik)], ZtZ[np.ix_(Ik,Ik)], p, perm=None)
@@ -1198,9 +1198,9 @@ def get_dldsigma22D(n, ete, Zte, sigma2, DinvIplusZtZD):
 # - `nlevels`: A vector containing the number of levels for each factor, e.g.
 #              `nlevels=[3,4]` would mean the first factor has 3 levels and
 #              the second factor has 4 levels.
-# - `nparams`: A vector containing the number of parameters for each factor,
-#              e.g. `nlevels=[2,1]` would mean the first factor has 2
-#              parameters and the second factor has 1 parameter.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 # - `ZtZ`: The Z matrix transposed and then multiplied by itself (Z'Z in the
 #          above notation).
 # - `Zte`: The Z matrix transposed and then multiplied by the OLS residuals
@@ -1223,18 +1223,18 @@ def get_dldsigma22D(n, ete, Zte, sigma2, DinvIplusZtZD):
 #             iteration.
 #
 # ============================================================================
-def get_dldDk2D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=None):
+def get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=None):
 
   # We only need calculate this once across all iterations
   if ZtZmat is None:
 
     # Instantiate to zeros
-    ZtZmat = np.zeros(nparams[k],nparams[k])
+    ZtZmat = np.zeros(nraneffs[k],nraneffs[k])
 
     for j in np.arange(nlevels[k]):
 
       # Get the indices for the kth factor jth level
-      Ikj = faclev_indices2D(k, j, nlevels, nparams)
+      Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
 
       # Work out Z_(k,j)'Z_(k,j)
       ZtZterm = ZtZ[np.ix_(Ikj,Ikj)]
@@ -1243,13 +1243,13 @@ def get_dldDk2D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=Non
       ZtZmat = ZtZmat + ZtZterm
 
   # Get the indices for the factors 
-  Ik = fac_indices2D(k, nlevels, nparams)
+  Ik = fac_indices2D(k, nlevels, nraneffs)
 
   # Work out lk
   lk = nlevels[k]
 
   # Work out block size
-  qk = nparams[k]
+  qk = nraneffs[k]
   p = np.array([qk,1])
 
   # Work out the second term in TT'
@@ -1277,16 +1277,16 @@ def get_dldDk2D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=Non
 # left here in case it has any use for future development.
 #
 # ============================================================================
-# def get_dldDk2D_old(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD):
+# def get_dldDk2D_old(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD):
 #
 #   # Initalize the derivative to zeros
-#   dldDk = np.zeros((nparams[k],nparams[k]))
+#   dldDk = np.zeros((nraneffs[k],nraneffs[k]))
 #
 #   # For each level j we need to add a term
 #   for j in np.arange(nlevels[k]):
 #
 #     # Get the indices for the kth factor jth level
-#     Ikj = faclev_indices2D(k, j, nlevels, nparams)
+#     Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
 #
 #     # Get (the kj^th columns of Z)^T multiplied by Z
 #     Z_kjtZ = ZtZ[Ikj,:]
@@ -1373,9 +1373,9 @@ def get_covdldbeta2D(XtZ, XtX, ZtZ, DinvIplusZtZD, sigma2):
 # - `nlevels`: A vector containing the number of levels for each factor, e.g.
 #              `nlevels=[3,4]` would mean the first factor has 3 levels and 
 #              the second factor has 4 levels.
-# - `nparams`: A vector containing the number of parameters for each factor, 
-#              e.g. `nlevels=[2,1]` would mean the first factor has 2 
-#              parameters and the second factor has 1 parameter.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 # - `ZtZ`: Z transpose multiplied by Z.
 # - `DinvIplusZtZD`: D(I+Z'ZD)^(-1) in the above notation.
 # - `invDupMatdict`: A dictionary of inverse duplication matrices such that 
@@ -1401,18 +1401,18 @@ def get_covdldbeta2D(XtZ, XtX, ZtZ, DinvIplusZtZD, sigma2):
 #             iteration.
 #
 # ============================================================================
-def get_covdldDkdsigma22D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False, ZtZmat=None):
+def get_covdldDkdsigma22D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False, ZtZmat=None):
 
   # We only need calculate this once across all iterations
   if ZtZmat is None:
 
     # Instantiate to zeros
-    ZtZmat = np.zeros(nparams[k],nparams[k])
+    ZtZmat = np.zeros(nraneffs[k],nraneffs[k])
 
     for j in np.arange(nlevels[k]):
 
       # Get the indices for the kth factor jth level
-      Ikj = faclev_indices2D(k, j, nlevels, nparams)
+      Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
 
       # Work out R_(k, j)
       ZtZterm = ZtZ[np.ix_(Ikj,Ikj)]
@@ -1421,14 +1421,14 @@ def get_covdldDkdsigma22D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDu
       ZtZmat = ZtZmat + ZtZterm
 
   # Get the indices for the factors 
-  Ik = fac_indices2D(k, nlevels, nparams)
+  Ik = fac_indices2D(k, nlevels, nraneffs)
 
   # Work out lk
   lk = nlevels[k]
 
   # Work out block size
-  q = np.sum(nlevels*nparams)
-  qk = nparams[k]
+  q = np.sum(nlevels*nraneffs)
+  qk = nraneffs[k]
   p = np.array([qk,q])
 
   # Work out the second term
@@ -1453,15 +1453,15 @@ def get_covdldDkdsigma22D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDu
 # left here in case it has any use for future development.
 #
 # ============================================================================
-# def get_covdldDkdsigma22D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False):
+# def get_covdldDkdsigma22D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False):
 #  
 #   # Sum of R_(k, j) over j
-#   RkSum = np.zeros(nparams[k],nparams[k])
+#   RkSum = np.zeros(nraneffs[k],nraneffs[k])
 #
 #   for j in np.arange(nlevels[k]):
 #
 #     # Get the indices for the kth factor jth level
-#     Ikj = faclev_indices2D(k, j, nlevels, nparams)
+#     Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
 #
 #     # Work out R_(k, j)
 #     Rkj = ZtZ[np.ix_(Ikj,Ikj)] - forceSym2D(ZtZ[Ikj,:] @ DinvIplusZtZD @ ZtZ[:,Ikj])
@@ -1503,9 +1503,9 @@ def get_covdldDkdsigma22D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDu
 # - `nlevels`: A vector containing the number of levels for each factor, e.g.
 #              `nlevels=[3,4]` would mean the first factor has 3 levels and
 #              the second factor has 4 levels.
-# - `nparams`: A vector containing the number of parameters for each factor,
-#              e.g. `nlevels=[2,1]` would mean the first factor has 2 
-#              parameters and the second factor has 1 parameter.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 # - `ZtZ`: Z transpose multiplied by Z.
 # - `DinvIplusZtZD`: D(I+Z'ZD)^(-1) in the above notation.
 # - `invDupMatdict`: A dictionary of inverse duplication matrices such that 
@@ -1531,17 +1531,17 @@ def get_covdldDkdsigma22D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDu
 #           only need be calculated once so can be passed between iterations.
 #
 # ============================================================================
-def get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, perm=None, vec=False):
+def get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, perm=None, vec=False):
 
   # Get the indices for the factors 
-  Ik1 = fac_indices2D(k1, nlevels, nparams)
-  Ik2 = fac_indices2D(k2, nlevels, nparams)
+  Ik1 = fac_indices2D(k1, nlevels, nraneffs)
+  Ik2 = fac_indices2D(k2, nlevels, nraneffs)
 
   # Work out R_(k1,k2)
   Rk1k2 = ZtZ[np.ix_(Ik1,Ik2)] - (ZtZ[Ik1,:] @ DinvIplusZtZD @ ZtZ[:,Ik2])
 
   # Work out block sizes
-  p = np.array([nparams[k1],nparams[k2]])
+  p = np.array([nraneffs[k1],nraneffs[k2]])
 
   # Obtain permutation
   RkRSum,perm=sumAijKronBij2D(Rk1k2, Rk1k2, p, perm)
@@ -1563,7 +1563,7 @@ def get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdi
 # left here in case it has any use for future development.
 #
 # ============================================================================
-# def get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False):
+# def get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False):
 #  
 #   # Sum of R_(k1, k2, i, j) kron R_(k1, k2, i, j) over i and j 
 #   for i in np.arange(nlevels[k1]):
@@ -1571,8 +1571,8 @@ def get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdi
 #     for j in np.arange(nlevels[k2]):
 #      
 #       # Get the indices for the k1th factor jth level
-#       Ik1i = faclev_indices2D(k1, i, nlevels, nparams)
-#       Ik2j = faclev_indices2D(k2, j, nlevels, nparams)
+#       Ik1i = faclev_indices2D(k1, i, nlevels, nraneffs)
+#       Ik2j = faclev_indices2D(k2, j, nlevels, nraneffs)
 #      
 #       # Work out R_(k1, k2, i, j)
 #       Rk1k2ij = ZtZ[np.ix_(Ik1i,Ik2j)] - (ZtZ[Ik1i,:] @ DinvIplusZtZD @ ZtZ[:,Ik2j])

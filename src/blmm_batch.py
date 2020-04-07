@@ -83,7 +83,7 @@ def main(*args):
     # Get number of fixed effects parameters
     L1 = str2vec(inputs['contrasts'][0]['c' + str(1)]['vector'])
     L1 = np.array(L1)
-    n_p = L1.shape[0]
+    p = L1.shape[0]
     del L1
 
     # Y volumes
@@ -109,7 +109,7 @@ def main(*args):
 
     # Similar to blksize in SwE, we divide by 8 times the size of a nifti
     # to work out how many blocks we use.
-    blksize = int(np.floor(MAXMEM/8/NIFTImem/n_p));
+    blksize = int(np.floor(MAXMEM/8/NIFTImem/p));
 
     # Reduce X to X for this block.
     X = loadFile(inputs['X'])

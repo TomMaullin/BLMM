@@ -32,11 +32,11 @@ from genTestDat import genTestData3D, prodMats3D
 def test_FS3D():
 
     # Generate some test data
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=4)
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=4)
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
 
     # Work out q and n
-    q = np.sum(nlevels*nparams)
+    q = np.sum(nlevels*nraneffs)
     n = X.shape[0]
     n_sv = n_sv.reshape(n_sv.shape[0])
 
@@ -50,23 +50,23 @@ def test_FS3D():
     paramVec_true = beta[testv,:]
     paramVec_true = np.concatenate((paramVec_true,sigma2[testv].reshape(1,1)),axis=0)
 
-    facInds = np.cumsum(nparams*nlevels)
+    facInds = np.cumsum(nraneffs*nlevels)
     facInds = np.insert(facInds,0,0)
 
     # Convert D to vector
     for k in np.arange(len(nlevels)):
 
-        vechD = mat2vech2D(D[testv,facInds[k]:(facInds[k]+nparams[k]),facInds[k]:(facInds[k]+nparams[k])])/sigma2[testv]
+        vechD = mat2vech2D(D[testv,facInds[k]:(facInds[k]+nraneffs[k]),facInds[k]:(facInds[k]+nraneffs[k])])/sigma2[testv]
         paramVec_true = np.concatenate((paramVec_true,vechD),axis=0)
 
     # ------------------------------------------------------------------------------------
     # Estimates
     # ------------------------------------------------------------------------------------
     # Spatially varying 3D
-    paramVec3D_sv = FS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nparams, 1e-6,n_sv)[testv,:,:]
+    paramVec3D_sv = FS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-6,n_sv)[testv,:,:]
     
     # Spatially varying 2D
-    paramVec2D_sv = FS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nparams, 1e-6,n_sv[testv])[0]
+    paramVec2D_sv = FS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n_sv[testv])[0]
 
     print('=============================================================')
     print('Unit test for: FS')
@@ -79,10 +79,10 @@ def test_FS3D():
 
     
     # Non-spatially varying 3D
-    paramVec3D_nsv = FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6,n)[testv,:,:]
+    paramVec3D_nsv = FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6,n)[testv,:,:]
 
     # Non-spatially varying 2D
-    paramVec2D_nsv = FS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nparams, 1e-6,n)[0]
+    paramVec2D_nsv = FS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n)[0]
 
     print('-------------------------------------------------------------')
     print('Results (Non Spatially Varying): ')
@@ -99,11 +99,11 @@ def test_FS3D():
 def test_pFS3D():
 
     # Generate some test data
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=4)
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=4)
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
 
     # Work out q and n
-    q = np.sum(nlevels*nparams)
+    q = np.sum(nlevels*nraneffs)
     n = X.shape[0]
     n_sv = n_sv.reshape(n_sv.shape[0])
 
@@ -117,23 +117,23 @@ def test_pFS3D():
     paramVec_true = beta[testv,:]
     paramVec_true = np.concatenate((paramVec_true,sigma2[testv].reshape(1,1)),axis=0)
 
-    facInds = np.cumsum(nparams*nlevels)
+    facInds = np.cumsum(nraneffs*nlevels)
     facInds = np.insert(facInds,0,0)
 
     # Convert D to vector
     for k in np.arange(len(nlevels)):
 
-        vechD = mat2vech2D(D[testv,facInds[k]:(facInds[k]+nparams[k]),facInds[k]:(facInds[k]+nparams[k])])/sigma2[testv]
+        vechD = mat2vech2D(D[testv,facInds[k]:(facInds[k]+nraneffs[k]),facInds[k]:(facInds[k]+nraneffs[k])])/sigma2[testv]
         paramVec_true = np.concatenate((paramVec_true,vechD),axis=0)
         
     # ------------------------------------------------------------------------------------
     # Estimates
     # ------------------------------------------------------------------------------------
     # Spatially varying 3D
-    paramVec3D_sv = pFS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nparams, 1e-6,n_sv)[testv,:,:]
+    paramVec3D_sv = pFS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-6,n_sv)[testv,:,:]
 
     # Spatially varying 2D
-    paramVec2D_sv = pFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nparams, 1e-6,n_sv[testv])[0]
+    paramVec2D_sv = pFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n_sv[testv])[0]
 
     print('=============================================================')
     print('Unit test for: pFS')
@@ -145,10 +145,10 @@ def test_pFS3D():
     print('   2D:    ', paramVec2D_sv.transpose())
     
     # Non-spatially varying 3D
-    paramVec3D_nsv = pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6,n)[testv,:,:]
+    paramVec3D_nsv = pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6,n)[testv,:,:]
 
     # Non-spatially varying 2D
-    paramVec2D_nsv = pFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nparams, 1e-6,n)[0]
+    paramVec2D_nsv = pFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n)[0]
 
     print('-------------------------------------------------------------')
     print('Results (Non Spatially Varying): ')
@@ -165,11 +165,11 @@ def test_pFS3D():
 def test_SFS3D():
 
     # Generate some test data
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=4)
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=4)
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
 
     # Work out q and n
-    q = np.sum(nlevels*nparams)
+    q = np.sum(nlevels*nraneffs)
     n = X.shape[0]
     n_sv = n_sv.reshape(n_sv.shape[0])
 
@@ -183,23 +183,23 @@ def test_SFS3D():
     paramVec_true = beta[testv,:]
     paramVec_true = np.concatenate((paramVec_true,sigma2[testv].reshape(1,1)),axis=0)
 
-    facInds = np.cumsum(nparams*nlevels)
+    facInds = np.cumsum(nraneffs*nlevels)
     facInds = np.insert(facInds,0,0)
 
     # Convert D to vector
     for k in np.arange(len(nlevels)):
 
-        vechD = mat2vech2D(D[testv,facInds[k]:(facInds[k]+nparams[k]),facInds[k]:(facInds[k]+nparams[k])])/sigma2[testv]
+        vechD = mat2vech2D(D[testv,facInds[k]:(facInds[k]+nraneffs[k]),facInds[k]:(facInds[k]+nraneffs[k])])/sigma2[testv]
         paramVec_true = np.concatenate((paramVec_true,vechD),axis=0)
 
     # ------------------------------------------------------------------------------------
     # Estimates
     # ------------------------------------------------------------------------------------
     # Spatially varying 3D
-    paramVec3D_sv = SFS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nparams, 1e-6,n_sv)[testv,:,:]
+    paramVec3D_sv = SFS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-6,n_sv)[testv,:,:]
 
     # Spatially varying 2D
-    paramVec2D_sv = SFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nparams, 1e-6,n_sv[testv])[0]
+    paramVec2D_sv = SFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n_sv[testv])[0]
 
     print('=============================================================')
     print('Unit test for: SFS')
@@ -211,10 +211,10 @@ def test_SFS3D():
     print('   2D:    ', paramVec2D_sv.transpose())
 
     # Non-spatially varying 3D
-    paramVec3D_nsv = SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6,n)[testv,:,:]
+    paramVec3D_nsv = SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6,n)[testv,:,:]
 
     # Non-spatially varying 2D
-    paramVec2D_nsv = SFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nparams, 1e-6,n)[0]
+    paramVec2D_nsv = SFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n)[0]
 
     print('-------------------------------------------------------------')
     print('Results (Non Spatially Varying): ')
@@ -232,11 +232,11 @@ def test_SFS3D():
 def test_pSFS3D():
 
     # Generate some test data
-    Y,X,Z,nlevels,nparams,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=4)
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=4)
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
 
     # Work out q and n
-    q = np.sum(nlevels*nparams)
+    q = np.sum(nlevels*nraneffs)
     n = X.shape[0]
     n_sv = n_sv.reshape(n_sv.shape[0])
 
@@ -250,23 +250,23 @@ def test_pSFS3D():
     paramVec_true = beta[testv,:]
     paramVec_true = np.concatenate((paramVec_true,sigma2[testv].reshape(1,1)),axis=0)
 
-    facInds = np.cumsum(nparams*nlevels)
+    facInds = np.cumsum(nraneffs*nlevels)
     facInds = np.insert(facInds,0,0)
 
     # Convert D to vector
     for k in np.arange(len(nlevels)):
 
-        vechD = mat2vech2D(D[testv,facInds[k]:(facInds[k]+nparams[k]),facInds[k]:(facInds[k]+nparams[k])])/sigma2[testv]
+        vechD = mat2vech2D(D[testv,facInds[k]:(facInds[k]+nraneffs[k]),facInds[k]:(facInds[k]+nraneffs[k])])/sigma2[testv]
         paramVec_true = np.concatenate((paramVec_true,vechD),axis=0)
 
     # ------------------------------------------------------------------------------------
     # Estimates
     # ------------------------------------------------------------------------------------
     # Spatially varying 3D
-    paramVec3D_sv = pSFS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nparams, 1e-6,n_sv)[testv,:,:]
+    paramVec3D_sv = pSFS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-6,n_sv)[testv,:,:]
 
     # Spatially varying 2D
-    paramVec2D_sv = pSFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nparams, 1e-6,n_sv[testv])[0]
+    paramVec2D_sv = pSFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n_sv[testv])[0]
 
 
     print('=============================================================')
@@ -279,10 +279,10 @@ def test_pSFS3D():
     print('   2D:    ', paramVec2D_sv.transpose())
 
     # Non-spatially varying 3D
-    paramVec3D_nsv = pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6,n)[testv,:,:]
+    paramVec3D_nsv = pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6,n)[testv,:,:]
 
     # Non-spatially varying 2D
-    paramVec2D_nsv = pSFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nparams, 1e-6,n)[0]
+    paramVec2D_nsv = pSFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n)[0]
 
     # Check if results are all close.
     sv_testVal = np.allclose(paramVec2D_sv,paramVec3D_sv,rtol=1e-2)

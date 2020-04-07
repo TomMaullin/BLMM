@@ -68,9 +68,9 @@ from lib.npMatrix2d import *
 # - `nlevels`: A vector containing the number of levels for each factor, 
 #              e.g. `nlevels=[3,4]` would mean the first factor has 3 levels
 #              and the second factor has 4 levels.
-# - `nparams`: A vector containing the number of parameters for each factor,
-#              e.g. `nlevels=[2,1]` would mean the first factor has 2
-#              parameters and the second factor has 1 parameter.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 #  - `tol`: A scalar tolerance value. Iteration stops once successive 
 #           log-likelihood values no longer exceed `tol`.
 #  - `n`: The number of observations.
@@ -87,7 +87,7 @@ from lib.npMatrix2d import *
 #  - `nit`: The number of iterations taken to converge.
 #
 # ============================================================================
-def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, init_paramVector=None):
+def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, init_paramVector=None):
     
     # ------------------------------------------------------------------------------
     # Initial estimates
@@ -97,7 +97,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
     r = len(nlevels)
 
     # Number of random effects, q
-    q = np.sum(np.dot(nparams,nlevels))
+    q = np.sum(np.dot(nraneffs,nlevels))
 
     # Number of fixed effects, p
     p = XtX.shape[0]
@@ -106,10 +106,10 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
     # Index variables
     # ------------------------------------------------------------------------------
     # Work out the total number of parameters
-    tnp = np.int32(p + 1 + np.sum(nparams*(nparams+1)/2))
+    tnp = np.int32(p + 1 + np.sum(nraneffs*(nraneffs+1)/2))
 
     # Indices for submatrics corresponding to Dks
-    FishIndsDk = np.int32(np.cumsum(nparams*(nparams+1)/2) + p + 1)
+    FishIndsDk = np.int32(np.cumsum(nraneffs*(nraneffs+1)/2) + p + 1)
     FishIndsDk = np.insert(FishIndsDk,0,p+1)
 
     # ------------------------------------------------------------------------------
@@ -119,13 +119,13 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
     counter = 0
 
     # Loop through and add each index
-    for k in np.arange(len(nparams)):
+    for k in np.arange(len(nraneffs)):
         for j in np.arange(nlevels[k]):
-            Dinds[counter] = np.concatenate((np.array([0]), np.cumsum(nlevels*nparams)))[k] + nparams[k]*j
+            Dinds[counter] = np.concatenate((np.array([0]), np.cumsum(nlevels*nraneffs)))[k] + nraneffs[k]*j
             counter = counter + 1
             
     # Last index will be missing so add it
-    Dinds[len(Dinds)-1]=Dinds[len(Dinds)-2]+nparams[-1]
+    Dinds[len(Dinds)-1]=Dinds[len(Dinds)-2]+nraneffs[-1]
     
     # Make sure indices are ints
     Dinds = np.int64(Dinds)
@@ -136,11 +136,11 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
     invDupMatdict = dict()
     elimMatdict = dict()
     comMatdict = dict()
-    for i in np.arange(len(nparams)):
+    for i in np.arange(len(nraneffs)):
 
-        invDupMatdict[i] = invDupMat2D(nparams[i])
-        comMatdict[i] = comMat2D(nparams[i],nparams[i])
-        elimMatdict[i] = elimMat2D(nparams[i])
+        invDupMatdict[i] = invDupMat2D(nraneffs[i])
+        comMatdict[i] = comMat2D(nraneffs[i],nraneffs[i])
+        elimMatdict[i] = elimMat2D(nraneffs[i])
         
     # ------------------------------------------------------------------------------
     # Initial estimates
@@ -155,7 +155,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
         # Initial cholesky decomposition and D.
         Ddict = dict()
         cholDict = dict()
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
 
             cholDict[k] = vechTri2mat2D(init_paramVector[FishIndsDk[k]:FishIndsDk[k+1]])
             Ddict[k] = cholDict[k] @ cholDict[k].transpose()
@@ -163,7 +163,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
         # Matrix version
         D = scipy.sparse.lil_matrix((q,q))
         counter = 0
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
             for j in np.arange(nlevels[i]):
 
                 D[Dinds[counter]:Dinds[counter+1], Dinds[counter]:Dinds[counter+1]] = Ddict[k]
@@ -184,17 +184,17 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
         # Inital cholesky decomposition and D
         Ddict = dict()
         cholDict = dict()
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
 
             # We just initialize to identity for cholesky.
-            cholDict[k] = np.eye(nparams[k])
-            Ddict[k] = np.eye(nparams[k])
+            cholDict[k] = np.eye(nraneffs[k])
+            Ddict[k] = np.eye(nraneffs[k])
 
         # Matrix version
         D = scipy.sparse.lil_matrix((q,q))
         t1 = time.time()
         counter = 0
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
             for j in np.arange(nlevels[k]):
 
                 D[Dinds[counter]:Dinds[counter+1], Dinds[counter]:Dinds[counter+1]] = Ddict[k]
@@ -221,13 +221,13 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
     # ------------------------------------------------------------------------------
     # This will hold the matrices: Sum_j^{l_k} Z_{i,j}'Z_{i,j}
     ZtZmatdict = dict()
-    for k in np.arange(len(nparams)):
+    for k in np.arange(len(nraneffs)):
         ZtZmatdict[k] = None
 
     # This will hold the permutations needed for the covariance between the
     # derivatives with respect to k
     permdict = dict()
-    for k in np.arange(len(nparams)):
+    for k in np.arange(len(nraneffs)):
         permdict[str(k)] = None
 
     # ------------------------------------------------------------------------------
@@ -260,31 +260,31 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
         #---------------------------------------------------------------------------
         counter = 0
         # Loop though unique blocks of D updating one at a time
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
 
             #-----------------------------------------------------------------------
             # Calculate derivative with respect to D_k
             #-----------------------------------------------------------------------
             # Work out derivative
             if ZtZmatdict[k] is None:
-                dldD,ZtZmatdict[k] = get_dldDk2D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None)
+                dldD,ZtZmatdict[k] = get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None)
             else:
-                dldD,_ = get_dldDk2D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k])
+                dldD,_ = get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k])
 
             #-----------------------------------------------------------------------
             # Calculate covariance of derivative with respect to D_k
             #-----------------------------------------------------------------------
             if permdict[str(k)] is None:
-                covdldDk,permdict[str(k)] = get_covdldDk1Dk22D(k, k, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, perm=None)
+                covdldDk,permdict[str(k)] = get_covdldDk1Dk22D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, perm=None)
             else:
-                covdldDk,_ = get_covdldDk1Dk22D(k, k, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, perm=permdict[str(k)])
+                covdldDk,_ = get_covdldDk1Dk22D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, perm=permdict[str(k)])
 
 
             #-----------------------------------------------------------------------
             # Transform to derivative with respect to chol_k
             #-----------------------------------------------------------------------
             # We need to modify by multiplying by this matrix to obtain the cholesky derivative.
-            chol_mod = elimMatdict[k] @ (scipy.sparse.identity(nparams[k]**2) + comMatdict[k]) @ scipy.sparse.kron(cholDict[k],np.eye(nparams[k])) @ elimMatdict[k].transpose()
+            chol_mod = elimMatdict[k] @ (scipy.sparse.identity(nraneffs[k]**2) + comMatdict[k]) @ scipy.sparse.kron(cholDict[k],np.eye(nraneffs[k])) @ elimMatdict[k].transpose()
             
             # Transform to cholesky
             dldcholk = chol_mod.transpose() @ mat2vech2D(dldD)
@@ -328,7 +328,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
     # Save parameter vector
     #-------------------------------------------------------------------------------
     paramVector = np.concatenate((beta, sigma2))
-    for k in np.arange(len(nparams)):
+    for k in np.arange(len(nraneffs)):
         paramVector = np.concatenate((paramVector, mat2vech2D(Ddict[k])))
 
     #-------------------------------------------------------------------------------
@@ -336,7 +336,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
     #-------------------------------------------------------------------------------
     bvals = DinvIplusZtZD @ Zte
 
-    return(paramVector, bvals, nit)
+    return(paramVector, bvals, nit, llhcurr)
 
 
 # ============================================================================
@@ -369,9 +369,9 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
 # - `nlevels`: A vector containing the number of levels for each factor, 
 #              e.g. `nlevels=[3,4]` would mean the first factor has 3 levels
 #              and the second factor has 4 levels.
-# - `nparams`: A vector containing the number of parameters for each factor,
-#              e.g. `nlevels=[2,1]` would mean the first factor has 2
-#              parameters and the second factor has 1 parameter.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 #  - `tol`: A scalar tolerance value. Iteration stops once successive 
 #           log-likelihood values no longer exceed `tol`.
 #  - `n`: The number of observations.
@@ -388,7 +388,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
 #  - `nit`: The number of iterations taken to converge.
 #
 # ============================================================================
-def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, init_paramVector=None):
+def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, init_paramVector=None):
     
     # ------------------------------------------------------------------------------
     # Useful scalars
@@ -397,7 +397,7 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, 
     r = len(nlevels)
 
     # Number of random effects, q
-    q = np.sum(np.dot(nparams,nlevels))
+    q = np.sum(np.dot(nraneffs,nlevels))
 
     # Number of fixed effects, p
     p = XtX.shape[0]
@@ -406,19 +406,19 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, 
     # Index variables
     # ------------------------------------------------------------------------------
     # Work out the total number of parameters
-    tnp = np.int32(p + 1 + np.sum(nparams*(nparams+1)/2))
+    tnp = np.int32(p + 1 + np.sum(nraneffs*(nraneffs+1)/2))
 
     # Indices for submatrics corresponding to Dks
-    FishIndsDk = np.int32(np.cumsum(nparams*(nparams+1)/2) + p + 1)
+    FishIndsDk = np.int32(np.cumsum(nraneffs*(nraneffs+1)/2) + p + 1)
     FishIndsDk = np.insert(FishIndsDk,0,p+1)
 
     # ------------------------------------------------------------------------------
     # Duplication matrices
     # ------------------------------------------------------------------------------
     invDupMatdict = dict()
-    for i in np.arange(len(nparams)):
+    for i in np.arange(len(nraneffs)):
 
-        invDupMatdict[i] = invDupMat2D(nparams[i])
+        invDupMatdict[i] = invDupMat2D(nraneffs[i])
         
     # ------------------------------------------------------------------------------
     # Initial estimates
@@ -431,11 +431,11 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, 
 
         # Initial D (dictionary version)
         Ddict = dict()
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
             Ddict[k] = makeDnnd2D(vech2mat2D(init_paramVector[FishIndsDk[k]:FishIndsDk[k+1]]))
 
         # Initial D (matrix version)
-        for i in np.arange(len(nparams)):
+        for i in np.arange(len(nraneffs)):
             for j in np.arange(nlevels[i]):
                 # Add block
                 if i == 0 and j == 0:
@@ -460,12 +460,12 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, 
 
         # Inital D (Dictionary version)
         Ddict = dict()
-        for k in np.arange(len(nparams)):
-            Ddict[k] = makeDnnd2D(initDk2D(k, ZtZ, Zte, sigma2, nlevels, nparams, invDupMatdict))
+        for k in np.arange(len(nraneffs)):
+            Ddict[k] = makeDnnd2D(initDk2D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict))
             
         # Matrix version
         D = np.array([])
-        for i in np.arange(len(nparams)):
+        for i in np.arange(len(nraneffs)):
             for j in np.arange(nlevels[i]):
                 # Add block
                 if i == 0 and j == 0:
@@ -488,14 +488,14 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, 
     # ------------------------------------------------------------------------------
     # This will hold the matrices: Sum_j^{l_k} Z_{i,j}'Z_{i,j}
     ZtZmatdict = dict()
-    for k in np.arange(len(nparams)):
+    for k in np.arange(len(nraneffs)):
         ZtZmatdict[k] = None
 
     # This will hold the permutations needed for the covariance between the
     # derivatives with respect to k1 and k2
     permdict = dict()
-    for k1 in np.arange(len(nparams)):
-        for k2 in np.arange(len(nparams)):
+    for k1 in np.arange(len(nraneffs)):
+        for k2 in np.arange(len(nraneffs)):
             permdict[str(k1)+str(k2)] = None
 
     # ------------------------------------------------------------------------------
@@ -538,12 +538,12 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, 
         
         # For each factor, factor k, work out dl/dD_k
         dldDdict = dict()
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
             # Store it in the dictionary# Store it in the dictionary
             if ZtZmatdict[k] is None:
-                dldDdict[k],ZtZmatdict[k] = get_dldDk2D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None)
+                dldDdict[k],ZtZmatdict[k] = get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None)
             else:
-                dldDdict[k],_ = get_dldDk2D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k])
+                dldDdict[k],_ = get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k])
 
         # --------------------------------------------------------------------------
         # Covariance of dl/dsigma2
@@ -562,20 +562,20 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, 
         FisherInfoMat[p,p] = covdldsigma2
 
         # Add dl/dsigma2 dl/dD covariance
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
 
             # Assign to the relevant block
             if ZtZmatdict[k] is None:
-                covdldDksigma2,ZtZmatdict[k] = get_covdldDkdsigma22D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, ZtZmat=None)
+                covdldDksigma2,ZtZmatdict[k] = get_covdldDkdsigma22D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, ZtZmat=None)
             else:
-                covdldDksigma2,_ = get_covdldDkdsigma22D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, ZtZmat=ZtZmatdict[k])
+                covdldDksigma2,_ = get_covdldDkdsigma22D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, ZtZmat=ZtZmatdict[k])
 
             # Assign to the relevant block
             FisherInfoMat[p, FishIndsDk[k]:FishIndsDk[k+1]] = covdldDksigma2.reshape(FishIndsDk[k+1]-FishIndsDk[k])
             FisherInfoMat[FishIndsDk[k]:FishIndsDk[k+1],p] = FisherInfoMat[p, FishIndsDk[k]:FishIndsDk[k+1]].transpose()
 
         # Add dl/dD covariance for each pair (k1,k2) of random factors
-        for k1 in np.arange(len(nparams)):
+        for k1 in np.arange(len(nraneffs)):
             for k2 in np.arange(k1+1):
 
                 # Work out the indices of random factor k1 and random factor k2
@@ -584,9 +584,9 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, 
 
                 # Get covariance between D_k1 and D_k2 
                 if permdict[str(k1)+str(k2)] is None:
-                    FisherInfoMat[np.ix_(IndsDk1, IndsDk2)],permdict[str(k1)+str(k2)] = get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict,perm=None)
+                    FisherInfoMat[np.ix_(IndsDk1, IndsDk2)],permdict[str(k1)+str(k2)] = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict,perm=None)
                 else:
-                    FisherInfoMat[np.ix_(IndsDk1, IndsDk2)],_ = get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict,perm=permdict[str(k1)+str(k2)])
+                    FisherInfoMat[np.ix_(IndsDk1, IndsDk2)],_ = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict,perm=permdict[str(k1)+str(k2)])
 
                 # Get covariance between D_k1 and D_k2 
                 FisherInfoMat[np.ix_(IndsDk2, IndsDk1)] = FisherInfoMat[np.ix_(IndsDk1, IndsDk2)].transpose()
@@ -600,7 +600,7 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, 
         paramVector = np.concatenate((beta, np.array([[sigma2]])))
         derivVector = np.concatenate((dldB, dldsigma2))
 
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
 
             paramVector = np.concatenate((paramVector, mat2vech2D(Ddict[k])))
             derivVector = np.concatenate((derivVector, mat2vech2D(dldDdict[k])))
@@ -617,11 +617,11 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, 
         sigma2 = paramVector[p:(p+1)][0,0]
 
         # D (dict version)
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
             Ddict[k] = makeDnnd2D(vech2mat2D(paramVector[FishIndsDk[k]:FishIndsDk[k+1]]))
         
         # D (matrix version)
-        for i in np.arange(len(nparams)):
+        for i in np.arange(len(nraneffs)):
             for j in np.arange(nlevels[i]):
                 if i == 0 and j == 0:
                     D = Ddict[i]
@@ -640,7 +640,7 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, 
     # --------------------------------------------------------------------------
     bvals = DinvIplusZtZD @ Zte
     
-    return(paramVector, bvals, nit)
+    return(paramVector, bvals, nit, llhcurr)
 
 
 # ============================================================================
@@ -679,9 +679,9 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, 
 # - `nlevels`: A vector containing the number of levels for each factor, 
 #              e.g. `nlevels=[3,4]` would mean the first factor has 3 levels
 #              and the second factor has 4 levels.
-# - `nparams`: A vector containing the number of parameters for each factor,
-#              e.g. `nlevels=[2,1]` would mean the first factor has 2
-#              parameters and the second factor has 1 parameter.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 #  - `tol`: A scalar tolerance value. Iteration stops once successive 
 #           log-likelihood values no longer exceed `tol`.
 #  - `n`: The number of observations.
@@ -698,7 +698,7 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, 
 #  - `nit`: The number of iterations taken to converge.
 #
 # ============================================================================
-def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, init_paramVector=None):
+def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, init_paramVector=None):
     
     # ------------------------------------------------------------------------------
     # Useful scalars
@@ -708,7 +708,7 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
     r = len(nlevels)
 
     # Number of random effects, q
-    q = np.sum(np.dot(nparams,nlevels))
+    q = np.sum(np.dot(nraneffs,nlevels))
 
     # Number of fixed effects, p
     p = XtX.shape[0]
@@ -717,19 +717,19 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
     # Index variables
     # ------------------------------------------------------------------------------
     # Work out the total number of parameters
-    tnp = np.int32(p + 1 + np.sum(nparams**2))
+    tnp = np.int32(p + 1 + np.sum(nraneffs**2))
 
     # Indices for submatrics corresponding to Dks
-    FishIndsDk = np.int32(np.cumsum(nparams**2) + p + 1)
+    FishIndsDk = np.int32(np.cumsum(nraneffs**2) + p + 1)
     FishIndsDk = np.insert(FishIndsDk,0,p+1)
 
     # ------------------------------------------------------------------------------
     # Duplication matrices
     # ------------------------------------------------------------------------------
     invDupMatdict = dict()
-    for i in np.arange(len(nparams)):
+    for i in np.arange(len(nraneffs)):
 
-        invDupMatdict[i] = invDupMat2D(nparams[i])
+        invDupMatdict[i] = invDupMat2D(nraneffs[i])
         
     # ------------------------------------------------------------------------------
     # Initial estimates
@@ -743,11 +743,11 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
 
         # Initial D (dictionary version)
         Ddict = dict()
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
             Ddict[k] = makeDnnd2D(vec2mat2D(init_paramVector[FishIndsDk[k]:FishIndsDk[k+1]]))
             
         # Initial D (matrix version)
-        for i in np.arange(len(nparams)):
+        for i in np.arange(len(nraneffs)):
             for j in np.arange(nlevels[i]):
                 if i == 0 and j == 0:
                     D = Ddict[i]
@@ -771,12 +771,12 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
 
         # Inital D (Dictionary version)
         Ddict = dict()
-        for k in np.arange(len(nparams)):
-            Ddict[k] = makeDnnd2D(initDk2D(k, ZtZ, Zte, sigma2, nlevels, nparams, invDupMatdict))
+        for k in np.arange(len(nraneffs)):
+            Ddict[k] = makeDnnd2D(initDk2D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict))
             
         # Inital D (Matrix version)
         D = np.array([])
-        for i in np.arange(len(nparams)):
+        for i in np.arange(len(nraneffs)):
             for j in np.arange(nlevels[i]):
                 if i == 0 and j == 0:
                     D = Ddict[i]
@@ -804,14 +804,14 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
     # ------------------------------------------------------------------------------
     # This will hold the matrices: Sum_j^{l_k} Z_{i,j}'Z_{i,j}
     ZtZmatdict = dict()
-    for k in np.arange(len(nparams)):
+    for k in np.arange(len(nraneffs)):
         ZtZmatdict[k] = None
 
     # This will hold the permutations needed for the covariance between the
     # derivatives with respect to k1 and k2
     permdict = dict()
-    for k1 in np.arange(len(nparams)):
-        for k2 in np.arange(len(nparams)):
+    for k1 in np.arange(len(nraneffs)):
+        for k2 in np.arange(len(nraneffs)):
             permdict[str(k1)+str(k2)] = None
 
     # ------------------------------------------------------------------------------
@@ -851,13 +851,13 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
         
         # For each factor, factor k, work out dl/dD_k
         dldDdict = dict()
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
 
             # Store it in the dictionary
             if ZtZmatdict[k] is None:
-                dldDdict[k],ZtZmatdict[k] = get_dldDk2D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None)
+                dldDdict[k],ZtZmatdict[k] = get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None)
             else:
-                dldDdict[k],_ = get_dldDk2D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k])
+                dldDdict[k],_ = get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k])
 
         # ------------------------------------------------------------------------
         # Covariance of dl/dsigma2
@@ -876,20 +876,20 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
         FisherInfoMat[p,p] = covdldsigma2
 
         # Add dl/dsigma2 dl/dD covariance
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
 
             # Assign to the relevant block
             if ZtZmatdict[k] is None:
-                covdldDksigma2,ZtZmatdict[k] = get_covdldDkdsigma22D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True, ZtZmat=None)
+                covdldDksigma2,ZtZmatdict[k] = get_covdldDkdsigma22D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True, ZtZmat=None)
             else:
-                covdldDksigma2,_ = get_covdldDkdsigma22D(k, sigma2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True, ZtZmat=ZtZmatdict[k])
+                covdldDksigma2,_ = get_covdldDkdsigma22D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True, ZtZmat=ZtZmatdict[k])
 
             # Assign to the relevant block
             FisherInfoMat[p, FishIndsDk[k]:FishIndsDk[k+1]] = covdldDksigma2.reshape(FishIndsDk[k+1]-FishIndsDk[k])
             FisherInfoMat[FishIndsDk[k]:FishIndsDk[k+1],p] = FisherInfoMat[p, FishIndsDk[k]:FishIndsDk[k+1]].transpose()
 
         # Add dl/dD covariance for each pair (k1,k2) of random factors
-        for k1 in np.arange(len(nparams)):
+        for k1 in np.arange(len(nraneffs)):
             for k2 in np.arange(k1+1):
 
                 # Work out the indices of D_k1 and D_k2
@@ -898,9 +898,9 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
 
                 # Get covariance between D_k1 and D_k2 
                 if permdict[str(k1)+str(k2)] is None:
-                    FisherInfoMat[np.ix_(IndsDk1, IndsDk2)],permdict[str(k1)+str(k2)] = get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict,vec=True,perm=None)
+                    FisherInfoMat[np.ix_(IndsDk1, IndsDk2)],permdict[str(k1)+str(k2)] = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict,vec=True,perm=None)
                 else:
-                    FisherInfoMat[np.ix_(IndsDk1, IndsDk2)],_ = get_covdldDk1Dk22D(k1, k2, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict,vec=True,perm=permdict[str(k1)+str(k2)])
+                    FisherInfoMat[np.ix_(IndsDk1, IndsDk2)],_ = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict,vec=True,perm=permdict[str(k1)+str(k2)])
 
                 FisherInfoMat[np.ix_(IndsDk2, IndsDk1)] = FisherInfoMat[np.ix_(IndsDk1, IndsDk2)].transpose()
 
@@ -913,7 +913,7 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
         paramVector = np.concatenate((beta, np.array([[sigma2]])))
         derivVector = np.concatenate((dldB, dldsigma2))
 
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
             paramVector = np.concatenate((paramVector, mat2vec2D(Ddict[k])))
             derivVector = np.concatenate((derivVector, mat2vec2D(dldDdict[k])))
 
@@ -929,11 +929,11 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
         sigma2 = paramVector[p:(p+1)][0,0]
 
         # D (dictionary version)
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
             Ddict[k] = makeDnnd2D(vec2mat2D(paramVector[FishIndsDk[k]:FishIndsDk[k+1]]))
         
         # D (matrix version)
-        for i in np.arange(len(nparams)):
+        for i in np.arange(len(nraneffs)):
             for j in np.arange(nlevels[i]):
                 # Add block for each level of each factor
                 if i == 0 and j == 0:
@@ -957,12 +957,12 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
     # Convert to vech representation.
     # ------------------------------------------------------------------------------
     # Indices for submatrics corresponding to Dks
-    IndsDk = np.int32(np.cumsum(nparams*(nparams+1)//2) + p + 1)
+    IndsDk = np.int32(np.cumsum(nraneffs*(nraneffs+1)//2) + p + 1)
     IndsDk = np.insert(IndsDk,0,p+1)
 
     # We reshape from (beta,sigma2, vec(D_1),...vec(D_r)) to
     # (beta,sigma2, vech(D_1),...vech(D_r)) for consistency with other functions.
-    paramVector_reshaped = np.zeros((np.sum(nparams*(nparams+1)//2) + p + 1,1))
+    paramVector_reshaped = np.zeros((np.sum(nraneffs*(nraneffs+1)//2) + p + 1,1))
     paramVector_reshaped[0:(p+1)]=paramVector[0:(p+1)].reshape(p+1,1)
 
     # Reshape each vec to vech
@@ -970,7 +970,7 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
         paramVector_reshaped[IndsDk[k]:IndsDk[k+1]] = vec2vech2D(paramVector[FishIndsDk[k]:FishIndsDk[k+1]]).reshape(paramVector_reshaped[IndsDk[k]:IndsDk[k+1]].shape)
 
     # Return results
-    return(paramVector_reshaped, bvals, nit)
+    return(paramVector_reshaped, bvals, nit, llhcurr)
 
 
 # ============================================================================
@@ -1020,9 +1020,9 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
 # - `nlevels`: A vector containing the number of levels for each factor, 
 #              e.g. `nlevels=[3,4]` would mean the first factor has 3 levels
 #              and the second factor has 4 levels.
-# - `nparams`: A vector containing the number of parameters for each factor,
-#              e.g. `nlevels=[2,1]` would mean the first factor has 2
-#              parameters and the second factor has 1 parameter.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 #  - `tol`: A scalar tolerance value. Iteration stops once successive 
 #           log-likelihood values no longer exceed `tol`.
 #  - `n`: The number of observations.
@@ -1039,7 +1039,7 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
 #  - `nit`: The number of iterations taken to converge.
 #
 # ============================================================================
-def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, init_paramVector=None):
+def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, init_paramVector=None):
     
     # ------------------------------------------------------------------------------
     # Useful scalars
@@ -1049,7 +1049,7 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
     r = len(nlevels)
 
     # Number of random effects, q
-    q = np.sum(np.dot(nparams,nlevels))
+    q = np.sum(np.dot(nraneffs,nlevels))
 
     # Number of fixed effects, p
     p = XtX.shape[0]
@@ -1058,22 +1058,22 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
     # Index variables
     # ------------------------------------------------------------------------------
     # Work out the total number of parameters
-    tnp = np.int32(p + 1 + np.sum(nparams*(nparams+1)/2))
+    tnp = np.int32(p + 1 + np.sum(nraneffs*(nraneffs+1)/2))
 
     # Indices for submatrics corresponding to Dks
-    FishIndsDk = np.int32(np.cumsum(nparams*(nparams+1)/2) + p + 1)
+    FishIndsDk = np.int32(np.cumsum(nraneffs*(nraneffs+1)/2) + p + 1)
     FishIndsDk = np.insert(FishIndsDk,0,p+1)
 
     # Work out D indices (there is one block of D per level)
     Dinds = np.zeros(np.sum(nlevels)+1)
     counter = 0
-    for k in np.arange(len(nparams)):
+    for k in np.arange(len(nraneffs)):
         for j in np.arange(nlevels[k]):
-            Dinds[counter] = np.concatenate((np.array([0]), np.cumsum(nlevels*nparams)))[k] + nparams[k]*j
+            Dinds[counter] = np.concatenate((np.array([0]), np.cumsum(nlevels*nraneffs)))[k] + nraneffs[k]*j
             counter = counter + 1
             
     # Last index will be missing so add it
-    Dinds[len(Dinds)-1]=Dinds[len(Dinds)-2]+nparams[-1]
+    Dinds[len(Dinds)-1]=Dinds[len(Dinds)-2]+nraneffs[-1]
     
     # Make sure indices are ints
     Dinds = np.int64(Dinds)
@@ -1082,9 +1082,9 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
     # Duplication matrices
     # ------------------------------------------------------------------------------
     invDupMatdict = dict()
-    for i in np.arange(len(nparams)):
+    for i in np.arange(len(nraneffs)):
 
-        invDupMatdict[i] = invDupMat2D(nparams[i])
+        invDupMatdict[i] = invDupMat2D(nraneffs[i])
         
     # ------------------------------------------------------------------------------
     # Initial estimates
@@ -1098,13 +1098,13 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
 
         # D (dict version)
         Ddict = dict()
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
             Ddict[k] = makeDnnd2D(vech2mat2D(init_paramVector[FishIndsDk[k]:FishIndsDk[k+1]]))
             
         # D (matrix version)
         D = scipy.sparse.lil_matrix((q,q))
         counter = 0
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
             for j in np.arange(nlevels[k]):
                 # Add a block for each level of each factor.
                 D[Dinds[counter]:Dinds[counter+1], Dinds[counter]:Dinds[counter+1]] = Ddict[k]
@@ -1127,13 +1127,13 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
             
         # Inital D (dict version)
         Ddict = dict()
-        for k in np.arange(len(nparams)):
-            Ddict[k] = makeDnnd2D(initDk2D(k, ZtZ, Zte, sigma2, nlevels, nparams, invDupMatdict))
+        for k in np.arange(len(nraneffs)):
+            Ddict[k] = makeDnnd2D(initDk2D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict))
             
         # Inital D (matrix version)
         D = scipy.sparse.lil_matrix((q,q))
         counter = 0
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
             for j in np.arange(nlevels[k]):
                 # Add a block for each level of each factor.
                 D[Dinds[counter]:Dinds[counter+1], Dinds[counter]:Dinds[counter+1]] = Ddict[k]
@@ -1160,13 +1160,13 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
     # ------------------------------------------------------------------------------
     # This will hold the matrices: Sum_j^{l_k} Z_{i,j}'Z_{i,j}
     ZtZmatdict = dict()
-    for k in np.arange(len(nparams)):
+    for k in np.arange(len(nraneffs)):
         ZtZmatdict[k] = None
 
     # This will hold the permutations needed for the covariance between the
     # derivatives with respect to k
     permdict = dict()
-    for k in np.arange(len(nparams)):
+    for k in np.arange(len(nraneffs)):
         permdict[str(k)] = None
 
     # ------------------------------------------------------------------------------
@@ -1198,23 +1198,23 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
         # Update D
         #---------------------------------------------------------------------------
         counter = 0
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
 
             #-----------------------------------------------------------------------
             # Work out derivative of D_k
             #-----------------------------------------------------------------------
             if ZtZmatdict[k] is None:
-                dldD,ZtZmatdict[k] = get_dldDk2D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None)
+                dldD,ZtZmatdict[k] = get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None)
             else:
-                dldD,_ = get_dldDk2D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k])
+                dldD,_ = get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k])
 
             #-----------------------------------------------------------------------
             # Work out covariance of derivative of D_k
             #-----------------------------------------------------------------------
             if permdict[str(k)] is None:
-                covdldDk,permdict[str(k)] = get_covdldDk1Dk22D(k, k, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True, perm=None)
+                covdldDk,permdict[str(k)] = get_covdldDk1Dk22D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True, perm=None)
             else:
-                covdldDk,_ = get_covdldDk1Dk22D(k, k, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True, perm=permdict[str(k)])
+                covdldDk,_ = get_covdldDk1Dk22D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True, perm=permdict[str(k)])
 
             #-----------------------------------------------------------------------
             # Update step
@@ -1251,7 +1251,7 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
     # Save parameters
     # ------------------------------------------------------------------------------
     paramVector = np.concatenate((beta, sigma2))
-    for k in np.arange(len(nparams)):
+    for k in np.arange(len(nraneffs)):
         paramVector = np.concatenate((paramVector, mat2vech2D(Ddict[k])))
 
     # ------------------------------------------------------------------------------
@@ -1259,7 +1259,7 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
     # ------------------------------------------------------------------------------
     bvals = DinvIplusZtZD @ Zte
         
-    return(paramVector, bvals, nit)
+    return(paramVector, bvals, nit, llhcurr)
 
 
 # ============================================================================
@@ -1303,9 +1303,9 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
 # - `nlevels`: A vector containing the number of levels for each factor, 
 #              e.g. `nlevels=[3,4]` would mean the first factor has 3 levels
 #              and the second factor has 4 levels.
-# - `nparams`: A vector containing the number of parameters for each factor,
-#              e.g. `nlevels=[2,1]` would mean the first factor has 2
-#              parameters and the second factor has 1 parameter.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 #  - `tol`: A scalar tolerance value. Iteration stops once successive 
 #           log-likelihood values no longer exceed `tol`.
 #  - `n`: The number of observations.
@@ -1322,7 +1322,7 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n
 #  - `nit`: The number of iterations taken to converge.
 #
 # ============================================================================
-def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n, init_paramVector=None):
+def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, init_paramVector=None):
     
     # ------------------------------------------------------------------------------
     # Useful scalars
@@ -1332,7 +1332,7 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
     r = len(nlevels)
 
     # Number of random effects, q
-    q = np.sum(np.dot(nparams,nlevels))
+    q = np.sum(np.dot(nraneffs,nlevels))
 
     # Number of fixed effects, p
     p = XtX.shape[0]
@@ -1341,19 +1341,19 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
     # Index variables
     # ------------------------------------------------------------------------------
     # Work out the total number of parameters
-    tnp = np.int32(p + 1 + np.sum(nparams*(nparams+1)/2))
+    tnp = np.int32(p + 1 + np.sum(nraneffs*(nraneffs+1)/2))
 
     # Indices for submatrics corresponding to Dks
-    FishIndsDk = np.int32(np.cumsum(nparams*(nparams+1)/2) + p + 1)
+    FishIndsDk = np.int32(np.cumsum(nraneffs*(nraneffs+1)/2) + p + 1)
     FishIndsDk = np.insert(FishIndsDk,0,p+1)
 
     # ------------------------------------------------------------------------------
     # Duplication matrices
     # ------------------------------------------------------------------------------
     invDupMatdict = dict()
-    for i in np.arange(len(nparams)):
+    for i in np.arange(len(nraneffs)):
 
-        invDupMatdict[i] = invDupMat2D(nparams[i])
+        invDupMatdict[i] = invDupMat2D(nraneffs[i])
 
     # ------------------------------------------------------------------------------
     # Initial estimates
@@ -1367,11 +1367,11 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
 
         # Initial D (dict version)
         Ddict = dict()
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
             Ddict[k] = makeDnnd2D(vech2mat2D(init_paramVector[FishIndsDk[k]:FishIndsDk[k+1]]))
             
         # Initial D (matrix version)
-        for i in np.arange(len(nparams)):
+        for i in np.arange(len(nraneffs)):
             for j in np.arange(nlevels[i]):
                 # Add a block for each level of each factor
                 if i == 0 and j == 0:
@@ -1396,12 +1396,12 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
             
         # Inital D (dict version)
         Ddict = dict()
-        for k in np.arange(len(nparams)):
-            Ddict[k] = makeDnnd2D(initDk2D(k, ZtZ, Zte, sigma2, nlevels, nparams, invDupMatdict))
+        for k in np.arange(len(nraneffs)):
+            Ddict[k] = makeDnnd2D(initDk2D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict))
             
         # Inital D (matrix version)
         D = np.array([])
-        for i in np.arange(len(nparams)):
+        for i in np.arange(len(nraneffs)):
             for j in np.arange(nlevels[i]):
                 # Add a block for each level of each factor
                 if i == 0 and j == 0:
@@ -1431,13 +1431,13 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
     # Work out D indices (there is one block of D per level)
     Dinds = np.zeros(np.sum(nlevels)+1)
     counter = 0
-    for k in np.arange(len(nparams)):
+    for k in np.arange(len(nraneffs)):
         for j in np.arange(nlevels[k]):
-            Dinds[counter] = np.concatenate((np.array([0]), np.cumsum(nlevels*nparams)))[k] + nparams[k]*j
+            Dinds[counter] = np.concatenate((np.array([0]), np.cumsum(nlevels*nraneffs)))[k] + nraneffs[k]*j
             counter = counter + 1
             
     # Last index will be missing so add it
-    Dinds[len(Dinds)-1]=Dinds[len(Dinds)-2]+nparams[-1]
+    Dinds[len(Dinds)-1]=Dinds[len(Dinds)-2]+nraneffs[-1]
     
     # Make sure indices are ints
     Dinds = np.int64(Dinds)
@@ -1447,13 +1447,13 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
     # ------------------------------------------------------------------------------
     # This will hold the matrices: Sum_j^{l_k} Z_{i,j}'Z_{i,j}
     ZtZmatdict = dict()
-    for k in np.arange(len(nparams)):
+    for k in np.arange(len(nraneffs)):
         ZtZmatdict[k] = None
 
     # This will hold the permutations needed for the covariance between the
     # derivatives with respect to k
     permdict = dict()
-    for k in np.arange(len(nparams)):
+    for k in np.arange(len(nraneffs)):
         permdict[str(k)] = None
 
     # ------------------------------------------------------------------------------
@@ -1485,23 +1485,23 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
         # Update D_k
         #---------------------------------------------------------------------------
         counter = 0
-        for k in np.arange(len(nparams)):
+        for k in np.arange(len(nraneffs)):
             
             #-----------------------------------------------------------------------
             # Work out derivative of dl/dD_k
             #-----------------------------------------------------------------------
             if ZtZmatdict[k] is None:
-                dldD,ZtZmatdict[k] = get_dldDk2D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None)
+                dldD,ZtZmatdict[k] = get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None)
             else:
-                dldD,_ = get_dldDk2D(k, nlevels, nparams, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k])
+                dldD,_ = get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k])
 
             #-----------------------------------------------------------------------
             # Work out covariance derivative of dl/dD_k
             #-----------------------------------------------------------------------
             if permdict[str(k)] is None:
-                covdldDk,permdict[str(k)] = get_covdldDk1Dk22D(k, k, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict,perm=None)
+                covdldDk,permdict[str(k)] = get_covdldDk1Dk22D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict,perm=None)
             else:
-                covdldDk,_ = get_covdldDk1Dk22D(k, k, nlevels, nparams, ZtZ, DinvIplusZtZD, invDupMatdict, perm=permdict[str(k)])
+                covdldDk,_ = get_covdldDk1Dk22D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, perm=permdict[str(k)])
 
             #-----------------------------------------------------------------------
             # Update step
@@ -1536,7 +1536,7 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
     # Save parameters
     # ------------------------------------------------------------------------------
     paramVector = np.concatenate((beta, sigma2))
-    for k in np.arange(len(nparams)):
+    for k in np.arange(len(nraneffs)):
         paramVector = np.concatenate((paramVector, mat2vech2D(Ddict[k])))
 
     # ------------------------------------------------------------------------------
@@ -1544,4 +1544,4 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, tol, n,
     # ------------------------------------------------------------------------------
     bvals = DinvIplusZtZD @ Zte
     
-    return(paramVector, bvals, nit)
+    return(paramVector, bvals, nit, llhcurr)

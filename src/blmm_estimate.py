@@ -52,9 +52,9 @@ from lib.est3d import *
 #  - `nlevels`: A vector containing the number of levels for each factor, e.g. 
 #               `nlevels=[3,4]` would mean the first factor has 3 levels and the
 #               second factor has 4 levels.
-#  - `nparams`: A vector containing the number of parameters for each factor, e.g.
-#               `nlevels=[2,1]` would mean the first factor has 2 parameters and the
-#               second factor has 1 parameter.
+#  - `nraneffs`: A vector containing the number of random effects for each
+#                factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#                random effects and the second factor has 1 random effect.
 #
 # ------------------------------------------------------------------------------------
 #
@@ -67,7 +67,7 @@ from lib.est3d import *
 # - `D`: The random effects covariance matrix estimate for each voxel.
 #
 # ====================================================================================
-def main(inputs, inds, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, n, nlevels, nparams):
+def main(inputs, inds, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, n, nlevels, nraneffs):
 
     # ----------------------------------------------------------------------
     #  Read in one input nifti to get size, affines, etc.
@@ -106,7 +106,7 @@ def main(inputs, inds, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, n, nlevels, 
     # Scalar quantities
     v = np.prod(inds.shape) # (Number of voxels we are looking at)
     p = XtX.shape[1] # (Number of Fixed Effects parameters)
-    qu = np.sum(nparams*(nparams+1)//2) # (Number of unique random effects)
+    qu = np.sum(nraneffs*(nraneffs+1)//2) # (Number of unique random effects)
 
 
     # REML is just a backdoor option at the moment as it isn't that useful
@@ -118,16 +118,16 @@ def main(inputs, inds, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, n, nlevels, 
     # ----------------------------------------------------------------------  
 
     if method=='pSFS': # Recommended, default method
-        paramVec = pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6, n, reml=REML)
+        paramVec = pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6, n, reml=REML)
     
     if method=='FS': 
-        paramVec = FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6, n)
+        paramVec = FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6, n)
 
     if method=='SFS': 
-        paramVec = SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6, n)
+        paramVec = SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6, n)
 
     if method=='pFS': 
-        paramVec = pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nparams, 1e-6, n)
+        paramVec = pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6, n)
 
     # ----------------------------------------------------------------------
     # Parameter outputting
@@ -140,7 +140,7 @@ def main(inputs, inds, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, n, nlevels, 
     dimD = (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],qu)
 
     # Get the indices in the paramvector corresponding to D matrices
-    IndsDk = np.int32(np.cumsum(nparams*(nparams+1)//2) + p + 1)
+    IndsDk = np.int32(np.cumsum(nraneffs*(nraneffs+1)//2) + p + 1)
     IndsDk = np.insert(IndsDk,0,p+1)
 
     # Output beta estimate
@@ -158,11 +158,11 @@ def main(inputs, inds, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, n, nlevels, 
     # Reconstruct D
     Ddict = dict()
     # D as a dictionary
-    for k in np.arange(len(nparams)):
+    for k in np.arange(len(nraneffs)):
 
         Ddict[k] = vech2mat3D(paramVec[:,IndsDk[k]:IndsDk[k+1],:])
       
     # Full version of D
-    D = getDfromDict3D(Ddict, nparams, nlevels)
+    D = getDfromDict3D(Ddict, nraneffs, nlevels)
 
     return(beta, sigma2, D)
