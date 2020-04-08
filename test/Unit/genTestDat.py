@@ -30,7 +30,7 @@ np.set_printoptions(threshold=sys.maxsize)
 #
 # -----------------------------------------------------------------------------
 #
-#   - n (optional): Number of subjects. If not provided, a random n will be
+#   - n (optional): Number of observations. If not provided, a random n will be
 #                   selected between 800 and 1200.
 #   - p (optional): Number of fixed effects parameters. If not provided, a
 #                   random p will be selected between 2 and 10 (an intercept is
@@ -148,7 +148,7 @@ def genTestData2D(n=None, p=None, nlevels=None, nraneffs=None):
 
         else:
 
-            # The factor is randomly arranged across subjects
+            # The factor is randomly arranged 
             factorVec = np.random.randint(0,nlevels[i],size=n) 
 
         # Build a matrix showing where the elements of Z should be
@@ -292,7 +292,7 @@ def prodMats2D(Y,Z,X):
 #
 # -----------------------------------------------------------------------------
 #
-#   - n (optional): Number of subjects. If not provided, a random n will be
+#   - n (optional): Number of observations. If not provided, a random n will be
 #                   selected between 800 and 1200.
 #   - p (optional): Number of fixed effects parameters. If not provided, a
 #                   random p will be selected between 2 and 10 (an intercept is
@@ -334,7 +334,7 @@ def prodMats2D(Y,Z,X):
 #           voxels).
 #   - Z_sv: A spatially varying random effects design (Z with random rows
 #           removed across voxels).
-#   - n_sv: Spatially varying number of subjects.
+#   - n_sv: Spatially varying number of observations.
 #
 # -----------------------------------------------------------------------------
 def genTestData3D(n=None, p=None, nlevels=None, nraneffs=None, v=None):
@@ -423,7 +423,7 @@ def genTestData3D(n=None, p=None, nlevels=None, nraneffs=None, v=None):
 
         else:
 
-            # The factor is randomly arranged across subjects
+            # The factor is randomly arranged 
             factorVec = np.random.randint(0,nlevels[i],size=n) 
 
         # Build a matrix showing where the elements of Z should be

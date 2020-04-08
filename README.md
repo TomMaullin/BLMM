@@ -137,7 +137,7 @@ After running this you will see text printed to the commandline telling you the 
 
  - `setup`: This will be working out the number of batches/blocks the analysis needs to be split into.
  - `batch*`: There may be several jobs with names of this format. These are the "chunks" the analysis has been split into. These are run in parallel to one another and typically don't take very long.
- - `results`: This code is combining the output of each batch to obtain statistical analyses. This will run once all `batch*` jobs have been completed. Please note this code has been streamlined for large numbers of subjects but not large number of parameters; therefore this job may take some time for large numbers of parameters.
+ - `results`: This code is combining the output of each batch to obtain statistical analyses. This will run once all `batch*` jobs have been completed. Please note this code has been streamlined for large numbers of observations/input images but not large number of parameters; therefore this job may take some time for large numbers of parameters.
 
 ### Analysis Output
 
@@ -146,7 +146,7 @@ Below is a full list of NIFTI files output after a BLMM analysis.
 | Filename  | Description  |
 |---|---|
 | `blmm_vox_mask` | This is the analysis mask. |
-| `blmm_vox_n` | This is a map of the number of subjects which contributed to each voxel in the final analysis. |
+| `blmm_vox_n` | This is a map of the number of input images which contributed to each voxel in the final analysis. |
 | `blmm_vox_edf` | This is the spatially varying niave degrees of freedom\*. |
 | `blmm_vox_beta`  | These are the beta (fixed effects parameter) estimates.  |
 | `blmm_vox_sigma2`  | These are the sigma2 (fixed effects variance) estimates.  |
