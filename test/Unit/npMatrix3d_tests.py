@@ -782,14 +782,18 @@ def test_get_dldDk3D():
     k = np.random.randint(0,nraneffs.shape[0])
 
     # First test spatially varying
-    dldDk_sv_test = get_dldDk3D(k, nlevels, nraneffs, ZtZ_sv, Zte_sv, sigma2, DinvIplusZtZD_sv)[testv,:,:]
+    dldDk_sv_test,ZtZmat = get_dldDk3D(k, nlevels, nraneffs, ZtZ_sv, Zte_sv, sigma2, DinvIplusZtZD_sv)
+    dldDk_sv_test,_ = get_dldDk3D(k, nlevels, nraneffs, ZtZ_sv, Zte_sv, sigma2, DinvIplusZtZD_sv, ZtZmat=ZtZmat)
+    dldDk_sv_test = dldDk_sv_test[testv,:,:] 
     dldDk_sv_expected = get_dldDk2D(k, nlevels, nraneffs, ZtZ_sv[testv,:,:], Zte_sv[testv,:,:], sigma2[testv], DinvIplusZtZD_sv[testv,:,:])[0]
 
     # Check if results are all close.
     sv_testVal = np.allclose(dldDk_sv_test,dldDk_sv_expected)
 
     # Now test non spatially varying
-    dldDk_nsv_test = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD)[testv,:,:]
+    dldDk_nsv_test,ZtZmat = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD)
+    dldDk_nsv_test,_ = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD)
+    dldDk_nsv_test = dldDk_nsv_test[testv,:,:] 
     dldDk_nsv_expected = get_dldDk2D(k, nlevels, nraneffs, ZtZ[0,:,:], Zte[testv,:,:], sigma2[testv], DinvIplusZtZD[testv,:,:])[0]
     
     # Check if results are all close.
@@ -901,14 +905,18 @@ def test_get_covdldDkdsigma23D():
       invDupMatdict[i] = invDupMat2D(nraneffs[i]).toarray()
 
     # First test spatially varying
-    covdldDsigma2_sv_test = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ_sv, DinvIplusZtZD_sv, invDupMatdict)[testv,:,:]
+    covdldDsigma2_sv_test,ZtZmat = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ_sv, DinvIplusZtZD_sv, invDupMatdict)
+    covdldDsigma2_sv_test,_ = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ_sv, DinvIplusZtZD_sv, invDupMatdict, ZtZmat=ZtZmat)
+    covdldDsigma2_sv_test = covdldDsigma2_sv_test[testv,:,:]
     covdldDsigma2_sv_expected,_ = get_covdldDkdsigma22D(k, sigma2[testv], nlevels, nraneffs, ZtZ_sv[testv,:,:], DinvIplusZtZD_sv[testv,:,:], invDupMatdict)
 
     # Check if results are all close.
     sv_testVal = np.allclose(covdldDsigma2_sv_test,covdldDsigma2_sv_expected)
 
     # Now test non spatially varying
-    covdldDsigma2_nsv_test = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict)[testv,:,:]
+    covdldDsigma2_nsv_test,ZtZmat = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict)
+    covdldDsigma2_nsv_test,_ = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, ZtZmat=ZtZmat)
+    covdldDsigma2_nsv_test = covdldDsigma2_nsv_test[testv,:,:]
     covdldDsigma2_nsv_expected,_ = get_covdldDkdsigma22D(k, sigma2[testv], nlevels, nraneffs, ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], invDupMatdict)
 
     # Check if results are all close.
@@ -966,14 +974,18 @@ def test_get_covdldDk1Dk23D():
       invDupMatdict[i] = invDupMat2D(nraneffs[i]).toarray()
 
     # First test spatially varying
-    covdldD_sv_test = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ_sv, DinvIplusZtZD_sv, invDupMatdict)[testv,:,:]
+    covdldD_sv_test,perm = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ_sv, DinvIplusZtZD_sv, invDupMatdict)
+    covdldD_sv_test,_ = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ_sv, DinvIplusZtZD_sv, invDupMatdict,perm=perm)
+    covdldD_sv_test = covdldD_sv_test[testv,:,:]
     covdldD_sv_expected = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ_sv[testv,:,:], DinvIplusZtZD_sv[testv,:,:], invDupMatdict)[0]
   
     # Check if results are all close.
     sv_testVal = np.allclose(covdldD_sv_test,covdldD_sv_expected)
 
     # Now test non spatially varying
-    covdldD_nsv_test = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict)[testv,:,:]
+    covdldD_nsv_test,perm = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict)
+    covdldD_nsv_test,_ = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict)
+    covdldD_nsv_test = covdldD_nsv_test[testv,:,:]
     covdldD_nsv_expected = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], invDupMatdict)[0]
     
     # Check if results are all close.

@@ -1434,7 +1434,7 @@ def get_covdldDkdsigma22D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invD
   # Work out the second term
   secondTerm = sumAijBijt2D(ZtZ[Ik,:] @ DinvIplusZtZD, ZtZ[Ik,:], p, p)
 
-  # Obtain ZtZmat
+  # Obtain sum of Rk
   RkSum = ZtZmat - secondTerm
 
   # Multiply by duplication matrices and save

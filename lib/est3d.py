@@ -160,6 +160,21 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n):
     llhcurr = 10*np.ones(XtY.shape[0])
     
     # ------------------------------------------------------------------------------
+    # Dicts to save repeated computation.
+    # ------------------------------------------------------------------------------
+    # This will hold the matrices: Sum_j^{l_k} Z_{i,j}'Z_{i,j}
+    ZtZmatdict = dict()
+    for k in np.arange(len(nraneffs)):
+        ZtZmatdict[k] = None
+
+    # This will hold the permutations needed for the covariance between the
+    # derivatives with respect to k
+    permdict = dict()
+    for k1 in np.arange(len(nraneffs)):
+        for k2 in np.arange(len(nraneffs)):
+            permdict[str(k1)+str(k2)] = None
+
+    # ------------------------------------------------------------------------------
     # Converged voxels and parameter saving
     # ------------------------------------------------------------------------------
     # Vector checking if all voxels converged
@@ -198,8 +213,15 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n):
         # For each factor, factor k, work out dl/dD_k
         dldDdict = dict()
         for k in np.arange(len(nraneffs)):
-            # Store it in the dictionary
-            dldDdict[k] = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD)
+
+            #-----------------------------------------------------------------------
+            # Calculate derivative with respect to D_k
+            #-----------------------------------------------------------------------
+            # Work out derivative
+            if ZtZmatdict[k] is None:
+                dldDdict[k],ZtZmatdict[k] = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None)
+            else:
+                dldDdict[k],_ = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k])
         
         # --------------------------------------------------------------------------
         # Covariances
@@ -220,11 +242,14 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n):
         # Add dl/dsigma2 dl/dD covariance
         for k in np.arange(len(nraneffs)):
 
-            # Get covariance of dldsigma and dldD      
-            covdldsigmadD = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict).reshape(v_iter,FishIndsDk[k+1]-FishIndsDk[k])
-            
+            # Calculate covariance between sigma2 and D
+            if ZtZmatdict[k] is None:
+                covdldsigma2dD,ZtZmatdict[k] = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, ZtZmat=None)
+            else:
+                covdldsigma2dD,_ = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, ZtZmat=ZtZmatdict[k])
+
             # Assign to the relevant block
-            FisherInfoMat[:,p, FishIndsDk[k]:FishIndsDk[k+1]] = covdldsigmadD
+            FisherInfoMat[:,p, FishIndsDk[k]:FishIndsDk[k+1]] = covdldsigma2dD.reshape(FisherInfoMat[:,p, FishIndsDk[k]:FishIndsDk[k+1]].shape)
             FisherInfoMat[:,FishIndsDk[k]:FishIndsDk[k+1],p:(p+1)] = FisherInfoMat[:,p:(p+1), FishIndsDk[k]:FishIndsDk[k+1]].transpose((0,2,1))
             
         # Add dl/dD covariance for each pair (k1,k2) of random factors
@@ -235,9 +260,14 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n):
                 IndsDk1 = np.arange(FishIndsDk[k1],FishIndsDk[k1+1])
                 IndsDk2 = np.arange(FishIndsDk[k2],FishIndsDk[k2+1])
 
-                # Get covariance between D_k1 and D_k2 
-                covdldDk1dDk2 = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict)
-                
+                #-----------------------------------------------------------------------
+                # Calculate covariance of derivative with respect to D_k
+                #-----------------------------------------------------------------------
+                if permdict[str(k1)+str(k2)] is None:
+                    covdldDk1dDk2,permdict[str(k1)+str(k2)] = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, perm=None)
+                else:
+                    covdldDk1dDk2,_ = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, perm=permdict[str(k1)+str(k2)])
+
                 # Add to FImat
                 FisherInfoMat[np.ix_(np.arange(v_iter), IndsDk1, IndsDk2)] = covdldDk1dDk2
                 FisherInfoMat[np.ix_(np.arange(v_iter), IndsDk2, IndsDk1)] = FisherInfoMat[np.ix_(np.arange(v_iter), IndsDk1, IndsDk2)].transpose((0,2,1))
@@ -325,7 +355,15 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n):
             ZtX = ZtX[localnotconverged, :, :]
             ZtZ = ZtZ[localnotconverged, :, :]
             XtZ = XtZ[localnotconverged, :, :]
-        
+            
+            # ----------------------------------------------------------------------
+            # Update ZtZmat
+            # ----------------------------------------------------------------------
+            # ZtZmat
+            for k in np.arange(len(nraneffs)):
+                if ZtZmatdict[k] is not None:
+                    ZtZmatdict[k]=ZtZmatdict[k][localnotconverged, :, :]
+
         # Update n
         if hasattr(n, "ndim"):
             # Check if n varies with voxel
@@ -505,6 +543,21 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
     llhcurr = 10*np.ones(XtY.shape[0])
     
     # ------------------------------------------------------------------------------
+    # Dicts to save repeated computation.
+    # ------------------------------------------------------------------------------
+    # This will hold the matrices: Sum_j^{l_k} Z_{i,j}'Z_{i,j}
+    ZtZmatdict = dict()
+    for k in np.arange(len(nraneffs)):
+        ZtZmatdict[k] = None
+
+    # This will hold the permutations needed for the covariance between the
+    # derivatives with respect to k
+    permdict = dict()
+    for k1 in np.arange(len(nraneffs)):
+        for k2 in np.arange(len(nraneffs)):
+            permdict[str(k1)+str(k2)] = None
+
+    # ------------------------------------------------------------------------------
     # Converged voxels and parameter saving
     # ------------------------------------------------------------------------------
     # Vector checking if all voxels converged
@@ -545,8 +598,15 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
         # For each factor, factor k, work out dl/dD_k
         dldDdict = dict()
         for k in np.arange(len(nraneffs)):
-            # Store it in the dictionary
-            dldDdict[k] = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD)
+
+            #-----------------------------------------------------------------------
+            # Calculate derivative with respect to D_k
+            #-----------------------------------------------------------------------
+            # Work out derivative
+            if ZtZmatdict[k] is None:
+                dldDdict[k],ZtZmatdict[k] = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None)
+            else:
+                dldDdict[k],_ = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k])
         
         # --------------------------------------------------------------------------
         # Covariances
@@ -567,11 +627,14 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
         # Add dl/dsigma2 dl/dD covariance
         for k in np.arange(len(nraneffs)):
 
-            # Get covariance of dldsigma and dldD      
-            covdldsigmadD = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True).reshape(v_iter,FishIndsDk[k+1]-FishIndsDk[k])
-            
+            # Calculate covariance between sigma2 and D
+            if ZtZmatdict[k] is None:
+                covdldsigma2dD,ZtZmatdict[k] = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True, ZtZmat=None)
+            else:
+                covdldsigma2dD,_ = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True, ZtZmat=ZtZmatdict[k])
+
             # Assign to the relevant block
-            FisherInfoMat[:,p, FishIndsDk[k]:FishIndsDk[k+1]] = covdldsigmadD
+            FisherInfoMat[:,p, FishIndsDk[k]:FishIndsDk[k+1]] = covdldsigma2dD.reshape(FisherInfoMat[:,p, FishIndsDk[k]:FishIndsDk[k+1]].shape)
             FisherInfoMat[:,FishIndsDk[k]:FishIndsDk[k+1],p:(p+1)] = FisherInfoMat[:,p:(p+1), FishIndsDk[k]:FishIndsDk[k+1]].transpose((0,2,1))
             
         # Add dl/dD covariance for each pair (k1,k2) of random factors k1 and k2.
@@ -582,9 +645,14 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
                 IndsDk1 = np.arange(FishIndsDk[k1],FishIndsDk[k1+1])
                 IndsDk2 = np.arange(FishIndsDk[k2],FishIndsDk[k2+1])
 
-                # Get covariance between D_k1 and D_k2 
-                covdldDk1dDk2 = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True)
-                
+                #-----------------------------------------------------------------------
+                # Calculate covariance of derivative with respect to D_k
+                #-----------------------------------------------------------------------
+                if permdict[str(k1)+str(k2)] is None:
+                    covdldDk1dDk2,permdict[str(k1)+str(k2)] = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True, perm=None)
+                else:
+                    covdldDk1dDk2,_ = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True, perm=permdict[str(k1)+str(k2)])
+
                 # Add to FImat
                 FisherInfoMat[np.ix_(np.arange(v_iter), IndsDk1, IndsDk2)] = covdldDk1dDk2
                 FisherInfoMat[np.ix_(np.arange(v_iter), IndsDk2, IndsDk1)] = FisherInfoMat[np.ix_(np.arange(v_iter), IndsDk1, IndsDk2)].transpose((0,2,1))
@@ -668,7 +736,15 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
             ZtX = ZtX[localnotconverged, :, :]
             ZtZ = ZtZ[localnotconverged, :, :]
             XtZ = XtZ[localnotconverged, :, :]
-            
+                
+            # ----------------------------------------------------------------------
+            # Update ZtZmat
+            # ----------------------------------------------------------------------
+            # ZtZmat
+            for k in np.arange(len(nraneffs)):
+                if ZtZmatdict[k] is not None:
+                    ZtZmatdict[k]=ZtZmatdict[k][localnotconverged, :, :]
+
         # Update n
         if hasattr(n, "ndim"):
             # Check if n varies with voxel
@@ -853,6 +929,20 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
     llhcurr = 10*np.ones(XtY.shape[0])
     
     # ------------------------------------------------------------------------------
+    # Dicts to save repeated computation.
+    # ------------------------------------------------------------------------------
+    # This will hold the matrices: Sum_j^{l_k} Z_{i,j}'Z_{i,j}
+    ZtZmatdict = dict()
+    for k in np.arange(len(nraneffs)):
+        ZtZmatdict[k] = None
+
+    # This will hold the permutations needed for the covariance between the
+    # derivatives with respect to k
+    permdict = dict()
+    for k in np.arange(len(nraneffs)):
+        permdict[str(k)] = None
+
+    # ------------------------------------------------------------------------------
     # Converged voxels and parameter saving
     # ------------------------------------------------------------------------------
     # Vector checking if all voxels converged
@@ -918,9 +1008,28 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
         counter = 0
         # Loop though unique blocks of D updating one at a time
         for k in np.arange(len(nraneffs)):
-            
+
+            #-----------------------------------------------------------------------
+            # Calculate derivative with respect to D_k
+            #-----------------------------------------------------------------------
+            # Work out derivative
+            if ZtZmatdict[k] is None:
+                dldDk,ZtZmatdict[k] = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None)
+            else:
+                dldDk,_ = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k])
+    
+            #-----------------------------------------------------------------------
+            # Calculate covariance of derivative with respect to D_k
+            #-----------------------------------------------------------------------
+            if permdict[str(k)] is None:
+                covdldDk1dDk2,permdict[str(k)] = get_covdldDk1Dk23D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, perm=None)
+            else:
+                covdldDk1dDk2,_ = get_covdldDk1Dk23D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, perm=permdict[str(k)])
+
+            #-----------------------------------------------------------------------
             # Work out update amount
-            update = forceSym3D(np.linalg.inv(get_covdldDk1Dk23D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict))) @ mat2vech3D(get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD))
+            #-----------------------------------------------------------------------
+            update = forceSym3D(np.linalg.inv(covdldDk1dDk2)) @ mat2vech3D(dldDk)
             
             # Multiply by stepsize
             update = np.einsum('i,ijk->ijk',lam, update)
@@ -987,7 +1096,15 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
             ZtX = ZtX[localnotconverged, :, :]
             ZtZ = ZtZ[localnotconverged, :, :]
             XtZ = XtZ[localnotconverged, :, :]
-            
+                
+            # ----------------------------------------------------------------------
+            # Update ZtZmat
+            # ----------------------------------------------------------------------
+            # ZtZmat
+            for k in np.arange(len(nraneffs)):
+                if ZtZmatdict[k] is not None:
+                    ZtZmatdict[k]=ZtZmatdict[k][localnotconverged, :, :]
+
         # Update n
         if hasattr(n, "ndim"):
             # Check if n varies with voxel
@@ -1015,13 +1132,6 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
 
         for k in np.arange(len(nraneffs)):
             Ddict[k] = Ddict[k][localnotconverged, :, :]
-            
-        # --------------------------------------------------------------------------
-        # Matrices needed later by many calculations
-        # --------------------------------------------------------------------------
-        # X transpose e and Z transpose e
-        Xte = XtY - (XtX @ beta)
-        Zte = ZtY - (ZtX @ beta)
     
     return(savedparams)
 
@@ -1182,6 +1292,20 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
     llhcurr = 10*np.ones(XtY.shape[0])
     
     # ------------------------------------------------------------------------------
+    # Dicts to save repeated computation.
+    # ------------------------------------------------------------------------------
+    # This will hold the matrices: Sum_j^{l_k} Z_{i,j}'Z_{i,j}
+    ZtZmatdict = dict()
+    for k in np.arange(len(nraneffs)):
+        ZtZmatdict[k] = None
+
+    # This will hold the permutations needed for the covariance between the
+    # derivatives with respect to k
+    permdict = dict()
+    for k in np.arange(len(nraneffs)):
+        permdict[str(k)] = None
+
+    # ------------------------------------------------------------------------------
     # Converged voxels and parameter saving
     # ------------------------------------------------------------------------------
     # Vector checking if all voxels converged
@@ -1253,9 +1377,28 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # --------------------------------------------------------------------------
         counter = 0
         for k in np.arange(len(nraneffs)):
-            
+
+            #-----------------------------------------------------------------------
+            # Calculate derivative with respect to D_k
+            #-----------------------------------------------------------------------
+            # Work out derivative
+            if ZtZmatdict[k] is None:
+                dldDk,ZtZmatdict[k] = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None)
+            else:
+                dldDk,_ = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k])
+        
+            #-----------------------------------------------------------------------
+            # Calculate covariance of derivative with respect to D_k
+            #-----------------------------------------------------------------------
+            if permdict[str(k)] is None:
+                covdldDk1dDk2,permdict[str(k)] = get_covdldDk1Dk23D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True, perm=None)
+            else:
+                covdldDk1dDk2,_ = get_covdldDk1Dk23D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True, perm=permdict[str(k)])
+
+            #-----------------------------------------------------------------------
             # Work out update amount
-            update_p = forceSym3D(np.linalg.inv(get_covdldDk1Dk23D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict,vec=True))) @ mat2vec3D(get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD))
+            #-----------------------------------------------------------------------
+            update_p = forceSym3D(np.linalg.inv(covdldDk1dDk2)) @ mat2vec3D(dldDk)
             
             # Multiply by stepsize
             update_p = np.einsum('i,ijk->ijk',lam, update_p)
@@ -1323,7 +1466,15 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             ZtX = ZtX[localnotconverged, :, :]
             ZtZ = ZtZ[localnotconverged, :, :]
             XtZ = XtZ[localnotconverged, :, :]
-            
+                
+            # ----------------------------------------------------------------------
+            # Update ZtZmat
+            # ----------------------------------------------------------------------
+            # ZtZmat
+            for k in np.arange(len(nraneffs)):
+                if ZtZmatdict[k] is not None:
+                    ZtZmatdict[k]=ZtZmatdict[k][localnotconverged, :, :]
+
         # Update n
         if hasattr(n, "ndim"):
             # Check if n varies with voxel
