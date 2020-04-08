@@ -244,8 +244,8 @@ def test2D():
 
         # Save parameters
         for j in np.arange(len(vechDk)):
-            results.at[indexVec[Dinds[k]+j],'PLS']=vechDk[j,0]
-            results.at[indexVec[Dinds[k]+qu+j],'PLS']=vechDk[j,0]*sigma2_pls[0]
+            results.at[indexVec[Dinds[k]+j],'PLS']=vechDk[j,0]/sigma2_pls[0]
+            results.at[indexVec[Dinds[k]+qu+j],'PLS']=vechDk[j,0]
 
     #===============================================================================
     # cSFS
