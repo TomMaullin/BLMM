@@ -90,7 +90,7 @@ from lib.npMatrix2d import *
 def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, init_paramVector=None):
     
     # ------------------------------------------------------------------------------
-    # Initial estimates
+    # Useful scalars
     # ------------------------------------------------------------------------------
 
     # Number of factors, r
@@ -169,6 +169,12 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
                 D[Dinds[counter]:Dinds[counter+1], Dinds[counter]:Dinds[counter+1]] = Ddict[k]
                 counter = counter + 1
 
+        # Work out e'e
+        ete = ssr2D(YtX, YtY, XtX, beta)
+
+        # Z'e, needed for first iteration
+        Zte = ZtY - (ZtX @ beta)
+
     # Otherwise use the closed form initial estimates
     else:
 
@@ -180,6 +186,9 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
 
         # Initial sigma2
         sigma2 = initSigma22D(ete, n)
+
+        # Z'e
+        Zte = ZtY - (ZtX @ beta)
             
         # Inital cholesky decomposition and D
         Ddict = dict()
@@ -251,8 +260,6 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         #---------------------------------------------------------------------------
         # Update sigma2
         #---------------------------------------------------------------------------
-        ete = ssr2D(YtX, YtY, XtX, beta)
-        Zte = ZtY - (ZtX @ beta)
         sigma2 = 1/n*(ete - Zte.transpose() @ DinvIplusZtZD @ Zte)
         
         #---------------------------------------------------------------------------
@@ -316,6 +323,15 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             #-----------------------------------------------------------------------
             IplusZtZD = np.eye(q) + (ZtZ @ D)
             DinvIplusZtZD = forceSym2D(D @ scipy.sparse.linalg.inv(scipy.sparse.csc_matrix(IplusZtZD)))
+
+        # --------------------------------------------------------------------------
+        # Matrices for next iteration
+        # --------------------------------------------------------------------------
+        # Recalculate Zte and ete
+        Zte = ZtY - (ZtX @ beta)
+
+        # Sum of squared residuals
+        ete = ssr2D(YtX, YtY, XtX, beta)
 
         #---------------------------------------------------------------------------
         # Update the step size and log likelihood
@@ -443,6 +459,12 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n,
                 else:
                     D = scipy.linalg.block_diag(D, Ddict[i])
 
+        # Work out e'e
+        ete = ssr2D(YtX, YtY, XtX, beta)
+
+        # Initial sigma2
+        sigma2 = initSigma22D(ete, n)
+
     # If we don't have initial values estimate them
     else:
 
@@ -455,7 +477,7 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n,
         # Initial sigma2
         sigma2 = initSigma22D(ete, n)
 
-        # Z'e, needed for initial D
+        # Z'e, needed for first iteration
         Zte = ZtY - (ZtX @ beta)
 
         # Inital D (Dictionary version)
@@ -508,18 +530,17 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n,
         # Update nit
         nit = nit+1
         
+        # print('sigma2 2D ', nit)
+        # print(sigma2)
+
         # Change current likelihood to previous
         llhprev = llhcurr
 
         # --------------------------------------------------------------------------
-        # Matrices needed later by many calculations
+        # Matrices needed later 
         # --------------------------------------------------------------------------
         # X transpose e and Z transpose e
         Xte = XtY - (XtX @ beta)
-        Zte = ZtY - (ZtX @ beta)
-
-        # Sum of squared residuals
-        ete = ssr2D(YtX, YtY, XtX, beta)
 
         # --------------------------------------------------------------------------
         # Obtain D(I+Z'ZD)^(-1)
@@ -627,6 +648,19 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n,
                     D = Ddict[i]
                 else:
                     D = scipy.linalg.block_diag(D, Ddict[i])
+
+        # --------------------------------------------------------------------------
+        # Matrices for next iteration
+        # --------------------------------------------------------------------------
+        # Recalculate Zte and ete
+        Zte = ZtY - (ZtX @ beta)
+
+        # Sum of squared residuals
+        ete = ssr2D(YtX, YtY, XtX, beta)
+
+        # Inverse of (I+Z'ZD) multiplied by D
+        IplusZtZD = np.eye(q) + (ZtZ @ D)
+        DinvIplusZtZD = forceSym2D(D @ scipy.sparse.linalg.inv(scipy.sparse.csc_matrix(IplusZtZD)))
 
         # ----------------------------------------------------------------------
         # Update the step size and log likelihood
@@ -754,6 +788,12 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
                 else:
                     D = scipy.linalg.block_diag(D, Ddict[i])
 
+        # Work out e'e
+        ete = ssr2D(YtX, YtY, XtX, beta)
+
+        # Z'e, needed for first iteration
+        Zte = ZtY - (ZtX @ beta)
+
     # Estimate initial values otherwise
     else:
 
@@ -766,7 +806,7 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
         # Initial sigma2
         sigma2 = initSigma22D(ete, n)
 
-        # Z'e, needed for initial D
+        # Z'e, needed for first iteration
         Zte = ZtY - (ZtX @ beta)
 
         # Inital D (Dictionary version)
@@ -831,14 +871,6 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
         # ------------------------------------------------------------------------
         # X transpose e and Z transpose e
         Xte = XtY - (XtX @ beta)
-        Zte = ZtY - (ZtX @ beta)
-
-        # Inverse of (I+Z'ZD) multiplied by D
-        IplusZtZD = np.eye(q) + (ZtZ @ D)
-        DinvIplusZtZD = forceSym2D(D @ scipy.sparse.linalg.inv(scipy.sparse.csc_matrix(IplusZtZD)))
-
-        # Sum of squared residuals
-        ete = ssr2D(YtX, YtY, XtX, beta)
 
         # ------------------------------------------------------------------------
         # Derivatives
@@ -940,6 +972,19 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
                     D = Ddict[i]
                 else:
                     D = scipy.linalg.block_diag(D, Ddict[i])
+
+        # --------------------------------------------------------------------------
+        # Matrices for next iteration
+        # --------------------------------------------------------------------------
+        # Recalculate Zte and ete
+        Zte = ZtY - (ZtX @ beta)
+
+        # Sum of squared residuals
+        ete = ssr2D(YtX, YtY, XtX, beta)
+
+        # Inverse of (I+Z'ZD) multiplied by D
+        IplusZtZD = np.eye(q) + (ZtZ @ D)
+        DinvIplusZtZD = forceSym2D(D @ scipy.sparse.linalg.inv(scipy.sparse.csc_matrix(IplusZtZD)))
 
         # --------------------------------------------------------------------------
         # Update the step size and log likelihood
@@ -1110,6 +1155,12 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
                 D[Dinds[counter]:Dinds[counter+1], Dinds[counter]:Dinds[counter+1]] = Ddict[k]
                 counter = counter + 1
 
+        # Work out e'e
+        ete = ssr2D(YtX, YtY, XtX, beta)
+
+        # Z'e, needed for first iteration
+        Zte = ZtY - (ZtX @ beta)
+
     # Otherwise work out initial estimates
     else:
 
@@ -1190,8 +1241,6 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         #---------------------------------------------------------------------------
         # Update sigma^2
         #---------------------------------------------------------------------------
-        ete = ssr2D(YtX, YtY, XtX, beta)
-        Zte = ZtY - (ZtX @ beta)
         sigma2 = 1/n*(ete - Zte.transpose() @ DinvIplusZtZD @ Zte)
         
         #---------------------------------------------------------------------------
@@ -1238,6 +1287,15 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             #-----------------------------------------------------------------------
             IplusZtZD = np.eye(q) + (ZtZ @ D)
             DinvIplusZtZD = forceSym2D(D @ scipy.sparse.linalg.inv(scipy.sparse.csc_matrix(IplusZtZD)))
+
+        # --------------------------------------------------------------------------
+        # Matrices for next iteration
+        # --------------------------------------------------------------------------
+        # Recalculate Zte and ete
+        Zte = ZtY - (ZtX @ beta)
+
+        # Sum of squared residuals
+        ete = ssr2D(YtX, YtY, XtX, beta)
 
         # --------------------------------------------------------------------------
         # Update step size and likelihood
@@ -1379,6 +1437,12 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
                 else:
                     D = scipy.linalg.block_diag(D, Ddict[i])
 
+        # Work out e'e
+        ete = ssr2D(YtX, YtY, XtX, beta)
+
+        # Z'e, needed for first iteration
+        Zte = ZtY - (ZtX @ beta)
+
     # Otherwise work out initial estimates
     else:
 
@@ -1477,8 +1541,6 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
         #---------------------------------------------------------------------------
         # Update sigma^2
         #---------------------------------------------------------------------------
-        ete = ssr2D(YtX, YtY, XtX, beta)
-        Zte = ZtY - (ZtX @ beta)
         sigma2 = 1/n*(ete - Zte.transpose() @ DinvIplusZtZD @ Zte)
         
         #---------------------------------------------------------------------------
@@ -1524,6 +1586,15 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
             # ----------------------------------------------------------------------
             IplusZtZD = np.eye(q) + (ZtZ @ D)
             DinvIplusZtZD = forceSym2D(D @ np.linalg.inv(IplusZtZD)) 
+
+        # --------------------------------------------------------------------------
+        # Matrices for next iteration
+        # --------------------------------------------------------------------------
+        # Recalculate Zte and ete
+        Zte = ZtY - (ZtX @ beta)
+
+        # Sum of squared residuals
+        ete = ssr2D(YtX, YtY, XtX, beta)
 
         # --------------------------------------------------------------------------
         # Update step size and likelihood

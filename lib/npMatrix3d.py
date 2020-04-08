@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.sparse
 from scipy import stats
-from lib.npMatrix2d import faclev_indices2D, permOfIkKkI2D, invDupMat2D
+from lib.npMatrix2d import faclev_indices2D, fac_indices2D, permOfIkKkI2D, invDupMat2D
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
@@ -657,6 +657,15 @@ def get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD):
 #          (Z'e=Z'(Y-X\beta) in the above notation).
 # - `sigma2`: The fixed effects variance (\sigma^2 in the above notation).
 # - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1).
+# - `ZtZmat`: The sum over j of Z_{(k,j)}'Z_{(k,j)}. This only need be 
+#             calculated once so can be stored and re-entered for each
+#             iteration.
+# - `REML`: Backdoor option for restricted likelihood maximisation.
+#           Currrently not maintained.
+# - `ZtX`: The Z matrix transposed and then multiplied by X (Z'X in the
+#          above notation). Only needed for REML.
+# - `XtX`: The X matrix transposed and then multiplied by X (X'X in the
+#          above notation). Only needed for REML.
 #
 # ----------------------------------------------------------------------------
 #
@@ -665,43 +674,57 @@ def get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD):
 # ----------------------------------------------------------------------------
 #
 # - `dldDk`: The derivative of l with respect to D_k.
+# - `ZtZmat`: The sum over j of Z_{(k,j)}'Z_{(k,j)}. This only need be 
+#             calculated once so can be stored and re-entered for each
+#             iteration.
 #
 # ============================================================================
-def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,reml=False, ZtX=0, XtX=0):
+def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=None, reml=False, ZtX=None, XtX=None):
 
   # Number of voxels
   v = Zte.shape[0]
-  
-  # Initalize the derivative to zeros
-  dldDk = np.zeros((v, nraneffs[k],nraneffs[k]))
-  
-  # For each level j we need to add a term
-  for j in np.arange(nlevels[k]):
 
-    # Get the indices for the kth factor jth level
-    Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
-    
-    # Get (the kj^th columns of Z)^T multiplied by Z
-    Z_kjtZ = ZtZ[:,Ikj,:]
-    Z_kjte = Zte[:,Ikj,:]
-    
-    # Get the first term of the derivative
-    Z_kjtVinve = Z_kjte - (Z_kjtZ @ DinvIplusZtZD @ Zte)
-    firstterm = np.einsum('i,ijk->ijk',1/sigma2,forceSym3D(Z_kjtVinve @ Z_kjtVinve.transpose((0,2,1))))
-    
-    # Get (the kj^th columns of Z)^T multiplied by (the kj^th columns of Z)
-    Z_kjtZ_kj = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ikj,Ikj)]
-    secondterm = forceSym3D(Z_kjtZ_kj) - forceSym3D(Z_kjtZ @ DinvIplusZtZD @ Z_kjtZ.transpose((0,2,1)))
-    
-    if j == 0:
-      
-      # Start a running sum over j
-      dldDk = firstterm - secondterm
-      
-    else:
-    
-      # Add these to the running sum
-      dldDk = dldDk + firstterm - secondterm
+  # We only need calculate this once across all iterations
+  if ZtZmat is None:
+
+    # Instantiate to zeros
+    ZtZmat = np.zeros((ZtZ.shape[0],nraneffs[k],nraneffs[k]))
+
+    for j in np.arange(nlevels[k]):
+
+      # Get the indices for the kth factor jth level
+      Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
+
+      # Work out Z_(k,j)'Z_(k,j)
+      ZtZterm = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ikj,Ikj)]
+
+      # Add together
+      ZtZmat = ZtZmat + ZtZterm
+
+  # Get the indices for the factors 
+  Ik = fac_indices2D(k, nlevels, nraneffs)
+
+  # Work out lk
+  lk = nlevels[k]
+
+  # Work out block size
+  qk = nraneffs[k]
+  p = np.array([qk,1])
+
+  # Work out the second term in TT'
+  secondTerm = sumAijBijt3D(ZtZ[:,Ik,:] @ DinvIplusZtZD, ZtZ[:,Ik,:], p, p)
+
+  # Obtain RkSum=sum (TkjTkj')
+  RkSum = ZtZmat - secondTerm
+
+  # Work out T_ku*sigma
+  TuSig = Zte[:,Ik,:] - (ZtZ[:,Ik,:] @ DinvIplusZtZD @ Zte)
+
+  # Obtain Sum Tu(Tu)'
+  TuuTSum = np.einsum('i,ijk->ijk',1/sigma2,sumAijBijt3D(TuSig, TuSig, p, p))
+
+  # Work out dldDk
+  dldDk = 0.5*(forceSym3D(TuuTSum - RkSum))
     
   if reml==True:
 
@@ -720,11 +743,75 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,reml=False
 
       dldDk = dldDk + 0.5*Z_kjtinvVX @ invXtinvVX @ Z_kjtinvVX.transpose((0,2,1))
 
-  # Halve the sum (the coefficient of a half was not included in the above)
-  dldDk = forceSym3D(dldDk/2)
-
   # Store it in the dictionary
-  return(dldDk)
+  return(dldDk, ZtZmat)
+
+
+# ============================================================================
+#
+# Commented out below is an older version of the above code. This has been 
+# left here in case it has any use for future development.
+#
+# ============================================================================
+# def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,reml=False, ZtX=0, XtX=0):
+#
+#   # Number of voxels
+#   v = Zte.shape[0]
+#  
+#   # Initalize the derivative to zeros
+#   dldDk = np.zeros((v, nraneffs[k],nraneffs[k]))
+#  
+#   # For each level j we need to add a term
+#   for j in np.arange(nlevels[k]):
+#
+#     # Get the indices for the kth factor jth level
+#     Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
+#    
+#     # Get (the kj^th columns of Z)^T multiplied by Z
+#     Z_kjtZ = ZtZ[:,Ikj,:]
+#     Z_kjte = Zte[:,Ikj,:]
+#    
+#     # Get the first term of the derivative
+#     Z_kjtVinve = Z_kjte - (Z_kjtZ @ DinvIplusZtZD @ Zte)
+#     firstterm = np.einsum('i,ijk->ijk',1/sigma2,forceSym3D(Z_kjtVinve @ Z_kjtVinve.transpose((0,2,1))))
+#    
+#     # Get (the kj^th columns of Z)^T multiplied by (the kj^th columns of Z)
+#     Z_kjtZ_kj = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ikj,Ikj)]
+#     secondterm = forceSym3D(Z_kjtZ_kj) - forceSym3D(Z_kjtZ @ DinvIplusZtZD @ Z_kjtZ.transpose((0,2,1)))
+#    
+#     if j == 0:
+#      
+#       # Start a running sum over j
+#       dldDk = firstterm - secondterm
+#      
+#     else:
+#    
+#       # Add these to the running sum
+#       dldDk = dldDk + firstterm - secondterm
+#    
+#   if reml==True:
+#
+#     invXtinvVX = np.linalg.inv(XtX - ZtX.transpose((0,2,1)) @ DinvIplusZtZD @ ZtX)
+#
+#     # For each level j we need to add a term
+#     for j in np.arange(nlevels[k]):
+#
+#       # Get the indices for the kth factor jth level
+#       Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
+#
+#       Z_kjtZ = ZtZ[:,Ikj,:]
+#       Z_kjtX = ZtX[:,Ikj,:]
+#
+#       Z_kjtinvVX = Z_kjtX - Z_kjtZ @ DinvIplusZtZD @ ZtX
+#
+#       dldDk = dldDk + 0.5*Z_kjtinvVX @ invXtinvVX @ Z_kjtinvVX.transpose((0,2,1))
+#
+#   # Halve the sum (the coefficient of a half was not included in the above)
+#   dldDk = forceSym3D(dldDk/2)
+#
+#   # Store it in the dictionary
+#   return(dldDk)
+# ============================================================================
 
 
 # ============================================================================
@@ -794,6 +881,9 @@ def get_covdldbeta3D(XtZ, XtX, ZtZ, DinvIplusZtZD, sigma2):
 # - `vec`: This is a boolean value which by default is false. If True it gives
 #          the update vector for vec (i.e. duplicates included), otherwise it
 #          gives the update vector for vech.
+# - `ZtZmat`: The sum over j of Z_{(k,j)}'Z_{(k,j)}. This only need be 
+#             calculated once so can be stored and re-entered for each
+#             iteration.
 #
 # ----------------------------------------------------------------------------
 #
@@ -804,26 +894,49 @@ def get_covdldbeta3D(XtZ, XtX, ZtZ, DinvIplusZtZD, sigma2):
 # - `covdldDdldsigma2`: The covariance between the derivative of the log 
 #                       likelihood with respect to vech(D_k) and the 
 #                       derivative with respect to \sigma^2.
+# - `ZtZmat`: The sum over j of Z_{(k,j)}'Z_{(k,j)}. This only need be 
+#             calculated once so can be stored and re-entered for each
+#             iteration.
 #
 # ============================================================================
-def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False):
+def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False, ZtZmat=None):
   
   # Number of voxels
   v = DinvIplusZtZD.shape[0]
-  
-  # Sum of R_(k, j) over j
-  RkSum = np.zeros((v,nraneffs[k],nraneffs[k]))
 
-  for j in np.arange(nlevels[k]):
+  # We only need calculate this once across all iterations
+  if ZtZmat is None:
 
-    # Get the indices for the kth factor jth level
-    Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
+    # Instantiate to zeros
+    ZtZmat = np.zeros((ZtZ.shape[0],nraneffs[k],nraneffs[k]))
 
-    # Work out R_(k, j)
-    Rkj = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ikj,Ikj)] - forceSym3D(ZtZ[:,Ikj,:] @ DinvIplusZtZD @ ZtZ[:,:,Ikj])
-    
-    # Add together
-    RkSum = RkSum + Rkj
+    for j in np.arange(nlevels[k]):
+
+      # Get the indices for the kth factor jth level
+      Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
+
+      # Work out Z_(k,j)'Z_(k,j)
+      ZtZterm = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ikj,Ikj)]
+
+      # Add together
+      ZtZmat = ZtZmat + ZtZterm
+
+  # Get the indices for the factors 
+  Ik = fac_indices2D(k, nlevels, nraneffs)
+
+  # Work out lk
+  lk = nlevels[k]
+
+  # Work out block size
+  q = np.sum(nlevels*nraneffs)
+  qk = nraneffs[k]
+  p = np.array([qk,q])
+
+  # Work out the second term
+  secondTerm = sumAijBijt3D(ZtZ[:,Ik,:] @ DinvIplusZtZD, ZtZ[:,Ik,:], p, p)
+
+  # Obtain ZtZmat
+  RkSum = ZtZmat - secondTerm
 
   # Multiply by duplication matrices and 
   if not vec:
@@ -831,7 +944,42 @@ def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invD
   else:
     covdldDdldsigma2 = np.einsum('i,ijk->ijk', 1/(2*sigma2), mat2vec3D(RkSum))
   
-  return(covdldDdldsigma2)
+  return(covdldDdldsigma2, ZtZmat)
+
+
+# ============================================================================
+#
+# Commented out below is an older version of the above code. This has been 
+# left here in case it has any use for future development.
+#
+# ============================================================================
+# def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False):
+#  
+#   # Number of voxels
+#   v = DinvIplusZtZD.shape[0]
+#  
+#   # Sum of R_(k, j) over j
+#   RkSum = np.zeros((v,nraneffs[k],nraneffs[k]))
+#
+#   for j in np.arange(nlevels[k]):
+#
+#     # Get the indices for the kth factor jth level
+#     Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
+#
+#     # Work out R_(k, j)
+#     Rkj = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ikj,Ikj)] - forceSym3D(ZtZ[:,Ikj,:] @ DinvIplusZtZD @ ZtZ[:,:,Ikj])
+#    
+#     # Add together
+#     RkSum = RkSum + Rkj
+#
+#   # Multiply by duplication matrices and 
+#   if not vec:
+#     covdldDdldsigma2 = np.einsum('i,ijk->ijk', 1/(2*sigma2), invDupMatdict[k] @ mat2vec3D(RkSum))
+#   else:
+#     covdldDdldsigma2 = np.einsum('i,ijk->ijk', 1/(2*sigma2), mat2vec3D(RkSum))
+#  
+#   return(covdldDdldsigma2)
+# ============================================================================
 
 
 # ============================================================================
@@ -868,6 +1016,9 @@ def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invD
 # - `vec`: This is a boolean value which by default is false. If True it gives
 #          the update matrix for vec (i.e. duplicates included), otherwise it
 #          gives true covariance for vech.
+# - `perm` (optional): The permutation of I kron K kron I (see 
+#                      `permOfIkKkI2D`). This only need be calculated once so
+#                      can be passed between iterations.
 #
 # ----------------------------------------------------------------------------
 #
@@ -878,44 +1029,76 @@ def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invD
 # - `covdldDk1dldk2`: The covariance between the derivative of the log
 #                     likelihood with respect to vech(D_(k1)) and the 
 #                     derivative with respect to vech(D_(k2)).
+# - `perm`: The permutation of I kron K kron I (see `permOfIkKkI2D`). This 
+#           only need be calculated once so can be passed between iterations.
 #
 # ============================================================================
-def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False):
+def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, perm=None, vec=False):
   
-  # Sum of R_(k1, k2, i, j) kron R_(k1, k2, i, j) over i and j 
-  for i in np.arange(nlevels[k1]):
+  # Get the indices for the factors 
+  Ik1 = fac_indices2D(k1, nlevels, nraneffs)
+  Ik2 = fac_indices2D(k2, nlevels, nraneffs)
 
-    for j in np.arange(nlevels[k2]):
-      
-      # Get the indices for the k1th factor jth level
-      Ik1i = faclev_indices2D(k1, i, nlevels, nraneffs)
-      Ik2j = faclev_indices2D(k2, j, nlevels, nraneffs)
-      
-      # Work out R_(k1, k2, i, j)
-      Rk1k2ij = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ik1i,Ik2j)] - (ZtZ[:,Ik1i,:] @ DinvIplusZtZD @ ZtZ[:,:,Ik2j])
-      
-      # Work out Rk1k2ij kron Rk1k2ij
-      RkRt = kron3D(Rk1k2ij,Rk1k2ij)
-      
-      # Add together
-      if (i == 0) and (j == 0):
-      
-        RkRtSum = RkRt
-      
-      else:
-        
-        RkRtSum = RkRtSum + RkRt
-    
+  # Work out R_(k1,k2)
+  Rk1k2 = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ik1,Ik2)] - (ZtZ[:,Ik1,:] @ DinvIplusZtZD @ ZtZ[:,:,Ik2])
+
+  # Work out block sizes
+  p = np.array([nraneffs[k1],nraneffs[k2]])
+
+  # Obtain permutation
+  RkRSum,perm=sumAijKronBij3D(Rk1k2, Rk1k2, p, perm)
+
   # Multiply by duplication matrices and save
   if not vec:
-    covdldDk1dldk2 = 1/2 * invDupMatdict[k1] @ RkRtSum @ invDupMatdict[k2].transpose()
+    covdldDk1dldk2 = 1/2 * invDupMatdict[k1] @ RkRSum @ invDupMatdict[k2].transpose()
   else:
-    covdldDk1dldk2 = 1/2 * RkRtSum
-
+    covdldDk1dldk2 = 1/2 * RkRSum
 
   # Return the result
-  return(covdldDk1dldk2)
+  return(covdldDk1dldk2, perm)
 
+
+# ============================================================================
+#
+# Commented out below is an older version of the above code. This has been 
+# left here in case it has any use for future development.
+#
+# ============================================================================
+# def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False):
+#  
+#   # Sum of R_(k1, k2, i, j) kron R_(k1, k2, i, j) over i and j 
+#   for i in np.arange(nlevels[k1]):
+#
+#     for j in np.arange(nlevels[k2]):
+#      
+#       # Get the indices for the k1th factor jth level
+#       Ik1i = faclev_indices2D(k1, i, nlevels, nraneffs)
+#       Ik2j = faclev_indices2D(k2, j, nlevels, nraneffs)
+#      
+#       # Work out R_(k1, k2, i, j)
+#       Rk1k2ij = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ik1i,Ik2j)] - (ZtZ[:,Ik1i,:] @ DinvIplusZtZD @ ZtZ[:,:,Ik2j])
+#     
+#       # Work out Rk1k2ij kron Rk1k2ij
+#       RkRt = kron3D(Rk1k2ij,Rk1k2ij)
+#      
+#       # Add together
+#       if (i == 0) and (j == 0):
+#      
+#         RkRtSum = RkRt
+#      
+#       else:
+#        
+#         RkRtSum = RkRtSum + RkRt
+#    
+#   # Multiply by duplication matrices and save
+#   if not vec:
+#     covdldDk1dldk2 = 1/2 * invDupMatdict[k1] @ RkRtSum @ invDupMatdict[k2].transpose()
+#   else:
+#     covdldDk1dldk2 = 1/2 * RkRtSum
+#
+#   # Return the result
+#   return(covdldDk1dldk2)
+# ============================================================================
 
 
 # ============================================================================
@@ -1124,12 +1307,16 @@ def mat2vecb3D(mat,p):
 #
 # ----------------------------------------------------------------------------
 #
-#  - A: A 3D matrix of dimension (v by m1 by m2).
-#  - B: A 3D matrix of dimension (v by m1' by m2).
+#  - A: A 3D matrix of dimension (v1* by m1 by m2).
+#  - B: A 3D matrix of dimension (v2* by m1' by m2).
 #  - pA: The size of the block partitions of A, e.g. if Av_{i,j} is of 
 #        dimension (n1 by n2) then pA=[n1, n2].
 #  - pB: The size of the block partitions of B, e.g. if Bv_{i,j} is of 
 #        dimension (n1' by n2) the pB=[n1', n2].
+#
+# * v1 and v2 may differ if and only if one of them is set to 1 (i.e. we allow
+#   for v1 and v2 to differ in the case that one of A or B is spatially
+#   varying whilst the other is not).
 #
 # ----------------------------------------------------------------------------
 #
@@ -1148,8 +1335,10 @@ def mat2vecb3D(mat,p):
 # ============================================================================
 def sumAijBijt3D(A, B, pA, pB):
   
-  # Number of voxels
-  v = A.shape[0]
+  # Number of voxels (we allow v1 and v2 to be different to allow for the 
+  # case that one of A and B is not spatially varying and hence had v=1)
+  v1 = A.shape[0]
+  v2 = B.shape[0]
 
   # Work out second (the common) dimension of the reshaped A and B
   nA = pA[0]
@@ -1168,7 +1357,7 @@ def sumAijBijt3D(A, B, pA, pB):
   B = block2stacked3D(B,pB)
 
   # Work out the sum
-  S = A.transpose((0,2,1)).reshape((v,mA,nA)).transpose((0,2,1)) @ B.transpose((0,2,1)).reshape((v,mB,nB))
+  S = A.transpose((0,2,1)).reshape((v1,mA,nA)).transpose((0,2,1)) @ B.transpose((0,2,1)).reshape((v2,mB,nB))
 
   # Return result
   return(S)
@@ -1914,10 +2103,10 @@ def get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nraneffs, ZtZ):
     for k in np.arange(len(nraneffs)):
 
         # Get covariance of dldsigma and dldD      
-        covdldsigmadD = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict).reshape(v,FishIndsDk[k+1]-FishIndsDk[k])
+        covdldsigma2dD = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict)[0].reshape(v,FishIndsDk[k+1]-FishIndsDk[k])
 
         # Assign to the relevant block
-        FisherInfoMat[:,0, FishIndsDk[k]:FishIndsDk[k+1]] = covdldsigmadD
+        FisherInfoMat[:,0, FishIndsDk[k]:FishIndsDk[k+1]] = covdldsigma2dD
         FisherInfoMat[:,FishIndsDk[k]:FishIndsDk[k+1],0:1] = FisherInfoMat[:,0:1, FishIndsDk[k]:FishIndsDk[k+1]].transpose((0,2,1))
       
     # Add dl/dD covariance
@@ -1929,7 +2118,7 @@ def get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nraneffs, ZtZ):
             IndsDk2 = np.arange(FishIndsDk[k2],FishIndsDk[k2+1])
 
             # Get covariance between D_k1 and D_k2 
-            covdldDk1dDk2 = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict)
+            covdldDk1dDk2 = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict)[0]
 
             # Add to FImat
             FisherInfoMat[np.ix_(np.arange(v), IndsDk1, IndsDk2)] = covdldDk1dDk2
