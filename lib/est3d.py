@@ -194,6 +194,9 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n):
         # Update number of iterations
         nit = nit + 1
 
+        # print('sigma2 3D ', nit)
+        # print(sigma2)
+
         # Change current likelihood to previous
         llhprev = llhcurr
         
@@ -345,6 +348,7 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n):
         YtY = YtY[localnotconverged, :, :]
         ZtY = ZtY[localnotconverged, :, :]
         YtZ = YtZ[localnotconverged, :, :]
+        Zte = Zte[localnotconverged, :, :]
         ete = ete[localnotconverged, :, :]
         DinvIplusZtZD = DinvIplusZtZD[localnotconverged, :, :]
 
@@ -726,6 +730,7 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
         YtY = YtY[localnotconverged, :, :]
         ZtY = ZtY[localnotconverged, :, :]
         YtZ = YtZ[localnotconverged, :, :]
+        Zte = Zte[localnotconverged, :, :]
         ete = ete[localnotconverged, :, :]
         DinvIplusZtZD = DinvIplusZtZD[localnotconverged, :, :]
 
@@ -995,10 +1000,6 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
         # --------------------------------------------------------------------------
         # Update sigma^2
         # --------------------------------------------------------------------------
-        # Work out e'e and Z'e
-        ete = ssr3D(YtX, YtY, XtX, beta)
-        Zte = ZtY - (ZtX @ beta)
-
         # Work out sigma^2
         sigma2 = 1/n*(ete - Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte).reshape(v_iter)
 
@@ -1047,6 +1048,12 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
             DinvIplusZtZD = forceSym3D(D @ np.linalg.inv(IplusZtZD)) 
         
         # --------------------------------------------------------------------------
+        # Recalculate matrices
+        # --------------------------------------------------------------------------
+        ete = ssr3D(YtX, YtY, XtX, beta)
+        Zte = ZtY - (ZtX @ beta)
+        
+        # --------------------------------------------------------------------------
         # Update the step size and log likelihoods
         # --------------------------------------------------------------------------
         llhcurr = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D)
@@ -1086,6 +1093,7 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
         YtY = YtY[localnotconverged, :, :]
         ZtY = ZtY[localnotconverged, :, :]
         YtZ = YtZ[localnotconverged, :, :]
+        Zte = Zte[localnotconverged, :, :]
         ete = ete[localnotconverged, :, :]
         DinvIplusZtZD = DinvIplusZtZD[localnotconverged, :, :]
 
@@ -1417,6 +1425,12 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # --------------------------------------------------------------------------
         IplusZtZD = np.eye(q) + (ZtZ @ D)
         DinvIplusZtZD = forceSym3D(D @ np.linalg.inv(IplusZtZD)) 
+        
+        # --------------------------------------------------------------------------
+        # Recalculate matrices
+        # --------------------------------------------------------------------------
+        ete = ssr3D(YtX, YtY, XtX, beta)
+        Zte = ZtY - (ZtX @ beta)
         
         # --------------------------------------------------------------------------
         # Update the step size and log likelihood

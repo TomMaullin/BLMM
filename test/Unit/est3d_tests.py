@@ -32,7 +32,7 @@ from genTestDat import genTestData3D, prodMats3D
 def test_FS3D():
 
     # Generate some test data
-    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=4)
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=4,n=5000)
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
 
     # Work out q and n
@@ -99,7 +99,7 @@ def test_FS3D():
 def test_pFS3D():
 
     # Generate some test data
-    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=4)
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=4,n=5000)
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
 
     # Work out q and n
@@ -165,7 +165,7 @@ def test_pFS3D():
 def test_SFS3D():
 
     # Generate some test data
-    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=4)
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=4,n=5000)
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
 
     # Work out q and n
@@ -232,7 +232,7 @@ def test_SFS3D():
 def test_pSFS3D():
 
     # Generate some test data
-    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=4)
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=4,n=5000)
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
 
     # Work out q and n
@@ -283,10 +283,6 @@ def test_pSFS3D():
 
     # Non-spatially varying 2D
     paramVec2D_nsv = pSFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n)[0]
-
-    # Check if results are all close.
-    sv_testVal = np.allclose(paramVec2D_sv,paramVec3D_sv,rtol=1e-2)
-    nsv_testVal = np.allclose(paramVec2D_nsv,paramVec3D_nsv,rtol=1e-2)
 
     print('-------------------------------------------------------------')
     print('Results (Non Spatially Varying): ')
