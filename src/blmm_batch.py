@@ -488,7 +488,16 @@ def obtainY(Y_files, M_files, M_t, M_a):
     Mask[np.where(np.count_nonzero(Y, axis=0)>0)[0]] = 1
     
     # Apply mask to Y
+    print('Y shape before mask apply')
+    print(Y.shape)
     Y = Y[:, np.where(np.count_nonzero(Y, axis=0)>0)[0]]
+    print('Y shape after mask apply')
+    print(Y.shape)
+
+    # Plan: Replace above with Y[:, np.where(M_a)] so we have Y under analysis mask
+    # Then remove all unmasking later, save X'Y as X'Y under analysis mask and so on
+
+    # Obstacle, what about M (below)?
 
     # Work out the mask.
     M = (Y!=0)
@@ -508,6 +517,11 @@ def obtainY(Y_files, M_files, M_t, M_a):
     # ordering)
     _, idx = np.unique(M, axis=1, return_index=True)
     M = M[:,np.sort(idx)]
+
+    print('shape of Y')
+    print(Y.shape)
+    print('shape of M_a')
+    print(M_a.shape)
 
     return Y, Mask, n_sv, M, Mmap
 
