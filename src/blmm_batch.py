@@ -226,7 +226,11 @@ def main(*args):
     # elements in Y should already be set to 0 and, as such, won't have 
     # any affect on these products.
     # ------------------------------------------------------------------
+    print(Y0.shape)
+    print(X.shape)
+    print(Y.shape)
     XtY = unmasked_AtB(X, Y, Mask)
+    print(XtY.shape)
     YtY = unmasked_AtA(Y, Mask)
     ZtY = unmasked_AtB(Z, Y, Mask) 
 
