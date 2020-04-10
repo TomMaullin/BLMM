@@ -487,12 +487,20 @@ def obtainY(Y_files, M_files, M_t, M_a):
     Mask = np.zeros([v])
     Mask[np.where(np.count_nonzero(Y, axis=0)>0)[0]] = 1
     
-    # Apply mask to Y
+    # Apply full mask to Y
     print('Y shape before mask apply')
     print(Y.shape)
-    Y = Y[:, np.where(np.count_nonzero(Y, axis=0)>0)[0]]
-    print('Y shape after mask apply')
-    print(Y.shape)
+    Y_fm = Y[:, np.where(np.count_nonzero(Y, axis=0)>0)[0]]
+    print('Y shape after full mask apply')
+    print(Y_fm.shape)
+
+    # Apply analysis mask to Y
+    Y_am = Y[:, np.where(M_a.reshape([v]))[0]]
+
+    print('Y shape after analysis mask apply')
+    print(Y_am.shape)
+
+    Y=Y_fm
 
     # Plan: Replace above with Y[:, np.where(M_a)] so we have Y under analysis mask
     # Then remove all unmasking later, save X'Y as X'Y under analysis mask and so on
