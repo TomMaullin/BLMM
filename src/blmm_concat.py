@@ -261,7 +261,7 @@ def main(*args):
         amask = np.ones([v,1])
 
     #  Get indices for analysis mask
-    amInds = get_amInds(amask)
+    amInds = get_amInds(amask, 4, 10)
 
     # Ensure overall mask matches analysis mask
     Mask[np.setdiff1d(np.arange(v).reshape(v,1), amInds)]=0
