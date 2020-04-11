@@ -520,7 +520,7 @@ def obtainY(Y_files, M_files, M_t, M_a):
     unique_id_nifti = M_df['id'].values
 
     # Make a nifti which will act as a "key" telling us which voxel had which design
-    Mmap = np.zeros(Mask)
+    Mmap = np.zeros(Mask.shape)
     Mmap[np.flatnonzero(Mask)] = unique_id_nifti[:]
     Mmap = Mmap.reshape(n_sv.shape)
 
