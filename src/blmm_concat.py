@@ -335,9 +335,15 @@ def main(*args):
     # --------------------------------------------------------------------------------
     # Read the matrices from the first batch. Note XtY is transposed as np
     # handles lots of rows much faster than lots of columns.
-    XtY = np.load(os.path.join(OutDir,"tmp","XtY1.npy")).transpose()
-    YtY = np.load(os.path.join(OutDir,"tmp","YtY1.npy"))
-    ZtY = np.load(os.path.join(OutDir,"tmp","ZtY1.npy"))
+    XtY = np.load(os.path.join(OutDir,"tmp","XtY1.npy"))#.transpose()
+    print('gqrab')
+    print(XtY.shape)
+    # YtY = np.load(os.path.join(OutDir,"tmp","YtY1.npy"))
+    # ZtY = np.load(os.path.join(OutDir,"tmp","ZtY1.npy"))
+
+    XtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp","XtY1.npy"), np.where(np.in1d(amInds,R_inds))[0])
+    YtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp","YtY1.npy"), np.where(np.in1d(amInds,R_inds))[0])
+    ZtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp","ZtY1.npy"), np.where(np.in1d(amInds,R_inds))[0])
 
     # Work out the uniqueness mask for the spatially varying designs
     uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
@@ -405,18 +411,19 @@ def main(*args):
         YtY = YtY + np.load(
             os.path.join(OutDir,"tmp","YtY" + str(batchNo) + ".npy"))
 
-        t1 = time.time()
-        ZtY = ZtY + np.load(
-            os.path.join(OutDir,"tmp","ZtY" + str(batchNo) + ".npy"))
-        t2 = time.time()
-        print('not tmp time: ', t2-t1)
+        # t1 = time.time()
+        # ZtY = ZtY + np.load(
+        #     os.path.join(OutDir,"tmp","ZtY" + str(batchNo) + ".npy"))
+        # t2 = time.time()
+        # print('not tmp time: ', t2-t1)
 
         t1 = time.time()
-        ZtYtmp_r = readLinesFromNPY(os.path.join(OutDir,"tmp","ZtY" + str(batchNo) + ".npy"), np.where(np.in1d(amInds,R_inds))[0])
+        XtY_r = XtY_r + readLinesFromNPY(os.path.join(OutDir,"tmp","XtY" + str(batchNo) + ".npy"), np.where(np.in1d(amInds,R_inds))[0])
+        YtY_r = YtY_r + readLinesFromNPY(os.path.join(OutDir,"tmp","YtY" + str(batchNo) + ".npy"), np.where(np.in1d(amInds,R_inds))[0])
+        ZtY_r = ZtY_r + readLinesFromNPY(os.path.join(OutDir,"tmp","ZtY" + str(batchNo) + ".npy"), np.where(np.in1d(amInds,R_inds))[0])
         t2 = time.time()
         print('tmp time: ', t2-t1)
-        print(ZtYtmp_r.shape)
-        print(type(ZtYtmp_r))
+        print(XtY_r.shape)
         
         # Read in uniqueness Mask file
         uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
@@ -486,17 +493,14 @@ def main(*args):
     print('XtY shape')
     print(XtY.shape)
 
-    # Number of voxels in analysis mask
-    v_am = np.prod(amInds.shape)
-
     print(v_am)
 
     print(XtY.shape)
     print(YtY.shape)
     print(ZtY.shape)
-    XtY = XtY.reshape([v_am, p, 1]) # MARKER all V_m
-    YtY = YtY.reshape([v_am, 1, 1])
-    ZtY = ZtY.reshape([v_am, q, 1])
+    XtY_r = XtY_r.reshape([v_r, p, 1]) # MARKER all V_m
+    YtY_r = YtY_r.reshape([v_r, 1, 1])
+    ZtY_r = ZtY_r.reshape([v_r, q, 1])
 
     XtX_r = XtX_r.reshape([v_r, p, p])
     ZtX_r = ZtX_r.reshape([v_r, q, p])
@@ -513,19 +517,19 @@ def main(*args):
     # analysis mask applied to them during the batch stage)
     if v_r:
 
-        # Calculate masked X'Y for ring
-        XtY_r = XtY[np.where(np.in1d(amInds,R_inds))[0],:,:]
+        # # Calculate masked X'Y for ring
+        # XtY_r = XtY[np.where(np.in1d(amInds,R_inds))[0],:,:]
 
-        # Calculate Y'Y for ring
-        YtY_r = YtY[np.where(np.in1d(amInds,R_inds))[0],:,:]
+        # # Calculate Y'Y for ring
+        # YtY_r = YtY[np.where(np.in1d(amInds,R_inds))[0],:,:]
 
-        # Calculate masked Z'Y for ring
-        ZtY_r = ZtY[np.where(np.in1d(amInds,R_inds))[0],:,:]
+        # # Calculate masked Z'Y for ring
+        # ZtY_r = ZtY[np.where(np.in1d(amInds,R_inds))[0],:,:]
 
-        # We calculate these by transposing
-        YtX_r = XtY_r.transpose((0,2,1))
-        YtZ_r = ZtY_r.transpose((0,2,1))
-        XtZ_r = ZtX_r.transpose((0,2,1))
+        # # We calculate these by transposing
+        # YtX_r = XtY_r.transpose((0,2,1))
+        # YtZ_r = ZtY_r.transpose((0,2,1))
+        # XtZ_r = ZtX_r.transpose((0,2,1))
 
         # Spatially varying nv for ring
         n_sv_r = n_sv[R_inds,:]
