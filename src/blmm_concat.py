@@ -370,9 +370,11 @@ def main(*args):
     # --------------------------------------------------------------------------------
     # Read the matrices from the first batch. Note XtY is transposed as np
     # handles lots of rows much faster than lots of columns.
-    XtY = np.load(os.path.join(OutDir,"tmp","XtY1.npy"))#.transpose()
-    print('gqrab')
-    print(XtY.shape)
+
+    XtYtmp = np.load(os.path.join(OutDir,"tmp","XtY1.npy")).transpose()
+    YtYtmp = np.load(os.path.join(OutDir,"tmp","YtY1.npy"))
+    ZtYtmp = np.load(os.path.join(OutDir,"tmp","ZtY1.npy"))
+
     # YtY = np.load(os.path.join(OutDir,"tmp","YtY1.npy"))
     # ZtY = np.load(os.path.join(OutDir,"tmp","ZtY1.npy"))
 
@@ -468,6 +470,15 @@ def main(*args):
         print('tmp time: ', t2-t1)
         print(XtY_r.shape)
         
+        XtYtmp = XtYtmp + np.load(
+            os.path.join(OutDir,"tmp","XtY" + str(batchNo) + ".npy")).transpose()
+
+        YtYtmp = YtYtmp + np.load(
+            os.path.join(OutDir,"tmp","YtY" + str(batchNo) + ".npy"))
+
+        ZtYtmp = ZtYtmp + np.load(
+            os.path.join(OutDir,"tmp","ZtY" + str(batchNo) + ".npy"))
+
         # Read in uniqueness Mask file
         uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
             "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii")).get_data().reshape(v)
@@ -530,7 +541,9 @@ def main(*args):
     # Calculate betahat = (X'X)^(-1)X'Y and output beta maps
     # --------------------------------------------------------------------------------    
 
-    XtYtmp_r = XtY[np.where(np.in1d(amInds,R_inds))[0],:]
+
+    XtYtmp = XtYtmp.transpose()
+    #XtYtmp_r = XtY[np.where(np.in1d(amInds,R_inds))[0],:]
 
     print(XtYtmp_r.shape)
     print('marker')
@@ -538,7 +551,39 @@ def main(*args):
     print(YtY_r.shape)
     print(ZtY_r.shape)
 
+
+
+
+    v_am = XtY.shape[0]
+
+    XtYtmp = XtYtmp.reshape([v_am, p, 1]) # MARKER all V_m
+    YtYtmp = YtYtmp.reshape([v_am, 1, 1])
+    ZtYtmp = ZtYtmp.reshape([v_am, q, 1])
+
+    # Calculate masked X'Y for ring
+    XtYtmp_r = XtYtmp[np.where(np.in1d(amInds,R_inds))[0],:,:]
+
+    # Calculate Y'Y for ring
+    YtYtmp_r = YtYtmp[np.where(np.in1d(amInds,R_inds))[0],:,:]
+
+    # Calculate masked Z'Y for ring
+    ZtYtmp_r = ZtYtmp[np.where(np.in1d(amInds,R_inds))[0],:,:]
+
+    print('tests')
     print(np.all(XtY_r==XtYtmp_r))
+    print(np.all(YtY_r==YtYtmp_r))
+    print(np.all(ZtY_r==ZtYtmp_r))
+
+
+
+
+
+
+
+
+
+
+
 
     XtY_r = XtY_r.reshape([v_r, p, 1]) 
     YtY_r = YtY_r.reshape([v_r, 1, 1])
