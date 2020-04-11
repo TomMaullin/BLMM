@@ -274,7 +274,7 @@ def addBlockToNifti(fname, block, blockInds,dim=None,volInd=None,aff=None,hdr=No
 
 
 # Read in only certain parts of numpy file
-def readLinesFromNPY(filename, lines)
+def readLinesFromNPY(filename, lines):
 
     # Load in the file but in memory map mode
     data_memmap = np.load(filename,mmap_mode='r')
