@@ -229,10 +229,15 @@ def main(*args):
     print(Y0.shape)
     print(X.shape)
     print(Y.shape)
-    XtY = unmasked_AtB(X, Y, Mask)
+    XtY = X.transpose() @ Y #unmasked_AtB(X, Y, Mask)
     print(XtY.shape)
-    YtY = unmasked_AtA(Y, Mask)
-    ZtY = unmasked_AtB(Z, Y, Mask) 
+    ZtY = Z.transpose() @ Y #unmasked_AtB(Z, Y, Mask) 
+
+    # Y is currently [n,v]
+    print(Y.reshape(Y.shape[0], Y.shape[1], 1).transpose((1,2,0)).shape)
+    YtY = Y.reshape(Y.shape[0], Y.shape[1], 1).transpose((1,2,0)) @ Y.reshape(Y.shape[0], Y.shape[1], 1).transpose((1,0,2))
+    print('YtY shape')
+    print(YtY.shape)
 
     # In a spatially varying design XtX has dimensions n by p by p. We
     # reshape to n by p^2 so that we can save as a csv.
@@ -249,8 +254,7 @@ def main(*args):
     ZtZ = MZ.transpose(0,2,1) @ MZ
     ZtZ = ZtZ.reshape([ZtZ.shape[0], ZtZ.shape[1]*ZtZ.shape[2]])
 
-    # Pandas reads and writes files much more quickly with nrows <<
-    # number of columns, so we transpose
+    # Change dimensions from [p (q), v] to [v, p (q)]
     XtY = XtY.transpose()
     ZtY = ZtY.transpose()
 
