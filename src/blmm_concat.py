@@ -257,6 +257,8 @@ def main(*args):
 
         amInds = get_amInds(amask)
 
+        print(amInds)
+
         Mask2 = np.ones(Mask.shape)
         Mask3 = np.array(Mask2)
         
