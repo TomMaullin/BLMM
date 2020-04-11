@@ -297,10 +297,16 @@ def main(*args):
     del Mask
 
     print('fwfnuie')
+    print(amInds.shape)
+    print(I_inds.shape)
+    print(I_inds[0:10])
 
     I_inds_am = np.where(np.in1d(amInds,I_inds))[0][ix_i]
     I_inds_am2 = np.where(np.in1d(amInds,I_inds))[0]
     print(np.all(I_inds_am==I_inds_am2))
+    print(ix_i[0:10])
+    print(I_inds_am[0:10])
+    print(I_inds_am2[0:10])
 
     # --------------------------------------------------------------------------------
     # Move to working with only analysis mask indices
