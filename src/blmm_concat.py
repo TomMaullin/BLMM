@@ -261,10 +261,12 @@ def main(*args):
         # By default make amask ones
         amask = np.ones([v,1])
 
-    #  Get indices for analysis mask (block)
+    # Get indices for block. These indices have to be the indices we want to
+    # compute, in relation to the entire volume.
     bamInds = get_amInds(amask, 4, 10)
 
-    #  Get indices for analysis mask
+    # Get indices for analysis mask. These indices have to be the indices we
+    # have recorded for the product matrices with respect to the entire volume
     amInds = get_amInds(amask)
 
     # Ensure overall mask matches analysis mask
@@ -299,28 +301,16 @@ def main(*args):
     nib.save(maskmap, os.path.join(OutDir,'blmm_vox_mask2.nii'))
     del maskmap
 
-
-
-    # MARKER
+    # Work out the 'ring' indices, in relation to the analysis mask
     ix_r = np.argsort(np.argsort(R_inds))
     R_inds_am = np.sort(np.where(np.in1d(amInds,R_inds))[0])[ix_r]
-
-    print('shapes')
-
-    print('R inds')
-    print(R_inds)
-
-    print('ixr')
-    print(ix_r)
-    print(R_inds_am) # 30 38
-    #print(R_inds_am2) # 30 38
 
     # Get indices of the "inner" volume where all studies had information
     # present. I.e. the voxels (usually near the middle of the brain) where
     # every voxel has a reading for every study.
     I_inds = np.sort(np.where((Mask==1)*(n_sv==n))[0])#
 
-    # MARKER
+    # Work out the 'inner' indices, in relation to the analysis mask
     ix_i = np.argsort(np.argsort(I_inds))
     I_inds_am = np.sort(np.where(np.in1d(amInds,I_inds))[0])[ix_i]
     del Mask
@@ -328,14 +318,6 @@ def main(*args):
     # --------------------------------------------------------------------------------
     # Move to working with only analysis mask indices
     # --------------------------------------------------------------------------------
-
-    # Obtain analysis mask indices
-
-    # Recalculate v and n_s_sv
-
-    # Convert R_inds and I_inds into ... TODO
-    #R_inds=np.where(np.in1d(amInds,R_inds))[0]
-    #R_inds = R_inds.reshape(R_inds.shape[0],1)
 
     # Number of voxels in ring
     v_r = R_inds.shape[0]
@@ -372,13 +354,6 @@ def main(*args):
     # --------------------------------------------------------------------------------
     # Read the matrices from the first batch. Note XtY is transposed as np
     # handles lots of rows much faster than lots of columns.
-
-    XtYtmp = np.load(os.path.join(OutDir,"tmp","XtY1.npy")).transpose()
-    YtYtmp = np.load(os.path.join(OutDir,"tmp","YtY1.npy"))
-    ZtYtmp = np.load(os.path.join(OutDir,"tmp","ZtY1.npy"))
-
-    # YtY = np.load(os.path.join(OutDir,"tmp","YtY1.npy"))
-    # ZtY = np.load(os.path.join(OutDir,"tmp","ZtY1.npy"))
 
     XtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp","XtY1.npy"), R_inds_am)
     YtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp","YtY1.npy"), R_inds_am)
@@ -432,7 +407,7 @@ def main(*args):
     ZtX_r = ZtX_batch_r
     ZtZ_r = ZtZ_batch_r
 
-    # Perform summation for ring
+    # Perform summation for inner
     XtX_i = XtX_batch_i
     ZtX_i = ZtX_batch_i
     ZtZ_i = ZtZ_batch_i
@@ -448,17 +423,6 @@ def main(*args):
     # Cycle through batches and add together results.
     for batchNo in range(2,(n_b+1)):
 
-
-        # YtY = YtY + np.load(
-        #     os.path.join(OutDir,"tmp","YtY" + str(batchNo) + ".npy"))
-
-        # t1 = time.time()
-        # ZtY = ZtY + np.load(
-        #     os.path.join(OutDir,"tmp","ZtY" + str(batchNo) + ".npy"))
-        # t2 = time.time()
-        # print('not tmp time: ', t2-t1)
-
-        t1 = time.time()
         XtY_r = XtY_r + readLinesFromNPY(os.path.join(OutDir,"tmp","XtY" + str(batchNo) + ".npy"), R_inds_am)
         YtY_r = YtY_r + readLinesFromNPY(os.path.join(OutDir,"tmp","YtY" + str(batchNo) + ".npy"), R_inds_am)
         ZtY_r = ZtY_r + readLinesFromNPY(os.path.join(OutDir,"tmp","ZtY" + str(batchNo) + ".npy"), R_inds_am)
@@ -466,18 +430,6 @@ def main(*args):
         XtY_i = XtY_i + readLinesFromNPY(os.path.join(OutDir,"tmp","XtY" + str(batchNo) + ".npy"), I_inds_am)
         YtY_i = YtY_i + readLinesFromNPY(os.path.join(OutDir,"tmp","YtY" + str(batchNo) + ".npy"), I_inds_am)
         ZtY_i = ZtY_i + readLinesFromNPY(os.path.join(OutDir,"tmp","ZtY" + str(batchNo) + ".npy"), I_inds_am)
-        t2 = time.time()
-        print('tmp time: ', t2-t1)
-        print(XtY_r.shape)
-        
-        XtYtmp = XtYtmp + np.load(
-            os.path.join(OutDir,"tmp","XtY" + str(batchNo) + ".npy")).transpose()
-
-        YtYtmp = YtYtmp + np.load(
-            os.path.join(OutDir,"tmp","YtY" + str(batchNo) + ".npy"))
-
-        ZtYtmp = ZtYtmp + np.load(
-            os.path.join(OutDir,"tmp","ZtY" + str(batchNo) + ".npy"))
 
         # Read in uniqueness Mask file
         uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
@@ -488,7 +440,6 @@ def main(*args):
 
         # Work out the uniqueness mask value inside the inner part of the brain
         uniquenessMask_i = uniquenessMask[I_inds[0]] 
-
 
         maxM = np.int32(np.amax(uniquenessMask))
 
@@ -541,82 +492,13 @@ def main(*args):
     # Calculate betahat = (X'X)^(-1)X'Y and output beta maps
     # --------------------------------------------------------------------------------    
 
-
-    XtYtmp = XtYtmp.transpose()
-    #XtYtmp_r = XtY[np.where(np.in1d(amInds,R_inds))[0],:]
-
-    print('marker')
-    print(XtY_r.shape)
-    print(YtY_r.shape)
-    print(ZtY_r.shape)
-
-
-
-
-    v_am = XtYtmp.shape[0]
-
-    XtYtmp = XtYtmp.reshape([v_am, p, 1]) # MARKER all V_m
-    YtYtmp = YtYtmp.reshape([v_am, 1, 1])
-    ZtYtmp = ZtYtmp.reshape([v_am, q, 1])
-
-    # Calculate masked X'Y for ring
-    XtYtmp_r = XtYtmp[np.where(np.in1d(amInds,R_inds))[0],:,:]
-
-    # Calculate Y'Y for ring
-    YtYtmp_r = YtYtmp[np.where(np.in1d(amInds,R_inds))[0],:,:]
-
-    # Calculate masked Z'Y for ring
-    ZtYtmp_r = ZtYtmp[np.where(np.in1d(amInds,R_inds))[0],:,:]
-
-    print('testshapes')
-    print(XtYtmp_r.shape)
-    print(YtYtmp_r.shape)
-    print(ZtYtmp_r.shape)
-
-
-
-
-
-
-
     XtY_r = XtY_r.reshape([v_r, p, 1]) 
     YtY_r = YtY_r.reshape([v_r, 1, 1])
     ZtY_r = ZtY_r.reshape([v_r, q, 1])
 
-
-
-    print('testshapes2')
-    print(XtY_r.shape)
-    print(YtY_r.shape)
-    print(ZtY_r.shape)
-
-
-
-
-
-    print('tests')
-    print(np.all(XtY_r==XtYtmp_r))
-    print(np.all(YtY_r==YtYtmp_r))
-    print(np.all(ZtY_r==ZtYtmp_r))
-
-
-
-
-
-
-
-
-
-
-
-
     XtY_i = XtY_i.reshape([v_i, p, 1]) 
     YtY_i = YtY_i.reshape([v_i, 1, 1])
     ZtY_i = ZtY_i.reshape([v_i, q, 1])
-
-    print(XtY_r.shape)
-    print(YtY_r.shape)
-    print(ZtY_r.shape)
 
     XtX_r = XtX_r.reshape([v_r, p, p])
     ZtX_r = ZtX_r.reshape([v_r, q, p])
@@ -633,34 +515,19 @@ def main(*args):
     # analysis mask applied to them during the batch stage)
     if v_r:
 
-        # We calculate these by transposing
-        YtXtmp_r = XtYtmp_r.transpose((0,2,1))
-        YtZtmp_r = ZtYtmp_r.transpose((0,2,1))
-        XtZ_r = ZtX_r.transpose((0,2,1))
-
         # Spatially varying nv for ring
         n_sv_r = n_sv[R_inds,:]
 
+        # Transposed matrices
+        YtX_r = XtY_r.transpose(0,2,1)
+        YtZ_r = ZtY_r.transpose(0,2,1) 
+        XtZ_r = ZtX_r.transpose(0,2,1)
 
         # Run parameter estimation
-        beta_r, sigma2_r, D_r = blmm_estimate.main(inputs, R_inds, XtX_r, XtYtmp_r, XtZ_r, YtXtmp_r, YtYtmp_r, YtZtmp_r, ZtX_r, ZtYtmp_r, ZtZ_r, n_sv_r, nlevels, nraneffs)
+        beta_r, sigma2_r, D_r = blmm_estimate.main(inputs, R_inds, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r, n_sv_r, nlevels, nraneffs)
 
         # Run inference
-        blmm_inference.main(inputs, nraneffs, nlevels, R_inds, beta_r, D_r, sigma2_r, n_sv_r, XtX_r, XtYtmp_r, XtZ_r, YtXtmp_r, YtYtmp_r, YtZtmp_r, ZtX_r, ZtYtmp_r, ZtZ_r)       
-        
-        # # Spatially varying nv for ring
-        # n_sv_r = n_sv[R_inds,:]
-
-        # # Transposed matrices
-        # YtX_r = XtY_r.transpose(0,2,1)
-        # YtZ_r = ZtY_r.transpose(0,2,1) 
-        # XtZ_r = ZtX_r.transpose(0,2,1)
-
-        # # Run parameter estimation
-        # beta_r, sigma2_r, D_r = blmm_estimate.main(inputs, R_inds, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r, n_sv_r, nlevels, nraneffs)
-
-        # # Run inference
-        # blmm_inference.main(inputs, nraneffs, nlevels, R_inds, beta_r, D_r, sigma2_r, n_sv_r, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r)       
+        blmm_inference.main(inputs, nraneffs, nlevels, R_inds, beta_r, D_r, sigma2_r, n_sv_r, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r)       
         
     if v_i:
 
