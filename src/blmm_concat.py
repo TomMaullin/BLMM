@@ -412,7 +412,7 @@ def main(*args):
         print('not tmp time: ', t2-t1)
 
         t1 = time.time()
-        ZtYtmp = readLinesFromNPY(os.path.join(OutDir,"tmp","ZtY" + str(batchNo) + ".npy"), np.array[20,29,40,32])
+        ZtYtmp = readLinesFromNPY(os.path.join(OutDir,"tmp","ZtY" + str(batchNo) + ".npy"), np.array([20,29,40,32]))
         t2 = time.time()
         print('tmp time: ', t2-t1)
         print(ZtYtmp.shape)
