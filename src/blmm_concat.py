@@ -631,19 +631,34 @@ def main(*args):
     # analysis mask applied to them during the batch stage)
     if v_r:
 
+        # We calculate these by transposing
+        YtXtmp_r = XtYtmp_r.transpose((0,2,1))
+        YtZtmp_r = ZtYtmp_r.transpose((0,2,1))
+        XtZtmp_r = ZtXtmp_r.transpose((0,2,1))
+
         # Spatially varying nv for ring
         n_sv_r = n_sv[R_inds,:]
 
-        # Transposed matrices
-        YtX_r = XtY_r.transpose(0,2,1)
-        YtZ_r = ZtY_r.transpose(0,2,1) 
-        XtZ_r = ZtX_r.transpose(0,2,1)
 
         # Run parameter estimation
-        beta_r, sigma2_r, D_r = blmm_estimate.main(inputs, R_inds, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r, n_sv_r, nlevels, nraneffs)
+        beta_r, sigma2_r, D_r = blmm_estimate.main(inputs, R_inds, XtX_r, XtYtmp_r, XtZ_r, YtXtmp_r, YtYtmp_r, YtZtmp_r, ZtX_r, ZtYtmp_r, ZtZ_r, n_sv_r, nlevels, nraneffs)
 
         # Run inference
-        blmm_inference.main(inputs, nraneffs, nlevels, R_inds, beta_r, D_r, sigma2_r, n_sv_r, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r)       
+        blmm_inference.main(inputs, nraneffs, nlevels, R_inds, beta_r, D_r, sigma2_r, n_sv_r, XtX_r, XtYtmp_r, XtZ_r, YtXtmp_r, YtYtmp_r, YtZtmp_r, ZtX_r, ZtYtmp_r, ZtZ_r)       
+        
+        # # Spatially varying nv for ring
+        # n_sv_r = n_sv[R_inds,:]
+
+        # # Transposed matrices
+        # YtX_r = XtY_r.transpose(0,2,1)
+        # YtZ_r = ZtY_r.transpose(0,2,1) 
+        # XtZ_r = ZtX_r.transpose(0,2,1)
+
+        # # Run parameter estimation
+        # beta_r, sigma2_r, D_r = blmm_estimate.main(inputs, R_inds, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r, n_sv_r, nlevels, nraneffs)
+
+        # # Run inference
+        # blmm_inference.main(inputs, nraneffs, nlevels, R_inds, beta_r, D_r, sigma2_r, n_sv_r, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r)       
         
     if v_i:
 
