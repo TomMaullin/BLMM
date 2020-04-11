@@ -406,7 +406,7 @@ def main(*args):
     for batchNo in range(2,(n_b+1)):
 
         XtY = XtY + np.load(
-            os.path.join(OutDir,"tmp","XtY" + str(batchNo) + ".npy")).transpose()
+            os.path.join(OutDir,"tmp","XtY" + str(batchNo) + ".npy"))
 
         YtY = YtY + np.load(
             os.path.join(OutDir,"tmp","YtY" + str(batchNo) + ".npy"))
@@ -487,21 +487,19 @@ def main(*args):
     # Calculate betahat = (X'X)^(-1)X'Y and output beta maps
     # --------------------------------------------------------------------------------    
 
-    # Reshaping
-    XtY = XtY.transpose()
-
-    print('XtY shape')
-    print(XtY.shape)
-
     print(v_am)
 
-    print(XtY.shape)
-    print(YtY.shape)
-    print(ZtY.shape)
+    print(XtY_r.shape)
+    print(YtY_r.shape)
+    print(ZtY_r.shape)
     XtY_r = XtY_r.reshape([v_r, p, 1]) # MARKER all V_m
     YtY_r = YtY_r.reshape([v_r, 1, 1])
     ZtY_r = ZtY_r.reshape([v_r, q, 1])
 
+    print(XtY_r.shape)
+    print(YtY_r.shape)
+    print(ZtY_r.shape)
+    
     XtX_r = XtX_r.reshape([v_r, p, p])
     ZtX_r = ZtX_r.reshape([v_r, q, p])
     ZtZ_r = ZtZ_r.reshape([v_r, q, q])
