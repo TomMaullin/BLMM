@@ -301,6 +301,17 @@ def main(*args):
     # MARKER
     ix_r = np.argsort(np.argsort(R_inds))
     R_inds_am = np.sort(np.where(np.in1d(amInds,R_inds))[0])#[ix_r]
+    R_inds_am2 = np.sort(np.where(np.in1d(amInds,R_inds))[0])[ix_r]
+
+    print('shapes')
+
+    print('R inds')
+    print(R_inds)
+
+    print('ixr')
+    print(ix_r)
+    print(R_inds_am) # 30 38
+    print(R_inds_am2) # 30 38
 
     # Get indices of the "inner" volume where all studies had information
     # present. I.e. the voxels (usually near the middle of the brain) where
@@ -311,18 +322,6 @@ def main(*args):
     ix_i = np.argsort(np.argsort(I_inds))
     I_inds_am = np.sort(np.where(np.in1d(amInds,I_inds))[0])#[ix_i]
     del Mask
-
-    print('fwfnuie')
-    print(amInds.shape)
-    print(I_inds.shape)
-    print(I_inds) #30 31
-
-    I_inds_am = np.where(np.in1d(amInds,I_inds))[0][ix_i]
-    I_inds_am2 = np.where(np.in1d(amInds,I_inds))[0]
-    print(np.all(I_inds_am==I_inds_am2))
-    print(ix_i)
-    print(I_inds_am) # 30 38
-    print(I_inds_am2) # 30 38
 
     # --------------------------------------------------------------------------------
     # Move to working with only analysis mask indices
