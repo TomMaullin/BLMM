@@ -511,7 +511,7 @@ def main(*args):
         XtZ_r = ZtX_r.transpose((0,2,1))
 
         # Spatially varying nv for ring
-        n_sv_r = n_sv[np.where(np.in1d(amInds,R_inds))[0],:]
+        n_sv_r = n_sv[R_inds,:]
 
 
     # If we have indices where all studies are present, work out X'X and
