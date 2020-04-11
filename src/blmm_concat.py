@@ -257,17 +257,18 @@ def main(*args):
 
         amInds = get_amInds(amask)
 
-        Mask2 = np.array(Mask)
-        Mask3 = np.array(Mask)
+        Mask2 = np.ones(Mask.shape)
+        Mask3 = np.array(Mask2)
         
         Mask[amask==0]=0
+        Mask3[amask==0]=0
 
 
         Mask2[np.setdiff1d(np.arange(v).reshape(v,1), amInds)]=0
 
         print('Mask check')
         print(np.all(Mask==Mask2))
-        print(np.all(Mask==Mask3))
+        print(np.all(Mask2==Mask3))
 
     else:
 
