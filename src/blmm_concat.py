@@ -412,12 +412,11 @@ def main(*args):
         print('not tmp time: ', t2-t1)
 
         t1 = time.time()
-        ZtYtmp = readLinesFromNPY(os.path.join(OutDir,"tmp","ZtY" + str(batchNo) + ".npy"), np.array([20,29,40,32]))
+        ZtYtmp_r = readLinesFromNPY(os.path.join(OutDir,"tmp","ZtY" + str(batchNo) + ".npy"), np.where(np.in1d(amInds,R_inds))[0])
         t2 = time.time()
         print('tmp time: ', t2-t1)
-        print(ZtYtmp.shape)
-        print(type(ZtYtmp))
-        print(ZtYtmp)
+        print(ZtYtmp_r.shape)
+        print(type(ZtYtmp_r))
         
         # Read in uniqueness Mask file
         uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
@@ -489,6 +488,8 @@ def main(*args):
 
     # Number of voxels in analysis mask
     v_am = np.prod(amInds.shape)
+
+    print(v_am)
 
     print(XtY.shape)
     print(YtY.shape)
