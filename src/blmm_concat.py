@@ -283,7 +283,7 @@ def main(*args):
     R_inds = np.where((Mask==1)*(n_sv<n))[0]
 
     # MARKER
-    ix_r = np.argsort(R_inds)
+    ix_r = np.argsort(np.argsort(R_inds))
     R_inds_am = np.where(np.in1d(amInds,R_inds))[0][ix_r]
 
     # Get indices of the "inner" volume where all studies had information
@@ -292,7 +292,7 @@ def main(*args):
     I_inds = np.where((Mask==1)*(n_sv==n))[0]
 
     # MARKER
-    ix_i = np.argsort(I_inds)
+    ix_i = np.argsort(np.argsort(I_inds))
     I_inds_am = np.where(np.in1d(amInds,I_inds))[0][ix_i]
     del Mask
 
