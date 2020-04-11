@@ -495,7 +495,7 @@ def main(*args):
     # Calculate betahat = (X'X)^(-1)X'Y and output beta maps
     # --------------------------------------------------------------------------------    
 
-    XtYtmp_r = XtY[np.where(np.in1d(amInds,R_inds))[0],:]
+    XtYtmp_r = XtY[np.in1d(amInds,R_inds),:]
 
     print(XtYtmp_r.shape)
     print('marker')
