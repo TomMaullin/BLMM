@@ -258,6 +258,7 @@ def main(*args):
         amInds = get_amInds(amask)
 
         Mask2 = np.array(Mask)
+        Mask3 = np.array(Mask)
         
         Mask[amask==0]=0
 
@@ -266,6 +267,7 @@ def main(*args):
 
         print('Mask check')
         print(np.all(Mask==Mask2))
+        print(np.all(Mask==Mask3))
 
     else:
 
