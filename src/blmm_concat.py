@@ -345,6 +345,10 @@ def main(*args):
     YtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp","YtY1.npy"), np.where(np.in1d(amInds,R_inds))[0])
     ZtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp","ZtY1.npy"), np.where(np.in1d(amInds,R_inds))[0])
 
+    XtY_i = readLinesFromNPY(os.path.join(OutDir,"tmp","XtY1.npy"), np.where(np.in1d(amInds,I_inds))[0])
+    YtY_i = readLinesFromNPY(os.path.join(OutDir,"tmp","YtY1.npy"), np.where(np.in1d(amInds,I_inds))[0])
+    ZtY_i = readLinesFromNPY(os.path.join(OutDir,"tmp","ZtY1.npy"), np.where(np.in1d(amInds,I_inds))[0])
+
     # Work out the uniqueness mask for the spatially varying designs
     uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
         "blmm_vox_uniqueM_batch1.nii")).get_data().reshape(v)
@@ -421,6 +425,10 @@ def main(*args):
         XtY_r = XtY_r + readLinesFromNPY(os.path.join(OutDir,"tmp","XtY" + str(batchNo) + ".npy"), np.where(np.in1d(amInds,R_inds))[0])
         YtY_r = YtY_r + readLinesFromNPY(os.path.join(OutDir,"tmp","YtY" + str(batchNo) + ".npy"), np.where(np.in1d(amInds,R_inds))[0])
         ZtY_r = ZtY_r + readLinesFromNPY(os.path.join(OutDir,"tmp","ZtY" + str(batchNo) + ".npy"), np.where(np.in1d(amInds,R_inds))[0])
+
+        XtY_i = XtY_i + readLinesFromNPY(os.path.join(OutDir,"tmp","XtY" + str(batchNo) + ".npy"), np.where(np.in1d(amInds,I_inds))[0])
+        YtY_i = YtY_i + readLinesFromNPY(os.path.join(OutDir,"tmp","YtY" + str(batchNo) + ".npy"), np.where(np.in1d(amInds,I_inds))[0])
+        ZtY_i = ZtY_i + readLinesFromNPY(os.path.join(OutDir,"tmp","ZtY" + str(batchNo) + ".npy"), np.where(np.in1d(amInds,I_inds))[0])
         t2 = time.time()
         print('tmp time: ', t2-t1)
         print(XtY_r.shape)
@@ -491,9 +499,14 @@ def main(*args):
     print(XtY_r.shape)
     print(YtY_r.shape)
     print(ZtY_r.shape)
-    XtY_r = XtY_r.reshape([v_r, p, 1]) # MARKER all V_m
+
+    XtY_r = XtY_r.reshape([v_r, p, 1]) 
     YtY_r = YtY_r.reshape([v_r, 1, 1])
     ZtY_r = ZtY_r.reshape([v_r, q, 1])
+
+    XtY_i = XtY_i.reshape([v_i, p, 1]) 
+    YtY_i = YtY_i.reshape([v_i, 1, 1])
+    ZtY_i = ZtY_i.reshape([v_i, q, 1])
 
     print(XtY_r.shape)
     print(YtY_r.shape)
@@ -514,56 +527,8 @@ def main(*args):
     # analysis mask applied to them during the batch stage)
     if v_r:
 
-        # # Calculate masked X'Y for ring
-        # XtY_r = XtY[np.where(np.in1d(amInds,R_inds))[0],:,:]
-
-        # # Calculate Y'Y for ring
-        # YtY_r = YtY[np.where(np.in1d(amInds,R_inds))[0],:,:]
-
-        # # Calculate masked Z'Y for ring
-        # ZtY_r = ZtY[np.where(np.in1d(amInds,R_inds))[0],:,:]
-
-        # # We calculate these by transposing
-        # YtX_r = XtY_r.transpose((0,2,1))
-        # YtZ_r = ZtY_r.transpose((0,2,1))
-        # XtZ_r = ZtX_r.transpose((0,2,1))
-
         # Spatially varying nv for ring
         n_sv_r = n_sv[R_inds,:]
-
-
-    # If we have indices where all studies are present, work out X'X and
-    # X'Y for these studies.
-    if v_i:
-        
-        # X'X must be 1 by np by np for broadcasting
-        XtX_i = XtX_i.reshape([1, p, p])
-
-        XtY_i = XtY[np.where(np.in1d(amInds,I_inds))[0],:]
-
-        # Calculate Y'Y for inner
-        YtY_i = XtY[np.where(np.in1d(amInds,I_inds))[0],:]
-
-        # Calculate Y'Y for inner
-        YtY_i = YtY[np.where(np.in1d(amInds,I_inds))[0],:,:]
-
-        # Calculate masked Z'X for inner
-        ZtX_i = ZtX_i.reshape([1, q, p])
-
-        # Calculate masked Z'Y for inner
-        ZtY_i = ZtY[np.where(np.in1d(amInds,I_inds))[0],:,:]
-
-        # Calculate Z'Y for inner
-        ZtZ_i = ZtZ_i.reshape([1, q, q])
-
-        # We calculate these by transposing
-        YtX_i = XtY_i.transpose((0,2,1))
-        YtZ_i = ZtY_i.transpose((0,2,1))
-        XtZ_i = ZtX_i.transpose((0,2,1))
-
-
-    # Complete parameter vector
-    if v_r:
 
         # Run parameter estimation
         beta_r, sigma2_r, D_r = blmm_estimate.main(inputs, R_inds, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r, n_sv_r, nlevels, nraneffs)
