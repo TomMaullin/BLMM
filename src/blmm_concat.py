@@ -313,7 +313,7 @@ def main(*args):
     print('ixr')
     print(ix_r)
     print(R_inds_am) # 30 38
-    print(R_inds_am2) # 30 38
+    #print(R_inds_am2) # 30 38
 
     # Get indices of the "inner" volume where all studies had information
     # present. I.e. the voxels (usually near the middle of the brain) where
