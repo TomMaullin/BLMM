@@ -530,6 +530,11 @@ def main(*args):
         # Spatially varying nv for ring
         n_sv_r = n_sv[R_inds,:]
 
+        # Transposed matrices
+        YtX_r = XtY_r.transpose(0,2,1)
+        YtZ_r = ZtY_r.transpose(0,2,1) 
+        XtZ_r = ZtX_r.transpose(0,2,1)
+
         # Run parameter estimation
         beta_r, sigma2_r, D_r = blmm_estimate.main(inputs, R_inds, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r, n_sv_r, nlevels, nraneffs)
 
@@ -537,6 +542,11 @@ def main(*args):
         blmm_inference.main(inputs, nraneffs, nlevels, R_inds, beta_r, D_r, sigma2_r, n_sv_r, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r)       
         
     if v_i:
+
+        # Transposed matrices
+        YtX_i = XtY_i.transpose(0,2,1)
+        YtZ_i = ZtY_i.transpose(0,2,1) 
+        XtZ_i = ZtX_i.transpose(0,2,1)
 
         # Run parameter estimation
         beta_i, sigma2_i, D_i = blmm_estimate.main(inputs, I_inds,  XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i, n, nlevels, nraneffs)
