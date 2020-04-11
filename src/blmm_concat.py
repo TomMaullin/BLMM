@@ -566,6 +566,11 @@ def main(*args):
     # Calculate masked Z'Y for ring
     ZtYtmp_r = ZtYtmp[np.where(np.in1d(amInds,R_inds))[0],:,:]
 
+    print('testshapes')
+    print(XtYtmp_r.shape)
+    print(YtYtmp_r.shape)
+    print(ZtYtmp_r.shape)
+
     print('tests')
     print(np.all(XtY_r==XtYtmp_r))
     print(np.all(YtY_r==YtYtmp_r))
