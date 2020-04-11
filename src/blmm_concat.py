@@ -634,7 +634,7 @@ def main(*args):
         # We calculate these by transposing
         YtXtmp_r = XtYtmp_r.transpose((0,2,1))
         YtZtmp_r = ZtYtmp_r.transpose((0,2,1))
-        XtZtmp_r = ZtXtmp_r.transpose((0,2,1))
+        XtZ_r = ZtX_r.transpose((0,2,1))
 
         # Spatially varying nv for ring
         n_sv_r = n_sv[R_inds,:]
