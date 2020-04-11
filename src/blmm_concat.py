@@ -254,9 +254,27 @@ def main(*args):
         
         # Read in the mask nifti.
         amask = loadFile(amask_path).get_data().reshape([v,1])
+
+        amInds = get_amInds(amask)
+
+        Mask2 = np.array(Mask)
         
         Mask[amask==0]=0
 
+
+        Mask2[np.setdiff1d(np.arange(v.reshape(v,1), amInds))]=0
+
+        print('Mask check')
+        print(np.all(Mask==Mask2))
+
+    else:
+
+        # By default make amask ones
+        amask = np.ones([v,1])
+
+    # Get amask indices
+    amInds = get_amInds(amask)
+        
     # Output final mask map
     maskmap = nib.Nifti1Image(Mask.reshape(
                                     NIFTIsize[0],
