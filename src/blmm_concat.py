@@ -571,6 +571,27 @@ def main(*args):
     print(YtYtmp_r.shape)
     print(ZtYtmp_r.shape)
 
+
+
+
+
+
+
+    XtY_r = XtY_r.reshape([v_r, p, 1]) 
+    YtY_r = YtY_r.reshape([v_r, 1, 1])
+    ZtY_r = ZtY_r.reshape([v_r, q, 1])
+
+
+
+    print('testshapes2')
+    print(XtY_r.shape)
+    print(YtY_r.shape)
+    print(ZtY_r.shape)
+
+
+
+
+
     print('tests')
     print(np.all(XtY_r==XtYtmp_r))
     print(np.all(YtY_r==YtYtmp_r))
@@ -586,10 +607,6 @@ def main(*args):
 
 
 
-
-    XtY_r = XtY_r.reshape([v_r, p, 1]) 
-    YtY_r = YtY_r.reshape([v_r, 1, 1])
-    ZtY_r = ZtY_r.reshape([v_r, q, 1])
 
     XtY_i = XtY_i.reshape([v_i, p, 1]) 
     YtY_i = YtY_i.reshape([v_i, 1, 1])
