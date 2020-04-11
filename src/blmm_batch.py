@@ -276,6 +276,7 @@ def main(*args):
     n_sv = nib.Nifti1Image(n_sv,
                            Y0.affine,
                            header=Y0.header)
+    print('saved')
     nib.save(n_sv, os.path.join(OutDir,'tmp',
                     'blmm_vox_n_batch'+ str(batchNo) + '.nii'))
 
