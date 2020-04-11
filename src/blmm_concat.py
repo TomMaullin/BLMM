@@ -296,6 +296,12 @@ def main(*args):
     I_inds_am = np.where(np.in1d(amInds,I_inds))[0][ix_i]
     del Mask
 
+    print('fwfnuie')
+
+    I_inds_am = np.where(np.in1d(amInds,I_inds))[0][ix_i]
+    I_inds_am2 = np.where(np.in1d(amInds,I_inds))[0]
+    print(np.all(I_inds_am, I_inds_am2))
+
     # --------------------------------------------------------------------------------
     # Move to working with only analysis mask indices
     # --------------------------------------------------------------------------------
