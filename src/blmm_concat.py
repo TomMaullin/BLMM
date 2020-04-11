@@ -405,11 +405,11 @@ def main(*args):
     # Cycle through batches and add together results.
     for batchNo in range(2,(n_b+1)):
 
-        XtY = XtY + np.load(
-            os.path.join(OutDir,"tmp","XtY" + str(batchNo) + ".npy"))
+        # XtY = XtY + np.load(
+        #     os.path.join(OutDir,"tmp","XtY" + str(batchNo) + ".npy"))
 
-        YtY = YtY + np.load(
-            os.path.join(OutDir,"tmp","YtY" + str(batchNo) + ".npy"))
+        # YtY = YtY + np.load(
+        #     os.path.join(OutDir,"tmp","YtY" + str(batchNo) + ".npy"))
 
         # t1 = time.time()
         # ZtY = ZtY + np.load(
