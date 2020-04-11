@@ -263,7 +263,7 @@ def main(*args):
         Mask[amask==0]=0
 
 
-        Mask2[np.setdiff1d(np.arange(v.reshape(v,1), amInds))]=0
+        Mask2[np.setdiff1d(np.arange(v).reshape(v,1), amInds)]=0
 
         print('Mask check')
         print(np.all(Mask==Mask2))
