@@ -261,11 +261,14 @@ def main(*args):
         # By default make amask ones
         amask = np.ones([v,1])
 
+    #  Get indices for analysis mask (block)
+    bamInds = get_amInds(amask, 4, 10)
+
     #  Get indices for analysis mask
-    amInds = get_amInds(amask, 4, 10)
+    amInds = get_amInds(amask)
 
     # Ensure overall mask matches analysis mask
-    Mask[~np.in1d(np.arange(v).reshape(v,1), amInds)]=0
+    Mask[~np.in1d(np.arange(v).reshape(v,1), bamInds)]=0
         
     # Output final mask map
     maskmap = nib.Nifti1Image(Mask.reshape(
@@ -300,8 +303,7 @@ def main(*args):
 
     # MARKER
     ix_r = np.argsort(np.argsort(R_inds))
-    R_inds_am = np.sort(np.where(np.in1d(amInds,R_inds))[0])#[ix_r]
-    R_inds_am2 = np.sort(np.where(np.in1d(amInds,R_inds))[0])[ix_r]
+    R_inds_am = np.sort(np.where(np.in1d(amInds,R_inds))[0])[ix_r]
 
     print('shapes')
 
@@ -320,7 +322,7 @@ def main(*args):
 
     # MARKER
     ix_i = np.argsort(np.argsort(I_inds))
-    I_inds_am = np.sort(np.where(np.in1d(amInds,I_inds))[0])#[ix_i]
+    I_inds_am = np.sort(np.where(np.in1d(amInds,I_inds))[0])[ix_i]
     del Mask
 
     # --------------------------------------------------------------------------------
