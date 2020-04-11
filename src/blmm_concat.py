@@ -255,30 +255,16 @@ def main(*args):
         # Read in the mask nifti.
         amask = loadFile(amask_path).get_data().reshape([v,1])
 
-        amInds = get_amInds(amask)
-
-        print(amInds)
-
-        Mask2 = np.ones(Mask.shape)
-        Mask3 = np.array(Mask2)
-        
-        Mask[amask==0]=0
-        Mask3[amask==0]=0
-
-
-        Mask2[np.setdiff1d(np.arange(v).reshape(v,1), amInds)]=0
-
-        print('Mask check')
-        print(np.all(Mask==Mask2))
-        print(np.all(Mask2==Mask3))
-
     else:
 
         # By default make amask ones
         amask = np.ones([v,1])
 
-    # Get amask indices
+    #  Get indices for analysis mask
     amInds = get_amInds(amask)
+
+    # Ensure overall mask matches analysis mask
+    Mask[np.setdiff1d(np.arange(v).reshape(v,1), amInds)]=0
         
     # Output final mask map
     maskmap = nib.Nifti1Image(Mask.reshape(
@@ -322,9 +308,6 @@ def main(*args):
     # Number of voxels in whole (inner + ring) mask
     v_m = v_i + v_r
 
-
-    # MARKER
-
     # Create df map
     df_r = n_sv[R_inds,:] - p
     df_r = df_r.reshape([v_r])
@@ -332,7 +315,7 @@ def main(*args):
 
     # Unmask df
     df = np.zeros([v])
-    df[R_inds] = df_r # df[amInds[R_inds]] MARKER
+    df[R_inds] = df_r 
     df[I_inds] = df_i
 
     df = df.reshape(int(NIFTIsize[0]),
@@ -357,13 +340,13 @@ def main(*args):
 
     # Work out the uniqueness mask for the spatially varying designs
     uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
-        "blmm_vox_uniqueM_batch1.nii")).get_data().reshape(v) # MARKER
+        "blmm_vox_uniqueM_batch1.nii")).get_data().reshape(v)
 
     # Work out the uniqueness mask inside the ring around the brain
-    uniquenessMask_r = uniquenessMask[R_inds] # MARKER amInds[R_inds]
+    uniquenessMask_r = uniquenessMask[R_inds]
 
     # Work out the uniqueness mask value inside the inner part of the brain
-    uniquenessMask_i = uniquenessMask[I_inds[0]] # MARKER amInds[I_inds[0]]
+    uniquenessMask_i = uniquenessMask[I_inds[0]] 
 
     maxM = np.int32(np.amax(uniquenessMask))
 
@@ -426,13 +409,13 @@ def main(*args):
         
         # Read in uniqueness Mask file
         uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
-            "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii")).get_data().reshape(v) # MARKER
+            "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii")).get_data().reshape(v)
 
         # Work out the uniqueness mask inside the ring around the brain
-        uniquenessMask_r = uniquenessMask[R_inds] # amInds[R_inds] MARKER
+        uniquenessMask_r = uniquenessMask[R_inds] 
 
         # Work out the uniqueness mask value inside the inner part of the brain
-        uniquenessMask_i = uniquenessMask[I_inds[0]] # MARKER amInds[I_inds[0]]
+        uniquenessMask_i = uniquenessMask[I_inds[0]] 
 
 
         maxM = np.int32(np.amax(uniquenessMask))
@@ -492,9 +475,12 @@ def main(*args):
     print('XtY shape')
     print(XtY.shape)
 
-    XtY = XtY.reshape([v, p, 1]) # MARKER all V_m
-    YtY = YtY.reshape([v, 1, 1])
-    ZtY = ZtY.reshape([v, q, 1])
+    # Number of voxels in analysis mask
+    v_am = np.prod(amInds.shape)
+
+    XtY = XtY.reshape([v_am, p, 1]) # MARKER all V_m
+    YtY = YtY.reshape([v_am, 1, 1])
+    ZtY = ZtY.reshape([v_am, q, 1])
 
     XtX_r = XtX_r.reshape([v_r, p, p])
     ZtX_r = ZtX_r.reshape([v_r, q, p])
@@ -511,13 +497,13 @@ def main(*args):
     if v_r:
 
         # Calculate masked X'Y for ring
-        XtY_r = XtY[R_inds,:,:] # MARKER RM R_inds
+        XtY_r = XtY[np.where(np.in1d(amInds,R_inds))[0],:,:]
 
         # Calculate Y'Y for ring
-        YtY_r = YtY[R_inds,:,:]
+        YtY_r = YtY[np.where(np.in1d(amInds,R_inds))[0],:,:]
 
         # Calculate masked Z'Y for ring
-        ZtY_r = ZtY[R_inds,:,:]
+        ZtY_r = ZtY[np.where(np.in1d(amInds,R_inds))[0],:,:]
 
         # We calculate these by transposing
         YtX_r = XtY_r.transpose((0,2,1))
@@ -525,7 +511,7 @@ def main(*args):
         XtZ_r = ZtX_r.transpose((0,2,1))
 
         # Spatially varying nv for ring
-        n_sv_r = n_sv[R_inds,:]
+        n_sv_r = n_sv[np.where(np.in1d(amInds,R_inds))[0],:]
 
 
     # If we have indices where all studies are present, work out X'X and
@@ -535,19 +521,19 @@ def main(*args):
         # X'X must be 1 by np by np for broadcasting
         XtX_i = XtX_i.reshape([1, p, p])
 
-        XtY_i = XtY[I_inds,:]
+        XtY_i = XtY[np.where(np.in1d(amInds,I_inds))[0],:]
 
         # Calculate Y'Y for inner
-        YtY_i = XtY[I_inds,:]
+        YtY_i = XtY[np.where(np.in1d(amInds,I_inds))[0],:]
 
         # Calculate Y'Y for inner
-        YtY_i = YtY[I_inds,:,:]
+        YtY_i = YtY[np.where(np.in1d(amInds,I_inds))[0],:,:]
 
         # Calculate masked Z'X for inner
         ZtX_i = ZtX_i.reshape([1, q, p])
 
         # Calculate masked Z'Y for inner
-        ZtY_i = ZtY[I_inds,:,:]
+        ZtY_i = ZtY[np.where(np.in1d(amInds,I_inds))[0],:,:]
 
         # Calculate Z'Y for inner
         ZtZ_i = ZtZ_i.reshape([1, q, q])
