@@ -409,8 +409,8 @@ def main(*args):
     # Cycle through batches and add together results.
     for batchNo in range(2,(n_b+1)):
 
-        # XtY = XtY + np.load(
-        #     os.path.join(OutDir,"tmp","XtY" + str(batchNo) + ".npy"))
+        XtY = XtY + np.load(
+            os.path.join(OutDir,"tmp","XtY" + str(batchNo) + ".npy"))
 
         # YtY = YtY + np.load(
         #     os.path.join(OutDir,"tmp","YtY" + str(batchNo) + ".npy"))
@@ -495,10 +495,15 @@ def main(*args):
     # Calculate betahat = (X'X)^(-1)X'Y and output beta maps
     # --------------------------------------------------------------------------------    
 
+    XtYtmp_r = XtY[np.where(np.in1d(amInds,R_inds))[0],:]
+
+    print(XtYtmp_r.shape)
     print('marker')
     print(XtY_r.shape)
     print(YtY_r.shape)
     print(ZtY_r.shape)
+
+    print(np.all(XtY_r==XtYtmp_r))
 
     XtY_r = XtY_r.reshape([v_r, p, 1]) 
     YtY_r = YtY_r.reshape([v_r, 1, 1])
