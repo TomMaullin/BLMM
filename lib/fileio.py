@@ -271,3 +271,18 @@ def addBlockToNifti(fname, block, blockInds,dim=None,volInd=None,aff=None,hdr=No
     nib.save(nifti, fname)
 
     del nifti, fname, data_out, affine
+
+
+# Read in only certain parts of numpy file
+def readLinesFromNPY(filename, lines)
+
+    # Load in the file but in memory map mode
+    data_memmap = np.load(filename,mmap_mode='r')
+
+    # Read in the desired lines
+    data_lines = np.array(data_memmap[lines,:])
+
+    # We don't want this file hanging around
+    del data_memmap
+
+    return(data_lines)
