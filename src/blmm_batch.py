@@ -211,9 +211,9 @@ def main(*args):
     # Verify input
     verifyInput(Y_files, M_files, Y0)
 
-    # Obtain Y, mask for Y, M (essentially the array Y!=0) n_sv and Mmap.
+    # Obtain Y, M (essentially the array Y!=0) n_sv and Mmap.
     # This mask is just for voxels with no studies present.
-    Y, Mask, n_sv, M, Mmap = obtainY(Y_files, M_files, M_t, M_a)
+    Y, n_sv, M, Mmap = obtainY(Y_files, M_files, M_t, M_a)
 
     # Work out voxel specific designs
     MX = applyMask(X, M)
@@ -430,7 +430,6 @@ def applyMask(X,M):
 # ----------------------------------------------------------------------------
 #
 #  - `Y`: The masked observations, reshaped to be of dimension n by v
-#  - `Mask`: The overall mask (as a 3D numpy array).
 #  - `n_sv`: The spatially varying number of observations (as a 3D numpy
 #            array).
 #  - `M`: The array Y!=0 (resized appropriately for later computation).
@@ -459,7 +458,7 @@ def obtainY(Y_files, M_files, M_t, M_a):
         # Read in each individual NIFTI.
         Y_indiv = loadFile(Y_files[i])
 
-        # Mask Y if necesart
+        # Mask Y if necesary
         if M_files:
         
             # Apply mask
@@ -520,7 +519,7 @@ def obtainY(Y_files, M_files, M_t, M_a):
     unique_id_nifti = M_df['id'].values
 
     # Make a nifti which will act as a "key" telling us which voxel had which design
-    Mmap = np.zeros(Mask.shape)
+    Mmap = np.zeros(Mask)
     Mmap[np.flatnonzero(Mask)] = unique_id_nifti[:]
     Mmap = Mmap.reshape(n_sv.shape)
 
@@ -535,91 +534,7 @@ def obtainY(Y_files, M_files, M_t, M_a):
     print('shape of M_a')
     print(M_a.shape)
 
-    return Y, Mask, n_sv, M, Mmap
-
-
-# ============================================================================
-# 
-# The below function takes in an array A and a 3D mask volume and returns a 
-# array AtA corresponding to A'A for all voxels inside the mask and zero for
-# all voxels outside the mask.
-#
-# ----------------------------------------------------------------------------
-#
-# This function takes in the following inputs:
-#
-# ----------------------------------------------------------------------------
-#
-#  - `A`: An (n by v) array.
-#  - `Mask`: The 3D mask array.
-#
-# ----------------------------------------------------------------------------
-#
-# This function gives as outputs:
-#
-# ----------------------------------------------------------------------------
-#
-#  - `AtA`: A array corresponding to A'A for all voxels inside the mask and
-#           zero for all voxels outside the mask.
-#
-# ============================================================================
-def unmasked_AtA(A, Mask):
-
-    # Read in number of observations and voxels.
-    n = A.shape[0]
-    v = A.shape[1]
-    
-    # Reshape A
-    A_rs = A.transpose().reshape(v, n, 1)
-    At_rs = A.transpose().reshape(v, 1, n)
-    del A
-
-    # Calculate A transpose A.
-    AtA_m = np.matmul(At_rs,A_rs).reshape([v, 1])
-
-    # Unmask YtY
-    AtA = np.zeros([Mask.shape[0], 1])
-    AtA[np.flatnonzero(Mask),:] = AtA_m[:]
-
-    return AtA
-
-
-# ============================================================================
-# 
-# The below function takes in two matrices, A and B, and a 3D mask volume and
-# returns an array AtB corresponding to A'B for all voxels inside the mask
-# and zero for all voxels outside the mask.
-#
-# ----------------------------------------------------------------------------
-#
-# This function takes in the following inputs:
-#
-# ----------------------------------------------------------------------------
-#
-#  - `A`: An (n by v) array.
-#  - `B`: An (v by n by p) array.
-#  - `Mask`: The 3D mask array.
-#
-# ----------------------------------------------------------------------------
-#
-# This function gives as outputs:
-#
-# ----------------------------------------------------------------------------
-#
-#  - `AtB`: A array corresponding to A'B for all voxels inside the mask and
-#           zero for all voxels outside the mask.
-#
-# ============================================================================
-def unmasked_AtB(A, B, Mask):
-    
-    # Calculate A transpose B (Masked)
-    AtB_m = A.transpose() @ B
-
-    # Unmask XtY
-    AtB = np.zeros([AtB_m.shape[0], Mask.shape[0]])
-    AtB[:,np.flatnonzero(Mask)] = AtB_m[:]
-
-    return AtB
+    return Y, n_sv, M, Mmap
 
 
 if __name__ == "__main__":
