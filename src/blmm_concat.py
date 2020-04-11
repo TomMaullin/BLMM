@@ -265,7 +265,7 @@ def main(*args):
     amInds = get_amInds(amask, 4, 10)
 
     # Ensure overall mask matches analysis mask
-    Mask[np.setdiff1d(np.arange(v).reshape(v,1), amInds)]=0
+    Mask[~np.in1d(np.arange(v).reshape(v,1), amInds)]=0
         
     # Output final mask map
     maskmap = nib.Nifti1Image(Mask.reshape(
@@ -495,7 +495,7 @@ def main(*args):
     # Calculate betahat = (X'X)^(-1)X'Y and output beta maps
     # --------------------------------------------------------------------------------    
 
-    XtYtmp_r = XtY[np.in1d(amInds,R_inds),:]
+    XtYtmp_r = XtY[np.where(np.in1d(amInds,R_inds))[0],:]
 
     print(XtYtmp_r.shape)
     print('marker')
