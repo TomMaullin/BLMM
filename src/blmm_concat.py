@@ -404,8 +404,19 @@ def main(*args):
         YtY = YtY + np.load(
             os.path.join(OutDir,"tmp","YtY" + str(batchNo) + ".npy"))
 
+        t1 = time.time()
         ZtY = ZtY + np.load(
             os.path.join(OutDir,"tmp","ZtY" + str(batchNo) + ".npy"))
+        t2 = time.time()
+        print('not tmp time: ', t2-t1)
+
+        t1 = time.time()
+        ZtYtmp = readLinesFromNPY(os.path.join(OutDir,"tmp","ZtY" + str(batchNo) + ".npy"), np.array[20,29,40,32])
+        t2 = time.time()
+        print('tmp time: ', t2-t1)
+        print(ZtYtmp.shape)
+        print(type(ZtYtmp))
+        print(ZtYtmp)
         
         # Read in uniqueness Mask file
         uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
@@ -496,7 +507,8 @@ def main(*args):
     REML = False
 
     # If we have indices where only some studies are present, work out X'X and
-    # X'Y for these studies.
+    # X'Y for these studies. (Remember X'Y, Y'Y and Z'Y have already had the 
+    # analysis mask applied to them during the batch stage)
     if v_r:
 
         # Calculate masked X'Y for ring
