@@ -551,7 +551,7 @@ def main(*args):
 
 
 
-    v_am = XtY.shape[0]
+    v_am = XtYtmp.shape[0]
 
     XtYtmp = XtYtmp.reshape([v_am, p, 1]) # MARKER all V_m
     YtYtmp = YtYtmp.reshape([v_am, 1, 1])
