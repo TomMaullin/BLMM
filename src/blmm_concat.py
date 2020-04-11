@@ -487,8 +487,7 @@ def main(*args):
     # Calculate betahat = (X'X)^(-1)X'Y and output beta maps
     # --------------------------------------------------------------------------------    
 
-    print(v_am)
-
+    print('marker')
     print(XtY_r.shape)
     print(YtY_r.shape)
     print(ZtY_r.shape)
@@ -499,7 +498,7 @@ def main(*args):
     print(XtY_r.shape)
     print(YtY_r.shape)
     print(ZtY_r.shape)
-    
+
     XtX_r = XtX_r.reshape([v_r, p, p])
     ZtX_r = ZtX_r.reshape([v_r, q, p])
     ZtZ_r = ZtZ_r.reshape([v_r, q, q])
