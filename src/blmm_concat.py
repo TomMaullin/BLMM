@@ -282,6 +282,22 @@ def main(*args):
     # missing studies.
     R_inds = np.sort(np.where((Mask==1)*(n_sv<n))[0])#
 
+    Mask2 = np.ones(Mask.shape)
+    Mask2[~np.in1d(np.arange(v).reshape(v,1), R_inds)]=0
+
+    # Output final mask map
+    maskmap = nib.Nifti1Image(Mask2.reshape(
+                                    NIFTIsize[0],
+                                    NIFTIsize[1],
+                                    NIFTIsize[2]
+                                    ),
+                              nifti.affine,
+                              header=nifti.header)
+    nib.save(maskmap, os.path.join(OutDir,'blmm_vox_mask2.nii'))
+    del maskmap
+
+
+
     # MARKER
     ix_r = np.argsort(np.argsort(R_inds))
     R_inds_am = np.sort(np.where(np.in1d(amInds,R_inds))[0])#[ix_r]
