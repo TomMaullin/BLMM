@@ -282,10 +282,18 @@ def main(*args):
     # missing studies.
     R_inds = np.where((Mask==1)*(n_sv<n))[0]
 
+    # MARKER
+    ix_r = np.argsort(R_inds)
+    R_inds_am = np.where(np.in1d(amInds,R_inds))[0][ix_r]
+
     # Get indices of the "inner" volume where all studies had information
     # present. I.e. the voxels (usually near the middle of the brain) where
     # every voxel has a reading for every study.
     I_inds = np.where((Mask==1)*(n_sv==n))[0]
+
+    # MARKER
+    ix_i = np.argsort(I_inds)
+    I_inds_am = np.where(np.in1d(amInds,I_inds))[0][ix_i]
     del Mask
 
     # --------------------------------------------------------------------------------
@@ -341,13 +349,13 @@ def main(*args):
     # YtY = np.load(os.path.join(OutDir,"tmp","YtY1.npy"))
     # ZtY = np.load(os.path.join(OutDir,"tmp","ZtY1.npy"))
 
-    XtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp","XtY1.npy"), np.where(np.in1d(amInds,R_inds))[0])
-    YtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp","YtY1.npy"), np.where(np.in1d(amInds,R_inds))[0])
-    ZtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp","ZtY1.npy"), np.where(np.in1d(amInds,R_inds))[0])
+    XtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp","XtY1.npy"), R_inds_am)
+    YtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp","YtY1.npy"), R_inds_am)
+    ZtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp","ZtY1.npy"), R_inds_am)
 
-    XtY_i = readLinesFromNPY(os.path.join(OutDir,"tmp","XtY1.npy"), np.where(np.in1d(amInds,I_inds))[0])
-    YtY_i = readLinesFromNPY(os.path.join(OutDir,"tmp","YtY1.npy"), np.where(np.in1d(amInds,I_inds))[0])
-    ZtY_i = readLinesFromNPY(os.path.join(OutDir,"tmp","ZtY1.npy"), np.where(np.in1d(amInds,I_inds))[0])
+    XtY_i = readLinesFromNPY(os.path.join(OutDir,"tmp","XtY1.npy"), I_inds_am)
+    YtY_i = readLinesFromNPY(os.path.join(OutDir,"tmp","YtY1.npy"), I_inds_am)
+    ZtY_i = readLinesFromNPY(os.path.join(OutDir,"tmp","ZtY1.npy"), I_inds_am)
 
     # Work out the uniqueness mask for the spatially varying designs
     uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
@@ -422,13 +430,13 @@ def main(*args):
         # print('not tmp time: ', t2-t1)
 
         t1 = time.time()
-        XtY_r = XtY_r + readLinesFromNPY(os.path.join(OutDir,"tmp","XtY" + str(batchNo) + ".npy"), np.where(np.in1d(amInds,R_inds))[0])
-        YtY_r = YtY_r + readLinesFromNPY(os.path.join(OutDir,"tmp","YtY" + str(batchNo) + ".npy"), np.where(np.in1d(amInds,R_inds))[0])
-        ZtY_r = ZtY_r + readLinesFromNPY(os.path.join(OutDir,"tmp","ZtY" + str(batchNo) + ".npy"), np.where(np.in1d(amInds,R_inds))[0])
+        XtY_r = XtY_r + readLinesFromNPY(os.path.join(OutDir,"tmp","XtY" + str(batchNo) + ".npy"), R_inds_am)
+        YtY_r = YtY_r + readLinesFromNPY(os.path.join(OutDir,"tmp","YtY" + str(batchNo) + ".npy"), R_inds_am)
+        ZtY_r = ZtY_r + readLinesFromNPY(os.path.join(OutDir,"tmp","ZtY" + str(batchNo) + ".npy"), R_inds_am)
 
-        XtY_i = XtY_i + readLinesFromNPY(os.path.join(OutDir,"tmp","XtY" + str(batchNo) + ".npy"), np.where(np.in1d(amInds,I_inds))[0])
-        YtY_i = YtY_i + readLinesFromNPY(os.path.join(OutDir,"tmp","YtY" + str(batchNo) + ".npy"), np.where(np.in1d(amInds,I_inds))[0])
-        ZtY_i = ZtY_i + readLinesFromNPY(os.path.join(OutDir,"tmp","ZtY" + str(batchNo) + ".npy"), np.where(np.in1d(amInds,I_inds))[0])
+        XtY_i = XtY_i + readLinesFromNPY(os.path.join(OutDir,"tmp","XtY" + str(batchNo) + ".npy"), I_inds_am)
+        YtY_i = YtY_i + readLinesFromNPY(os.path.join(OutDir,"tmp","YtY" + str(batchNo) + ".npy"), I_inds_am)
+        ZtY_i = ZtY_i + readLinesFromNPY(os.path.join(OutDir,"tmp","ZtY" + str(batchNo) + ".npy"), I_inds_am)
         t2 = time.time()
         print('tmp time: ', t2-t1)
         print(XtY_r.shape)
