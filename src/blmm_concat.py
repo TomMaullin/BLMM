@@ -478,6 +478,9 @@ def main(*args):
     # Number of voxels in analysis mask
     v_am = np.prod(amInds.shape)
 
+    print(XtY.shape)
+    print(YtY.shape)
+    print(ZtY.shape)
     XtY = XtY.reshape([v_am, p, 1]) # MARKER all V_m
     YtY = YtY.reshape([v_am, 1, 1])
     ZtY = ZtY.reshape([v_am, q, 1])
