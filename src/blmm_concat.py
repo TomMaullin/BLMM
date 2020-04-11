@@ -445,7 +445,7 @@ def main(*args):
 
     # Cycle through batches and add together results.
     for batchNo in range(2,(n_b+1)):
-        
+
 
         # YtY = YtY + np.load(
         #     os.path.join(OutDir,"tmp","YtY" + str(batchNo) + ".npy"))
@@ -543,7 +543,6 @@ def main(*args):
     XtYtmp = XtYtmp.transpose()
     #XtYtmp_r = XtY[np.where(np.in1d(amInds,R_inds))[0],:]
 
-    print(XtYtmp_r.shape)
     print('marker')
     print(XtY_r.shape)
     print(YtY_r.shape)
