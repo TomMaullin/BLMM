@@ -353,15 +353,15 @@ def main(*args):
     # Load X'X, X'Y, Y'Y, X'Z, Y'Z, Z'Z
     # --------------------------------------------------------------------------------
 
-    XtY2_r = readAndSumAtB('XtY',OutDir,R_inds_am,n_b)
+    # Ring
+    XtY_r = readAndSumAtB('XtY',OutDir,R_inds_am,n_b)
+    YtY_r = readAndSumAtB('XtY',OutDir,R_inds_am,n_b)
+    ZtY_r = readAndSumAtB('XtY',OutDir,R_inds_am,n_b)
 
-    XtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp","XtY1.npy"), R_inds_am)
-    YtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp","YtY1.npy"), R_inds_am)
-    ZtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp","ZtY1.npy"), R_inds_am)
-
-    XtY_i = readLinesFromNPY(os.path.join(OutDir,"tmp","XtY1.npy"), I_inds_am)
-    YtY_i = readLinesFromNPY(os.path.join(OutDir,"tmp","YtY1.npy"), I_inds_am)
-    ZtY_i = readLinesFromNPY(os.path.join(OutDir,"tmp","ZtY1.npy"), I_inds_am)
+    # Inner
+    XtY_i = readAndSumAtB('XtY',OutDir,I_inds_am,n_b)
+    YtY_i = readAndSumAtB('XtY',OutDir,I_inds_am,n_b)
+    ZtY_i = readAndSumAtB('XtY',OutDir,I_inds_am,n_b)
 
     # Work out the uniqueness mask for the spatially varying designs
     uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
@@ -422,14 +422,6 @@ def main(*args):
 
     # Cycle through batches and add together results.
     for batchNo in range(2,(n_b+1)):
-
-        XtY_r = XtY_r + readLinesFromNPY(os.path.join(OutDir,"tmp","XtY" + str(batchNo) + ".npy"), R_inds_am)
-        YtY_r = YtY_r + readLinesFromNPY(os.path.join(OutDir,"tmp","YtY" + str(batchNo) + ".npy"), R_inds_am)
-        ZtY_r = ZtY_r + readLinesFromNPY(os.path.join(OutDir,"tmp","ZtY" + str(batchNo) + ".npy"), R_inds_am)
-
-        XtY_i = XtY_i + readLinesFromNPY(os.path.join(OutDir,"tmp","XtY" + str(batchNo) + ".npy"), I_inds_am)
-        YtY_i = YtY_i + readLinesFromNPY(os.path.join(OutDir,"tmp","YtY" + str(batchNo) + ".npy"), I_inds_am)
-        ZtY_i = ZtY_i + readLinesFromNPY(os.path.join(OutDir,"tmp","ZtY" + str(batchNo) + ".npy"), I_inds_am)
 
         # Read in uniqueness Mask file
         uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
