@@ -579,8 +579,6 @@ def readAndSumUniqueAtB(AtBstr, OutDir, vinds, n_b, sv):
     # Make zeros for outer ring of brain ZtZ, XtX, ZtX etc (remember A'B is still flattened)
     if sv:
         AtB = np.zeros((vcurrent, AtB_batch_unique.shape[1]))
-    else:
-        AtB = np.zeros(AtB_batch_unique.shape[1])
 
     # Fill with unique maskings
     for m in range(1,maxM+1):
@@ -616,17 +614,19 @@ def readAndSumUniqueAtB(AtBstr, OutDir, vinds, n_b, sv):
             os.path.join(OutDir,"tmp",AtBstr + str(batchNo) + ".npy"))
 
         # Make zeros for whole nifti ZtZ, XtX, ZtX etc
-        AtB_batch = np.zeros((vcurrent, AtB_batch_unique.shape[1]))
+        if sv:
+            AtB_batch = np.zeros((vcurrent, AtB_batch_unique.shape[1]))
 
         # Fill with unique maskings
         for m in range(1,maxM+1):
 
-            AtB_batch[np.where(uniquenessMask==m),:] = AtB_batch_unique[(m-1),:]
+            if sv:
+                AtB_batch[np.where(uniquenessMask==m),:] = AtB_batch_unique[(m-1),:]
+            else:
+                # Work out Z'Z, Z'X and X'X for the inner
+                if uniquenessMask == m:
 
-            # Work out Z'Z, Z'X and X'X for the inner
-            if uniquenessMask == m:
-
-                AtB_batch = AtB_batch_unique[(m-1),:]
+                    AtB_batch = AtB_batch_unique[(m-1),:]
 
         # Add to running total
         AtB = AtB + AtB_batch
