@@ -490,7 +490,7 @@ def main(*args):
     # Calculate betahat = (X'X)^(-1)X'Y and output beta maps
     # --------------------------------------------------------------------------------    
     
-    XtY2_r = readAndSumAtB('XtY',R_inds,n_b)
+    XtY2_r = readAndSumAtB('XtY',OutDir,R_inds,n_b)
 
     print('check')
     print(np.all(XtY2_r==XtY_r))
@@ -553,7 +553,7 @@ def main(*args):
     w.resetwarnings()
 
 
-def readAndSumAtB(AtBstr,vinds,n_b):
+def readAndSumAtB(AtBstr, OutDir, vinds,n_b):
 
     # Read in first A'B
     AtB = readLinesFromNPY(os.path.join(OutDir,"tmp",AtBstr + '1.npy'), vinds)
@@ -561,8 +561,10 @@ def readAndSumAtB(AtBstr,vinds,n_b):
     # Cycle through batches and add together results.
     for batchNo in range(2,(n_b+1)):
 
+        # Sum A'B
         AtB = AtB + readLinesFromNPY(os.path.join(OutDir,"tmp",AtBstr + str(batchNo) + ".npy"), vinds)
 
+    # Return A'B
     return(AtB)
 
 if __name__ == "__main__":
