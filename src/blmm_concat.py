@@ -355,13 +355,13 @@ def main(*args):
 
     # Ring X'Y, Y'Y, Z'Y
     XtY_r = readAndSumAtB('XtY',OutDir,R_inds_am,n_b).reshape([v_r, p, 1])
-    YtY_r = readAndSumAtB('XtY',OutDir,R_inds_am,n_b).reshape([v_r, 1, 1])
-    ZtY_r = readAndSumAtB('XtY',OutDir,R_inds_am,n_b).reshape([v_r, q, 1])
+    YtY_r = readAndSumAtB('YtY',OutDir,R_inds_am,n_b).reshape([v_r, 1, 1])
+    ZtY_r = readAndSumAtB('ZtY',OutDir,R_inds_am,n_b).reshape([v_r, q, 1])
 
     # Inner X'Y, Y'Y, Z'Y
     XtY_i = readAndSumAtB('XtY',OutDir,I_inds_am,n_b).reshape([1, p, 1])
-    YtY_i = readAndSumAtB('XtY',OutDir,I_inds_am,n_b).reshape([1, 1, 1])
-    ZtY_i = readAndSumAtB('XtY',OutDir,I_inds_am,n_b).reshape([1, q, 1])
+    YtY_i = readAndSumAtB('YtY',OutDir,I_inds_am,n_b).reshape([1, 1, 1])
+    ZtY_i = readAndSumAtB('ZtY',OutDir,I_inds_am,n_b).reshape([1, q, 1])
 
     # Work out the uniqueness mask for the spatially varying designs
     uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
