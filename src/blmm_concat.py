@@ -359,9 +359,9 @@ def main(*args):
     ZtY_r = readAndSumAtB('ZtY',OutDir,R_inds_am,n_b).reshape([v_r, q, 1])
 
     # Inner X'Y, Y'Y, Z'Y
-    XtY_i = readAndSumAtB('XtY',OutDir,I_inds_am,n_b).reshape([1, p, 1])
-    YtY_i = readAndSumAtB('YtY',OutDir,I_inds_am,n_b).reshape([1, 1, 1])
-    ZtY_i = readAndSumAtB('ZtY',OutDir,I_inds_am,n_b).reshape([1, q, 1])
+    XtY_i = readAndSumAtB('XtY',OutDir,I_inds_am,n_b).reshape([v_i, p, 1])
+    YtY_i = readAndSumAtB('YtY',OutDir,I_inds_am,n_b).reshape([v_i, 1, 1])
+    ZtY_i = readAndSumAtB('ZtY',OutDir,I_inds_am,n_b).reshape([v_i, q, 1])
 
     # Work out the uniqueness mask for the spatially varying designs
     uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
@@ -541,6 +541,91 @@ def readAndSumAtB(AtBstr, OutDir, vinds,n_b):
 
     # Return A'B
     return(AtB)
+
+
+# def readAndSumUniqueAtB(AtBstr, OutDir, vinds, n_b, sv):
+
+#     # Work out the uniqueness mask for the spatially varying designs
+#     uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
+#         "blmm_vox_uniqueM_batch1.nii")).get_data()
+
+#     v = np.prod(uniquenessMask.shape)
+#     vcurrent = np.prod(vinds.shape)
+
+#     uniquenessMask=uniquenessMask.reshape(v)
+
+#     # Work out how many unique matrices there were
+#     maxM = np.int32(np.amax(uniquenessMask))
+
+#     if sv:
+#         # Work out the uniqueness mask inside the ring around the brain
+#         uniquenessMask = uniquenessMask[vinds]
+#     else:
+#         # Work out the uniqueness mask value inside the inner part of the brain
+#         uniquenessMask = uniquenessMask[vinds[0]] 
+
+
+#     # read in XtX
+#     AtB_batch_unique = np.load(
+#         os.path.join(OutDir,"tmp",AtBstr+"1.npy"))
+
+#     # Make zeros for outer ring of brain ZtZ, XtX, ZtX etc (remember A'B is still flattened)
+#     if sv:
+#         AtB = np.zeros((vcurrent, AtB_batch_unique.shape[1]))
+#     else:
+#         AtB = np.zeros(AtB_batch_unique.shape[1])
+
+#     # Fill with unique maskings
+#     for m in range(1,maxM+1):
+
+#         if sv:
+#             # Work out Z'Z, Z'X and X'X for the ring
+#             AtB[np.where(uniquenessMask==m),:] = AtB_batch_unique[(m-1),:]
+
+#         # Work out Z'Z, Z'X and X'X for the inner
+#         else:
+#             if uniquenessMask == m:
+#                 AtB = AtB_batch_unique[(m-1),:]
+
+#     # Cycle through batches and add together results.
+#     for batchNo in range(2,(n_b+1)):
+
+#         # Read in uniqueness Mask file
+#         uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
+#             "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii")).get_data().reshape(v)
+
+#         maxM = np.int32(np.amax(uniquenessMask))
+
+#         if sv:
+#             # Work out the uniqueness mask inside the ring around the brain
+#             uniquenessMask = uniquenessMask[vinds] 
+#         else:
+#             # Work out the uniqueness mask value inside the inner part of the brain
+#             uniquenessMask = uniquenessMask[vinds[0]] 
+
+
+#         # read in XtX, ZtX, ZtZ
+#         AtB_batch_unique = np.load(
+#             os.path.join(OutDir,"tmp",AtBstr + str(batchNo) + ".npy"))
+
+#         # Make zeros for whole nifti ZtZ, XtX, ZtX etc
+#         AtB_batch = np.zeros((vcurrent, AtB_batch_unique.shape[1]))
+
+#         # Fill with unique maskings
+#         for m in range(1,maxM+1):
+
+#             AtB_batch[np.where(uniquenessMask==m),:] = AtB_batch_unique[(m-1),:]
+
+#             # Work out Z'Z, Z'X and X'X for the inner
+#             if uniquenessMask == m:
+
+#                 AtB_batch = AtB_batch_unique[(m-1),:]
+
+#         # Add to running total
+#         AtB = AtB + AtB_batch
+
+#     return(AtB)
+
 
 if __name__ == "__main__":
     main()
