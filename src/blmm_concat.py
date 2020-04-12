@@ -352,8 +352,6 @@ def main(*args):
     # --------------------------------------------------------------------------------
     # Load X'X, X'Y, Y'Y, X'Z, Y'Z, Z'Z
     # --------------------------------------------------------------------------------
-    # Read the matrices from the first batch. Note XtY is transposed as np
-    # handles lots of rows much faster than lots of columns.
 
     XtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp","XtY1.npy"), R_inds_am)
     YtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp","YtY1.npy"), R_inds_am)
@@ -491,6 +489,11 @@ def main(*args):
     # --------------------------------------------------------------------------------
     # Calculate betahat = (X'X)^(-1)X'Y and output beta maps
     # --------------------------------------------------------------------------------    
+    
+    XtY2_r = readAndSumAtB('XtY',R_inds,n_b)
+
+    print('check')
+    print(np.all(XtY2_r==XtY_r))
 
     XtY_r = XtY_r.reshape([v_r, p, 1]) 
     YtY_r = YtY_r.reshape([v_r, 1, 1])
@@ -548,6 +551,19 @@ def main(*args):
     shutil.rmtree(os.path.join(OutDir, 'tmp'))
 
     w.resetwarnings()
+
+
+def readAndSumAtB(AtBstr,vinds,n_b):
+
+    # Read in first A'B
+    AtB = readLinesFromNPY(os.path.join(OutDir,"tmp",AtBstr + '1.npy'), vinds)
+
+    # Cycle through batches and add together results.
+    for batchNo in range(2,(n_b+1)):
+
+        AtB = AtB + readLinesFromNPY(os.path.join(OutDir,"tmp",AtBstr + str(batchNo) + ".npy"), vinds)
+
+    return(AtB)
 
 if __name__ == "__main__":
     main()
