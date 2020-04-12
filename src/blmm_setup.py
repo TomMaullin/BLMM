@@ -6,6 +6,7 @@ import numpy as np
 import sys
 import os
 import yaml
+import tables
 from lib.fileio import loadFile, str2vec
 
 # ====================================================================================
