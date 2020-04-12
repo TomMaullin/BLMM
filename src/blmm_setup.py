@@ -6,7 +6,7 @@ import numpy as np
 import sys
 import os
 import yaml
-import tables
+import h5py
 from lib.fileio import loadFile, str2vec
 
 # ====================================================================================
