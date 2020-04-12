@@ -6,7 +6,7 @@ import numpy as np
 import sys
 import os
 import yaml
-import h5py
+import h5py_cache
 from lib.fileio import loadFile, str2vec
 
 # ====================================================================================
