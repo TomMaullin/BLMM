@@ -353,8 +353,8 @@ def main(*args):
     # Load X'X, X'Y, Y'Y, X'Z, Y'Z, Z'Z
     # --------------------------------------------------------------------------------
 
-    XtY2_r = readAndSumAtB('XtY',OutDir,R_inds,n_b)
-    
+    XtY2_r = readAndSumAtB('XtY',OutDir,R_inds_am,n_b)
+
     XtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp","XtY1.npy"), R_inds_am)
     YtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp","YtY1.npy"), R_inds_am)
     ZtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp","ZtY1.npy"), R_inds_am)
