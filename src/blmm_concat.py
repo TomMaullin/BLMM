@@ -353,15 +353,15 @@ def main(*args):
     # Load X'X, X'Y, Y'Y, X'Z, Y'Z, Z'Z
     # --------------------------------------------------------------------------------
 
-    # Ring
-    XtY_r = readAndSumAtB('XtY',OutDir,R_inds_am,n_b)
-    YtY_r = readAndSumAtB('XtY',OutDir,R_inds_am,n_b)
-    ZtY_r = readAndSumAtB('XtY',OutDir,R_inds_am,n_b)
+    # Ring X'Y, Y'Y, Z'Y
+    XtY_r = readAndSumAtB('XtY',OutDir,R_inds_am,n_b).reshape([v_r, p, 1])
+    YtY_r = readAndSumAtB('XtY',OutDir,R_inds_am,n_b).reshape([v_r, 1, 1])
+    ZtY_r = readAndSumAtB('XtY',OutDir,R_inds_am,n_b).reshape([v_r, q, 1])
 
-    # Inner
-    XtY_i = readAndSumAtB('XtY',OutDir,I_inds_am,n_b)
-    YtY_i = readAndSumAtB('XtY',OutDir,I_inds_am,n_b)
-    ZtY_i = readAndSumAtB('XtY',OutDir,I_inds_am,n_b)
+    # Inner X'Y, Y'Y, Z'Y
+    XtY_i = readAndSumAtB('XtY',OutDir,I_inds_am,n_b).reshape([1, p, 1])
+    YtY_i = readAndSumAtB('XtY',OutDir,I_inds_am,n_b).reshape([1, 1, 1])
+    ZtY_i = readAndSumAtB('XtY',OutDir,I_inds_am,n_b).reshape([1, q, 1])
 
     # Work out the uniqueness mask for the spatially varying designs
     uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
@@ -411,14 +411,6 @@ def main(*args):
     XtX_i = XtX_batch_i
     ZtX_i = ZtX_batch_i
     ZtZ_i = ZtZ_batch_i
-
-    # Delete the files as they are no longer needed.
-    os.remove(os.path.join(OutDir,"tmp","XtY1.npy"))
-    os.remove(os.path.join(OutDir,"tmp","YtY1.npy"))
-    os.remove(os.path.join(OutDir,"tmp","ZtX1.npy"))
-    os.remove(os.path.join(OutDir,"tmp","ZtY1.npy"))
-    os.remove(os.path.join(OutDir,"tmp","ZtZ1.npy"))
-    os.remove(os.path.join(OutDir,"tmp","blmm_vox_uniqueM_batch1.nii"))
 
     # Cycle through batches and add together results.
     for batchNo in range(2,(n_b+1)):
@@ -471,29 +463,20 @@ def main(*args):
         ZtX_i = ZtX_i + ZtX_batch_i
         ZtZ_i = ZtZ_i + ZtZ_batch_i
         
-        # Delete the files as they are no longer needed.
-        os.remove(os.path.join(OutDir, "tmp","XtY" + str(batchNo) + ".npy"))
-        os.remove(os.path.join(OutDir, "tmp","YtY" + str(batchNo) + ".npy"))
-        os.remove(os.path.join(OutDir, "tmp","ZtY" + str(batchNo) + ".npy"))
-        os.remove(os.path.join(OutDir, "tmp","XtX" + str(batchNo) + ".npy"))
-        os.remove(os.path.join(OutDir, "tmp","ZtX" + str(batchNo) + ".npy"))
-        os.remove(os.path.join(OutDir, "tmp","ZtZ" + str(batchNo) + ".npy"))
+    # Delete the files as they are no longer needed.
+    fileStrs = ["XtY","YtY","ZtY","XtX","ZtX","ZtZ"]
+
+    for batchNo in range(1,(n_b+1)):
+        # Remove uniqueness mask
         os.remove(os.path.join(OutDir, "tmp", "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii"))
+
+        for fileStr in fileStrs:
+            # Remove product matrices
+            os.remove(os.path.join(OutDir, "tmp",fileStr + str(batchNo) + ".npy"))
 
     # --------------------------------------------------------------------------------
     # Calculate betahat = (X'X)^(-1)X'Y and output beta maps
-    # --------------------------------------------------------------------------------    
-
-    print('check')
-    print(np.all(XtY2_r==XtY_r))
-
-    XtY_r = XtY_r.reshape([v_r, p, 1]) 
-    YtY_r = YtY_r.reshape([v_r, 1, 1])
-    ZtY_r = ZtY_r.reshape([v_r, q, 1])
-
-    XtY_i = XtY_i.reshape([v_i, p, 1]) 
-    YtY_i = YtY_i.reshape([v_i, 1, 1])
-    ZtY_i = ZtY_i.reshape([v_i, q, 1])
+    # --------------------------------------------------------------------------------
 
     XtX_r = XtX_r.reshape([v_r, p, p])
     ZtX_r = ZtX_r.reshape([v_r, q, p])
