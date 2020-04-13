@@ -2231,6 +2231,9 @@ def pracNumVoxelBlocks(inputs):
   else:
     maxnvb = 60
 
+  print(numVoxelBlocks(inputs))
+  print(maxnvb)
+
   # Work out number of voxel blocks we should use.
   nvb = np.min(numVoxelBlocks(inputs), maxnvb)
 
