@@ -343,14 +343,21 @@ def main(ipath, vb):
     ZtY_i = readAndSumAtB('ZtY',OutDir,I_inds_am,n_b).reshape([v_i, q, 1])
 
     # Ring Z'Z. Z'X, X'X
-    ZtZ_r = readAndSumUniqueAtB('ZtZ',OutDir,R_inds,n_b,True).reshape([v_r, q, q])
-    ZtX_r = readAndSumUniqueAtB('ZtX',OutDir,R_inds,n_b,True).reshape([v_r, q, p])
-    XtX_r = readAndSumUniqueAtB('XtX',OutDir,R_inds,n_b,True).reshape([v_r, p, p])
+    print('q: ', q)
+    print('p: ', p)
+    print('v_r: ', v_r)
+    if v_r:
+
+        ZtZ_r = readAndSumUniqueAtB('ZtZ',OutDir,R_inds,n_b,True).reshape([v_r, q, q])
+        ZtX_r = readAndSumUniqueAtB('ZtX',OutDir,R_inds,n_b,True).reshape([v_r, q, p])
+        XtX_r = readAndSumUniqueAtB('XtX',OutDir,R_inds,n_b,True).reshape([v_r, p, p])
     
-    # Inner Z'Z. Z'X, X'X
-    ZtZ_i = readAndSumUniqueAtB('ZtZ',OutDir,I_inds,n_b,False).reshape([1, q, q])
-    ZtX_i = readAndSumUniqueAtB('ZtX',OutDir,I_inds,n_b,False).reshape([1, q, p])
-    XtX_i = readAndSumUniqueAtB('XtX',OutDir,I_inds,n_b,False).reshape([1, p, p])    
+    if v_i:
+            
+        # Inner Z'Z. Z'X, X'X
+        ZtZ_i = readAndSumUniqueAtB('ZtZ',OutDir,I_inds,n_b,False).reshape([1, q, q])
+        ZtX_i = readAndSumUniqueAtB('ZtX',OutDir,I_inds,n_b,False).reshape([1, q, p])
+        XtX_i = readAndSumUniqueAtB('XtX',OutDir,I_inds,n_b,False).reshape([1, p, p])    
 
     # Delete the files as they are no longer needed.
     fileStrs = ["XtY","YtY","ZtY","XtX","ZtX","ZtZ"]
@@ -424,6 +431,9 @@ def readAndSumAtB(AtBstr, OutDir, vinds,n_b):
 
 # MARKER
 def readAndSumUniqueAtB(AtBstr, OutDir, vinds, n_b, sv):
+
+    print(AtBstr)
+    print('vinds: ',vinds)
 
     # Work out the uniqueness mask for the spatially varying designs
     uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
