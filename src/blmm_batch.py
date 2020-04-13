@@ -559,7 +559,7 @@ def memorySafeAtB(A,B,MAXMEM,filename):
     for vb in range(int(v//vPerBlock+1)):
         M[voxelGroups[vb],:]=(A.transpose(0,2,1) @ B[voxelGroups[vb],:,:]).reshape(len(voxelGroups[vb]),pORq)
         
-    print(vPerBlock+1)
+    print(v//vPerBlock+1)
 
     del M
 
