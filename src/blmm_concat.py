@@ -247,16 +247,21 @@ def main(ipath, vb):
         # By default make amask ones
         amask = np.ones([v,1])
 
+    # if voxel blocking
+
     # Get indices for block. These indices have to be the indices we want to
     # compute, in relation to the entire volume.
     bamInds = get_amInds(amask, 4, 10)
 
-    # Get indices for analysis mask. These indices have to be the indices we
-    # have recorded for the product matrices with respect to the entire volume
-    amInds = get_amInds(amask)
+    # else
+    # bamInds = amInds
 
     # Ensure overall mask matches analysis mask
     Mask[~np.in1d(np.arange(v).reshape(v,1), bamInds)]=0
+
+    # Get indices for whole analysis mask. These indices are the indices we
+    # have recorded for the product matrices with respect to the entire volume
+    amInds = get_amInds(amask)
         
     # Output final mask map
     maskmap = nib.Nifti1Image(Mask.reshape(
@@ -402,7 +407,7 @@ def main(ipath, vb):
 
     w.resetwarnings()
 
-
+# MARKER
 def readAndSumAtB(AtBstr, OutDir, vinds,n_b):
 
     # Read in first A'B
@@ -417,7 +422,7 @@ def readAndSumAtB(AtBstr, OutDir, vinds,n_b):
     # Return A'B
     return(AtB)
 
-
+# MARKER
 def readAndSumUniqueAtB(AtBstr, OutDir, vinds, n_b, sv):
 
     # Work out the uniqueness mask for the spatially varying designs

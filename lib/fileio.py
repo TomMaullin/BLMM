@@ -272,7 +272,7 @@ def addBlockToNifti(fname, block, blockInds,dim=None,volInd=None,aff=None,hdr=No
 
     del nifti, fname, data_out, affine
 
-
+# MARKER
 # Read in only certain parts of numpy file
 def readLinesFromNPY(filename, lines):
 

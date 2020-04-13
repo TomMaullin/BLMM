@@ -171,9 +171,15 @@ def main(*args):
     with open(os.path.join(OutDir, "nb.txt"), 'w') as f:
         print(int(np.ceil(len(Y_files)/int(blksize))), file=f)
 
+    print('running0')
+
     if 'voxelBatching' in inputs:
 
+        print('running')
+
         if inputs['voxelBatching']:
+        
+            print('running2')
 
             # Obtain number of voxel blocks for parallelization.
             nvb = pracNumVoxelBlocks(inputs)
