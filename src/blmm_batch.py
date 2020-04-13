@@ -233,7 +233,7 @@ def main(*args):
     XtY = X.transpose() @ Y #unmasked_AtB(X, Y, Mask)
     print(XtY.shape)
     #ZtY = Z.transpose() @ Y #unmasked_AtB(Z, Y, Mask) 
-    memorySafeAtB(Z.reshape(1,Z.shape[0],Z.shape[1]),Y.reshape(Y.shape[0], Y.shape[1], 1).transpose((1,0,2)),MAXMEM,batchNo)
+    memorySafeAtB(Z.reshape(1,Z.shape[0],Z.shape[1]),Y.reshape(Y.shape[0], Y.shape[1], 1).transpose((1,0,2)),MAXMEM,os.path.join(OutDir,"tmp","ZtY" + str(batchNo)+'.npy'))
 
     # Y is currently [n,v]
     print(Y.reshape(Y.shape[0], Y.shape[1], 1).transpose((1,2,0)).shape)
@@ -542,13 +542,13 @@ def obtainY(Y_files, M_files, M_t, M_a):
 # Memory safe A'B for A of shape [v,]
 
 # X'Y, Z'Y
-def memorySafeAtB(A,B,MAXMEM,batchNo):
+def memorySafeAtB(A,B,MAXMEM,filename):
 
     print(A.shape) # currently [n,q], assume [1,n,q]
     print(B.shape) # Currently [n,v], assume [v,n,1]
 
     # create a memory-mapped .npy file with the dimensions and dtype we want
-    M = open_memmap(os.path.join(OutDir,"tmp","ZtY" + str(batchNo)+'.npy'), mode='w+', dtype='float64', shape=(v,q))
+    M = open_memmap(filename, mode='w+', dtype='float64', shape=(v,q))
         
     # Work out the number of voxels we can save at a time.
     # (8 bytes per numpy float exponent multiplied by 10
