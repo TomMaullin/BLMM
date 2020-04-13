@@ -232,6 +232,7 @@ def main(*args):
     XtY = X.transpose() @ Y #unmasked_AtB(X, Y, Mask)
     print(XtY.shape)
     ZtY = Z.transpose() @ Y #unmasked_AtB(Z, Y, Mask) 
+    memorySafeAtB(Z,Y,MAXMEM)
 
     # Y is currently [n,v]
     print(Y.reshape(Y.shape[0], Y.shape[1], 1).transpose((1,2,0)).shape)
@@ -536,6 +537,33 @@ def obtainY(Y_files, M_files, M_t, M_a):
     print(M_a.shape)
 
     return Y, n_sv, M, Mmap
+
+# Memory safe A'B for A of shape [v,]
+
+# X'Y, Z'Y
+def memorySafeAtB(A,B,MAXMEM):
+
+    print(A.shape)
+    print(B.shape)
+
+    # # create a memory-mapped .npy file with the dimensions and dtype we want
+    # M = open_memmap(os.path.join(OutDir,"tmp","ZtY" + str(batchNo)+'.npy'), mode='w+', dtype='float64', shape=(v,q))
+        
+    # # Work out the number of voxels we can save at a time.
+    # # (8 bytes per numpy float exponent multiplied by 10
+    # # for a safe overhead)
+    # vPerBlock = MAXMEM/(10*8*q)
+
+    # # Work out the indices for each grou of voxels
+    # voxelGroups = np.array_split(np.arange(v, dtype='int32'), v//vPerBlock+1)
+    
+    # # Loop through each group of voxels saving A'B for those voxels
+    # for vb in range(int(v//vPerBlock+1)):
+
+    #     M[voxelGroups[vb],:]=(A.transpose() @ B[voxelGroups[vb],:,:]).reshape(len(voxelGroups[vb]),q)
+        
+    print('done')
+
 
 
 if __name__ == "__main__":
