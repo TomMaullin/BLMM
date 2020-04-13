@@ -231,8 +231,8 @@ def main(*args):
     print(Y.shape)
     XtY = X.transpose() @ Y #unmasked_AtB(X, Y, Mask)
     print(XtY.shape)
-    ZtY = Z.transpose() @ Y #unmasked_AtB(Z, Y, Mask) 
-    memorySafeAtB(Z.reshape(1,Z.shape[0],Z.shape[1]),Y.reshape(Y.shape[0], Y.shape[1], 1).transpose((1,0,2)),MAXMEM)
+    #ZtY = Z.transpose() @ Y #unmasked_AtB(Z, Y, Mask) 
+    memorySafeAtB(Z.reshape(1,Z.shape[0],Z.shape[1]),Y.reshape(Y.shape[0], Y.shape[1], 1).transpose((1,0,2)),MAXMEM,batchNo)
 
     # Y is currently [n,v]
     print(Y.reshape(Y.shape[0], Y.shape[1], 1).transpose((1,2,0)).shape)
@@ -257,7 +257,7 @@ def main(*args):
 
     # Change dimensions from [p (q), v] to [v, p (q)]
     XtY = XtY.transpose()
-    ZtY = ZtY.transpose()
+    #ZtY = ZtY.transpose()
 
     # Record product matrices 
     np.save(os.path.join(OutDir,"tmp","XtX" + str(batchNo)), 
@@ -266,8 +266,8 @@ def main(*args):
                XtY) 
     np.save(os.path.join(OutDir,"tmp","YtY" + str(batchNo)), 
                YtY) 
-    np.save(os.path.join(OutDir,"tmp","ZtY" + str(batchNo)), 
-               ZtY) 
+    # np.save(os.path.join(OutDir,"tmp","ZtY" + str(batchNo)), 
+    #            ZtY) 
     np.save(os.path.join(OutDir,"tmp","ZtX" + str(batchNo)), 
                ZtX) 
     np.save(os.path.join(OutDir,"tmp","ZtZ" + str(batchNo)), 
@@ -541,29 +541,29 @@ def obtainY(Y_files, M_files, M_t, M_a):
 # Memory safe A'B for A of shape [v,]
 
 # X'Y, Z'Y
-def memorySafeAtB(A,B,MAXMEM):
+def memorySafeAtB(A,B,MAXMEM,batchNo):
 
     print(A.shape) # currently [n,q], assume [1,n,q]
     print(B.shape) # Currently [n,v], assume [v,n,1]
 
-    # # create a memory-mapped .npy file with the dimensions and dtype we want
-    # M = open_memmap(os.path.join(OutDir,"tmp","ZtY" + str(batchNo)+'.npy'), mode='w+', dtype='float64', shape=(v,q))
+    # create a memory-mapped .npy file with the dimensions and dtype we want
+    M = open_memmap(os.path.join(OutDir,"tmp","ZtY" + str(batchNo)+'.npy'), mode='w+', dtype='float64', shape=(v,q))
         
-    # # Work out the number of voxels we can save at a time.
-    # # (8 bytes per numpy float exponent multiplied by 10
-    # # for a safe overhead)
-    # vPerBlock = MAXMEM/(10*8*q)
+    # Work out the number of voxels we can save at a time.
+    # (8 bytes per numpy float exponent multiplied by 10
+    # for a safe overhead)
+    vPerBlock = MAXMEM/(10*8*q)
 
-    # # Work out the indices for each grou of voxels
-    # voxelGroups = np.array_split(np.arange(v, dtype='int32'), v//vPerBlock+1)
+    # Work out the indices for each grou of voxels
+    voxelGroups = np.array_split(np.arange(v, dtype='int32'), v//vPerBlock+1)
     
-    # # Loop through each group of voxels saving A'B for those voxels
-    # for vb in range(int(v//vPerBlock+1)):
-
-    #     M[voxelGroups[vb],:]=(A.transpose() @ B[voxelGroups[vb],:,:]).reshape(len(voxelGroups[vb]),q)
+    # Loop through each group of voxels saving A'B for those voxels
+    for vb in range(int(v//vPerBlock+1)):
+        M[voxelGroups[vb],:]=(A.transpose() @ B[voxelGroups[vb],:,:]).reshape(len(voxelGroups[vb]),q)
         
     print('done')
 
+    del M
 
 
 if __name__ == "__main__":
