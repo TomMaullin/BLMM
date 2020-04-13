@@ -2,6 +2,7 @@ import numpy as np
 import scipy.sparse
 from scipy import stats
 from lib.npMatrix2d import faclev_indices2D, fac_indices2D, permOfIkKkI2D, invDupMat2D
+from lib.fileio import loadFile
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
@@ -2152,3 +2153,80 @@ def get_amInds(am, vb=None, nvb=None):
     amInds = np.array_split(amInds, nvb)[vb]
 
   return(amInds)
+
+
+# The number of voxel blocks we have to split the data into
+def numVoxelBlocks(inputs):
+
+  # ----------------------------------------------------------------
+  # Number of levels and number of random effects
+  # ----------------------------------------------------------------
+  # Random factor variables.
+  rfxmats = inputs['Z']
+
+  # Number of random effects
+  r = len(rfxmats)
+
+  # Number of random effects for each factor, q
+  nraneffs = []
+
+  # Number of levels for each factor, l
+  nlevels = []
+
+  for k in range(r):
+
+    rfxdes = loadFile(rfxmats[k]['f' + str(k+1)]['design'])
+    rfxfac = loadFile(rfxmats[k]['f' + str(k+1)]['factor'])
+
+    nraneffs = nraneffs + [rfxdes.shape[1]]
+    nlevels = nlevels + [len(np.unique(rfxfac))]
+
+  # Get number of random effects
+  nraneffs = np.array(nraneffs)
+  nlevels = np.array(nlevels)
+  q = np.sum(nraneffs*nlevels)
+
+  # ----------------------------------------------------------------
+  # Work out number of voxels we'd ideally want in a block
+  # ----------------------------------------------------------------
+  # This is done by taking the maximum memory (in bytes), divided
+  # by roughly the amount of memory a float in numpy takes (8), 
+  # divided by 10 (allowing us to have up to 5 variables of
+  # allowed size at any one time), divided by q^2 (the number of 
+  # random effects squared/the largest matrix size we would
+  # look at).
+  vPerBlock = MAXMEM/(5*8*(q**2))
+
+  # Read in analysis mask (if present)
+  if 'analysis_mask' in inputs:
+    am = loadFile(inputs['analysis_mask'])
+    am = am.get_data()
+  else:
+    am = np.ones(Y0.shape)
+
+  # Work out number of non-zero voxels in analysis mask
+  v = np.sum(am!=0)
+
+  # Work out number of voxel blocks we would need.
+  nvb = v//vPerBlock+1
+
+  # Return number of voxel blocks
+  return(nvb)
+
+
+# The number of voxel blocks we have are able to split the data into 
+# for parallel computation.
+def pracNumVoxelBlocks(inputs):
+
+  # Check if maximum number of voxel blocks specified,
+  # otherwise, default to 60
+  if 'maxnvb' in inputs:
+    maxnvb = inputs['maxnvb']
+  else:
+    maxnvb = 60
+
+  # Work out number of voxel blocks we should use.
+  nvb = np.min(numVoxelBlocks(inputs), maxnvb)
+
+  # Return number of voxel blocks
+  return(nvb)

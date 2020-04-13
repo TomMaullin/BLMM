@@ -8,6 +8,7 @@ import os
 import yaml
 import h5py
 from lib.fileio import loadFile, str2vec
+from lib.npMatrix3d import pracNumVoxelBlocks
 
 # ====================================================================================
 #
@@ -170,77 +171,16 @@ def main(*args):
     with open(os.path.join(OutDir, "nb.txt"), 'w') as f:
         print(int(np.ceil(len(Y_files)/int(blksize))), file=f)
 
-    # If we are in voxel block mode work out the maximum number of voxels we wish to
-    # estimate at any one time.
-    if 'vb' in inputs:
+    if 'voxelBatching' in inputs:
 
-        # ----------------------------------------------------------------
-        # Number of levels and number of random effects
-        # ----------------------------------------------------------------
-        # Random factor variables.
-        rfxmats = inputs['Z']
+        if inputs['voxelBatching']:
 
-        # Number of random effects
-        r = len(rfxmats)
+            # Obtain number of voxel blocks for parallelization.
+            nvb = pracNumVoxelBlocks(inputs)
 
-        # Number of random effects for each factor, q
-        nraneffs = []
-
-        # Number of levels for each factor, l
-        nlevels = []
-
-        for k in range(r):
-
-            rfxdes = loadFile(rfxmats[k]['f' + str(k+1)]['design'])
-            rfxfac = loadFile(rfxmats[k]['f' + str(k+1)]['factor'])
-
-            nraneffs = nraneffs + [rfxdes.shape[1]]
-            nlevels = nlevels + [len(np.unique(rfxfac))]
-
-        # Get number of random effects
-        nraneffs = np.array(nraneffs)
-        nlevels = np.array(nlevels)
-        q = np.sum(nraneffs*nlevels)
-
-        # ----------------------------------------------------------------
-        # Work out number of voxels we'd ideally want in a block
-        # ----------------------------------------------------------------
-        # This is done by taking the maximum memory (in bytes), divided
-        # by roughly the amount of memory a float in numpy takes (8), 
-        # divided by 10 (allowing us to have up to 10 variables of
-        # allowed size at any one time), divided by q^2 (the number of 
-        # random effects squared/the largest matrix size we would
-        # look at).
-        vPerBlock = MAXMEM/(10*8*q**2)
-
-        # Read in analysis mask (if present)
-        if 'analysis_mask' in inputs:
-            am = loadFile(inputs['analysis_mask'])
-            am = am.get_data()
-        else:
-            am = np.ones(Y0.shape)
-
-        # Work out number of non-zero voxels in analysis mask
-        v = np.sum(am!=0)
-
-        # Check if maximum number of voxel blocks specified,
-        # otherwise, default to 60
-        if 'maxnvb' in inputs:
-            maxnvb = inputs['maxnvb']
-        else:
-            maxnvb = 60
-
-        # Work out number of voxel blocks we would need.
-        nvb = np.min(v//vPerBlock+1, maxnvb)
-
-        # Work out the practical number of voxels per block (we
-        # might not actually be able to use v//vPerBlock blocks
-        # so we have to check.
-        prac_vPerBlock = np.max(vPerBlock, v//maxnvb+1)
-
-        # Get indices corresponding to non-zero voxels
-
-        # np.where(a.reshape(np.prod(a.shape))!=0)
+            # Output number of voxel batches to a text file
+            with open(os.path.join(OutDir, "nvb.txt"), 'w') as f:
+                print(int(nvb), file=f)
 
 
     # Reset warnings
