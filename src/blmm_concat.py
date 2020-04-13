@@ -77,8 +77,6 @@ def main(ipath, vb):
     with open(os.path.join(ipath), 'r') as stream:
         inputs = yaml.load(stream,Loader=yaml.FullLoader)
 
-    print('vb: ', vb)
-
     # --------------------------------------------------------------------------------
     # Read basic inputs
     # --------------------------------------------------------------------------------
@@ -251,7 +249,10 @@ def main(ipath, vb):
 
     # Get indices for block. These indices have to be the indices we want to
     # compute, in relation to the entire volume.
-    bamInds = get_amInds(amask, 4, 10)
+    nvb = pracNumVoxelBlocks(inputs)
+    print('vb: ', vb-1)
+    print('nvb: ', nvb)
+    bamInds = get_amInds(amask, vb-1, nvb) # Remem vb 0 indexed in py but 1 indexed in bash
 
     # else
     # bamInds = amInds
@@ -343,9 +344,6 @@ def main(ipath, vb):
     ZtY_i = readAndSumAtB('ZtY',OutDir,I_inds_am,n_b).reshape([v_i, q, 1])
 
     # Ring Z'Z. Z'X, X'X
-    print('q: ', q)
-    print('p: ', p)
-    print('v_r: ', v_r)
     if v_r:
 
         ZtZ_r = readAndSumUniqueAtB('ZtZ',OutDir,R_inds,n_b,True).reshape([v_r, q, q])
@@ -431,9 +429,6 @@ def readAndSumAtB(AtBstr, OutDir, vinds,n_b):
 
 # MARKER
 def readAndSumUniqueAtB(AtBstr, OutDir, vinds, n_b, sv):
-
-    print(AtBstr)
-    print('vinds: ',vinds)
 
     # Work out the uniqueness mask for the spatially varying designs
     uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 

@@ -2133,7 +2133,7 @@ def get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nraneffs, ZtZ):
 # ============================================================================
 # Inputs:
 # - `am`: Analysis mask as a 3d volume
-# - `vb`: The number of the voxel block of interest
+# - `vb`: The number of the voxel block of interest (less than 0 return all inds)
 # - `nvb`: The number of voxel blocks in total
 #
 # ============================================================================
@@ -2146,7 +2146,7 @@ def get_amInds(am, vb=None, nvb=None):
   amInds=np.where(am==1)[0]
 
   # Get vb^th block of voxels
-  if vb is not None:
+  if vb is not None and vb>=0:
 
     # Split am into equal nvb "equally" (ish) sized blocks and take
     # the vb^th block.
