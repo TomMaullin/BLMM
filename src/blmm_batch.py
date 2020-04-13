@@ -545,7 +545,7 @@ def memorySafeAtB(A,B,MAXMEM,filename):
     pORq = A.shape[2]
 
     # create a memory-mapped .npy file with the dimensions and dtype we want
-    M = open_memmap(filename, mode='w+', dtype='float64', shape=(v,q))
+    M = open_memmap(filename, mode='w+', dtype='float64', shape=(v,pORq))
         
     # Work out the number of voxels we can save at a time.
     # (8 bytes per numpy float exponent multiplied by 10
