@@ -2186,6 +2186,12 @@ def numVoxelBlocks(inputs):
   nlevels = np.array(nlevels)
   q = np.sum(nraneffs*nlevels)
 
+  # Check if the maximum memory is saved.    
+  if 'MAXMEM' in inputs:
+    MAXMEM = eval(inputs['MAXMEM'])
+  else:
+    MAXMEM = 2**32
+
   # ----------------------------------------------------------------
   # Work out number of voxels we'd ideally want in a block
   # ----------------------------------------------------------------
