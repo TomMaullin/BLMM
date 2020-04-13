@@ -563,7 +563,7 @@ def memorySafeAtB(A,B,MAXMEM,filename):
     
     # Loop through each group of voxels saving A'B for those voxels
     for vb in range(int(v//vPerBlock+1)):
-        M[voxelGroups[vb],:]=(A.transpose() @ B[voxelGroups[vb],:,:]).reshape(len(voxelGroups[vb]),q)
+        M[voxelGroups[vb],:]=(A.transpose(0,2,1) @ B[voxelGroups[vb],:,:]).reshape(len(voxelGroups[vb]),q)
         
     print('done')
 
