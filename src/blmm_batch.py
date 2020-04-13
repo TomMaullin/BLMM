@@ -229,18 +229,16 @@ def main(*args):
     # ------------------------------------------------------------------
     print(Y0.shape)
     print(X.shape)
-    # print(Y.shape)
-    # XtY = X.transpose() @ Y #unmasked_AtB(X, Y, Mask)
-    # print(XtY.shape)
-    #ZtY = Z.transpose() @ Y #unmasked_AtB(Z, Y, Mask) 
-    memorySafeAtB(Z.reshape(1,Z.shape[0],Z.shape[1]),Y.reshape(Y.shape[0], Y.shape[1], 1).transpose((1,0,2)),MAXMEM,os.path.join(OutDir,"tmp","ZtY" + str(batchNo)+'.npy'))
-    memorySafeAtB(X.reshape(1,X.shape[0],X.shape[1]),Y.reshape(Y.shape[0], Y.shape[1], 1).transpose((1,0,2)),MAXMEM,os.path.join(OutDir,"tmp","XtY" + str(batchNo)+'.npy'))
 
-    # Y is currently [n,v]
-    print(Y.reshape(Y.shape[0], Y.shape[1], 1).transpose((1,2,0)).shape)
-    YtY = Y.reshape(Y.shape[0], Y.shape[1], 1).transpose((1,2,0)) @ Y.reshape(Y.shape[0], Y.shape[1], 1).transpose((1,0,2))
-    print('YtY shape')
-    print(YtY.shape)
+    # We are careful how we compute X'Y and Z'Y, in case either p or q
+    # is large. We save these "bit by bit" as memory map objects just in
+    # case they don't fit in working memory (this is only usually a large
+    # issue for very large designs).
+    memorySafeAtB(Z.reshape(1,Z.shape[0],Z.shape[1]),Y,MAXMEM,os.path.join(OutDir,"tmp","ZtY" + str(batchNo)+'.npy'))
+    memorySafeAtB(X.reshape(1,X.shape[0],X.shape[1]),Y,MAXMEM,os.path.join(OutDir,"tmp","XtY" + str(batchNo)+'.npy'))
+
+    # Calculate Y
+    YtY = Y.transpose(0,2,1) @ Y
 
     # In a spatially varying design XtX has dimensions n by p by p. We
     # reshape to n by p^2 so that we can save as a csv.
@@ -257,19 +255,11 @@ def main(*args):
     ZtZ = MZ.transpose(0,2,1) @ MZ
     ZtZ = ZtZ.reshape([ZtZ.shape[0], ZtZ.shape[1]*ZtZ.shape[2]])
 
-    # Change dimensions from [p (q), v] to [v, p (q)]
-    #XtY = XtY.transpose()
-    #ZtY = ZtY.transpose()
-
-    # Record product matrices 
+    # Record product matrices X'X, Y'Y, Z'X and Z'Z.
     np.save(os.path.join(OutDir,"tmp","XtX" + str(batchNo)), 
                 XtX)
-    # np.save(os.path.join(OutDir,"tmp","XtY" + str(batchNo)), 
-    #            XtY) 
     np.save(os.path.join(OutDir,"tmp","YtY" + str(batchNo)), 
-               YtY) 
-    # np.save(os.path.join(OutDir,"tmp","ZtY" + str(batchNo)), 
-    #            ZtY) 
+               YtY)
     np.save(os.path.join(OutDir,"tmp","ZtX" + str(batchNo)), 
                ZtX) 
     np.save(os.path.join(OutDir,"tmp","ZtZ" + str(batchNo)), 
@@ -433,7 +423,7 @@ def applyMask(X,M):
 #
 # ----------------------------------------------------------------------------
 #
-#  - `Y`: The masked observations, reshaped to be of dimension n by v
+#  - `Y`: The masked observations, reshaped to be of dimension v by n by 1.
 #  - `n_sv`: The spatially varying number of observations (as a 3D numpy
 #            array).
 #  - `M`: The array Y!=0 (resized appropriately for later computation).
@@ -537,6 +527,9 @@ def obtainY(Y_files, M_files, M_t, M_a):
     print(Y.shape)
     print('shape of M_a')
     print(M_a.shape)
+
+    # Reshape Y
+    Y = Y.reshape(Y.shape[0], Y.shape[1], 1).transpose((1,0,2))
 
     return Y, n_sv, M, Mmap
 
