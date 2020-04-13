@@ -29,19 +29,6 @@ cfg=$(RealPath $cfg)
 eval $(parse_yaml $cfg "config_")
 mkdir -p $config_outdir
 
-# Check if we are in voxel batch mode (not yet implemented)
-#if [ -z $config_vb ] ; then
-
-  #config_vb=0
-
-  #echo "Voxel batch unset"
-
-#else
-
-  #echo "Voxel batch set"
-
-#fi
-
 # This file is used to record number of batches
 if [ -f $config_outdir/nb.txt ] ; then
     rm $config_outdir/nb.txt 
@@ -117,15 +104,43 @@ else
   fi
 fi
 
-# Submit results job 
-fsl_sub -j $batchIDs -l log/ -N results bash $BLMM_PATH/scripts/cluster_blmm_concat.sh $inputs > /tmp/$$ && resultsID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
-if [ "$resultsID" == "" ] ; then
-  echo "Results job submission failed!"
-fi
 
-if [ "$printOpt" == "1" ] ; then
-  echo "Submitting results job..."
-  echo "Please use qstat to monitor progress."
+
+# Check if we are in voxel batch mode (not yet implemented)
+if [ -z $config_voxelBatching ] || [ "$config_voxelBatching" == "0" ] ; then
+    
+  # Voxel batching is not turned on
+  fsl_sub -j $batchIDs -l log/ -N results bash $BLMM_PATH/scripts/cluster_blmm_concat.sh $inputs "-1" > /tmp/$$ && resultsID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
+  if [ "$resultsID" == "" ] ; then
+    echo "Results job submission failed!"
+  fi
+
+  if [ "$printOpt" == "1" ] ; then
+    echo "Submitting results job..."
+    echo "Please use qstat to monitor progress."
+  else
+    echo $resultsID
+  fi
+
 else
-  echo $resultsID
+
+  # Voxel batching is on, so work out number of voxel batches needed.
+  typeset -i nvb=$(cat $config_outdir/nvb.txt)
+
+  i=1
+  while [ "$i" -le "$nb" ]; do
+
+    # Submit nb batches and get the ids for them
+    fsl_sub -j $batchIDs -l log/ -N results$i bash $BLMM_PATH/scripts/cluster_blmm_concat.sh $inputs $i > /tmp/$$ && resultsIDs=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$resultsIDs
+    i=$(($i + 1))
+  done
+
+  if [ "$printOpt" == "1" ] ; then
+    echo "Voxel Batch Mode..."
+    echo "Submitting results jobs..."
+    echo "Please use qstat to monitor progress."
+  else
+    echo $resultsIDs
+  fi
+
 fi

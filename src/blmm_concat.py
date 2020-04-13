@@ -40,11 +40,13 @@ import src.blmm_estimate as blmm_estimate
 #
 # The code takes the following inputs:
 #
-#  - input path (optional): If specified, the first argument will be ased to be a
+#  - ipath (optional): If specified, the first argument will be ased to be a
 #                           path to an `inputs` yml file, following the same 
 #                           formatting guidelines as `blmm_config.yml`. If not 
 #                           specified, the default file `blmm_config.yml` will be 
 #                           ased to contain the inputs.
+#
+# MARKER TODO
 #
 # ------------------------------------------------------------------------------------
 # Developer notes:
@@ -66,26 +68,16 @@ import src.blmm_estimate as blmm_estimate
 #       per voxel). 
 #
 # ====================================================================================
-def main(*args):
+def main(ipath, vb):
 
     # --------------------------------------------------------------------------------
     # Check inputs
     # --------------------------------------------------------------------------------
-    if len(args)==0 or (not args[0]):
-        # Load in inputs
-        with open(os.path.join(
-                    os.path.dirname(os.path.realpath(__file__)),
-                    '..',
-                    'blmm_config.yml'), 'r') as stream:
-            inputs = yaml.load(stream,Loader=yaml.FullLoader)
-    else:
-        if type(args[0]) is str:
-            # In this case inputs file is first argument
-            with open(os.path.join(args[0]), 'r') as stream:
-                inputs = yaml.load(stream,Loader=yaml.FullLoader)
-        else:  
-            # In this case inputs structure is first argument.
-            inputs = args[0]
+    # Inputs file is first argument
+    with open(os.path.join(ipath), 'r') as stream:
+        inputs = yaml.load(stream,Loader=yaml.FullLoader)
+
+    print('vb: ', vb)
 
     # --------------------------------------------------------------------------------
     # Read basic inputs
