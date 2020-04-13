@@ -547,6 +547,9 @@ def memorySafeAtB(A,B,MAXMEM,filename):
     print(A.shape) # currently [n,q], assume [1,n,q]
     print(B.shape) # Currently [n,v], assume [v,n,1]
 
+    v = B.shape[0]
+    q = A.shape[2]
+
     # create a memory-mapped .npy file with the dimensions and dtype we want
     M = open_memmap(filename, mode='w+', dtype='float64', shape=(v,q))
         
