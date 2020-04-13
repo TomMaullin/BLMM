@@ -128,7 +128,7 @@ else
   typeset -i nvb=$(cat $config_outdir/nvb.txt)
 
   i=1
-  while [ "$i" -le "$nb" ]; do
+  while [ "$i" -le "$nvb" ]; do
 
     # Submit nb batches and get the ids for them
     fsl_sub -j $batchIDs -l log/ -N results$i bash $BLMM_PATH/scripts/cluster_blmm_concat.sh $inputs $i > /tmp/$$ && resultsIDs=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$resultsIDs
