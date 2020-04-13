@@ -363,113 +363,16 @@ def main(*args):
     YtY_i = readAndSumAtB('YtY',OutDir,I_inds_am,n_b).reshape([v_i, 1, 1])
     ZtY_i = readAndSumAtB('ZtY',OutDir,I_inds_am,n_b).reshape([v_i, q, 1])
 
-    ZtZ2_i = readAndSumUniqueAtB('ZtZ',OutDir,I_inds,n_b,False)#.reshape([1, q, q])
-    ZtZ2_r = readAndSumUniqueAtB('ZtZ',OutDir,R_inds,n_b,True)#.reshape([v_r, q, q])
-    ZtX2_i = readAndSumUniqueAtB('ZtX',OutDir,I_inds,n_b,False)#.reshape([1, q, q])
-    ZtX2_r = readAndSumUniqueAtB('ZtX',OutDir,R_inds,n_b,True)#.reshape([v_r, q, q])
-    XtX2_i = readAndSumUniqueAtB('XtX',OutDir,I_inds,n_b,False)#.reshape([1, q, q])
-    XtX2_r = readAndSumUniqueAtB('XtX',OutDir,R_inds,n_b,True)#.reshape([v_r, q, q])
+    # Ring Z'Z. Z'X, X'X
+    ZtZ_r = readAndSumUniqueAtB('ZtZ',OutDir,R_inds,n_b,True).reshape([v_r, q, q])
+    ZtX_r = readAndSumUniqueAtB('ZtX',OutDir,R_inds,n_b,True).reshape([v_r, q, p])
+    XtX_r = readAndSumUniqueAtB('XtX',OutDir,R_inds,n_b,True).reshape([v_r, p, p])
+    
+    # Inner Z'Z. Z'X, X'X
+    ZtZ_i = readAndSumUniqueAtB('ZtZ',OutDir,I_inds,n_b,False).reshape([1, q, q])
+    ZtX_i = readAndSumUniqueAtB('ZtX',OutDir,I_inds,n_b,False).reshape([1, q, p])
+    XtX_i = readAndSumUniqueAtB('XtX',OutDir,I_inds,n_b,False).reshape([1, p, p])    
 
-    # Work out the uniqueness mask for the spatially varying designs
-    uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
-        "blmm_vox_uniqueM_batch1.nii")).get_data().reshape(v)
-
-    # Work out the uniqueness mask inside the ring around the brain
-    uniquenessMask_r = uniquenessMask[R_inds]
-
-    # Work out the uniqueness mask value inside the inner part of the brain
-    uniquenessMask_i = uniquenessMask[I_inds[0]] 
-
-    maxM = np.int32(np.amax(uniquenessMask))
-
-    # read in XtX, ZtX, ZtZ
-    ZtZ_batch_unique = np.load(
-        os.path.join(OutDir,"tmp","ZtZ1.npy"))
-    ZtX_batch_unique = np.load(
-        os.path.join(OutDir,"tmp","ZtX1.npy"))
-    XtX_batch_unique = np.load(
-        os.path.join(OutDir,"tmp","XtX1.npy"))
-
-    # Make zeros for outer ring of brain ZtZ, XtX, ZtX etc
-    ZtZ_batch_r = np.zeros((v_r, ZtZ_batch_unique.shape[1]))
-    ZtX_batch_r = np.zeros((v_r, ZtX_batch_unique.shape[1]))
-    XtX_batch_r = np.zeros((v_r, XtX_batch_unique.shape[1]))
-
-    # Fill with unique maskings
-    for m in range(1,maxM+1):
-
-        # Work out Z'Z, Z'X and X'X for the ring
-        ZtZ_batch_r[np.where(uniquenessMask_r==m),:] = ZtZ_batch_unique[(m-1),:]
-        ZtX_batch_r[np.where(uniquenessMask_r==m),:] = ZtX_batch_unique[(m-1),:]
-        XtX_batch_r[np.where(uniquenessMask_r==m),:] = XtX_batch_unique[(m-1),:]
-
-        # Work out Z'Z, Z'X and X'X for the inner
-        if uniquenessMask_i == m:
-            ZtZ_batch_i = ZtZ_batch_unique[(m-1),:]
-            ZtX_batch_i = ZtX_batch_unique[(m-1),:]
-            XtX_batch_i = XtX_batch_unique[(m-1),:]
-
-    # Perform summation for ring
-    XtX_r = XtX_batch_r
-    ZtX_r = ZtX_batch_r
-    ZtZ_r = ZtZ_batch_r
-
-    # Perform summation for inner
-    XtX_i = XtX_batch_i
-    ZtX_i = ZtX_batch_i
-    ZtZ_i = ZtZ_batch_i
-
-    # Cycle through batches and add together results.
-    for batchNo in range(2,(n_b+1)):
-
-        # Read in uniqueness Mask file
-        uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
-            "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii")).get_data().reshape(v)
-
-        # Work out the uniqueness mask inside the ring around the brain
-        uniquenessMask_r = uniquenessMask[R_inds] 
-
-        # Work out the uniqueness mask value inside the inner part of the brain
-        uniquenessMask_i = uniquenessMask[I_inds[0]] 
-
-        maxM = np.int32(np.amax(uniquenessMask))
-
-        # read in XtX, ZtX, ZtZ
-        ZtZ_batch_unique = np.load(
-            os.path.join(OutDir,"tmp","ZtZ" + str(batchNo) + ".npy"))
-        ZtX_batch_unique = np.load(
-            os.path.join(OutDir,"tmp","ZtX" + str(batchNo) + ".npy"))
-        XtX_batch_unique = np.load(
-            os.path.join(OutDir,"tmp","XtX" + str(batchNo) + ".npy"))
-
-        # Make zeros for whole nifti ZtZ, XtX, ZtX etc
-        ZtZ_batch_r = np.zeros((v_r, ZtZ_batch_unique.shape[1]))
-        ZtX_batch_r = np.zeros((v_r, ZtX_batch_unique.shape[1]))
-        XtX_batch_r = np.zeros((v_r, XtX_batch_unique.shape[1]))
-
-        # Fill with unique maskings
-        for m in range(1,maxM+1):
-
-            ZtZ_batch_r[np.where(uniquenessMask_r==m),:] = ZtZ_batch_unique[(m-1),:]
-            ZtX_batch_r[np.where(uniquenessMask_r==m),:] = ZtX_batch_unique[(m-1),:]
-            XtX_batch_r[np.where(uniquenessMask_r==m),:] = XtX_batch_unique[(m-1),:]
-
-            # Work out Z'Z, Z'X and X'X for the inner
-            if uniquenessMask_i == m:
-
-                ZtZ_batch_i = ZtZ_batch_unique[(m-1),:]
-                ZtX_batch_i = ZtX_batch_unique[(m-1),:]
-                XtX_batch_i = XtX_batch_unique[(m-1),:]
-
-        # Add to running total
-        XtX_r = XtX_r + XtX_batch_r
-        ZtX_r = ZtX_r + ZtX_batch_r
-        ZtZ_r = ZtZ_r + ZtZ_batch_r
-
-        XtX_i = XtX_i + XtX_batch_i
-        ZtX_i = ZtX_i + ZtX_batch_i
-        ZtZ_i = ZtZ_i + ZtZ_batch_i
-        
     # Delete the files as they are no longer needed.
     fileStrs = ["XtY","YtY","ZtY","XtX","ZtX","ZtZ"]
 
@@ -484,22 +387,6 @@ def main(*args):
     # --------------------------------------------------------------------------------
     # Calculate betahat = (X'X)^(-1)X'Y and output beta maps
     # --------------------------------------------------------------------------------
-
-    print('check')
-    print(np.all(ZtZ2_i==ZtZ_i))
-    print(np.all(ZtZ2_r==ZtZ_r))
-    print(np.all(ZtX2_i==ZtX_i))
-    print(np.all(ZtX2_r==ZtX_r))
-    print(np.all(XtX2_i==XtX_i))
-    print(np.all(XtX2_r==XtX_r))
-
-    XtX_r = XtX_r.reshape([v_r, p, p])
-    ZtX_r = ZtX_r.reshape([v_r, q, p])
-    ZtZ_r = ZtZ_r.reshape([v_r, q, q])
-
-    XtX_i = XtX_i.reshape([1, p, p])
-    ZtX_i = ZtX_i.reshape([1, q, p])
-    ZtZ_i = ZtZ_i.reshape([1, q, q])
 
     REML = False
 
