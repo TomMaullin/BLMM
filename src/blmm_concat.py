@@ -153,28 +153,22 @@ def main(ipath, vb):
     # Work out number of batchs
     n_b = len(glob.glob(os.path.join(OutDir,"tmp","blmm_vox_n_batch*")))
 
-    if (len(args)==0) or (type(args[0]) is str):
+    # Read in n (spatially varying)
+    nmapb  = loadFile(os.path.join(OutDir,"tmp", "blmm_vox_n_batch1.nii"))
+    n_sv = nmapb.get_data()# Read in uniqueness Mask file
 
-        # Read in n (spatially varying)
-        nmapb  = loadFile(os.path.join(OutDir,"tmp", "blmm_vox_n_batch1.nii"))
-        n_sv = nmapb.get_data()# Read in uniqueness Mask file
+    # Remove files, don't need them anymore
+    os.remove(os.path.join(OutDir,"tmp","blmm_vox_n_batch1.nii"))
 
-        # Remove files, don't need them anymore
-        os.remove(os.path.join(OutDir,"tmp","blmm_vox_n_batch1.nii"))
-
-        # Cycle through batches and add together n.
-        for batchNo in range(2,(n_b+1)):
-            
-            # Obtain the full nmap.
-            n_sv = n_sv + loadFile(os.path.join(OutDir,"tmp", 
-                "blmm_vox_n_batch" + str(batchNo) + ".nii")).get_data()
-            
-            # Remove file, don't need it anymore
-            os.remove(os.path.join(OutDir, "tmp", "blmm_vox_n_batch" + str(batchNo) + ".nii"))
-
-    else:
-        # Read in n_sv.
-        n_sv = args[4]
+    # Cycle through batches and add together n.
+    for batchNo in range(2,(n_b+1)):
+        
+        # Obtain the full nmap.
+        n_sv = n_sv + loadFile(os.path.join(OutDir,"tmp", 
+            "blmm_vox_n_batch" + str(batchNo) + ".nii")).get_data()
+        
+        # Remove file, don't need it anymore
+        os.remove(os.path.join(OutDir, "tmp", "blmm_vox_n_batch" + str(batchNo) + ".nii"))
 
     # Save nmap
     nmap = nib.Nifti1Image(n_sv,
@@ -403,8 +397,7 @@ def main(ipath, vb):
         blmm_inference.main(inputs, nraneffs, nlevels, I_inds, beta_i, D_i, sigma2_i, n, XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i)
 
     # Clean up files
-    if len(args)==0:
-        os.remove(os.path.join(OutDir, 'nb.txt'))
+    os.remove(os.path.join(OutDir, 'nb.txt'))
     shutil.rmtree(os.path.join(OutDir, 'tmp'))
 
     w.resetwarnings()

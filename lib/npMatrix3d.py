@@ -2129,7 +2129,7 @@ def get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nraneffs, ZtZ):
     # Return result
     return(FisherInfoMat)
 
-
+# MARKER
 # ============================================================================
 # Inputs:
 # - `am`: Analysis mask as a 3d volume
@@ -2154,7 +2154,7 @@ def get_amInds(am, vb=None, nvb=None):
 
   return(amInds)
 
-
+# MARKER
 # The number of voxel blocks we have to split the data into
 def numVoxelBlocks(inputs):
 
@@ -2213,7 +2213,7 @@ def numVoxelBlocks(inputs):
   # Return number of voxel blocks
   return(nvb)
 
-
+# MARKER
 # The number of voxel blocks we have are able to split the data into 
 # for parallel computation.
 def pracNumVoxelBlocks(inputs):

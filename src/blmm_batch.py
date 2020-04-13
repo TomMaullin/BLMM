@@ -533,8 +533,8 @@ def obtainY(Y_files, M_files, M_t, M_a):
 
     return Y, n_sv, M, Mmap
 
-# Memory safe A'B for A of shape [v,]
-
+# Memory safe A'B
+# MARKER
 # Special care must be taken with X'Y and Z'Y
 def memorySafeAtB(A,B,MAXMEM,filename):
 
