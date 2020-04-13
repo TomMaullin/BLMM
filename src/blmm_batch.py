@@ -232,7 +232,7 @@ def main(*args):
     XtY = X.transpose() @ Y #unmasked_AtB(X, Y, Mask)
     print(XtY.shape)
     ZtY = Z.transpose() @ Y #unmasked_AtB(Z, Y, Mask) 
-    memorySafeAtB(Z,Y,MAXMEM)
+    memorySafeAtB(Z.reshape(1,Z.shape[0],Z.shape[1]),Y.reshape(Y.shape[0], Y.shape[1], 1).transpose((1,0,2)),MAXMEM)
 
     # Y is currently [n,v]
     print(Y.reshape(Y.shape[0], Y.shape[1], 1).transpose((1,2,0)).shape)
@@ -543,8 +543,8 @@ def obtainY(Y_files, M_files, M_t, M_a):
 # X'Y, Z'Y
 def memorySafeAtB(A,B,MAXMEM):
 
-    print(A.shape)
-    print(B.shape)
+    print(A.shape) # currently [n,q], assume [1,n,q]
+    print(B.shape) # Currently [n,v], assume [v,n,1]
 
     # # create a memory-mapped .npy file with the dimensions and dtype we want
     # M = open_memmap(os.path.join(OutDir,"tmp","ZtY" + str(batchNo)+'.npy'), mode='w+', dtype='float64', shape=(v,q))
