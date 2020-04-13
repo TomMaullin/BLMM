@@ -365,6 +365,10 @@ def main(*args):
 
     ZtZ2_i = readAndSumUniqueAtB('ZtZ',OutDir,I_inds,n_b,False)#.reshape([1, q, q])
     ZtZ2_r = readAndSumUniqueAtB('ZtZ',OutDir,R_inds,n_b,True)#.reshape([v_r, q, q])
+    ZtX2_i = readAndSumUniqueAtB('ZtX',OutDir,I_inds,n_b,False)#.reshape([1, q, q])
+    ZtX2_r = readAndSumUniqueAtB('ZtX',OutDir,R_inds,n_b,True)#.reshape([v_r, q, q])
+    XtX2_i = readAndSumUniqueAtB('XtX',OutDir,I_inds,n_b,False)#.reshape([1, q, q])
+    XtX2_r = readAndSumUniqueAtB('XtX',OutDir,R_inds,n_b,True)#.reshape([v_r, q, q])
 
     # Work out the uniqueness mask for the spatially varying designs
     uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
@@ -484,6 +488,10 @@ def main(*args):
     print('check')
     print(np.all(ZtZ2_i==ZtZ_i))
     print(np.all(ZtZ2_r==ZtZ_r))
+    print(np.all(ZtX2_i==ZtX_i))
+    print(np.all(ZtX2_r==ZtX_r))
+    print(np.all(XtX2_i==XtX_i))
+    print(np.all(XtX2_r==XtX_r))
 
     XtX_r = XtX_r.reshape([v_r, p, p])
     ZtX_r = ZtX_r.reshape([v_r, q, p])
