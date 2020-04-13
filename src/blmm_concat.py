@@ -77,6 +77,9 @@ def main(ipath, vb):
     with open(os.path.join(ipath), 'r') as stream:
         inputs = yaml.load(stream,Loader=yaml.FullLoader)
 
+    # Voxel batch
+    vb = int(vb)
+
     # --------------------------------------------------------------------------------
     # Read basic inputs
     # --------------------------------------------------------------------------------
