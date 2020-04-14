@@ -2197,11 +2197,11 @@ def numVoxelBlocks(inputs):
   # ----------------------------------------------------------------
   # This is done by taking the maximum memory (in bytes), divided
   # by roughly the amount of memory a float in numpy takes (8), 
-  # divided by 10 (allowing us to have up to 5 variables of
+  # divided by 10 (allowing us to have up to 10 variables of
   # allowed size at any one time), divided by q^2 (the number of 
   # random effects squared/the largest matrix size we would
   # look at).
-  vPerBlock = MAXMEM/(5*8*(q**2))
+  vPerBlock = MAXMEM/(10*8*(q**2))
 
   # Read in analysis mask (if present)
   if 'analysis_mask' in inputs:
