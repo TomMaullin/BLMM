@@ -5,6 +5,7 @@ w.simplefilter(action = 'ignore', category = FutureWarning)
 import numpy as np
 import sys
 import os
+import shutil
 import yaml
 import h5py
 from lib.fileio import loadFile, str2vec
@@ -127,10 +128,11 @@ def main(*args):
              'blmm_vox_conFlp.nii', 'blmm_vox_conR2.nii']
 
     for file in files:
-
         if os.path.exists(os.path.join(OutDir, file)):
-
             os.remove(os.path.join(OutDir, file))
+
+    if os.path.exists(os.path.join(OutDir, 'tmp')):  
+        shutil.rmtree(os.path.join(OutDir, 'tmp'))
 
     # Get number of parameters
     L1 = str2vec(inputs['contrasts'][0]['c' + str(1)]['vector'])
