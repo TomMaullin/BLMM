@@ -110,8 +110,8 @@ fi
 if [ -z $config_voxelBatching ] || [ "$config_voxelBatching" == "0" ] ; then
     
   # Voxel batching is not turned on
-  fsl_sub -j $batchIDs -l log/ -N results bash $BLMM_PATH/scripts/cluster_blmm_concat.sh $inputs "-1" > /tmp/$$ && resultsID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
-  if [ "$resultsID" == "" ] ; then
+  fsl_sub -j $batchIDs -l log/ -N results bash $BLMM_PATH/scripts/cluster_blmm_concat.sh $inputs "-1" > /tmp/$$ && resultsIDs=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
+  if [ "$resultsIDs" == "" ] ; then
     echo "Results job submission failed!"
   fi
 
@@ -138,9 +138,16 @@ else
   if [ "$printOpt" == "1" ] ; then
     echo "Voxel Batch Mode..."
     echo "Submitting results jobs..."
-    echo "Please use qstat to monitor progress."
   else
     echo $resultsIDs
   fi
 
+fi
+
+# Cleanup operation
+echo "Analysis complete."
+echo "(Clean up in progress...)"
+fsl_sub -j $resultsIDs -l log/ -N results bash $BLMM_PATH/scripts/cluster_blmm_cleanup.sh $inputs > /tmp/$$ && cleanupID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
+if [ "$cleanupID" == "" ] ; then
+  echo "Clean up job submission failed!"
 fi

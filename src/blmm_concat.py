@@ -158,9 +158,6 @@ def main(ipath, vb):
     nmapb  = loadFile(os.path.join(OutDir,"tmp", "blmm_vox_n_batch1.nii"))
     n_sv = nmapb.get_data()# Read in uniqueness Mask file
 
-    # Remove files, don't need them anymore
-    os.remove(os.path.join(OutDir,"tmp","blmm_vox_n_batch1.nii"))
-
     # Cycle through batches and add together n.
     for batchNo in range(2,(n_b+1)):
         
@@ -168,14 +165,11 @@ def main(ipath, vb):
         n_sv = n_sv + loadFile(os.path.join(OutDir,"tmp", 
             "blmm_vox_n_batch" + str(batchNo) + ".nii")).get_data()
         
-        # Remove file, don't need it anymore
-        os.remove(os.path.join(OutDir, "tmp", "blmm_vox_n_batch" + str(batchNo) + ".nii"))
-
     # Save nmap
     nmap = nib.Nifti1Image(n_sv,
                            nifti.affine,
                            header=nifti.header)
-    nib.save(nmap, os.path.join(OutDir,'blmm_vox_n.nii'))
+    nib.save(nmap, os.path.join(OutDir,'blmm_vox_n.nii')) ### MARKER: THIS SHOULD ONLY BE DONE ONCE BUT CURRENTLY DONE IN ALL BATCHES
     n_sv = n_sv.reshape(v, 1)
     del nmap
 
@@ -184,7 +178,7 @@ def main(ipath, vb):
     n = X.shape[0]
 
     # --------------------------------------------------------------------------------
-    # Create Mask
+    # Create Mask ### MARKER: THIS SHOULD ONLY BE DONE ONCE BUT CURRENTLY DONE IN ALL BATCHES
     # --------------------------------------------------------------------------------
 
     Mask = np.ones([v, 1])
@@ -274,7 +268,7 @@ def main(ipath, vb):
                                     NIFTIsize[2]
                                     ),
                               nifti.affine,
-                              header=nifti.header)
+                              header=nifti.header) ### MARKER: THIS SHOULD ONLY BE DONE ONCE BUT CURRENTLY DONE IN ALL BATCHES
     nib.save(maskmap, os.path.join(OutDir,'blmm_vox_mask.nii'))
     del maskmap
 
@@ -328,7 +322,7 @@ def main(ipath, vb):
     # Save beta map.
     dfmap = nib.Nifti1Image(df,
                             nifti.affine,
-                            header=nifti.header)
+                            header=nifti.header) ### MARKER: THIS SHOULD ONLY BE DONE ONCE BUT CURRENTLY DONE IN ALL BATCHES
     nib.save(dfmap, os.path.join(OutDir,'blmm_vox_edf.nii'))
     del df, dfmap
 
@@ -359,17 +353,6 @@ def main(ipath, vb):
         ZtZ_i = readAndSumUniqueAtB('ZtZ',OutDir,I_inds,n_b,False).reshape([1, q, q])
         ZtX_i = readAndSumUniqueAtB('ZtX',OutDir,I_inds,n_b,False).reshape([1, q, p])
         XtX_i = readAndSumUniqueAtB('XtX',OutDir,I_inds,n_b,False).reshape([1, p, p])    
-
-    # Delete the files as they are no longer needed.
-    fileStrs = ["XtY","YtY","ZtY","XtX","ZtX","ZtZ"]
-
-    for batchNo in range(1,(n_b+1)):
-        # Remove uniqueness mask
-        os.remove(os.path.join(OutDir, "tmp", "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii"))
-
-        for fileStr in fileStrs:
-            # Remove product matrices
-            os.remove(os.path.join(OutDir, "tmp",fileStr + str(batchNo) + ".npy"))
 
     # --------------------------------------------------------------------------------
     # Calculate betahat = (X'X)^(-1)X'Y and output beta maps
@@ -408,10 +391,6 @@ def main(ipath, vb):
 
         # Run inference
         blmm_inference.main(inputs, nraneffs, nlevels, I_inds, beta_i, D_i, sigma2_i, n, XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i)
-
-    # Clean up files
-    os.remove(os.path.join(OutDir, 'nb.txt'))
-    shutil.rmtree(os.path.join(OutDir, 'tmp'))
 
     w.resetwarnings()
 
