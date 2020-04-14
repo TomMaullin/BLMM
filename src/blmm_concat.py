@@ -265,14 +265,14 @@ def main(ipath, vb):
     nvb = MAXMEM/(10*8*(q**2))
 
     # Work out number of groups we have to split iindices into.
-    nvg = len(bamInds)//nvb+1
+    nvg = int(len(bamInds)//nvb+1)
 
     # Split voxels we want to look at into groups we can compute
     voxelGroups = np.array_split(bamInds, nvg)
 
     # Loop through list of voxel indices, looking at each group of voxels, in
     # turn.
-    for cv in np.arange(nvg):
+    for cv in range(nvg):
 
         # Current group of voxels
         bamInds_cv = voxelGroups[cv]
