@@ -80,6 +80,12 @@ def main(ipath, vb):
     # Voxel batch
     vb = int(vb)
 
+    # Check if the maximum memory is saved.    
+    if 'MAXMEM' in inputs:
+        MAXMEM = eval(inputs['MAXMEM'])
+    else:
+        MAXMEM = 2**32
+
     # --------------------------------------------------------------------------------
     # Read basic inputs
     # --------------------------------------------------------------------------------
@@ -223,25 +229,14 @@ def main(ipath, vb):
         # By default make amask ones
         amask = np.ones([v,1])
 
-    # if voxel blocking
-
-    # Get indices for block. These indices have to be the indices we want to
-    # compute, in relation to the entire volume.
-    nvb = pracNumVoxelBlocks(inputs)
-    print('vb: ', vb-1)
-    print('nvb: ', nvb)
-    bamInds = get_amInds(amask, vb-1, nvb) # Remem vb 0 indexed in py but 1 indexed in bash
-
-    # else
-    # bamInds = amInds
-
-    # Ensure overall mask matches analysis mask
-    Mask[~np.in1d(np.arange(v).reshape(v,1), bamInds)]=0
 
     # Get indices for whole analysis mask. These indices are the indices we
     # have recorded for the product matrices with respect to the entire volume
     amInds = get_amInds(amask)
         
+    # Ensure overall mask matches analysis mask
+    Mask[~np.in1d(np.arange(v).reshape(v,1), amInds)]=0
+
     # Output final mask map
     maskmap = nib.Nifti1Image(Mask.reshape(
                                     NIFTIsize[0],
@@ -253,125 +248,163 @@ def main(ipath, vb):
     nib.save(maskmap, os.path.join(OutDir,'blmm_vox_mask.nii'))
     del maskmap
 
-    # Get indices of voxels in ring around brain where there are
-    # missing studies.
-    R_inds = np.sort(np.where((Mask==1)*(n_sv<n))[0])
+    # ------------------------------------------------------------------------
+    # Work out block of voxels we are looking at
+    # ------------------------------------------------------------------------
+    # Get indices for block. These indices have to be the indices we want to
+    # compute, in relation to the entire volume. If we aren't partitioning by 
+    # block these will be equal to amInds
+    pnvb = pracNumVoxelBlocks(inputs)
+    bamInds = get_amInds(amask, vb-1, pnvb) # Remem vb 0 indexed in py but 1 indexed in bash
 
-    # Work out the 'ring' indices, in relation to the analysis mask
-    ix_r = np.argsort(np.argsort(R_inds))
-    R_inds_am = np.sort(np.where(np.in1d(amInds,R_inds))[0])[ix_r]
+    # ------------------------------------------------------------------------
+    # Split the voxels into computable groups
+    # ------------------------------------------------------------------------
 
-    # Get indices of the "inner" volume where all studies had information
-    # present. I.e. the voxels (usually near the middle of the brain) where
-    # every voxel has a reading for every study.
-    I_inds = np.sort(np.where((Mask==1)*(n_sv==n))[0])
+    # Work out the number of voxels we can actually compute at a time.
+    nvb = MAXMEM/(10*8*(q**2))
 
-    # Work out the 'inner' indices, in relation to the analysis mask
-    ix_i = np.argsort(np.argsort(I_inds))
-    I_inds_am = np.sort(np.where(np.in1d(amInds,I_inds))[0])[ix_i]
+    # Work out number of groups we have to split iindices into.
+    nvg = len(bamInds)//nvb+1
 
-    # We no longer need the mask variable
-    del Mask
+    # Split voxels we want to look at into groups we can compute
+    voxelGroups = np.array_split(bamInds, nvg)
 
-    # --------------------------------------------------------------------------------
-    # Move to working with only analysis mask indices
-    # --------------------------------------------------------------------------------
+    # Loop through list of voxel indices, looking at each group of voxels, in
+    # turn.
+    for cv in np.arange(nvg):
 
-    # Number of voxels in ring
-    v_r = R_inds.shape[0]
+        # Current group of voxels
+        bamInds_cv = voxelGroups[cv]
 
-    # Number of voxels in inner mask
-    v_i = I_inds.shape[0]
+        # Mask for current voxels
+        Mask_cv = np.array(Mask)
+        Mask_cv[~np.in1d(np.arange(v).reshape(v,1), bamInds_cv)]=0
 
-    # Number of voxels in whole (inner + ring) mask
-    v_m = v_i + v_r
+        # Get indices of voxels in ring around brain where there are
+        # missing studies.
+        R_inds = np.sort(np.where((Mask_cv==1)*(n_sv<n))[0])
 
-    # Create df map
-    df_r = n_sv[R_inds,:] - p
-    df_r = df_r.reshape([v_r])
-    df_i = n - p
+        # Work out the 'ring' indices, in relation to the analysis mask
+        ix_r = np.argsort(np.argsort(R_inds))
+        R_inds_am = np.sort(np.where(np.in1d(amInds,R_inds))[0])[ix_r]
 
-    # Unmask df
-    df = np.zeros([v])
-    df[R_inds] = df_r 
-    df[I_inds] = df_i
+        # Get indices of the "inner" volume where all studies had information
+        # present. I.e. the voxels (usually near the middle of the brain) where
+        # every voxel has a reading for every study.
+        I_inds = np.sort(np.where((Mask_cv==1)*(n_sv==n))[0])
 
-    df = df.reshape(int(NIFTIsize[0]),
-                    int(NIFTIsize[1]),
-                    int(NIFTIsize[2]))
+        # Work out the 'inner' indices, in relation to the analysis mask
+        ix_i = np.argsort(np.argsort(I_inds))
+        I_inds_am = np.sort(np.where(np.in1d(amInds,I_inds))[0])[ix_i]
 
-    # Save beta map.
-    dfmap = nib.Nifti1Image(df,
-                            nifti.affine,
-                            header=nifti.header) ### MARKER: THIS SHOULD ONLY BE DONE ONCE BUT CURRENTLY DONE IN ALL BATCHES
-    nib.save(dfmap, os.path.join(OutDir,'blmm_vox_edf.nii'))
-    del df, dfmap
+        # We no longer need the mask variable
+        del Mask
 
-    # --------------------------------------------------------------------------------
-    # Load X'X, X'Y, Y'Y, X'Z, Y'Z, Z'Z
-    # --------------------------------------------------------------------------------
 
-    # Ring X'Y, Y'Y, Z'Y
-    XtY_r = readAndSumAtB('XtY',OutDir,R_inds_am,n_b).reshape([v_r, p, 1])
-    YtY_r = readAndSumAtB('YtY',OutDir,R_inds_am,n_b).reshape([v_r, 1, 1])
-    ZtY_r = readAndSumAtB('ZtY',OutDir,R_inds_am,n_b).reshape([v_r, q, 1])
+        # ------------------------------------------------------------------------
+        # Number of voxels in ring and inner
+        # ------------------------------------------------------------------------
 
-    # Inner X'Y, Y'Y, Z'Y
-    XtY_i = readAndSumAtB('XtY',OutDir,I_inds_am,n_b).reshape([v_i, p, 1])
-    YtY_i = readAndSumAtB('YtY',OutDir,I_inds_am,n_b).reshape([v_i, 1, 1])
-    ZtY_i = readAndSumAtB('ZtY',OutDir,I_inds_am,n_b).reshape([v_i, q, 1])
+        # Number of voxels in ring
+        v_r = R_inds.shape[0]
 
-    # Ring Z'Z. Z'X, X'X
-    if v_r:
+        # Number of voxels in inner mask
+        v_i = I_inds.shape[0]
 
-        ZtZ_r = readAndSumUniqueAtB('ZtZ',OutDir,R_inds,n_b,True).reshape([v_r, q, q])
-        ZtX_r = readAndSumUniqueAtB('ZtX',OutDir,R_inds,n_b,True).reshape([v_r, q, p])
-        XtX_r = readAndSumUniqueAtB('XtX',OutDir,R_inds,n_b,True).reshape([v_r, p, p])
-    
-    if v_i:
-            
-        # Inner Z'Z. Z'X, X'X
-        ZtZ_i = readAndSumUniqueAtB('ZtZ',OutDir,I_inds,n_b,False).reshape([1, q, q])
-        ZtX_i = readAndSumUniqueAtB('ZtX',OutDir,I_inds,n_b,False).reshape([1, q, p])
-        XtX_i = readAndSumUniqueAtB('XtX',OutDir,I_inds,n_b,False).reshape([1, p, p])    
+        # Number of voxels in whole (inner + ring) mask
+        v_m = v_i + v_r
 
-    # --------------------------------------------------------------------------------
-    # Calculate betahat = (X'X)^(-1)X'Y and output beta maps
-    # --------------------------------------------------------------------------------
+        # ------------------------------------------------------------------------
+        # Degrees of freedom (n-p)
+        # ------------------------------------------------------------------------
 
-    REML = False
+        # Create df map
+        df_r = n_sv[R_inds,:] - p
+        df_r = df_r.reshape([v_r])
+        df_i = n - p
 
-    # If we have indices where only some studies are present, work out X'X and
-    # X'Y for these studies. (Remember X'Y, Y'Y and Z'Y have already had the 
-    # analysis mask applied to them during the batch stage)
-    if v_r:
+        # Unmask df
+        df = np.zeros([v])
+        df[R_inds] = df_r 
+        df[I_inds] = df_i
 
-        # Spatially varying nv for ring
-        n_sv_r = n_sv[R_inds,:]
+        df = df.reshape(int(NIFTIsize[0]),
+                        int(NIFTIsize[1]),
+                        int(NIFTIsize[2]))
 
-        # Transposed matrices
-        YtX_r = XtY_r.transpose(0,2,1)
-        YtZ_r = ZtY_r.transpose(0,2,1) 
-        XtZ_r = ZtX_r.transpose(0,2,1)
+        # Save beta map.
+        dfmap = nib.Nifti1Image(df,
+                                nifti.affine,
+                                header=nifti.header) ### MARKER: THIS SHOULD ONLY BE DONE ONCE BUT CURRENTLY DONE IN ALL BATCHES
+        nib.save(dfmap, os.path.join(OutDir,'blmm_vox_edf.nii'))
+        del df, dfmap
 
-        # Run parameter estimation
-        beta_r, sigma2_r, D_r = blmm_estimate.main(inputs, R_inds, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r, n_sv_r, nlevels, nraneffs)
+        # --------------------------------------------------------------------------------
+        # Load X'X, X'Y, Y'Y, X'Z, Y'Z, Z'Z
+        # --------------------------------------------------------------------------------
 
-        # Run inference
-        blmm_inference.main(inputs, nraneffs, nlevels, R_inds, beta_r, D_r, sigma2_r, n_sv_r, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r)       
+        # Ring X'Y, Y'Y, Z'Y
+        XtY_r = readAndSumAtB('XtY',OutDir,R_inds_am,n_b).reshape([v_r, p, 1])
+        YtY_r = readAndSumAtB('YtY',OutDir,R_inds_am,n_b).reshape([v_r, 1, 1])
+        ZtY_r = readAndSumAtB('ZtY',OutDir,R_inds_am,n_b).reshape([v_r, q, 1])
+
+        # Inner X'Y, Y'Y, Z'Y
+        XtY_i = readAndSumAtB('XtY',OutDir,I_inds_am,n_b).reshape([v_i, p, 1])
+        YtY_i = readAndSumAtB('YtY',OutDir,I_inds_am,n_b).reshape([v_i, 1, 1])
+        ZtY_i = readAndSumAtB('ZtY',OutDir,I_inds_am,n_b).reshape([v_i, q, 1])
+
+        # Ring Z'Z. Z'X, X'X
+        if v_r:
+
+            ZtZ_r = readAndSumUniqueAtB('ZtZ',OutDir,R_inds,n_b,True).reshape([v_r, q, q])
+            ZtX_r = readAndSumUniqueAtB('ZtX',OutDir,R_inds,n_b,True).reshape([v_r, q, p])
+            XtX_r = readAndSumUniqueAtB('XtX',OutDir,R_inds,n_b,True).reshape([v_r, p, p])
         
-    if v_i:
+        if v_i:
+                
+            # Inner Z'Z. Z'X, X'X
+            ZtZ_i = readAndSumUniqueAtB('ZtZ',OutDir,I_inds,n_b,False).reshape([1, q, q])
+            ZtX_i = readAndSumUniqueAtB('ZtX',OutDir,I_inds,n_b,False).reshape([1, q, p])
+            XtX_i = readAndSumUniqueAtB('XtX',OutDir,I_inds,n_b,False).reshape([1, p, p])    
 
-        # Transposed matrices
-        YtX_i = XtY_i.transpose(0,2,1)
-        YtZ_i = ZtY_i.transpose(0,2,1) 
-        XtZ_i = ZtX_i.transpose(0,2,1)
+        # --------------------------------------------------------------------------------
+        # Calculate betahat = (X'X)^(-1)X'Y and output beta maps
+        # --------------------------------------------------------------------------------
 
-        # Run parameter estimation
-        beta_i, sigma2_i, D_i = blmm_estimate.main(inputs, I_inds,  XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i, n, nlevels, nraneffs)
+        REML = False
 
-        # Run inference
-        blmm_inference.main(inputs, nraneffs, nlevels, I_inds, beta_i, D_i, sigma2_i, n, XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i)
+        # If we have indices where only some studies are present, work out X'X and
+        # X'Y for these studies. (Remember X'Y, Y'Y and Z'Y have already had the 
+        # analysis mask applied to them during the batch stage)
+        if v_r:
+
+            # Spatially varying nv for ring
+            n_sv_r = n_sv[R_inds,:]
+
+            # Transposed matrices
+            YtX_r = XtY_r.transpose(0,2,1)
+            YtZ_r = ZtY_r.transpose(0,2,1) 
+            XtZ_r = ZtX_r.transpose(0,2,1)
+
+            # Run parameter estimation
+            beta_r, sigma2_r, D_r = blmm_estimate.main(inputs, R_inds, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r, n_sv_r, nlevels, nraneffs)
+
+            # Run inference
+            blmm_inference.main(inputs, nraneffs, nlevels, R_inds, beta_r, D_r, sigma2_r, n_sv_r, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r)       
+            
+        if v_i:
+
+            # Transposed matrices
+            YtX_i = XtY_i.transpose(0,2,1)
+            YtZ_i = ZtY_i.transpose(0,2,1) 
+            XtZ_i = ZtX_i.transpose(0,2,1)
+
+            # Run parameter estimation
+            beta_i, sigma2_i, D_i = blmm_estimate.main(inputs, I_inds,  XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i, n, nlevels, nraneffs)
+
+            # Run inference
+            blmm_inference.main(inputs, nraneffs, nlevels, I_inds, beta_i, D_i, sigma2_i, n, XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i)
 
     w.resetwarnings()
 

@@ -552,7 +552,7 @@ def memorySafeAtB(A,B,MAXMEM,filename):
     # for a safe overhead)
     vPerBlock = MAXMEM/(10*8*pORq)
 
-    # Work out the indices for each grou of voxels
+    # Work out the indices for each group of voxels
     voxelGroups = np.array_split(np.arange(v, dtype='int32'), v//vPerBlock+1)
     
     # Loop through each group of voxels saving A'B for those voxels
