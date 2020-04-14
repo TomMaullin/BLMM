@@ -128,25 +128,6 @@ def main(ipath, vb):
     v = int(np.prod(NIFTIsize))
 
     # --------------------------------------------------------------------------------
-    # Remove any files from the previous runs
-    #
-    # Note: This is important as if we are outputting blocks to files we want to be
-    # sure none of the previous results are lingering around anywhere.
-    # --------------------------------------------------------------------------------
-
-    files = ['blmm_vox_n.nii', 'blmm_vox_mask.nii', 'blmm_vox_edf.nii', 'blmm_vox_beta.nii',
-             'blmm_vox_llh.nii', 'blmm_vox_sigma2.nii', 'blmm_vox_D.nii', 'blmm_vox_resms.nii',
-             'blmm_vox_cov.nii', 'blmm_vox_conT_swedf.nii', 'blmm_vox_conT.nii', 'blmm_vox_conTlp.nii',
-             'blmm_vox_conSE.nii', 'blmm_vox_con.nii', 'blmm_vox_conF.nii', 'blmm_vox_conF_swedf.nii',
-             'blmm_vox_conFlp.nii', 'blmm_vox_conR2.nii']
-
-    for file in files:
-
-        if os.path.exists(os.path.join(OutDir, file)):
-
-            os.remove(os.path.join(OutDir, file))
-
-    # --------------------------------------------------------------------------------
     # Get n (number of observations) and n_sv (spatially varying number of
     # observations)
     # --------------------------------------------------------------------------------
