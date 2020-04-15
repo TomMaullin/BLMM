@@ -1506,8 +1506,8 @@ def get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2):
     if isinstance(sigma2,np.ndarray):
 
         # Check first that n isn't a single value
-        if np.prod(sigma2.shape)>1:
-    
+        if sigma2.ndim>1:
+          
             sigma2 = sigma2.reshape(sigma2.shape[0])
 
     # Work out X'V^{-1}X = X'X - X'ZD(I+Z'ZD)^{-1}Z'X
@@ -1558,7 +1558,7 @@ def get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2):
     if isinstance(sigma2,np.ndarray):
 
         # Check first that n isn't a single value
-        if np.prod(sigma2.shape)>1:
+        if sigma2.ndim>1:
     
             sigma2 = sigma2.reshape(sigma2.shape[0])
 
