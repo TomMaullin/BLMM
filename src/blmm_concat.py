@@ -298,10 +298,6 @@ def main(ipath, vb):
         ix_i = np.argsort(np.argsort(I_inds))
         I_inds_am = np.sort(np.where(np.in1d(amInds,I_inds))[0])[ix_i]
 
-        # We no longer need the mask variable
-        del Mask
-
-
         # ------------------------------------------------------------------------
         # Number of voxels in ring and inner
         # ------------------------------------------------------------------------
@@ -389,6 +385,8 @@ def main(ipath, vb):
 
             # Run parameter estimation
             beta_r, sigma2_r, D_r = blmm_estimate.main(inputs, R_inds, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r, n_sv_r, nlevels, nraneffs)
+
+            print('sigma2 (r mode) shape: ', sigma2_r.shape)
 
             # Run inference
             blmm_inference.main(inputs, nraneffs, nlevels, R_inds, beta_r, D_r, sigma2_r, n_sv_r, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r)       
