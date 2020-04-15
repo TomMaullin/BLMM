@@ -1,4 +1,5 @@
 import os
+import time
 import pandas as pd
 import nibabel as nib
 import numpy as np
@@ -176,6 +177,16 @@ def str2vec(c):
 # ============================================================================
 def addBlockToNifti(fname, block, blockInds,dim=None,volInd=None,aff=None,hdr=None):
 
+    # Check if file is in use
+    fileLocked = True
+    while fileLocked:
+        time.sleep(0.002)
+        fileLocked = os.path.exists(fname + ".lock")
+
+    # Create lock file, so other jobs know we are writing to this file
+    with open(fname + ".lock", 'w') as fp: 
+        pass
+
     # Check volInd is correct datatype
     if volInd is not None:
 
@@ -269,6 +280,10 @@ def addBlockToNifti(fname, block, blockInds,dim=None,volInd=None,aff=None,hdr=No
     
     # Save NIFTI
     nib.save(nifti, fname)
+
+    # Delete lock file, so other jobs know they can now write to the
+    # file
+    os.remove(fname + ".lock")
 
     del nifti, fname, data_out, affine
 
