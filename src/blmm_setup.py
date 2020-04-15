@@ -8,6 +8,7 @@ import os
 import shutil
 import yaml
 import h5py
+import filelock
 from lib.fileio import loadFile, str2vec
 from lib.npMatrix3d import pracNumVoxelBlocks
 
