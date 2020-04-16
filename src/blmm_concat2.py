@@ -145,12 +145,18 @@ def main(ipath, vb):
     nmapb  = loadFile(os.path.join(OutDir,"tmp", "blmm_vox_n_batch1.nii"))
     n_sv = nmapb.get_data()# Read in uniqueness Mask file
 
+    # Remove file we just read
+    os.remove(os.path.join(OutDir,"tmp", "blmm_vox_n_batch1.nii"))
+
     # Cycle through batches and add together n.
     for batchNo in range(2,(n_b+1)):
         
         # Obtain the full nmap.
         n_sv = n_sv + loadFile(os.path.join(OutDir,"tmp", 
             "blmm_vox_n_batch" + str(batchNo) + ".nii")).get_data()
+
+        # Remove file we just read
+        os.remove(os.path.join(OutDir,"tmp", "blmm_vox_n_batch" + str(batchNo) + ".nii"))
         
     # Save nmap
     nmap = nib.Nifti1Image(n_sv,
@@ -331,12 +337,9 @@ def main(ipath, vb):
         os.remove(os.path.join(OutDir, "tmp","ZtY" + str(batchNo) + ".npy"))
 
     # Save new X'Y, Y'Y and Z'Y files here
-    np.save(os.path.join(OutDir,"tmp","YtY" + str(batchNo)), 
-               YtY)
-    np.save(os.path.join(OutDir,"tmp","XtY" + str(batchNo)), 
-               XtY) 
-    np.save(os.path.join(OutDir,"tmp","ZtY" + str(batchNo)), 
-               ZtY) 
+    np.save(os.path.join(OutDir,"tmp","YtY"), YtY)
+    np.save(os.path.join(OutDir,"tmp","XtY"), XtY) 
+    np.save(os.path.join(OutDir,"tmp","ZtY"), ZtY) 
 
     # Ring Z'Z. Z'X, X'X
     if v_r:
@@ -352,12 +355,18 @@ def main(ipath, vb):
         # so extra care must be taken here
         _, idx = np.unique(ZtZ_r, axis=0, return_index=True)
         ZtZ_ru = ZtZ_r[np.sort(idx),:]
+        print(ZtZ_r.shape)
+        print(ZtZ_ru.shape)
 
         _, idx = np.unique(ZtX_r, axis=0, return_index=True)
         ZtX_ru = ZtX_r[np.sort(idx),:]
+        print(ZtX_r.shape)
+        print(ZtX_ru.shape)
 
         _, idx = np.unique(ZtX_r, axis=0, return_index=True)
         XtX_ru = XtX_r[np.sort(idx),:]
+        print(XtX_r.shape)
+        print(XtX_ru.shape)
 
         # Work out the uniqueness indices for the ring (the key by which
         # we recover X'X, X'Z, Z'Z etc). Note: Due to the preserving of
@@ -396,15 +405,22 @@ def main(ipath, vb):
     uMap = nib.Nifti1Image(uMap,
                            nifti.affine,
                            header=nifti.header) ### MARKER: THIS SHOULD ONLY BE DONE ONCE BUT CURRENTLY DONE IN ALL BATCHES
-    nib.save(uMap, os.path.join(OutDir,'blmm_vox_uniqueM.nii'))
+    nib.save(uMap, os.path.join(OutDir,"tmp","blmm_vox_uniqueM.nii"))
 
     # Save unique designs
-    np.save(os.path.join(OutDir,"tmp","XtX" + str(batchNo)), 
-               XtX_u)
-    np.save(os.path.join(OutDir,"tmp","ZtX" + str(batchNo)), 
-               ZtX_u) 
-    np.save(os.path.join(OutDir,"tmp","ZtZ" + str(batchNo)), 
-               ZtZ_u) 
+    np.save(os.path.join(OutDir,"tmp","XtX"),XtX_u)
+    np.save(os.path.join(OutDir,"tmp","ZtX"),ZtX_u) 
+    np.save(os.path.join(OutDir,"tmp","ZtZ"),ZtZ_u) 
+
+
+    # Remove Z'X, Z'Z, X'X, n and uniqueness M files here
+    for batchNo in range(1,(n_b+1)):
+        os.remove(os.path.join(OutDir, "tmp","XtX" + str(batchNo) + ".npy"))
+        os.remove(os.path.join(OutDir, "tmp","ZtZ" + str(batchNo) + ".npy"))
+        os.remove(os.path.join(OutDir, "tmp","ZtX" + str(batchNo) + ".npy"))
+        os.remove(os.path.join(OutDir,"tmp","blmm_vox_uniqueM_batch" + str(batchNo) + ".nii"))
+        os.remove(os.path.join(OutDir,"tmp","blmm_vox_n_batch" + str(batchNo) + ".nii"))
+
 
     del uMap, ZtZ_u, XtX_u, ZtX_u
 
