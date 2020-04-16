@@ -371,9 +371,9 @@ def main(ipath, vb):
     if v_i:
             
         # Inner Z'Z. Z'X, X'X
-        ZtZ_i = readAndSumUniqueAtB('ZtZ',OutDir,I_inds,n_b,False)#.reshape([1, q, q])
-        ZtX_i = readAndSumUniqueAtB('ZtX',OutDir,I_inds,n_b,False)#.reshape([1, q, p])
-        XtX_i = readAndSumUniqueAtB('XtX',OutDir,I_inds,n_b,False)#.reshape([1, p, p])
+        ZtZ_i = readAndSumUniqueAtB('ZtZ',OutDir,I_inds,n_b,False).reshape([1, q**2])
+        ZtX_i = readAndSumUniqueAtB('ZtX',OutDir,I_inds,n_b,False).reshape([1, q*p])
+        XtX_i = readAndSumUniqueAtB('XtX',OutDir,I_inds,n_b,False).reshape([1, p**2])
 
         # Add to the list of unique designs
         ZtZ_u = np.concatenate((ZtZ_ru, ZtZ_i), axis=0)
