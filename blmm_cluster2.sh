@@ -106,48 +106,48 @@ fi
 
 
 
-# Check if we are in voxel batch mode (not yet implemented)
-if [ -z $config_voxelBatching ] || [ "$config_voxelBatching" == "0" ] ; then
-    
-  # Voxel batching is not turned on
-  fsl_sub -j $batchIDs -l log/ -N results bash $BLMM_PATH/scripts/cluster_blmm_concat2.sh $inputs "-1" > /tmp/$$ && resultsIDs=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
-  if [ "$resultsIDs" == "" ] ; then
-    echo "Results job submission failed!"
-  fi
+# # Check if we are in voxel batch mode (not yet implemented)
+# if [ -z $config_voxelBatching ] || [ "$config_voxelBatching" == "0" ] ; then
+  
+# Voxel batching is not turned on
+fsl_sub -j $batchIDs -l log/ -N results bash $BLMM_PATH/scripts/cluster_blmm_concat2.sh $inputs "-1" > /tmp/$$ && resultsIDs=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
+if [ "$resultsIDs" == "" ] ; then
+  echo "Results job submission failed!"
+fi
 
-  if [ "$printOpt" == "1" ] ; then
-    echo "Submitting results job..."
-    echo "Please use qstat to monitor progress."
-  else
-    echo $resultsID
-  fi
-
+if [ "$printOpt" == "1" ] ; then
+  echo "Submitting results job..."
+  echo "Please use qstat to monitor progress."
 else
-
-  # Voxel batching is on, so work out number of voxel batches needed.
-  typeset -i nvb=$(cat $config_outdir/nvb.txt)
-
-  i=1
-  while [ "$i" -le "$nvb" ]; do
-
-    # Submit nb batches and get the ids for them
-    fsl_sub -j $batchIDs -l log/ -N results$i bash $BLMM_PATH/scripts/cluster_blmm_concat2.sh $inputs $i > /tmp/$$ && resultsIDs=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$resultsIDs
-    i=$(($i + 1))
-  done
-
-  if [ "$printOpt" == "1" ] ; then
-    echo "Voxel Batch Mode..."
-    echo "Submitting results jobs..."
-  else
-    echo $resultsIDs
-  fi
-
+  echo $resultsID
 fi
 
-# Cleanup operation
-echo "Analysis complete."
-echo "(Clean up in progress...)"
-fsl_sub -j $resultsIDs -l log/ -N cleanup bash $BLMM_PATH/scripts/cluster_blmm_cleanup.sh $inputs > /tmp/$$ && cleanupID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
-if [ "$cleanupID" == "" ] ; then
-  echo "Clean up job submission failed!"
-fi
+# else
+
+#   # Voxel batching is on, so work out number of voxel batches needed.
+#   typeset -i nvb=$(cat $config_outdir/nvb.txt)
+
+#   i=1
+#   while [ "$i" -le "$nvb" ]; do
+
+#     # Submit nb batches and get the ids for them
+#     fsl_sub -j $batchIDs -l log/ -N results$i bash $BLMM_PATH/scripts/cluster_blmm_concat2.sh $inputs $i > /tmp/$$ && resultsIDs=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$resultsIDs
+#     i=$(($i + 1))
+#   done
+
+#   if [ "$printOpt" == "1" ] ; then
+#     echo "Voxel Batch Mode..."
+#     echo "Submitting results jobs..."
+#   else
+#     echo $resultsIDs
+#   fi
+
+# fi
+
+# # Cleanup operation
+# echo "Analysis complete."
+# echo "(Clean up in progress...)"
+# fsl_sub -j $resultsIDs -l log/ -N cleanup bash $BLMM_PATH/scripts/cluster_blmm_cleanup.sh $inputs > /tmp/$$ && cleanupID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
+# if [ "$cleanupID" == "" ] ; then
+#   echo "Clean up job submission failed!"
+# fi
