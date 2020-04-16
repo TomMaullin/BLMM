@@ -259,7 +259,7 @@ def main(ipath, vb):
 
     # Get indices of voxels in ring around brain where there are
     # missing studies.
-    R_inds = np.sort(np.where((Mask_cv==1)*(n_sv<n))[0])
+    R_inds = np.sort(np.where((Mask==1)*(n_sv<n))[0])
 
     # Work out the 'ring' indices, in relation to the analysis mask
     ix_r = np.argsort(np.argsort(R_inds))
@@ -268,7 +268,7 @@ def main(ipath, vb):
     # Get indices of the "inner" volume where all studies had information
     # present. I.e. the voxels (usually near the middle of the brain) where
     # every voxel has a reading for every study.
-    I_inds = np.sort(np.where((Mask_cv==1)*(n_sv==n))[0])
+    I_inds = np.sort(np.where((Mask==1)*(n_sv==n))[0])
 
     # Work out the 'inner' indices, in relation to the analysis mask
     ix_i = np.argsort(np.argsort(I_inds))
