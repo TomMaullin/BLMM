@@ -352,19 +352,15 @@ def main(ipath, vb):
 
         # Then work out new unique X'X, Z'X, Z'Z indices 
         # Note: finding the unique elements may change the order
-        # so extra care must be taken here
-        _, idx = np.unique(ZtZ_r, axis=0, return_index=True)
-        ZtZ_ru = ZtZ_r[np.sort(idx),:]
-        print(ZtZ_r.shape)
-        print(ZtZ_ru.shape)
-
+        # so extra care must be taken here with indexing
         _, idx = np.unique(ZtX_r, axis=0, return_index=True)
+        XtX_ru = XtX_r[np.sort(idx),:]
+        ZtZ_ru = ZtZ_r[np.sort(idx),:]
         ZtX_ru = ZtX_r[np.sort(idx),:]
+
         print(ZtX_r.shape)
         print(ZtX_ru.shape)
 
-        _, idx = np.unique(ZtX_r, axis=0, return_index=True)
-        XtX_ru = XtX_r[np.sort(idx),:]
         print(XtX_r.shape)
         print(XtX_ru.shape)
 
