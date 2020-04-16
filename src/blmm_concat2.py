@@ -372,9 +372,9 @@ def main(ipath, vb):
         # we recover X'X, X'Z, Z'Z etc). Note: Due to the preserving of
         # order above, these indices should be the same for X'X, Z'X and 
         # Z'Z, so we need only compute them once.
-        ZtZ_r_df = pd.DataFrame(ZtZ_r)
-        ZtZ_r_df['id'] = ZtZ_r_df.groupby(ZtZ_r_df.columns.tolist(), sort=False).ngroup() + 1
-        unique_id_r = ZtZ_r_df['id'].values
+        XtX_r_df = pd.DataFrame(XtX_r)
+        XtX_r_df['id'] = XtX_r_df.groupby(XtX_r_df.columns.tolist(), sort=False).ngroup() + 1
+        unique_id_r = XtX_r_df['id'].values
 
     
     if v_i:
