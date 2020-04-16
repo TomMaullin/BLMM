@@ -326,9 +326,9 @@ def main(ipath, vb):
     v_m = np.prod(amInds.shape)
 
     # Ring X'Y, Y'Y, Z'Y
-    XtY = readAndSumAtB('XtY',OutDir,np.arange(v_m),n_b).reshape([v_m, p, 1])
-    YtY = readAndSumAtB('YtY',OutDir,np.arange(v_m),n_b).reshape([v_m, 1, 1])
-    ZtY = readAndSumAtB('ZtY',OutDir,np.arange(v_m),n_b).reshape([v_m, q, 1])
+    XtY = readAndSumAtB('XtY',OutDir,np.arange(v_m),n_b).reshape([v_m, p])
+    YtY = readAndSumAtB('YtY',OutDir,np.arange(v_m),n_b).reshape([v_m, 1])
+    ZtY = readAndSumAtB('ZtY',OutDir,np.arange(v_m),n_b).reshape([v_m, q])
 
     # Remove X'Y, Y'Y and Z'Y files here
     for batchNo in range(1,(n_b+1)):
@@ -419,7 +419,6 @@ def main(ipath, vb):
         os.remove(os.path.join(OutDir, "tmp","ZtZ" + str(batchNo) + ".npy"))
         os.remove(os.path.join(OutDir, "tmp","ZtX" + str(batchNo) + ".npy"))
         os.remove(os.path.join(OutDir,"tmp","blmm_vox_uniqueM_batch" + str(batchNo) + ".nii"))
-        os.remove(os.path.join(OutDir,"tmp","blmm_vox_n_batch" + str(batchNo) + ".nii"))
 
 
     del uMap, ZtZ_u, XtX_u, ZtX_u
