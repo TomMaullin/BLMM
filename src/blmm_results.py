@@ -314,27 +314,32 @@ def readUniqueAtB(AtBstr, OutDir, vinds, n_b, sv):
     uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
         "blmm_vox_uniqueM.nii")).get_data()
 
+    # Total number of voxels
     v = np.prod(uniquenessMask.shape)
+
+    # Number of voxels we are currently looking at
     vcurrent = np.prod(vinds.shape)
 
+    # Reshape the mask
     uniquenessMask=uniquenessMask.reshape(v)
 
     # Work out how many unique matrices there were
     maxM = np.int32(np.amax(uniquenessMask))
 
+    # If spatially varying is true we must be looking at "ring" voxels, else inner
     if sv:
         # Work out the uniqueness mask inside the ring around the brain
         uniquenessMask = uniquenessMask[vinds]
     else:
         # Work out the uniqueness mask value inside the inner part of the brain
         uniquenessMask = uniquenessMask[vinds[0]] 
+        print('unique indicator: ', uniquenessMask[vinds[0]] )
 
-
-    # read in XtX
+    # Read in unique A'B
     AtB_batch_unique = np.load(
         os.path.join(OutDir,"tmp",AtBstr+".npy"))
 
-    # Make zeros for outer ring of brain ZtZ, XtX, ZtX etc (remember A'B is still flattened)
+    # Initiate A'B to zeros if necessary
     if sv:
         AtB = np.zeros((vcurrent, AtB_batch_unique.shape[1]))
 
