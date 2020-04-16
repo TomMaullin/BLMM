@@ -316,10 +316,13 @@ def main(ipath, vb):
     # Load X'X, X'Y, Y'Y, X'Z, Y'Z, Z'Z
     # --------------------------------------------------------------------------------
 
+    # Number of voxels in mask
+    v_m = np.prod(amInds.shape)
+
     # Ring X'Y, Y'Y, Z'Y
-    XtY = readAndSumAtB('XtY',OutDir,np.arange(np.prod(amInds.shape)),n_b).reshape([v_r, p, 1])
-    YtY = readAndSumAtB('YtY',OutDir,np.arange(np.prod(amInds.shape)),n_b).reshape([v_r, 1, 1])
-    ZtY = readAndSumAtB('ZtY',OutDir,np.arange(np.prod(amInds.shape)),n_b).reshape([v_r, q, 1])
+    XtY = readAndSumAtB('XtY',OutDir,np.arange(v_m),n_b).reshape([v_m, p, 1])
+    YtY = readAndSumAtB('YtY',OutDir,np.arange(v_m),n_b).reshape([v_m, 1, 1])
+    ZtY = readAndSumAtB('ZtY',OutDir,np.arange(v_m),n_b).reshape([v_m, q, 1])
 
     # Remove X'Y, Y'Y and Z'Y files here
     for batchNo in range(1,(n_b+1)):
