@@ -299,6 +299,11 @@ def main(ipath, vb):
             YtZ_i = ZtY_i.transpose(0,2,1) 
             XtZ_i = ZtX_i.transpose(0,2,1)
 
+            print('prod mat check')
+            print(XtX_i)
+            print(ZtX_i)
+            print(ZtZ_i)
+
             # Run parameter estimation
             beta_i, sigma2_i, D_i = blmm_estimate.main(inputs, I_inds,  XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i, n, nlevels, nraneffs)
 

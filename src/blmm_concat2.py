@@ -392,12 +392,10 @@ def main(ipath, vb):
         # The unique id for the inner will be the next available value
         unique_id_i = np.max(unique_id_r)+1
 
-    # Unmask uniqueness map (Note: we add one to all unique ids here as the background of 
-    # the nifti is set to zero. This means if we would not be able to distinguish design
-    # "0" from the background of the image unless we added 1 here.)
+    # Unmask uniqueness map
     uMap = np.zeros([v])
-    uMap[R_inds] = unique_id_r+1 
-    uMap[I_inds] = unique_id_i+1
+    uMap[R_inds] = unique_id_r 
+    uMap[I_inds] = unique_id_i
 
     uMap = uMap.reshape(int(NIFTIsize[0]),
                         int(NIFTIsize[1]),

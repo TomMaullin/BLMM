@@ -364,6 +364,11 @@ def main(ipath, vb):
             ZtX_i = readAndSumUniqueAtB('ZtX',OutDir,I_inds,n_b,False).reshape([1, q, p])
             XtX_i = readAndSumUniqueAtB('XtX',OutDir,I_inds,n_b,False).reshape([1, p, p])    
 
+            print('prod mat check')
+            print(XtX_i)
+            print(ZtX_i)
+            print(ZtZ_i)
+
         # --------------------------------------------------------------------------------
         # Calculate betahat = (X'X)^(-1)X'Y and output beta maps
         # --------------------------------------------------------------------------------
