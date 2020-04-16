@@ -370,7 +370,7 @@ def main(ipath, vb):
         # order above, these indices should be the same for X'X, Z'X and 
         # Z'Z, so we need only compute them once.
         df_r = pd.DataFrame(np.concatenate((ZtZ_r,ZtX_r,XtX_r),axis=1))
-        df_r['id'] = XtX_r_df.groupby(df_r.columns.tolist(), sort=False).ngroup() + 1
+        df_r['id'] = df_r.groupby(df_r.columns.tolist(), sort=False).ngroup() + 1
         unique_id_r = df_r['id'].values
 
     
