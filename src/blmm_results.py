@@ -338,7 +338,8 @@ def readUniqueAtB(AtBstr, OutDir, vinds, n_b, sv):
     else:
         # Work out the uniqueness mask value inside the inner part of the brain
         uniquenessMask = uniquenessMask[vinds[0]] 
-        print('unique indicator: ', uniquenessMask[vinds[0]] )
+        print('unique indicator: ', uniquenessMask)
+        print('maxM: ', maxM)
 
     # Read in unique A'B
     AtB_batch_unique = np.load(
