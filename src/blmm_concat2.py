@@ -353,10 +353,7 @@ def main(ipath, vb):
         # Then work out new unique X'X, Z'X, Z'Z indices 
         # Note: finding the unique elements may change the order
         # so extra care must be taken here with indexing
-        _, idx1 = np.unique(XtX_r, axis=0, return_index=True)
-        _, idx2 = np.unique(XtX_r, axis=0, return_index=True)
-        _, idx3 = np.unique(XtX_r, axis=0, return_index=True)
-        idx = np.unique(np.concatenate((idx1,idx2, idx3)))
+        _, idx = np.unique(np.concatenate((ZtZ_r,ZtX_r,XtX_r),axis=1), axis=0, return_index=True)
 
         XtX_ru = XtX_r[np.sort(idx),:]
         ZtZ_ru = ZtZ_r[np.sort(idx),:]
@@ -372,9 +369,9 @@ def main(ipath, vb):
         # we recover X'X, X'Z, Z'Z etc). Note: Due to the preserving of
         # order above, these indices should be the same for X'X, Z'X and 
         # Z'Z, so we need only compute them once.
-        XtX_r_df = pd.DataFrame(XtX_r)
-        XtX_r_df['id'] = XtX_r_df.groupby(XtX_r_df.columns.tolist(), sort=False).ngroup() + 1
-        unique_id_r = XtX_r_df['id'].values
+        df_r = pd.DataFrame(np.concatenate((ZtZ_r,ZtX_r,XtX_r),axis=1))
+        df_r['id'] = XtX_r_df.groupby(df_r.columns.tolist(), sort=False).ngroup() + 1
+        unique_id_r = df_r['id'].values
 
     
     if v_i:
