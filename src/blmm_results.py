@@ -249,9 +249,9 @@ def main(ipath, vb):
         if v_i:
                 
             # Inner Z'Z. Z'X, X'X
-            ZtZ_i = readAndSumUniqueAtB('ZtZ', OutDir, I_inds, n_b, True).reshape([1, q, q])
-            ZtX_i = readAndSumUniqueAtB('ZtX', OutDir, I_inds, n_b, True).reshape([1, q, p])
-            XtX_i = readAndSumUniqueAtB('XtX', OutDir, I_inds, n_b, True).reshape([1, p, p])
+            ZtZ_i = readAndSumUniqueAtB('ZtZ', OutDir, I_inds, n_b, False).reshape([1, q, q])
+            ZtX_i = readAndSumUniqueAtB('ZtX', OutDir, I_inds, n_b, False).reshape([1, q, p])
+            XtX_i = readAndSumUniqueAtB('XtX', OutDir, I_inds, n_b, False).reshape([1, p, p])
 
         # --------------------------------------------------------------------------------
         # Calculate betahat = (X'X)^(-1)X'Y and output beta maps
