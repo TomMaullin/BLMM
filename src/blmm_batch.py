@@ -227,8 +227,6 @@ def main(*args):
     # elements in Y should already be set to 0 and, as such, won't have 
     # any affect on these products.
     # ------------------------------------------------------------------
-    print(Y0.shape)
-    print(X.shape)
 
     # We are careful how we compute X'Y and Z'Y, in case either p or q
     # is large. We save these "chunk by chunk" as memory map objects just
@@ -269,7 +267,6 @@ def main(*args):
     n_sv = nib.Nifti1Image(n_sv,
                            Y0.affine,
                            header=Y0.header)
-    print('saved')
     nib.save(n_sv, os.path.join(OutDir,'tmp',
                     'blmm_vox_n_batch'+ str(batchNo) + '.nii'))
 
