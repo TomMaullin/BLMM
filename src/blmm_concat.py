@@ -576,6 +576,5 @@ def readAndSumUniqueAtB(AtBstr, OutDir, vinds, n_b, sv):
 
     return(AtB)
 
-
 if __name__ == "__main__":
     main()

@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# -----------------------------------------------------------------------
+# Work out BLMM path
+# -----------------------------------------------------------------------
 RealPath() {
     (echo $(cd $(dirname "$1") && pwd -P)/$(basename "$1"))
 }
@@ -9,6 +12,9 @@ BLMM_PATH=$(dirname $(RealPath "${BASH_SOURCE[0]}"))
 # include parse_yaml function
 . $BLMM_PATH/scripts/parse_yaml.sh
 
+# -----------------------------------------------------------------------
+# Read and parse BLMM config file
+# -----------------------------------------------------------------------
 # Work out if we have been given multiple analyses configurations
 # Else just assume blmm_config is the correct configuration
 if [ "$1" == "" ] ; then
@@ -16,17 +22,14 @@ if [ "$1" == "" ] ; then
 else
   cfg=$1
 fi
-
-# If the second argument is IDs we use this to print IDs
-if [ "$2" == "IDs" ] ; then
-  printOpt=2
-else
-  printOpt=1
-fi
-
 cfg=$(RealPath $cfg)
+
 # read yaml file to get output directory
 eval $(parse_yaml $cfg "config_")
+
+# -----------------------------------------------------------------------
+# Make output directory and empty nb.txt file
+# -----------------------------------------------------------------------
 mkdir -p $config_outdir
 
 # This file is used to record number of batches
@@ -35,21 +38,21 @@ if [ -f $config_outdir/nb.txt ] ; then
 fi
 touch $config_outdir/nb.txt 
 
-# Make a copy of the inputs file, if the user touches the cfg file this will not mess
-# with anything now.
+# -----------------------------------------------------------------------
+# Make a copy of the inputs file, if the user touches the cfg file this
+# will not mess with anything now.
+# -----------------------------------------------------------------------
 inputs=$config_outdir/inputs.yml
 cp $cfg $inputs
 
+# -----------------------------------------------------------------------
+# Submit setup job
+# -----------------------------------------------------------------------
 fsl_sub -l log/ -N setup bash $BLMM_PATH/scripts/cluster_blmm_setup.sh $inputs > /tmp/$$ && setupID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
 if [ "$setupID" == "" ] ; then
   echo "Setup job submission failed!"
 fi
-
-if [ "$printOpt" == "1" ] ; then
-  echo "Setting up distributed analysis..."
-else
-  echo $setupID
-fi
+echo "Setting up distributed analysis..."
 
 # This loop waits for the setup job to finish before
 # deciding how many batches to run. It also checks to 
@@ -81,14 +84,14 @@ do
   fi
 done
 
-if [ "$printOpt" == "1" ] ; then
-  echo "Submitting batch jobs..."
-fi
-
 # Reread yaml file in case filepaths have been updated to be absolute
 eval $(parse_yaml $inputs "config_")
 inputs=$config_outdir/inputs.yml
 
+# -----------------------------------------------------------------------
+# Submit Batch jobs
+# -----------------------------------------------------------------------
+echo "Submitting batch jobs."
 i=1
 while [ "$i" -le "$nb" ]; do
 
@@ -98,25 +101,20 @@ while [ "$i" -le "$nb" ]; do
 done
 if [ "$batchIDs" == "" ] ; then
   echo "Batch jobs submission failed!"
-else
-  if [ "$printOpt" == "2" ] ; then
-    echo $batchIDs
-  fi
 fi
 
-  
-# Voxel batching is not turned on
+# -----------------------------------------------------------------------
+# Submit Concatenation job
+# -----------------------------------------------------------------------
 fsl_sub -j $batchIDs -l log/ -N concat bash $BLMM_PATH/scripts/cluster_blmm_concat.sh $inputs > /tmp/$$ && concatID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
 if [ "$concatID" == "" ] ; then
   echo "Concatenation job submission failed!"
 fi
+echo "Submitting concatenation job."
 
-if [ "$printOpt" == "1" ] ; then
-  echo "Submitting concatenation job..."
-else
-  echo $concatID
-fi
-
+# -----------------------------------------------------------------------
+# Submit Results jobs
+# -----------------------------------------------------------------------
 # Check if we are in voxel batch mode (not yet implemented)
 if [ -z $config_voxelBatching ] || [ "$config_voxelBatching" == "0" ] ; then
     
@@ -125,13 +123,7 @@ if [ -z $config_voxelBatching ] || [ "$config_voxelBatching" == "0" ] ; then
   if [ "$resultsIDs" == "" ] ; then
     echo "Results job submission failed!"
   fi
-
-  if [ "$printOpt" == "1" ] ; then
-    echo "Submitting results job..."
-    echo "Please use qstat to monitor progress."
-  else
-    echo $resultsID
-  fi
+  echo "Submitting results job."
 
 else
 
@@ -145,19 +137,15 @@ else
     fsl_sub -j $concatID -l log/ -N results$i bash $BLMM_PATH/scripts/cluster_blmm_results.sh $inputs $i > /tmp/$$ && resultsIDs=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$resultsIDs
     i=$(($i + 1))
   done
-
-  if [ "$printOpt" == "1" ] ; then
-    echo "Voxel Batch Mode..."
-    echo "Submitting results jobs..."
-  else
-    echo $resultsIDs
-  fi
+  echo "Submitting results jobs (in Voxel Block mode)."
 
 fi
 
-# Cleanup operation
-echo "Analysis complete."
-echo "(Clean up in progress...)"
+# -----------------------------------------------------------------------
+# Submit Cleanup job
+# -----------------------------------------------------------------------
+echo "Submitting cleanup job."
+echo "Analysis submission complete. Please use qstat to monitor progress."
 fsl_sub -j $resultsIDs -l log/ -N cleanup bash $BLMM_PATH/scripts/cluster_blmm_cleanup.sh $inputs > /tmp/$$ && cleanupID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
 if [ "$cleanupID" == "" ] ; then
   echo "Clean up job submission failed!"

@@ -35,7 +35,7 @@ import pandas as pd
 #
 # ------------------------------------------------------------------------------------
 #
-# Author: Tom Maullin (Last edited: 04/04/2020)
+# Author: Tom Maullin (Last edited: 17/04/2020)
 #
 # ------------------------------------------------------------------------------------
 #
@@ -231,9 +231,9 @@ def main(*args):
     print(X.shape)
 
     # We are careful how we compute X'Y and Z'Y, in case either p or q
-    # is large. We save these "bit by bit" as memory map objects just in
-    # case they don't fit in working memory (this is only usually a large
-    # issue for very large designs).
+    # is large. We save these "chunk by chunk" as memory map objects just
+    # in case they don't fit in working memory (this is only usually a
+    # large issue for very large designs).
     memorySafeAtB(Z.reshape(1,Z.shape[0],Z.shape[1]),Y,MAXMEM,os.path.join(OutDir,"tmp","ZtY" + str(batchNo)+'.npy'))
     memorySafeAtB(X.reshape(1,X.shape[0],X.shape[1]),Y,MAXMEM,os.path.join(OutDir,"tmp","XtY" + str(batchNo)+'.npy'))
 
@@ -485,27 +485,15 @@ def obtainY(Y_files, M_files, M_t, M_a):
     Mask[np.where(np.count_nonzero(Y, axis=0)>0)[0]] = 1
     
     # Apply full mask to Y
-    print('Y shape before mask apply')
-    print(Y.shape)
     Y_fm = Y[:, np.where(np.count_nonzero(Y, axis=0)>0)[0]]
-    print('Y shape after full mask apply')
-    print(Y_fm.shape)
 
-    # Apply analysis mask to Y
-    Y_am = Y[:, np.where(M_a.reshape([v]))[0]]
-
-    print('Y shape after analysis mask apply')
-    print(Y_am.shape)
-
-    Y=Y_fm
-
-    # Plan: Replace above with Y[:, np.where(M_a)] so we have Y under analysis mask
-    # Then remove all unmasking later, save X'Y as X'Y under analysis mask and so on
-
-    # Obstacle, what about M (below)?
+    # Apply analysis mask to Y, we use the analysis mask here as the product
+    # matrices across all batches should have the same masking for convinience
+    # We can apply the full mask at a later stage.
+    Y = Y[:, np.where(M_a.reshape([v]))[0]]
 
     # Work out the mask.
-    M = (Y!=0)
+    M = (Y_fm!=0)
 
     # Get indices corresponding to the unique rows of M
     M_df = pd.DataFrame(M.transpose())
@@ -523,14 +511,10 @@ def obtainY(Y_files, M_files, M_t, M_a):
     _, idx = np.unique(M, axis=1, return_index=True)
     M = M[:,np.sort(idx)]
 
-    print('shape of Y')
-    print(Y.shape)
-    print('shape of M_a')
-    print(M_a.shape)
-
     # Reshape Y
     Y = Y.reshape(Y.shape[0], Y.shape[1], 1).transpose((1,0,2))
 
+    # Return results
     return Y, n_sv, M, Mmap
 
 
@@ -559,10 +543,11 @@ def obtainY(Y_files, M_files, M_t, M_a):
 # ============================================================================
 def memorySafeAtB(A,B,MAXMEM,filename):
 
+    # Record v and k3 (which is usually p or q)
     v = B.shape[0]
     pORq = A.shape[2]
 
-    # create a memory-mapped .npy file with the dimensions and dtype we want
+    # Create a memory-mapped .npy file with the dimensions and dtype we want
     M = open_memmap(filename, mode='w+', dtype='float64', shape=(v,pORq))
         
     # Work out the number of voxels we can save at a time.
@@ -577,6 +562,7 @@ def memorySafeAtB(A,B,MAXMEM,filename):
     for vb in range(int(v//vPerBlock+1)):
         M[voxelGroups[vb],:]=(A.transpose(0,2,1) @ B[voxelGroups[vb],:,:]).reshape(len(voxelGroups[vb]),pORq)
         
+    # Delete M from memory (important!)
     del M
 
 
