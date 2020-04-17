@@ -14,7 +14,8 @@ np.set_printoptions(threshold=np.nan)
 
 # ====================================================================================
 #
-# This file is the cleanup stage of the BLMM pipeline.
+# This file is the cleanup stage of the BLMM pipeline. It simply deletes any remaining
+# files that are no longer needed.
 #
 # ------------------------------------------------------------------------------------
 #
@@ -24,13 +25,8 @@ np.set_printoptions(threshold=np.nan)
 #
 # The code takes the following inputs:
 #
-#  - ipath (optional): If specified, the first argument will be ased to be a
-#                           path to an `inputs` yml file, following the same 
-#                           formatting guidelines as `blmm_config.yml`. If not 
-#                           specified, the default file `blmm_config.yml` will be 
-#                           ased to contain the inputs.
-#
-# MARKER TODO
+#  - `ipath`: Path to an `inputs` yml file, following the same formatting guidelines
+#             as `blmm_config.yml`. 
 #
 # ====================================================================================
 def main(ipath):
@@ -51,6 +47,7 @@ def main(ipath):
     # Clean up files
     # --------------------------------------------------------------------------------
     os.remove(os.path.join(OutDir, 'nb.txt'))
+    os.remove(os.path.join(OutDir, 'nvb.txt'))
     shutil.rmtree(os.path.join(OutDir, 'tmp'))
 
     print('Analysis complete!')

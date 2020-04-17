@@ -40,13 +40,8 @@ import src.blmm_estimate as blmm_estimate
 #
 # The code takes the following inputs:
 #
-#  - ipath (optional): If specified, the first argument will be ased to be a
-#                           path to an `inputs` yml file, following the same 
-#                           formatting guidelines as `blmm_config.yml`. If not 
-#                           specified, the default file `blmm_config.yml` will be 
-#                           ased to contain the inputs.
-#
-# MARKER TODO
+#  - `ipath`: Path to an `inputs` yml file, following the same formatting guidelines
+#             as `blmm_config.yml`. 
 #
 # ------------------------------------------------------------------------------------
 # Developer notes:
@@ -68,7 +63,7 @@ import src.blmm_estimate as blmm_estimate
 #       per voxel). 
 #
 # ====================================================================================
-def main(ipath, vb):
+def main(ipath):
 
     # --------------------------------------------------------------------------------
     # Check inputs
@@ -76,9 +71,6 @@ def main(ipath, vb):
     # Inputs file is first argument
     with open(os.path.join(ipath), 'r') as stream:
         inputs = yaml.load(stream,Loader=yaml.FullLoader)
-
-    # Voxel batch
-    vb = int(vb)
 
     # Check if the maximum memory is saved.    
     if 'MAXMEM' in inputs:
@@ -162,7 +154,7 @@ def main(ipath, vb):
     nmap = nib.Nifti1Image(n_sv,
                            nifti.affine,
                            header=nifti.header)
-    nib.save(nmap, os.path.join(OutDir,'blmm_vox_n.nii')) ### MARKER: THIS SHOULD ONLY BE DONE ONCE BUT CURRENTLY DONE IN ALL BATCHES
+    nib.save(nmap, os.path.join(OutDir,'blmm_vox_n.nii'))
     n_sv = n_sv.reshape(v, 1)
     del nmap
 
@@ -171,7 +163,7 @@ def main(ipath, vb):
     n = X.shape[0]
 
     # --------------------------------------------------------------------------------
-    # Create Mask ### MARKER: THIS SHOULD ONLY BE DONE ONCE BUT CURRENTLY DONE IN ALL BATCHES
+    # Create Mask
     # --------------------------------------------------------------------------------
 
     Mask = np.ones([v, 1])
@@ -250,7 +242,7 @@ def main(ipath, vb):
                                     NIFTIsize[2]
                                     ),
                               nifti.affine,
-                              header=nifti.header) ### MARKER: THIS SHOULD ONLY BE DONE ONCE BUT CURRENTLY DONE IN ALL BATCHES
+                              header=nifti.header) 
     nib.save(maskmap, os.path.join(OutDir,'blmm_vox_mask.nii'))
     del maskmap
 
@@ -260,6 +252,7 @@ def main(ipath, vb):
     # Get indices for block. These indices have to be the indices we want to
     # compute, in relation to the entire volume. If we aren't partitioning by 
     # block these will be equal to amInds
+    vb = 0
     pnvb = pracNumVoxelBlocks(inputs)
     bamInds = get_amInds(amask, vb-1, pnvb) # Remem vb 0 indexed in py but 1 indexed in bash
 
@@ -314,7 +307,7 @@ def main(ipath, vb):
     # Save beta map.
     dfmap = nib.Nifti1Image(df,
                             nifti.affine,
-                            header=nifti.header) ### MARKER: THIS SHOULD ONLY BE DONE ONCE BUT CURRENTLY DONE IN ALL BATCHES
+                            header=nifti.header) 
     nib.save(dfmap, os.path.join(OutDir,'blmm_vox_edf.nii'))
     del df, dfmap
 
@@ -401,7 +394,7 @@ def main(ipath, vb):
     # Save beta map.
     uMap = nib.Nifti1Image(uMap,
                            nifti.affine,
-                           header=nifti.header) ### MARKER: THIS SHOULD ONLY BE DONE ONCE BUT CURRENTLY DONE IN ALL BATCHES
+                           header=nifti.header) 
     nib.save(uMap, os.path.join(OutDir,"tmp","blmm_vox_uniqueM.nii"))
 
     # Save unique designs
@@ -422,7 +415,40 @@ def main(ipath, vb):
 
     w.resetwarnings()
 
-# MARKER
+
+# ============================================================================
+#
+# For a specified set of voxels, the below function reads in the product
+# matrix A'B from each batch job, sums the batch product matrices and returns
+# the sum, i.e. the product matrix for the entire analysis, at each voxel.
+#
+# Note: This function is only designed for the product matrices; X'Y, Z'Y and
+# Y'Y.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `AtBstr`: A string representing which product matrix we are looking at. 
+#             i.e. "XtY" for X'Y, "ZtY" for Z'Y and "YtY" for Y'Y.
+# - `OutDir`: Output directory.
+# - `vinds`: Voxel indices; (flattened) indices representing which voxels we 
+#            are interested in looking at.
+# - `n_b`: The number of batches run during the batch stage.
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `AtB`: The product matrix (flattened), for every voxel; If we had wanted 
+#          X'Y (which is dimension p by 1) for v voxels, the output would here
+#          would have dimension (v by p).
+#
+# ============================================================================
 def readAndSumAtB(AtBstr, OutDir, vinds,n_b):
 
     # Read in first A'B
@@ -437,7 +463,45 @@ def readAndSumAtB(AtBstr, OutDir, vinds,n_b):
     # Return A'B
     return(AtB)
 
-# MARKER
+
+# ============================================================================
+#
+# For a specified set of voxels, the below function reads in the unique 
+# product matrices A'B from each batch job, works out which voxel had which 
+# product matrix, sums the batch product matrices and returns the sum, i.e. 
+# the product matrix for the entire analysis, at each voxel.
+#
+# Note: This function is only designed for the product matrices; Z'X, Z'Z and
+# X'X.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `AtBstr`: A string representing which product matrix we are looking at. 
+#             i.e. "XtY" for X'Y, "ZtY" for Z'Y and "YtY" for Y'Y.
+# - `OutDir`: Output directory.
+# - `vinds`: Voxel indices; (flattened) indices representing which voxels we 
+#            are interested in looking at.
+# - `n_b`: The number of batches run during the batch stage.
+# - `sv`: Spatial varying boolean value. This tells us if we expect the
+#         product matrix to vary across these voxels, or whether we expect it
+#         to be the same for all of them.
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `AtB`: The product matrix (flattened); If we had wanted X'X (which is 
+#          dimension p by p) for v voxels, the output would here would have 
+#          dimension (1 by p**2). If sv was True, we will have one matrix for
+#          each voxel. If sv was false we will have one matrix for all voxels.
+#
+# ============================================================================
 def readAndSumUniqueAtB(AtBstr, OutDir, vinds, n_b, sv):
 
     # Work out the uniqueness mask for the spatially varying designs

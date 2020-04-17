@@ -19,34 +19,24 @@ import src.blmm_estimate as blmm_estimate
 
 # ====================================================================================
 #
-# This file is the third stage of the BLMM pipeline. This stage reads in the product
-# matrices output by each of the `blmm_batch` jobs during the second stage and s 
-# them to obtain the product matrices for the overall model. It also calculates n_sv
-# for the whole model and the overall mask.
-#
-# Following this, the `blmm_concat` code then seperates the voxels in the brain into
-# two categories; "inner" and "ring" (explained in the developer notes below). Once
-# this has been done the product matrices corresponding to "inner" and "ring" voxels
-# are passed to `blmm_estimate`, which estimates the parameters of the model; beta,
-# sigma2 and D. Following this, the product matrices and parameter estimates are 
-# passed to `blmm_inference`, which generates statistic maps and other miscelanoues 
-# output.
+# This file is a wrapper for the fourth and fifth stages of the BLMM pipeline; 
+# `blmm_estimate.py` and `blmm_inference.py`. See these files for more details.
 #
 # ------------------------------------------------------------------------------------
 #
-# Author: Tom Maullin (Last edited: 04/04/2020)
+# Author: Tom Maullin (Last edited: 17/04/2020)
 #
 # ------------------------------------------------------------------------------------
 #
 # The code takes the following inputs:
 #
-#  - ipath (optional): If specified, the first argument will be ased to be a
-#                           path to an `inputs` yml file, following the same 
-#                           formatting guidelines as `blmm_config.yml`. If not 
-#                           specified, the default file `blmm_config.yml` will be 
-#                           ased to contain the inputs.
-#
-# MARKER TODO
+#  - `ipath`: Path to an `inputs` yml file, following the same formatting guidelines
+#             as `blmm_config.yml`. 
+#  - `vb`: Voxel batch number. If `vb` is set to k>0, this tells us that this code is 
+#          being run in parallel and we must perform inference and estimation on the
+#          (k-1)^th block of voxels. If `vb` is set to k<0, we know that the code is
+#          being run in serial and inference and estimation should be performed for 
+#          all voxels.
 #
 # ------------------------------------------------------------------------------------
 # Developer notes:
@@ -77,7 +67,7 @@ def main(ipath, vb):
     with open(os.path.join(ipath), 'r') as stream:
         inputs = yaml.load(stream,Loader=yaml.FullLoader)
 
-    # Voxel batch
+    # Voxel block
     vb = int(vb)
 
     # Check if the maximum memory is saved.    
@@ -138,12 +128,6 @@ def main(ipath, vb):
     # observations)
     # --------------------------------------------------------------------------------
 
-    # Work out number of batchs
-    with open(os.path.join(OutDir,'nb.txt')) as f:
-        n_b = int(f.readline())
-
-    print('nb: ', n_b)
-        
     # load n_sv
     n_sv = loadFile(os.path.join(OutDir,'blmm_vox_n.nii')).get_data().reshape([v,1])
 
@@ -254,16 +238,16 @@ def main(ipath, vb):
         # Ring Z'Z. Z'X, X'X
         if v_r:
 
-            ZtZ_r = readUniqueAtB('ZtZ',OutDir,R_inds,n_b,True).reshape([v_r, q, q])
-            ZtX_r = readUniqueAtB('ZtX',OutDir,R_inds,n_b,True).reshape([v_r, q, p])
-            XtX_r = readUniqueAtB('XtX',OutDir,R_inds,n_b,True).reshape([v_r, p, p])
+            ZtZ_r = readUniqueAtB('ZtZ',OutDir,R_inds,True).reshape([v_r, q, q])
+            ZtX_r = readUniqueAtB('ZtX',OutDir,R_inds,True).reshape([v_r, q, p])
+            XtX_r = readUniqueAtB('XtX',OutDir,R_inds,True).reshape([v_r, p, p])
         
         if v_i:
                 
             # Inner Z'Z. Z'X, X'X
-            ZtZ_i = readUniqueAtB('ZtZ',OutDir,I_inds,n_b,False).reshape([1, q, q])
-            ZtX_i = readUniqueAtB('ZtX',OutDir,I_inds,n_b,False).reshape([1, q, p])
-            XtX_i = readUniqueAtB('XtX',OutDir,I_inds,n_b,False).reshape([1, p, p])    
+            ZtZ_i = readUniqueAtB('ZtZ',OutDir,I_inds,False).reshape([1, q, q])
+            ZtX_i = readUniqueAtB('ZtX',OutDir,I_inds,False).reshape([1, q, p])
+            XtX_i = readUniqueAtB('XtX',OutDir,I_inds,False).reshape([1, p, p])    
 
         # --------------------------------------------------------------------------------
         # Calculate betahat = (X'X)^(-1)X'Y and output beta maps
@@ -312,8 +296,43 @@ def main(ipath, vb):
 
     w.resetwarnings()
 
-# MARKER
-def readUniqueAtB(AtBstr, OutDir, vinds, n_b, sv):
+# ============================================================================
+#
+# For a specified set of voxels, the below function reads in the unique 
+# product matrices A'B, works out which voxel had which product matrix, and 
+# then returns the result.
+#
+# Note: This function is only designed for the product matrices; Z'X, Z'Z and
+# X'X.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `AtBstr`: A string representing which product matrix we are looking at. 
+#             i.e. "XtY" for X'Y, "ZtY" for Z'Y and "YtY" for Y'Y.
+# - `OutDir`: Output directory.
+# - `vinds`: Voxel indices; (flattened) indices representing which voxels we 
+#            are interested in looking at.
+# - `sv`: Spatial varying boolean value. This tells us if we expect the
+#         product matrix to vary across these voxels, or whether we expect it
+#         to be the same for all of them.
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `AtB`: The product matrix (flattened); If we had wanted X'X (which is 
+#          dimension p by p) for v voxels, the output would here would have 
+#          dimension (1 by p**2). If sv was True, we will have one matrix for
+#          each voxel. If sv was false we will have one matrix for all voxels.
+#
+# ============================================================================
+def readUniqueAtB(AtBstr, OutDir, vinds, sv):
 
     # Work out the uniqueness mask for the spatially varying designs
     uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
@@ -342,24 +361,24 @@ def readUniqueAtB(AtBstr, OutDir, vinds, n_b, sv):
         print('maxM: ', maxM)
 
     # Read in unique A'B
-    AtB_batch_unique = np.load(
+    AtB_unique = np.load(
         os.path.join(OutDir,"tmp",AtBstr+".npy"))
 
     # Initiate A'B to zeros if necessary
     if sv:
-        AtB = np.zeros((vcurrent, AtB_batch_unique.shape[1]))
+        AtB = np.zeros((vcurrent, AtB_unique.shape[1]))
 
     # Fill with unique maskings
     for m in range(1,maxM+1):
 
         if sv:
             # Work out Z'Z, Z'X and X'X for the ring
-            AtB[np.where(uniquenessMask==m),:] = AtB_batch_unique[(m-1),:]
+            AtB[np.where(uniquenessMask==m),:] = AtB_unique[(m-1),:]
 
         # Work out Z'Z, Z'X and X'X for the inner
         else:
             if uniquenessMask == m:
-                AtB = AtB_batch_unique[(m-1),:]
+                AtB = AtB_unique[(m-1),:]
 
     return(AtB)
 

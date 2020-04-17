@@ -533,13 +533,31 @@ def obtainY(Y_files, M_files, M_t, M_a):
 
     return Y, n_sv, M, Mmap
 
-# Memory safe A'B
-# MARKER
-# Special care must be taken with X'Y and Z'Y
-def memorySafeAtB(A,B,MAXMEM,filename):
 
-    print(A.shape) # currently [n,q], assume [1,n,q]
-    print(B.shape) # Currently [n,v], assume [v,n,1]
+# ============================================================================
+#
+# Given two 3D numpy arrays, A and B, of shape (1, k1, k2) and (v, k1, k3)
+# respectively, the below function calculates the (v, k2, k3) matrix A'B
+# and outputs it to a file in a "memory safe" way, ensuring that the 
+# (v, k2, k3) matrix is calculated and output in managable chunks, one at a
+# time.
+#
+# This function is designed with the use case of the product matrices X'Y and
+# Z'Y in mind.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `A`: The (1, k1, k2) shaped matrix.
+# - `B`: The (v, k1, k3) shaped matrix.
+# - `MAXMEM`: The maximum memory allowed for usage, in bytes.
+# - `filename`: The name of the file.
+#
+# ============================================================================
+def memorySafeAtB(A,B,MAXMEM,filename):
 
     v = B.shape[0]
     pORq = A.shape[2]
@@ -559,8 +577,6 @@ def memorySafeAtB(A,B,MAXMEM,filename):
     for vb in range(int(v//vPerBlock+1)):
         M[voxelGroups[vb],:]=(A.transpose(0,2,1) @ B[voxelGroups[vb],:,:]).reshape(len(voxelGroups[vb]),pORq)
         
-    print(v//vPerBlock+1)
-
     del M
 
 

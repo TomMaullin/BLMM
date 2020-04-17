@@ -2131,12 +2131,32 @@ def get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nraneffs, ZtZ):
     # Return result
     return(FisherInfoMat)
 
-# MARKER
+
 # ============================================================================
-# Inputs:
-# - `am`: Analysis mask as a 3d volume
-# - `vb`: The number of the voxel block of interest (less than 0 return all inds)
-# - `nvb`: The number of voxel blocks in total
+#
+# The below function takes in an analysis mask and either; returns the mask in
+# flattened form, or, given a specified block number, vb, and number of blocks,
+# returns a mask, in flattened form, containing only the indices of the vb^th
+# block of voxels.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `am`: The analysis mask as a 3d volume.
+# - `vb`: The number of the voxel block of interest (less than 0 return all
+#         indices)
+# - `nvb`: The number of voxel blocks in total.
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `amInds`: The indices for the mask.
 #
 # ============================================================================
 def get_amInds(am, vb=None, nvb=None):
@@ -2156,8 +2176,30 @@ def get_amInds(am, vb=None, nvb=None):
 
   return(amInds)
 
-# MARKER
-# The number of voxel blocks we have to split the data into
+
+# ============================================================================
+#
+# The below function computes the  number of voxel blocks we have to split the
+# data into, due to memory constraints.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `inputs`: The inputs dictionary read from a blmm inputs cfg file.
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `nvb`: The number of voxel blocks we have to split the data into in order
+#          to compute the design.
+#
+# ============================================================================
 def numVoxelBlocks(inputs):
 
   # ----------------------------------------------------------------
@@ -2221,9 +2263,30 @@ def numVoxelBlocks(inputs):
   # Return number of voxel blocks
   return(nvb)
 
-# MARKER
-# The number of voxel blocks we have are able to split the data into 
-# for parallel computation.
+
+# ============================================================================
+#
+# The below function computes the  number of voxel blocks we are able to split
+# the data into for parallel computation.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `inputs`: The inputs dictionary read from a blmm inputs cfg file.
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `nvb`: The number of voxel blocks we can split the data into for parallel
+#          computation.
+#
+# ============================================================================
 def pracNumVoxelBlocks(inputs):
 
   # Check if maximum number of voxel blocks specified,

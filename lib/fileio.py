@@ -287,8 +287,31 @@ def addBlockToNifti(fname, block, blockInds,dim=None,volInd=None,aff=None,hdr=No
 
     del nifti, fname, data_out, affine
 
-# MARKER
-# Read in only certain parts of numpy file
+
+# ============================================================================
+#
+# The below function reads in a numpy file as a memory map and returns the 
+# specified lines from the file. The benefit of this is that the entire file
+# is not read into memory and we retrieve only the parts of the file we need.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `filename`: The name of the file.
+# - `lines`: Indices of the lines we wish to retrieve from the file.
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `data_lines`: The lines from the file we wanted to retrieve.  
+#
+# ============================================================================
 def readLinesFromNPY(filename, lines):
 
     # Load in the file but in memory map mode
