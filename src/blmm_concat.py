@@ -318,10 +318,13 @@ def main(ipath):
     # Number of voxels in mask
     v_m = np.prod(amInds.shape)
 
-    # Ring X'Y, Y'Y, Z'Y
-    XtY = readAndSumAtB('XtY',OutDir,np.arange(v_m),n_b).reshape([v_m, p])
-    YtY = readAndSumAtB('YtY',OutDir,np.arange(v_m),n_b).reshape([v_m, 1])
-    ZtY = readAndSumAtB('ZtY',OutDir,np.arange(v_m),n_b).reshape([v_m, q])
+    # # Ring X'Y, Y'Y, Z'Y
+    # XtY = readAndSumAtB('XtY',OutDir,np.arange(v_m),n_b).reshape([v_m, p])
+    # YtY = readAndSumAtB('YtY',OutDir,np.arange(v_m),n_b).reshape([v_m, 1])
+    # ZtY = readAndSumAtB('ZtY',OutDir,np.arange(v_m),n_b).reshape([v_m, q])
+    memorySafeReadAndSumAtB('XtY', OutDir, n_b, np.array([v_m, p]), MAXMEM)
+    memorySafeReadAndSumAtB('YtY', OutDir, n_b, np.array([v_m, 1]), MAXMEM)
+    memorySafeReadAndSumAtB('ZtY', OutDir, n_b, np.array([v_m, q]), MAXMEM)
 
     # Remove X'Y, Y'Y and Z'Y files here
     for batchNo in range(1,(n_b+1)):
@@ -329,10 +332,10 @@ def main(ipath):
         os.remove(os.path.join(OutDir, "tmp","YtY" + str(batchNo) + ".npy"))
         os.remove(os.path.join(OutDir, "tmp","ZtY" + str(batchNo) + ".npy"))
 
-    # Save new X'Y, Y'Y and Z'Y files here
-    np.save(os.path.join(OutDir,"tmp","YtY"), YtY)
-    np.save(os.path.join(OutDir,"tmp","XtY"), XtY) 
-    np.save(os.path.join(OutDir,"tmp","ZtY"), ZtY) 
+    # # Save new X'Y, Y'Y and Z'Y files here
+    # np.save(os.path.join(OutDir,"tmp","YtY"), YtY)
+    # np.save(os.path.join(OutDir,"tmp","XtY"), XtY) 
+    # np.save(os.path.join(OutDir,"tmp","ZtY"), ZtY) 
 
     # Ring Z'Z. Z'X, X'X
     if v_r:
@@ -441,13 +444,13 @@ def main(ipath):
 #          would have dimension (v by p).
 #
 # ============================================================================
-def readAndSumAtB(AtBstr, OutDir, vinds,n_b):
+def readAndSumAtB(AtBstr, OutDir, vinds, nb):
 
     # Read in first A'B
     AtB = readLinesFromNPY(os.path.join(OutDir,"tmp",AtBstr + '1.npy'), vinds)
 
     # Cycle through batches and add together results.
-    for batchNo in range(2,(n_b+1)):
+    for batchNo in range(2,(nb+1)):
 
         # Sum A'B
         AtB = AtB + readLinesFromNPY(os.path.join(OutDir,"tmp",AtBstr + str(batchNo) + ".npy"), vinds)
@@ -455,6 +458,48 @@ def readAndSumAtB(AtBstr, OutDir, vinds,n_b):
     # Return A'B
     return(AtB)
 
+# ============================================================================
+#
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# ============================================================================
+def memorySafeReadAndSumAtB(AtBstr, OutDir, nb, dimAtB, MAXMEM):
+
+    # Work out the filename for the output
+    filename = os.path.join(OutDir,"tmp",AtBstr)
+
+    # Work out total number of voxels
+    v = dimAtB[0]
+
+    # Work out p/q
+    pORq = dimAtB[1]
+
+    # Create a memory-mapped .npy file with the dimensions and dtype we want
+    M = open_memmap(filename, mode='w+', dtype='float64', shape=dimAtB)
+        
+    # Work out the number of voxels we can save at a time.
+    # (8 bytes per numpy float exponent multiplied by 5
+    # for a safe overhead)
+    vPerBlock = MAXMEM/(5*8*pORq)
+
+    # Work out the indices for each group of voxels
+    voxelGroups = np.array_split(np.arange(v, dtype='int32'), v//vPerBlock+1)
+    
+    # Loop through each group of voxels saving A'B for those voxels
+    for vb in range(int(v//vPerBlock+1)):
+        M[voxelGroups[vb],:]=readAndSumAtB(AtBstr, OutDir, voxelGroups[vb], nb)
+        
+    # Delete M from memory (important!)
+    del M
+
+
+if __name__ == "__main__":
+    main()
 
 # ============================================================================
 #
