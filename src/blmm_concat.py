@@ -327,81 +327,10 @@ def main(ipath):
         os.remove(os.path.join(OutDir, "tmp","YtY" + str(batchNo) + ".npy"))
         os.remove(os.path.join(OutDir, "tmp","ZtY" + str(batchNo) + ".npy"))
 
-    # # Save new X'Y, Y'Y and Z'Y files here
-    # np.save(os.path.join(OutDir,"tmp","YtY"), YtY)
-    # np.save(os.path.join(OutDir,"tmp","XtY"), XtY) 
-    # np.save(os.path.join(OutDir,"tmp","ZtY"), ZtY) 
-
-    # Ring Z'Z. Z'X, X'X
-    if v_r:
-
-        ZtZ_r = readAndSumUniqueAtB('ZtZ',OutDir,R_inds,n_b,True)
-        ZtX_r = readAndSumUniqueAtB('ZtX',OutDir,R_inds,n_b,True)
-        XtX_r = readAndSumUniqueAtB('XtX',OutDir,R_inds,n_b,True)
-
-        # Then work out new unique X'X, Z'X, Z'Z indices 
-        # Note: finding the unique elements may change the order
-        # so extra care must be taken here with indexing
-        _, idx = np.unique(np.concatenate((ZtZ_r,ZtX_r,XtX_r),axis=1), axis=0, return_index=True)
-
-        XtX_ru = XtX_r[np.sort(idx),:]
-        ZtZ_ru = ZtZ_r[np.sort(idx),:]
-        ZtX_ru = ZtX_r[np.sort(idx),:]
-
-        # Work out the uniqueness indices for the ring (the key by which
-        # we recover X'X, X'Z, Z'Z etc). Note: Due to the preserving of
-        # order above, these indices should be the same for X'X, Z'X and 
-        # Z'Z, so we need only compute them once.
-        df_r = pd.DataFrame(np.concatenate((ZtZ_r,ZtX_r,XtX_r),axis=1))
-        df_r['id'] = df_r.groupby(df_r.columns.tolist(), sort=False).ngroup() + 1
-        unique_id_r = df_r['id'].values
-
-    
-    if v_i:
-            
-        # Inner Z'Z. Z'X, X'X
-        ZtZ_i = readAndSumUniqueAtB('ZtZ',OutDir,I_inds,n_b,False).reshape([1, q**2])
-        ZtX_i = readAndSumUniqueAtB('ZtX',OutDir,I_inds,n_b,False).reshape([1, q*p])
-        XtX_i = readAndSumUniqueAtB('XtX',OutDir,I_inds,n_b,False).reshape([1, p**2])
-
-        # Add to the list of unique designs
-        ZtZ_u = np.concatenate((ZtZ_ru, ZtZ_i), axis=0)
-        XtX_u = np.concatenate((XtX_ru, XtX_i), axis=0)
-        ZtX_u = np.concatenate((ZtX_ru, ZtX_i), axis=0)
-
-        # The unique id for the inner will be the next available value
-        unique_id_i = np.max(unique_id_r)+1
-
-    # Unmask uniqueness map
-    uMap = np.zeros([v])
-    uMap[R_inds] = unique_id_r 
-    uMap[I_inds] = unique_id_i
-
-    uMap = uMap.reshape(int(NIFTIsize[0]),
-                        int(NIFTIsize[1]),
-                        int(NIFTIsize[2]))
-
-    # Save beta map.
-    uMap = nib.Nifti1Image(uMap,
-                           nifti.affine,
-                           header=nifti.header) 
-    nib.save(uMap, os.path.join(OutDir,"tmp","blmm_vox_uniqueM.nii"))
-
     # Save unique designs
     np.save(os.path.join(OutDir,"tmp","XtX"),XtX_u)
     np.save(os.path.join(OutDir,"tmp","ZtX"),ZtX_u) 
-    np.save(os.path.join(OutDir,"tmp","ZtZ"),ZtZ_u) 
-
-
-    # Remove Z'X, Z'Z, X'X, n and uniqueness M files here
-    for batchNo in range(1,(n_b+1)):
-        os.remove(os.path.join(OutDir, "tmp","XtX" + str(batchNo) + ".npy"))
-        os.remove(os.path.join(OutDir, "tmp","ZtZ" + str(batchNo) + ".npy"))
-        os.remove(os.path.join(OutDir, "tmp","ZtX" + str(batchNo) + ".npy"))
-        os.remove(os.path.join(OutDir,"tmp","blmm_vox_uniqueM_batch" + str(batchNo) + ".nii"))
-
-
-    del uMap, ZtZ_u, XtX_u, ZtX_u
+    np.save(os.path.join(OutDir,"tmp","ZtZ"),ZtZ_u)
 
     w.resetwarnings()
 
@@ -496,125 +425,125 @@ def memorySafeReadAndSumAtB(AtBstr, OutDir, nb, dimAtB, MAXMEM):
 if __name__ == "__main__":
     main()
 
-# ============================================================================
-#
-# For a specified set of voxels, the below function reads in the unique 
-# product matrices A'B from each batch job, works out which voxel had which 
-# product matrix, sums the batch product matrices and returns the sum, i.e. 
-# the product matrix for the entire analysis, at each voxel.
-#
-# Note: This function is only designed for the product matrices; Z'X, Z'Z and
-# X'X.
-#
-# ----------------------------------------------------------------------------
-#
-# This function takes in the following inputs:
-#
-# ----------------------------------------------------------------------------
-#
-# - `AtBstr`: A string representing which product matrix we are looking at. 
-#             i.e. "XtY" for X'Y, "ZtY" for Z'Y and "YtY" for Y'Y.
-# - `OutDir`: Output directory.
-# - `vinds`: Voxel indices; (flattened) indices representing which voxels we 
-#            are interested in looking at.
-# - `n_b`: The number of batches run during the batch stage.
-# - `sv`: Spatial varying boolean value. This tells us if we expect the
-#         product matrix to vary across these voxels, or whether we expect it
-#         to be the same for all of them.
-#
-# ----------------------------------------------------------------------------
-#
-# And gives the following output:
-#
-# ----------------------------------------------------------------------------
-#
-# - `AtB`: The product matrix (flattened); If we had wanted X'X (which is 
-#          dimension p by p) for v voxels, the output would here would have 
-#          dimension (1 by p**2). If sv was True, we will have one matrix for
-#          each voxel. If sv was false we will have one matrix for all voxels.
-#
-# ============================================================================
-def readAndSumUniqueAtB(AtBstr, OutDir, vinds, n_b, sv):
+# # ============================================================================
+# #
+# # For a specified set of voxels, the below function reads in the unique 
+# # product matrices A'B from each batch job, works out which voxel had which 
+# # product matrix, sums the batch product matrices and returns the sum, i.e. 
+# # the product matrix for the entire analysis, at each voxel.
+# #
+# # Note: This function is only designed for the product matrices; Z'X, Z'Z and
+# # X'X.
+# #
+# # ----------------------------------------------------------------------------
+# #
+# # This function takes in the following inputs:
+# #
+# # ----------------------------------------------------------------------------
+# #
+# # - `AtBstr`: A string representing which product matrix we are looking at. 
+# #             i.e. "XtY" for X'Y, "ZtY" for Z'Y and "YtY" for Y'Y.
+# # - `OutDir`: Output directory.
+# # - `vinds`: Voxel indices; (flattened) indices representing which voxels we 
+# #            are interested in looking at.
+# # - `n_b`: The number of batches run during the batch stage.
+# # - `sv`: Spatial varying boolean value. This tells us if we expect the
+# #         product matrix to vary across these voxels, or whether we expect it
+# #         to be the same for all of them.
+# #
+# # ----------------------------------------------------------------------------
+# #
+# # And gives the following output:
+# #
+# # ----------------------------------------------------------------------------
+# #
+# # - `AtB`: The product matrix (flattened); If we had wanted X'X (which is 
+# #          dimension p by p) for v voxels, the output would here would have 
+# #          dimension (1 by p**2). If sv was True, we will have one matrix for
+# #          each voxel. If sv was false we will have one matrix for all voxels.
+# #
+# # ============================================================================
+# def readAndSumUniqueAtB(AtBstr, OutDir, vinds, n_b, sv):
 
-    # Work out the uniqueness mask for the spatially varying designs
-    uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
-        "blmm_vox_uniqueM_batch1.nii")).get_data()
+#     # Work out the uniqueness mask for the spatially varying designs
+#     uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
+#         "blmm_vox_uniqueM_batch1.nii")).get_data()
 
-    v = np.prod(uniquenessMask.shape)
-    vcurrent = np.prod(vinds.shape)
+#     v = np.prod(uniquenessMask.shape)
+#     vcurrent = np.prod(vinds.shape)
 
-    uniquenessMask=uniquenessMask.reshape(v)
+#     uniquenessMask=uniquenessMask.reshape(v)
 
-    # Work out how many unique matrices there were
-    maxM = np.int32(np.amax(uniquenessMask))
+#     # Work out how many unique matrices there were
+#     maxM = np.int32(np.amax(uniquenessMask))
 
-    if sv:
-        # Work out the uniqueness mask inside the ring around the brain
-        uniquenessMask = uniquenessMask[vinds]
-    else:
-        # Work out the uniqueness mask value inside the inner part of the brain
-        uniquenessMask = uniquenessMask[vinds[0]] 
+#     if sv:
+#         # Work out the uniqueness mask inside the ring around the brain
+#         uniquenessMask = uniquenessMask[vinds]
+#     else:
+#         # Work out the uniqueness mask value inside the inner part of the brain
+#         uniquenessMask = uniquenessMask[vinds[0]] 
 
-    # read in XtX
-    AtB_batch_unique = np.load(
-        os.path.join(OutDir,"tmp",AtBstr+"1.npy"))
+#     # read in XtX
+#     AtB_batch_unique = np.load(
+#         os.path.join(OutDir,"tmp",AtBstr+"1.npy"))
 
-    # Make zeros for outer ring of brain ZtZ, XtX, ZtX etc (remember A'B is still flattened)
-    if sv:
-        AtB = np.zeros((vcurrent, AtB_batch_unique.shape[1]))
+#     # Make zeros for outer ring of brain ZtZ, XtX, ZtX etc (remember A'B is still flattened)
+#     if sv:
+#         AtB = np.zeros((vcurrent, AtB_batch_unique.shape[1]))
 
-    # Fill with unique maskings
-    for m in range(1,maxM+1):
+#     # Fill with unique maskings
+#     for m in range(1,maxM+1):
 
-        if sv:
-            # Work out Z'Z, Z'X and X'X for the ring
-            AtB[np.where(uniquenessMask==m),:] = AtB_batch_unique[(m-1),:]
+#         if sv:
+#             # Work out Z'Z, Z'X and X'X for the ring
+#             AtB[np.where(uniquenessMask==m),:] = AtB_batch_unique[(m-1),:]
 
-        # Work out Z'Z, Z'X and X'X for the inner
-        else:
-            if uniquenessMask == m:
-                AtB = AtB_batch_unique[(m-1),:]
+#         # Work out Z'Z, Z'X and X'X for the inner
+#         else:
+#             if uniquenessMask == m:
+#                 AtB = AtB_batch_unique[(m-1),:]
 
-    # Cycle through batches and add together results.
-    for batchNo in range(2,(n_b+1)):
+#     # Cycle through batches and add together results.
+#     for batchNo in range(2,(n_b+1)):
 
-        # Read in uniqueness Mask file
-        uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
-            "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii")).get_data().reshape(v)
+#         # Read in uniqueness Mask file
+#         uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
+#             "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii")).get_data().reshape(v)
 
-        maxM = np.int32(np.amax(uniquenessMask))
+#         maxM = np.int32(np.amax(uniquenessMask))
 
-        if sv:
-            # Work out the uniqueness mask inside the ring around the brain
-            uniquenessMask = uniquenessMask[vinds] 
-        else:
-            # Work out the uniqueness mask value inside the inner part of the brain
-            uniquenessMask = uniquenessMask[vinds[0]] 
+#         if sv:
+#             # Work out the uniqueness mask inside the ring around the brain
+#             uniquenessMask = uniquenessMask[vinds] 
+#         else:
+#             # Work out the uniqueness mask value inside the inner part of the brain
+#             uniquenessMask = uniquenessMask[vinds[0]] 
 
 
-        # read in XtX, ZtX, ZtZ
-        AtB_batch_unique = np.load(
-            os.path.join(OutDir,"tmp",AtBstr + str(batchNo) + ".npy"))
+#         # read in XtX, ZtX, ZtZ
+#         AtB_batch_unique = np.load(
+#             os.path.join(OutDir,"tmp",AtBstr + str(batchNo) + ".npy"))
 
-        # Make zeros for whole nifti ZtZ, XtX, ZtX etc
-        if sv:
-            AtB_batch = np.zeros((vcurrent, AtB_batch_unique.shape[1]))
+#         # Make zeros for whole nifti ZtZ, XtX, ZtX etc
+#         if sv:
+#             AtB_batch = np.zeros((vcurrent, AtB_batch_unique.shape[1]))
 
-        # Fill with unique maskings
-        for m in range(1,maxM+1):
+#         # Fill with unique maskings
+#         for m in range(1,maxM+1):
 
-            if sv:
-                AtB_batch[np.where(uniquenessMask==m),:] = AtB_batch_unique[(m-1),:]
-            else:
-                # Work out Z'Z, Z'X and X'X for the inner
-                if uniquenessMask == m:
+#             if sv:
+#                 AtB_batch[np.where(uniquenessMask==m),:] = AtB_batch_unique[(m-1),:]
+#             else:
+#                 # Work out Z'Z, Z'X and X'X for the inner
+#                 if uniquenessMask == m:
 
-                    AtB_batch = AtB_batch_unique[(m-1),:]
+#                     AtB_batch = AtB_batch_unique[(m-1),:]
 
-        # Add to running total
-        AtB = AtB + AtB_batch
+#         # Add to running total
+#         AtB = AtB + AtB_batch
 
-    return(AtB)
+#     return(AtB)
 
 if __name__ == "__main__":
     main()
