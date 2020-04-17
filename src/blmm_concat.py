@@ -314,9 +314,6 @@ def main(ipath):
     v_m = np.prod(amInds.shape)
 
     # # Ring X'Y, Y'Y, Z'Y
-    # XtY = readAndSumAtB('XtY',OutDir,np.arange(v_m),n_b).reshape([v_m, p])
-    # YtY = readAndSumAtB('YtY',OutDir,np.arange(v_m),n_b).reshape([v_m, 1])
-    # ZtY = readAndSumAtB('ZtY',OutDir,np.arange(v_m),n_b).reshape([v_m, q])
     memorySafeReadAndSumAtB('XtY', OutDir, n_b, np.array([v_m, p]), MAXMEM)
     memorySafeReadAndSumAtB('YtY', OutDir, n_b, np.array([v_m, 1]), MAXMEM)
     memorySafeReadAndSumAtB('ZtY', OutDir, n_b, np.array([v_m, q]), MAXMEM)
@@ -426,126 +423,6 @@ def memorySafeReadAndSumAtB(AtBstr, OutDir, nb, dimAtB, MAXMEM):
         
     # Delete M from memory (important!)
     del M
-
-# # ============================================================================
-# #
-# # For a specified set of voxels, the below function reads in the unique 
-# # product matrices A'B from each batch job, works out which voxel had which 
-# # product matrix, sums the batch product matrices and returns the sum, i.e. 
-# # the product matrix for the entire analysis, at each voxel.
-# #
-# # Note: This function is only designed for the product matrices; Z'X, Z'Z and
-# # X'X.
-# #
-# # ----------------------------------------------------------------------------
-# #
-# # This function takes in the following inputs:
-# #
-# # ----------------------------------------------------------------------------
-# #
-# # - `AtBstr`: A string representing which product matrix we are looking at. 
-# #             i.e. "XtY" for X'Y, "ZtY" for Z'Y and "YtY" for Y'Y.
-# # - `OutDir`: Output directory.
-# # - `vinds`: Voxel indices; (flattened) indices representing which voxels we 
-# #            are interested in looking at.
-# # - `n_b`: The number of batches run during the batch stage.
-# # - `sv`: Spatial varying boolean value. This tells us if we expect the
-# #         product matrix to vary across these voxels, or whether we expect it
-# #         to be the same for all of them.
-# #
-# # ----------------------------------------------------------------------------
-# #
-# # And gives the following output:
-# #
-# # ----------------------------------------------------------------------------
-# #
-# # - `AtB`: The product matrix (flattened); If we had wanted X'X (which is 
-# #          dimension p by p) for v voxels, the output would here would have 
-# #          dimension (1 by p**2). If sv was True, we will have one matrix for
-# #          each voxel. If sv was false we will have one matrix for all voxels.
-# #
-# # ============================================================================
-# def readAndSumUniqueAtB(AtBstr, OutDir, vinds, n_b, sv):
-
-#     # Work out the uniqueness mask for the spatially varying designs
-#     uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
-#         "blmm_vox_uniqueM_batch1.nii")).get_data()
-
-#     v = np.prod(uniquenessMask.shape)
-#     vcurrent = np.prod(vinds.shape)
-
-#     uniquenessMask=uniquenessMask.reshape(v)
-
-#     # Work out how many unique matrices there were
-#     maxM = np.int32(np.amax(uniquenessMask))
-
-#     if sv:
-#         # Work out the uniqueness mask inside the ring around the brain
-#         uniquenessMask = uniquenessMask[vinds]
-#     else:
-#         # Work out the uniqueness mask value inside the inner part of the brain
-#         uniquenessMask = uniquenessMask[vinds[0]] 
-
-#     # read in XtX
-#     AtB_batch_unique = np.load(
-#         os.path.join(OutDir,"tmp",AtBstr+"1.npy"))
-
-#     # Make zeros for outer ring of brain ZtZ, XtX, ZtX etc (remember A'B is still flattened)
-#     if sv:
-#         AtB = np.zeros((vcurrent, AtB_batch_unique.shape[1]))
-
-#     # Fill with unique maskings
-#     for m in range(1,maxM+1):
-
-#         if sv:
-#             # Work out Z'Z, Z'X and X'X for the ring
-#             AtB[np.where(uniquenessMask==m),:] = AtB_batch_unique[(m-1),:]
-
-#         # Work out Z'Z, Z'X and X'X for the inner
-#         else:
-#             if uniquenessMask == m:
-#                 AtB = AtB_batch_unique[(m-1),:]
-
-#     # Cycle through batches and add together results.
-#     for batchNo in range(2,(n_b+1)):
-
-#         # Read in uniqueness Mask file
-#         uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
-#             "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii")).get_data().reshape(v)
-
-#         maxM = np.int32(np.amax(uniquenessMask))
-
-#         if sv:
-#             # Work out the uniqueness mask inside the ring around the brain
-#             uniquenessMask = uniquenessMask[vinds] 
-#         else:
-#             # Work out the uniqueness mask value inside the inner part of the brain
-#             uniquenessMask = uniquenessMask[vinds[0]] 
-
-
-#         # read in XtX, ZtX, ZtZ
-#         AtB_batch_unique = np.load(
-#             os.path.join(OutDir,"tmp",AtBstr + str(batchNo) + ".npy"))
-
-#         # Make zeros for whole nifti ZtZ, XtX, ZtX etc
-#         if sv:
-#             AtB_batch = np.zeros((vcurrent, AtB_batch_unique.shape[1]))
-
-#         # Fill with unique maskings
-#         for m in range(1,maxM+1):
-
-#             if sv:
-#                 AtB_batch[np.where(uniquenessMask==m),:] = AtB_batch_unique[(m-1),:]
-#             else:
-#                 # Work out Z'Z, Z'X and X'X for the inner
-#                 if uniquenessMask == m:
-
-#                     AtB_batch = AtB_batch_unique[(m-1),:]
-
-#         # Add to running total
-#         AtB = AtB + AtB_batch
-
-#     return(AtB)
 
 if __name__ == "__main__":
     main()

@@ -76,14 +76,14 @@ def main(ipath, vb):
     else:
         MAXMEM = 2**32
 
-    # Work out number of batchs
-    with open(os.path.join(OutDir,'nb.txt')) as f:
-        n_b = int(f.readline())
-    
     # --------------------------------------------------------------------------------
     # Read basic inputs
     # --------------------------------------------------------------------------------
     OutDir = inputs['outdir']
+
+    # Work out number of batchs
+    with open(os.path.join(OutDir,'nb.txt')) as f:
+        n_b = int(f.readline())
 
     # Random factor variables.
     rfxmats = inputs['Z']
@@ -293,11 +293,13 @@ def main(ipath, vb):
 
     w.resetwarnings()
 
+
 # ============================================================================
 #
 # For a specified set of voxels, the below function reads in the unique 
-# product matrices A'B, works out which voxel had which product matrix, and 
-# then returns the result.
+# product matrices A'B from each batch job, works out which voxel had which 
+# product matrix, sums the batch product matrices and returns the sum, i.e. 
+# the product matrix for the entire analysis, at each voxel.
 #
 # Note: This function is only designed for the product matrices; Z'X, Z'Z and
 # X'X.
@@ -313,6 +315,7 @@ def main(ipath, vb):
 # - `OutDir`: Output directory.
 # - `vinds`: Voxel indices; (flattened) indices representing which voxels we 
 #            are interested in looking at.
+# - `n_b`: The number of batches run during the batch stage.
 # - `sv`: Spatial varying boolean value. This tells us if we expect the
 #         product matrix to vary across these voxels, or whether we expect it
 #         to be the same for all of them.
