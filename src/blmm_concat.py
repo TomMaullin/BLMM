@@ -466,7 +466,7 @@ def readAndSumAtB(AtBstr, OutDir, vinds, nb):
 def memorySafeReadAndSumAtB(AtBstr, OutDir, nb, dimAtB, MAXMEM):
 
     # Work out the filename for the output
-    filename = os.path.join(OutDir,"tmp",AtBstr)
+    filename = os.path.join(OutDir,"tmp",AtBstr + '.npy')
 
     # Work out total number of voxels
     v = dimAtB[0]
