@@ -341,8 +341,6 @@ def main(ipath):
         ZtX_r = readAndSumUniqueAtB('ZtX',OutDir,R_inds,n_b,True)
         XtX_r = readAndSumUniqueAtB('XtX',OutDir,R_inds,n_b,True)
 
-        print(ZtZ_r.shape)
-
         # Then work out new unique X'X, Z'X, Z'Z indices 
         # Note: finding the unique elements may change the order
         # so extra care must be taken here with indexing
@@ -351,12 +349,6 @@ def main(ipath):
         XtX_ru = XtX_r[np.sort(idx),:]
         ZtZ_ru = ZtZ_r[np.sort(idx),:]
         ZtX_ru = ZtX_r[np.sort(idx),:]
-
-        print(ZtX_r.shape)
-        print(ZtX_ru.shape)
-
-        print(XtX_r.shape)
-        print(XtX_ru.shape)
 
         # Work out the uniqueness indices for the ring (the key by which
         # we recover X'X, X'Z, Z'Z etc). Note: Due to the preserving of
@@ -522,7 +514,6 @@ def readAndSumUniqueAtB(AtBstr, OutDir, vinds, n_b, sv):
     else:
         # Work out the uniqueness mask value inside the inner part of the brain
         uniquenessMask = uniquenessMask[vinds[0]] 
-
 
     # read in XtX
     AtB_batch_unique = np.load(

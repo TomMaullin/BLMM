@@ -106,7 +106,7 @@ fi
 
   
 # Voxel batching is not turned on
-fsl_sub -j $batchIDs -l log/ -N concat bash $BLMM_PATH/scripts/cluster_blmm_concat.sh $inputs "-1" > /tmp/$$ && concatID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
+fsl_sub -j $batchIDs -l log/ -N concat bash $BLMM_PATH/scripts/cluster_blmm_concat.sh $inputs > /tmp/$$ && concatID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
 if [ "$concatID" == "" ] ; then
   echo "Concatenation job submission failed!"
 fi

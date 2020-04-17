@@ -109,7 +109,7 @@ def main(ipath, vb):
     # Get number of unique random effects
     q_u = np.sum(nraneffs*(nraneffs+1)//2)
     
-    # Get number of parameters
+    # Get number of fixed effects parameters
     L1 = str2vec(inputs['contrasts'][0]['c' + str(1)]['vector'])
     L1 = np.array(L1)
     p = L1.shape[0]
