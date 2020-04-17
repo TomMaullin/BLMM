@@ -271,8 +271,6 @@ def main(ipath, vb):
             # Run parameter estimation
             beta_r, sigma2_r, D_r = blmm_estimate.main(inputs, R_inds, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r, n_sv_r, nlevels, nraneffs)
 
-            print('sigma2 (r mode) shape: ', sigma2_r.shape)
-
             # Run inference
             blmm_inference.main(inputs, nraneffs, nlevels, R_inds, beta_r, D_r, sigma2_r, n_sv_r, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r)       
             
@@ -282,11 +280,6 @@ def main(ipath, vb):
             YtX_i = XtY_i.transpose(0,2,1)
             YtZ_i = ZtY_i.transpose(0,2,1) 
             XtZ_i = ZtX_i.transpose(0,2,1)
-
-            print('prod mat check')
-            print(XtX_i)
-            print(ZtX_i)
-            print(ZtZ_i)
 
             # Run parameter estimation
             beta_i, sigma2_i, D_i = blmm_estimate.main(inputs, I_inds,  XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i, n, nlevels, nraneffs)
@@ -357,8 +350,6 @@ def readUniqueAtB(AtBstr, OutDir, vinds, sv):
     else:
         # Work out the uniqueness mask value inside the inner part of the brain
         uniquenessMask = uniquenessMask[vinds[0]] 
-        print('unique indicator: ', uniquenessMask)
-        print('maxM: ', maxM)
 
     # Read in unique A'B
     AtB_unique = np.load(
