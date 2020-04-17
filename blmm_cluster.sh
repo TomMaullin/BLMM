@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "Setting up distributed analysis..."
+
 # -----------------------------------------------------------------------
 # Work out BLMM path
 # -----------------------------------------------------------------------
@@ -51,8 +53,9 @@ cp $cfg $inputs
 fsl_sub -l log/ -N setup bash $BLMM_PATH/scripts/cluster_blmm_setup.sh $inputs > /tmp/$$ && setupID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
 if [ "$setupID" == "" ] ; then
   echo "Setup job submission failed!"
+else
+  echo "Submitted: Setup job."
 fi
-echo "Setting up distributed analysis..."
 
 # This loop waits for the setup job to finish before
 # deciding how many batches to run. It also checks to 
@@ -91,7 +94,6 @@ inputs=$config_outdir/inputs.yml
 # -----------------------------------------------------------------------
 # Submit Batch jobs
 # -----------------------------------------------------------------------
-echo "Submitting batch jobs."
 i=1
 while [ "$i" -le "$nb" ]; do
 
@@ -101,6 +103,8 @@ while [ "$i" -le "$nb" ]; do
 done
 if [ "$batchIDs" == "" ] ; then
   echo "Batch jobs submission failed!"
+else
+  echo "Submitted: Batch jobs."
 fi
 
 # -----------------------------------------------------------------------
@@ -109,8 +113,9 @@ fi
 fsl_sub -j $batchIDs -l log/ -N concat bash $BLMM_PATH/scripts/cluster_blmm_concat.sh $inputs > /tmp/$$ && concatID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
 if [ "$concatID" == "" ] ; then
   echo "Concatenation job submission failed!"
+else
+  echo "Submitted: Concatenation job."
 fi
-echo "Submitting concatenation job."
 
 # -----------------------------------------------------------------------
 # Submit Results jobs
@@ -122,8 +127,9 @@ if [ -z $config_voxelBatching ] || [ "$config_voxelBatching" == "0" ] ; then
   fsl_sub -j $concatID -l log/ -N results bash $BLMM_PATH/scripts/cluster_blmm_results.sh $inputs "-1" > /tmp/$$ && resultsIDs=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
   if [ "$resultsIDs" == "" ] ; then
     echo "Results job submission failed!"
+  else
+    echo "Submitted: Results job."
   fi
-  echo "Submitting results job."
 
 else
 
@@ -137,16 +143,17 @@ else
     fsl_sub -j $concatID -l log/ -N results$i bash $BLMM_PATH/scripts/cluster_blmm_results.sh $inputs $i > /tmp/$$ && resultsIDs=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$resultsIDs
     i=$(($i + 1))
   done
-  echo "Submitting results jobs (in Voxel Block mode)."
+  echo "Submitted: Results jobs (in Voxel Batch mode)."
 
 fi
 
 # -----------------------------------------------------------------------
 # Submit Cleanup job
 # -----------------------------------------------------------------------
-echo "Submitting cleanup job."
-echo "Analysis submission complete. Please use qstat to monitor progress."
 fsl_sub -j $resultsIDs -l log/ -N cleanup bash $BLMM_PATH/scripts/cluster_blmm_cleanup.sh $inputs > /tmp/$$ && cleanupID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
 if [ "$cleanupID" == "" ] ; then
   echo "Clean up job submission failed!"
+else
+  echo "Submitted: Cleanup job."
 fi
+echo "Analysis submission complete. Please use qstat to monitor progress."
