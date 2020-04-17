@@ -1516,8 +1516,6 @@ def get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2):
     # Work out var(LB) = L'(X'V^{-1}X)^{-1}L
     covB = np.linalg.inv(XtinvVX)
 
-    print('covB shape: ', covB.shape)
-
     # Calculate sigma^2(X'V^{-1}X)^(-1)
     covB = np.einsum('i,ijk->ijk',sigma2,covB)
 

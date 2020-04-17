@@ -142,8 +142,6 @@ def main(inputs, nraneffs, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX
         # Dimensoon of cov(beta) NIFTI
         dimCov = (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],p**2)
 
-        print('sigma2 shape: ', sigma2.shape)
-
         # Work out cov(beta)
         covB = get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2).reshape(v, p**2)
         addBlockToNifti(os.path.join(OutDir, 'blmm_vox_cov.nii'), covB, inds,volInd=None,dim=dimCov,aff=nifti.affine,hdr=nifti.header)
