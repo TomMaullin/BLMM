@@ -104,13 +104,24 @@ else
   fi
 fi
 
+  
+# Voxel batching is not turned on
+fsl_sub -j $batchIDs -l log/ -N concat bash $BLMM_PATH/scripts/cluster_blmm_concat2.sh $inputs "-1" > /tmp/$$ && concatID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
+if [ "$concatID" == "" ] ; then
+  echo "Concatenation job submission failed!"
+fi
 
+if [ "$printOpt" == "1" ] ; then
+  echo "Submitting concatenation job..."
+else
+  echo $concatID
+fi
 
 # Check if we are in voxel batch mode (not yet implemented)
 if [ -z $config_voxelBatching ] || [ "$config_voxelBatching" == "0" ] ; then
     
   # Voxel batching is not turned on
-  fsl_sub -j $batchIDs -l log/ -N results bash $BLMM_PATH/scripts/cluster_blmm_concat.sh $inputs "-1" > /tmp/$$ && resultsIDs=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
+  fsl_sub -j $concatID -l log/ -N results bash $BLMM_PATH/scripts/cluster_blmm_results.sh $inputs "-1" > /tmp/$$ && resultsIDs=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
   if [ "$resultsIDs" == "" ] ; then
     echo "Results job submission failed!"
   fi
@@ -131,7 +142,7 @@ else
   while [ "$i" -le "$nvb" ]; do
 
     # Submit nb batches and get the ids for them
-    fsl_sub -j $batchIDs -l log/ -N results$i bash $BLMM_PATH/scripts/cluster_blmm_concat.sh $inputs $i > /tmp/$$ && resultsIDs=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$resultsIDs
+    fsl_sub -j $concatID -l log/ -N results$i bash $BLMM_PATH/scripts/cluster_blmm_results.sh $inputs $i > /tmp/$$ && resultsIDs=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$resultsIDs
     i=$(($i + 1))
   done
 

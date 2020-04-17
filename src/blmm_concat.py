@@ -123,7 +123,7 @@ def main(ipath, vb):
     L1 = str2vec(inputs['contrasts'][0]['c' + str(1)]['vector'])
     L1 = np.array(L1)
     p = L1.shape[0]
-    del L1
+    del L1, rfxdes, rfxfac
     
     # Read in the nifti size and work out number of voxels.
     with open(inputs['Y_files']) as a:
@@ -145,12 +145,18 @@ def main(ipath, vb):
     nmapb  = loadFile(os.path.join(OutDir,"tmp", "blmm_vox_n_batch1.nii"))
     n_sv = nmapb.get_data()# Read in uniqueness Mask file
 
+    # Remove file we just read
+    os.remove(os.path.join(OutDir,"tmp", "blmm_vox_n_batch1.nii"))
+
     # Cycle through batches and add together n.
     for batchNo in range(2,(n_b+1)):
         
         # Obtain the full nmap.
         n_sv = n_sv + loadFile(os.path.join(OutDir,"tmp", 
             "blmm_vox_n_batch" + str(batchNo) + ".nii")).get_data()
+
+        # Remove file we just read
+        os.remove(os.path.join(OutDir,"tmp", "blmm_vox_n_batch" + str(batchNo) + ".nii"))
         
     # Save nmap
     nmap = nib.Nifti1Image(n_sv,
@@ -257,157 +263,162 @@ def main(ipath, vb):
     pnvb = pracNumVoxelBlocks(inputs)
     bamInds = get_amInds(amask, vb-1, pnvb) # Remem vb 0 indexed in py but 1 indexed in bash
 
+    # Get indices of voxels in ring around brain where there are
+    # missing studies.
+    R_inds = np.sort(np.where((Mask==1)*(n_sv<n))[0])
+
+    # Work out the 'ring' indices, in relation to the analysis mask
+    ix_r = np.argsort(np.argsort(R_inds))
+    R_inds_am = np.sort(np.where(np.in1d(amInds,R_inds))[0])[ix_r]
+
+    # Get indices of the "inner" volume where all studies had information
+    # present. I.e. the voxels (usually near the middle of the brain) where
+    # every voxel has a reading for every study.
+    I_inds = np.sort(np.where((Mask==1)*(n_sv==n))[0])
+
+    # Work out the 'inner' indices, in relation to the analysis mask
+    ix_i = np.argsort(np.argsort(I_inds))
+    I_inds_am = np.sort(np.where(np.in1d(amInds,I_inds))[0])[ix_i]
+
     # ------------------------------------------------------------------------
-    # Split the voxels into computable groups
+    # Number of voxels in ring and inner
     # ------------------------------------------------------------------------
 
-    # Work out the number of voxels we can actually compute at a time.
-    nvb = MAXMEM/(10*8*(q**2))
+    # Number of voxels in ring
+    v_r = R_inds.shape[0]
 
-    # Work out number of groups we have to split iindices into.
-    nvg = int(len(bamInds)//nvb+1)
+    # Number of voxels in inner mask
+    v_i = I_inds.shape[0]
 
-    # Split voxels we want to look at into groups we can compute
-    voxelGroups = np.array_split(bamInds, nvg)
+    # Number of voxels in whole (inner + ring) mask
+    v_m = v_i + v_r
 
-    # Loop through list of voxel indices, looking at each group of voxels, in
-    # turn.
-    for cv in range(nvg):
+    # ------------------------------------------------------------------------
+    # Degrees of freedom (n-p)
+    # ------------------------------------------------------------------------
 
-        # Current group of voxels
-        bamInds_cv = voxelGroups[cv]
+    # Create df map
+    df_r = n_sv[R_inds,:] - p
+    df_r = df_r.reshape([v_r])
+    df_i = n - p
 
-        # Mask for current voxels
-        Mask_cv = np.array(Mask)
-        Mask_cv[~np.in1d(np.arange(v).reshape(v,1), bamInds_cv)]=0
+    # Unmask df
+    df = np.zeros([v])
+    df[R_inds] = df_r 
+    df[I_inds] = df_i
 
-        # Get indices of voxels in ring around brain where there are
-        # missing studies.
-        R_inds = np.sort(np.where((Mask_cv==1)*(n_sv<n))[0])
+    df = df.reshape(int(NIFTIsize[0]),
+                    int(NIFTIsize[1]),
+                    int(NIFTIsize[2]))
 
-        # Work out the 'ring' indices, in relation to the analysis mask
-        ix_r = np.argsort(np.argsort(R_inds))
-        R_inds_am = np.sort(np.where(np.in1d(amInds,R_inds))[0])[ix_r]
+    # Save beta map.
+    dfmap = nib.Nifti1Image(df,
+                            nifti.affine,
+                            header=nifti.header) ### MARKER: THIS SHOULD ONLY BE DONE ONCE BUT CURRENTLY DONE IN ALL BATCHES
+    nib.save(dfmap, os.path.join(OutDir,'blmm_vox_edf.nii'))
+    del df, dfmap
 
-        # Get indices of the "inner" volume where all studies had information
-        # present. I.e. the voxels (usually near the middle of the brain) where
-        # every voxel has a reading for every study.
-        I_inds = np.sort(np.where((Mask_cv==1)*(n_sv==n))[0])
+    # --------------------------------------------------------------------------------
+    # Load X'X, X'Y, Y'Y, X'Z, Y'Z, Z'Z
+    # --------------------------------------------------------------------------------
 
-        # Work out the 'inner' indices, in relation to the analysis mask
-        ix_i = np.argsort(np.argsort(I_inds))
-        I_inds_am = np.sort(np.where(np.in1d(amInds,I_inds))[0])[ix_i]
+    # Number of voxels in mask
+    v_m = np.prod(amInds.shape)
 
-        # ------------------------------------------------------------------------
-        # Number of voxels in ring and inner
-        # ------------------------------------------------------------------------
+    # Ring X'Y, Y'Y, Z'Y
+    XtY = readAndSumAtB('XtY',OutDir,np.arange(v_m),n_b).reshape([v_m, p])
+    YtY = readAndSumAtB('YtY',OutDir,np.arange(v_m),n_b).reshape([v_m, 1])
+    ZtY = readAndSumAtB('ZtY',OutDir,np.arange(v_m),n_b).reshape([v_m, q])
 
-        # Number of voxels in ring
-        v_r = R_inds.shape[0]
+    # Remove X'Y, Y'Y and Z'Y files here
+    for batchNo in range(1,(n_b+1)):
+        os.remove(os.path.join(OutDir, "tmp","XtY" + str(batchNo) + ".npy"))
+        os.remove(os.path.join(OutDir, "tmp","YtY" + str(batchNo) + ".npy"))
+        os.remove(os.path.join(OutDir, "tmp","ZtY" + str(batchNo) + ".npy"))
 
-        # Number of voxels in inner mask
-        v_i = I_inds.shape[0]
+    # Save new X'Y, Y'Y and Z'Y files here
+    np.save(os.path.join(OutDir,"tmp","YtY"), YtY)
+    np.save(os.path.join(OutDir,"tmp","XtY"), XtY) 
+    np.save(os.path.join(OutDir,"tmp","ZtY"), ZtY) 
 
-        # Number of voxels in whole (inner + ring) mask
-        v_m = v_i + v_r
+    # Ring Z'Z. Z'X, X'X
+    if v_r:
 
-        # ------------------------------------------------------------------------
-        # Degrees of freedom (n-p)
-        # ------------------------------------------------------------------------
+        ZtZ_r = readAndSumUniqueAtB('ZtZ',OutDir,R_inds,n_b,True)
+        ZtX_r = readAndSumUniqueAtB('ZtX',OutDir,R_inds,n_b,True)
+        XtX_r = readAndSumUniqueAtB('XtX',OutDir,R_inds,n_b,True)
 
-        # Create df map
-        df_r = n_sv[R_inds,:] - p
-        df_r = df_r.reshape([v_r])
-        df_i = n - p
+        print(ZtZ_r.shape)
 
-        # Unmask df
-        df = np.zeros([v])
-        df[R_inds] = df_r 
-        df[I_inds] = df_i
+        # Then work out new unique X'X, Z'X, Z'Z indices 
+        # Note: finding the unique elements may change the order
+        # so extra care must be taken here with indexing
+        _, idx = np.unique(np.concatenate((ZtZ_r,ZtX_r,XtX_r),axis=1), axis=0, return_index=True)
 
-        df = df.reshape(int(NIFTIsize[0]),
+        XtX_ru = XtX_r[np.sort(idx),:]
+        ZtZ_ru = ZtZ_r[np.sort(idx),:]
+        ZtX_ru = ZtX_r[np.sort(idx),:]
+
+        print(ZtX_r.shape)
+        print(ZtX_ru.shape)
+
+        print(XtX_r.shape)
+        print(XtX_ru.shape)
+
+        # Work out the uniqueness indices for the ring (the key by which
+        # we recover X'X, X'Z, Z'Z etc). Note: Due to the preserving of
+        # order above, these indices should be the same for X'X, Z'X and 
+        # Z'Z, so we need only compute them once.
+        df_r = pd.DataFrame(np.concatenate((ZtZ_r,ZtX_r,XtX_r),axis=1))
+        df_r['id'] = df_r.groupby(df_r.columns.tolist(), sort=False).ngroup() + 1
+        unique_id_r = df_r['id'].values
+
+    
+    if v_i:
+            
+        # Inner Z'Z. Z'X, X'X
+        ZtZ_i = readAndSumUniqueAtB('ZtZ',OutDir,I_inds,n_b,False).reshape([1, q**2])
+        ZtX_i = readAndSumUniqueAtB('ZtX',OutDir,I_inds,n_b,False).reshape([1, q*p])
+        XtX_i = readAndSumUniqueAtB('XtX',OutDir,I_inds,n_b,False).reshape([1, p**2])
+
+        # Add to the list of unique designs
+        ZtZ_u = np.concatenate((ZtZ_ru, ZtZ_i), axis=0)
+        XtX_u = np.concatenate((XtX_ru, XtX_i), axis=0)
+        ZtX_u = np.concatenate((ZtX_ru, ZtX_i), axis=0)
+
+        # The unique id for the inner will be the next available value
+        unique_id_i = np.max(unique_id_r)+1
+
+    # Unmask uniqueness map
+    uMap = np.zeros([v])
+    uMap[R_inds] = unique_id_r 
+    uMap[I_inds] = unique_id_i
+
+    uMap = uMap.reshape(int(NIFTIsize[0]),
                         int(NIFTIsize[1]),
                         int(NIFTIsize[2]))
 
-        # Save beta map.
-        dfmap = nib.Nifti1Image(df,
-                                nifti.affine,
-                                header=nifti.header) ### MARKER: THIS SHOULD ONLY BE DONE ONCE BUT CURRENTLY DONE IN ALL BATCHES
-        nib.save(dfmap, os.path.join(OutDir,'blmm_vox_edf.nii'))
-        del df, dfmap
+    # Save beta map.
+    uMap = nib.Nifti1Image(uMap,
+                           nifti.affine,
+                           header=nifti.header) ### MARKER: THIS SHOULD ONLY BE DONE ONCE BUT CURRENTLY DONE IN ALL BATCHES
+    nib.save(uMap, os.path.join(OutDir,"tmp","blmm_vox_uniqueM.nii"))
 
-        # --------------------------------------------------------------------------------
-        # Load X'X, X'Y, Y'Y, X'Z, Y'Z, Z'Z
-        # --------------------------------------------------------------------------------
+    # Save unique designs
+    np.save(os.path.join(OutDir,"tmp","XtX"),XtX_u)
+    np.save(os.path.join(OutDir,"tmp","ZtX"),ZtX_u) 
+    np.save(os.path.join(OutDir,"tmp","ZtZ"),ZtZ_u) 
 
-        # Ring X'Y, Y'Y, Z'Y
-        XtY_r = readAndSumAtB('XtY',OutDir,R_inds_am,n_b).reshape([v_r, p, 1])
-        YtY_r = readAndSumAtB('YtY',OutDir,R_inds_am,n_b).reshape([v_r, 1, 1])
-        ZtY_r = readAndSumAtB('ZtY',OutDir,R_inds_am,n_b).reshape([v_r, q, 1])
 
-        # Inner X'Y, Y'Y, Z'Y
-        XtY_i = readAndSumAtB('XtY',OutDir,I_inds_am,n_b).reshape([v_i, p, 1])
-        YtY_i = readAndSumAtB('YtY',OutDir,I_inds_am,n_b).reshape([v_i, 1, 1])
-        ZtY_i = readAndSumAtB('ZtY',OutDir,I_inds_am,n_b).reshape([v_i, q, 1])
+    # Remove Z'X, Z'Z, X'X, n and uniqueness M files here
+    for batchNo in range(1,(n_b+1)):
+        os.remove(os.path.join(OutDir, "tmp","XtX" + str(batchNo) + ".npy"))
+        os.remove(os.path.join(OutDir, "tmp","ZtZ" + str(batchNo) + ".npy"))
+        os.remove(os.path.join(OutDir, "tmp","ZtX" + str(batchNo) + ".npy"))
+        os.remove(os.path.join(OutDir,"tmp","blmm_vox_uniqueM_batch" + str(batchNo) + ".nii"))
 
-        # Ring Z'Z. Z'X, X'X
-        if v_r:
 
-            ZtZ_r = readAndSumUniqueAtB('ZtZ',OutDir,R_inds,n_b,True).reshape([v_r, q, q])
-            ZtX_r = readAndSumUniqueAtB('ZtX',OutDir,R_inds,n_b,True).reshape([v_r, q, p])
-            XtX_r = readAndSumUniqueAtB('XtX',OutDir,R_inds,n_b,True).reshape([v_r, p, p])
-        
-        if v_i:
-                
-            # Inner Z'Z. Z'X, X'X
-            ZtZ_i = readAndSumUniqueAtB('ZtZ',OutDir,I_inds,n_b,False).reshape([1, q, q])
-            ZtX_i = readAndSumUniqueAtB('ZtX',OutDir,I_inds,n_b,False).reshape([1, q, p])
-            XtX_i = readAndSumUniqueAtB('XtX',OutDir,I_inds,n_b,False).reshape([1, p, p])    
-
-            print('prod mat check')
-            print(XtX_i)
-            print(ZtX_i)
-            print(ZtZ_i)
-
-        # --------------------------------------------------------------------------------
-        # Calculate betahat = (X'X)^(-1)X'Y and output beta maps
-        # --------------------------------------------------------------------------------
-
-        REML = False
-
-        # If we have indices where only some studies are present, work out X'X and
-        # X'Y for these studies. (Remember X'Y, Y'Y and Z'Y have already had the 
-        # analysis mask applied to them during the batch stage)
-        if v_r:
-
-            # Spatially varying nv for ring
-            n_sv_r = n_sv[R_inds,:]
-
-            # Transposed matrices
-            YtX_r = XtY_r.transpose(0,2,1)
-            YtZ_r = ZtY_r.transpose(0,2,1) 
-            XtZ_r = ZtX_r.transpose(0,2,1)
-
-            # Run parameter estimation
-            beta_r, sigma2_r, D_r = blmm_estimate.main(inputs, R_inds, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r, n_sv_r, nlevels, nraneffs)
-
-            print('sigma2 (r mode) shape: ', sigma2_r.shape)
-
-            # Run inference
-            blmm_inference.main(inputs, nraneffs, nlevels, R_inds, beta_r, D_r, sigma2_r, n_sv_r, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r)       
-            
-        if v_i:
-
-            # Transposed matrices
-            YtX_i = XtY_i.transpose(0,2,1)
-            YtZ_i = ZtY_i.transpose(0,2,1) 
-            XtZ_i = ZtX_i.transpose(0,2,1)
-
-            # Run parameter estimation
-            beta_i, sigma2_i, D_i = blmm_estimate.main(inputs, I_inds,  XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i, n, nlevels, nraneffs)
-
-            # Run inference
-            blmm_inference.main(inputs, nraneffs, nlevels, I_inds, beta_i, D_i, sigma2_i, n, XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i)
+    del uMap, ZtZ_u, XtX_u, ZtX_u
 
     w.resetwarnings()
 
