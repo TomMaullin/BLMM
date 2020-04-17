@@ -3,6 +3,7 @@ import warnings as w
 # be ignored for now.
 w.simplefilter(action = 'ignore', category = FutureWarning)
 import numpy as np
+from numpy.lib.format import open_memmap
 import nibabel as nib
 import sys
 import os
