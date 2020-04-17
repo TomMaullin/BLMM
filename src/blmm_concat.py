@@ -487,7 +487,7 @@ def memorySafeReadAndSumAtB(AtBstr, OutDir, nb, dimAtB, MAXMEM):
     
     # Loop through each group of voxels saving A'B for those voxels
     for vb in range(int(v//vPerBlock+1)):
-        M[voxelGroups[vb],:]=readAndSumAtB(AtBstr, OutDir, voxelGroups[vb], nb)
+        M[voxelGroups[vb],:]=readAndSumAtB(AtBstr, OutDir, voxelGroups[vb], nb).reshape(M[voxelGroups[vb],:].shape)
         
     # Delete M from memory (important!)
     del M
