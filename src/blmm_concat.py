@@ -248,14 +248,8 @@ def main(ipath):
     del maskmap
 
     # ------------------------------------------------------------------------
-    # Work out block of voxels we are looking at
+    # Work out "Ring" and "Inner" indices
     # ------------------------------------------------------------------------
-    # Get indices for block. These indices have to be the indices we want to
-    # compute, in relation to the entire volume. If we aren't partitioning by 
-    # block these will be equal to amInds
-    vb = 0
-    pnvb = pracNumVoxelBlocks(inputs)
-    bamInds = get_amInds(amask, vb-1, pnvb) # Remem vb 0 indexed in py but 1 indexed in bash
 
     # Get indices of voxels in ring around brain where there are
     # missing studies.
