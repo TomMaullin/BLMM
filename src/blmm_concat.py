@@ -327,11 +327,6 @@ def main(ipath):
         os.remove(os.path.join(OutDir, "tmp","YtY" + str(batchNo) + ".npy"))
         os.remove(os.path.join(OutDir, "tmp","ZtY" + str(batchNo) + ".npy"))
 
-    # Save unique designs
-    np.save(os.path.join(OutDir,"tmp","XtX"),XtX_u)
-    np.save(os.path.join(OutDir,"tmp","ZtX"),ZtX_u) 
-    np.save(os.path.join(OutDir,"tmp","ZtZ"),ZtZ_u)
-
     w.resetwarnings()
 
 
@@ -384,12 +379,23 @@ def readAndSumAtB(AtBstr, OutDir, vinds, nb):
 
 # ============================================================================
 #
+# The below function reads and sums all files for the product matrix A'B from 
+# the batch jobs and saves the result as a numpy file. It does this in a 
+# memory safe way by  working with memory maps and only loading in as much as 
+# it can at any one moment.
 #
 # ----------------------------------------------------------------------------
 #
 # This function takes in the following inputs:
 #
 # ----------------------------------------------------------------------------
+#
+# - `AtBstr`: A string representing which product matrix we are looking at. 
+#             i.e. "XtY" for X'Y, "ZtY" for Z'Y and "YtY" for Y'Y.
+# - `OutDir`: Output directory.
+# - `nb`: The number of batches run during the batch stage.
+# - `dimAtB`: The expected dimension of the output numpy file.
+# - `MAXMEM`: The maximum memory allowed for computation, in bytes.
 #
 # ============================================================================
 def memorySafeReadAndSumAtB(AtBstr, OutDir, nb, dimAtB, MAXMEM):
@@ -420,10 +426,6 @@ def memorySafeReadAndSumAtB(AtBstr, OutDir, nb, dimAtB, MAXMEM):
         
     # Delete M from memory (important!)
     del M
-
-
-if __name__ == "__main__":
-    main()
 
 # # ============================================================================
 # #
