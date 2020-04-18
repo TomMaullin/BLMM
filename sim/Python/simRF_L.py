@@ -17,7 +17,7 @@ from lib.FS2D import FS2D
 from lib.pFS2D import pFS2D
 from lib.SFS2D import SFS2D
 from lib.pSFS2D import pSFS2D
-from lib.PLS import PLS2D, PLS2D_getBeta, PLS2D_getD, PLS2D_getSigma2
+from lib.PeLS import PeLS2D, PeLS2D_getBeta, PeLS2D_getD, PeLS2D_getSigma2
 import cvxopt
 from cvxopt import cholmod, umfpack, amd, matrix, spmatrix, lapack
 from scipy.optimize import minimize
@@ -240,7 +240,7 @@ def main():
   # Identity (Actually quicker to calculate outside of estimation)
   I = spmatrix(1.0, range(Lam.size[0]), range(Lam.size[0]))
 
-  # Obtaining permutation for PLS
+  # Obtaining permutation for PeLS
   P=cvxopt.amd.order(LamtZtZLam)
 
   runningtime = 0
@@ -255,17 +255,17 @@ def main():
     YtXtmp = matrix(YtX[i,:,:])
     
     t1 = time.time()
-    theta_est = minimize(PLS2D, theta0, args=(ZtXtmp, ZtYtmp, XtXtmp, ZtZtmp, XtYtmp, YtXtmp, YtZtmp, XtZtmp, YtYtmp, n, P, I, tinds, rinds, cinds), method='L-BFGS-B', tol=1e-7)
+    theta_est = minimize(PeLS2D, theta0, args=(ZtXtmp, ZtYtmp, XtXtmp, ZtZtmp, XtYtmp, YtXtmp, YtZtmp, XtZtmp, YtYtmp, n, P, I, tinds, rinds, cinds), method='L-BFGS-B', tol=1e-7)
     runningtime = runningtime + time.time()-t1
 
     nit = theta_est.nit
     theta_est = theta_est.x
     
     # Get current beta
-    beta_est = np.array(PLS2D_getBeta(theta_est, ZtXtmp, ZtYtmp, XtXtmp, ZtZtmp, XtYtmp, YtXtmp, YtZtmp, XtZtmp, YtYtmp, n, P,tinds, rinds, cinds))
+    beta_est = np.array(PeLS2D_getBeta(theta_est, ZtXtmp, ZtYtmp, XtXtmp, ZtZtmp, XtYtmp, YtXtmp, YtZtmp, XtZtmp, YtYtmp, n, P,tinds, rinds, cinds))
     
-    sigma2_est = PLS2D_getSigma2(theta_est, ZtXtmp, ZtYtmp, XtXtmp, ZtZtmp, XtYtmp, YtXtmp, YtZtmp, XtZtmp, YtYtmp, n, P, I, tinds, rinds, cinds)
-    D_est = np.array(matrix(PLS2D_getD(theta_est, tinds, rinds, cinds, sigma2_est)))
+    sigma2_est = PeLS2D_getSigma2(theta_est, ZtXtmp, ZtYtmp, XtXtmp, ZtZtmp, XtYtmp, YtXtmp, YtZtmp, XtZtmp, YtYtmp, n, P, I, tinds, rinds, cinds)
+    D_est = np.array(matrix(PeLS2D_getD(theta_est, tinds, rinds, cinds, sigma2_est)))
 
     DinvIplusZtZD = D_est @ np.linalg.inv(np.eye(q) + np.array(ZtZ[0,:,:]) @ D_est)
     Zte = np.array(ZtYtmp) - np.array(ZtX[0,:,:]) @ beta_est

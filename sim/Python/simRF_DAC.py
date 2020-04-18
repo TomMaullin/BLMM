@@ -17,7 +17,7 @@ from lib.FS2D import FS2D
 from lib.pFS2D import pFS2D
 from lib.SFS2D import SFS2D
 from lib.pSFS2D import pSFS2D
-from lib.PLS import PLS2D, PLS2D_getBeta, PLS2D_getD, PLS2D_getSigma2
+from lib.PeLS import PeLS2D, PeLS2D_getBeta, PeLS2D_getD, PeLS2D_getSigma2
 import cvxopt
 from cvxopt import cholmod, umfpack, amd, matrix, spmatrix, lapack
 from scipy.optimize import minimize
@@ -212,9 +212,9 @@ def main():
     # X'X
     XtX = np.matmul(X.transpose(0,2,1),X)
 
-    mode = 'PLS'
+    mode = 'PeLS'
 
-    if mode == 'PLS':
+    if mode == 'PeLS':
 
         #================================================================================
         # Initial theta
@@ -233,7 +233,7 @@ def main():
         # Obtain Lambda'Z'ZLambda
         LamtZtZLam = spmatrix.trans(Lam)*cvxopt.sparse(matrix(ZtZ[0,:,:]))*Lam
 
-        # Obtaining permutation for PLS
+        # Obtaining permutation for PeLS
         cholmod.options['supernodal']=2
         P=amd.order(LamtZtZLam)
 
@@ -247,7 +247,7 @@ def main():
         # Run Simulation
         #================================================================================
         t1 = time.time()
-        est_theta = divAndConq_PLS(theta0, inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
+        est_theta = divAndConq_PeLS(theta0, inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
         t2 = time.time()
         print('Time taken (seconds):', t2-t1)
 
@@ -275,10 +275,10 @@ def main():
             YtZ_current = cvxopt.matrix(YtZ[i,:,:])
             ZtY_current = cvxopt.matrix(ZtY[i,:,:])
 
-            beta_est = np.array(PLS2D_getBeta(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, tinds, rinds, cinds))
+            beta_est = np.array(PeLS2D_getBeta(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, tinds, rinds, cinds))
 
-            sigma2_est = PLS2D_getSigma2(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)
-            D_est = np.array(matrix(PLS2D_getD(theta, tinds, rinds, cinds, sigma2_est)))
+            sigma2_est = PeLS2D_getSigma2(theta, ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds)
+            D_est = np.array(matrix(PeLS2D_getD(theta, tinds, rinds, cinds, sigma2_est)))
 
             DinvIplusZtZD = D_est @ np.linalg.inv(np.eye(q) + np.array(ZtZ[0,:,:]) @ D_est)
             Zte = np.array(ZtY_current) - np.array(ZtX[0,:,:]) @ beta_est
@@ -592,7 +592,7 @@ def main():
         print(bDiff)
 
 
-def divAndConq_PLS(init_theta, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta):
+def divAndConq_PeLS(init_theta, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta):
 
     # Number of voxels and dimension of block we are looking at
     current_dimv = current_inds.shape
@@ -613,7 +613,7 @@ def divAndConq_PLS(init_theta, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, 
     ZtZ_current = cvxopt.sparse(cvxopt.matrix(ZtZ[0,:,:]))
 
     # Get new theta
-    tmp = minimize(PLS2D, init_theta, args=(ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds), method='L-BFGS-B', tol=1e-7)
+    tmp = minimize(PeLS2D, init_theta, args=(ZtX_current, ZtY_current, XtX_current, ZtZ_current, XtY_current, YtX_current, YtZ_current, XtZ_current, YtY_current, n, P, I, tinds, rinds, cinds), method='L-BFGS-B', tol=1e-7)
     new_theta = tmp.x
 
     if current_dimv[0]!=1 and current_dimv[1]!=1 and current_dimv[2]!=1:
@@ -628,14 +628,14 @@ def divAndConq_PLS(init_theta, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, 
         current_inds_block7 = current_inds[:(current_dimv[0]//2),(current_dimv[1]//2):,(current_dimv[2]//2):]
         current_inds_block8 = current_inds[(current_dimv[0]//2):,(current_dimv[1]//2):,(current_dimv[2]//2):]
 
-        est_theta = divAndConq_PLS(new_theta, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
-        est_theta = divAndConq_PLS(new_theta, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
-        est_theta = divAndConq_PLS(new_theta, current_inds_block3, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
-        est_theta = divAndConq_PLS(new_theta, current_inds_block4, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
-        est_theta = divAndConq_PLS(new_theta, current_inds_block5, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
-        est_theta = divAndConq_PLS(new_theta, current_inds_block6, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
-        est_theta = divAndConq_PLS(new_theta, current_inds_block7, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
-        est_theta = divAndConq_PLS(new_theta, current_inds_block8, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
+        est_theta = divAndConq_PeLS(new_theta, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
+        est_theta = divAndConq_PeLS(new_theta, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
+        est_theta = divAndConq_PeLS(new_theta, current_inds_block3, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
+        est_theta = divAndConq_PeLS(new_theta, current_inds_block4, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
+        est_theta = divAndConq_PeLS(new_theta, current_inds_block5, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
+        est_theta = divAndConq_PeLS(new_theta, current_inds_block6, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
+        est_theta = divAndConq_PeLS(new_theta, current_inds_block7, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
+        est_theta = divAndConq_PeLS(new_theta, current_inds_block8, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
 
     elif current_dimv[0]!=1 and current_dimv[1]!=1:
 
@@ -645,10 +645,10 @@ def divAndConq_PLS(init_theta, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, 
         current_inds_block3 = current_inds[:(current_dimv[0]//2),(current_dimv[1]//2):,:]
         current_inds_block4 = current_inds[(current_dimv[0]//2):,(current_dimv[1]//2):,:]
 
-        est_theta = divAndConq_PLS(new_theta, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
-        est_theta = divAndConq_PLS(new_theta, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
-        est_theta = divAndConq_PLS(new_theta, current_inds_block3, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
-        est_theta = divAndConq_PLS(new_theta, current_inds_block4, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
+        est_theta = divAndConq_PeLS(new_theta, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
+        est_theta = divAndConq_PeLS(new_theta, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
+        est_theta = divAndConq_PeLS(new_theta, current_inds_block3, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
+        est_theta = divAndConq_PeLS(new_theta, current_inds_block4, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
 
     elif current_dimv[0]!=1 and current_dimv[2]!=1:
 
@@ -658,10 +658,10 @@ def divAndConq_PLS(init_theta, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, 
         current_inds_block3 = current_inds[:(current_dimv[0]//2),:,(current_dimv[2]//2):]
         current_inds_block4 = current_inds[(current_dimv[0]//2):,:,(current_dimv[2]//2):]
 
-        est_theta = divAndConq_PLS(new_theta, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
-        est_theta = divAndConq_PLS(new_theta, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
-        est_theta = divAndConq_PLS(new_theta, current_inds_block3, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
-        est_theta = divAndConq_PLS(new_theta, current_inds_block4, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
+        est_theta = divAndConq_PeLS(new_theta, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
+        est_theta = divAndConq_PeLS(new_theta, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
+        est_theta = divAndConq_PeLS(new_theta, current_inds_block3, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
+        est_theta = divAndConq_PeLS(new_theta, current_inds_block4, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
 
 
     elif current_dimv[1]!=1 and current_dimv[2]!=1:
@@ -672,34 +672,34 @@ def divAndConq_PLS(init_theta, current_inds, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, 
         current_inds_block3 = current_inds[:,:(current_dimv[1]//2),(current_dimv[2]//2):]
         current_inds_block4 = current_inds[:,(current_dimv[1]//2):,(current_dimv[2]//2):]
 
-        est_theta = divAndConq_PLS(new_theta, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
-        est_theta = divAndConq_PLS(new_theta, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
-        est_theta = divAndConq_PLS(new_theta, current_inds_block3, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
-        est_theta = divAndConq_PLS(new_theta, current_inds_block4, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
+        est_theta = divAndConq_PeLS(new_theta, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
+        est_theta = divAndConq_PeLS(new_theta, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
+        est_theta = divAndConq_PeLS(new_theta, current_inds_block3, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
+        est_theta = divAndConq_PeLS(new_theta, current_inds_block4, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
 
     elif current_dimv[0]!=1:
 
         current_inds_block1 = current_inds[:(current_dimv[0]//2),:,:]
         current_inds_block2 = current_inds[(current_dimv[0]//2):,:,:]
 
-        est_theta = divAndConq_PLS(new_theta, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
-        est_theta = divAndConq_PLS(new_theta, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
+        est_theta = divAndConq_PeLS(new_theta, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
+        est_theta = divAndConq_PeLS(new_theta, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
 
     elif current_dimv[1]!=1:
 
         current_inds_block1 = current_inds[:,:(current_dimv[1]//2),:]
         current_inds_block2 = current_inds[:,(current_dimv[1]//2):,:]
 
-        est_theta = divAndConq_PLS(new_theta, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
-        est_theta = divAndConq_PLS(new_theta, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
+        est_theta = divAndConq_PeLS(new_theta, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
+        est_theta = divAndConq_PeLS(new_theta, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
 
     elif current_dimv[2]!=1:
 
         current_inds_block1 = current_inds[:,:,:(current_dimv[2]//2)]
         current_inds_block2 = current_inds[:,:,(current_dimv[2]//2):]
 
-        est_theta = divAndConq_PLS(new_theta, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
-        est_theta = divAndConq_PLS(new_theta, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
+        est_theta = divAndConq_PeLS(new_theta, current_inds_block1, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
+        est_theta = divAndConq_PeLS(new_theta, current_inds_block2, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds, est_theta)
 
     else:
 

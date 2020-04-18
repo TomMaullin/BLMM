@@ -17,7 +17,7 @@ from genTestDat import genTestData2D, prodMats2D
 from lib.est2d import *
 from lib.npMatrix2d import *
 from lib.cvxMatrix2d import *
-from lib.PLS import PLS2D, PLS2D_getSigma2, PLS2D_getBeta, PLS2D_getD
+from lib.PeLS import PeLS2D, PeLS2D_getSigma2, PeLS2D_getBeta, PeLS2D_getD
 
 # ==================================================================================
 #
@@ -99,7 +99,7 @@ def test2D():
             indexVec = np.append(indexVec, 'sigma2*D'+str(k+1)+','+str(j+1))
 
     # Construct dataframe
-    results = pd.DataFrame(index=indexVec, columns=['Truth', 'PLS', 'FS', 'pFS', 'SFS', 'pSFS', 'cSFS'])
+    results = pd.DataFrame(index=indexVec, columns=['Truth', 'PeLS', 'FS', 'pFS', 'SFS', 'pSFS', 'cSFS'])
 
     # ------------------------------------------------------------------------------------
     # Truth
@@ -171,7 +171,7 @@ def test2D():
         results.at[indexVec[i+qu],'pSFS']=paramVector_pSFS[p,0]*paramVector_pSFS[i-3,0]
 
     #===============================================================================
-    # PLS
+    # PeLS
     #===============================================================================
 
     # Convert matrices to cvxopt format.
@@ -200,12 +200,12 @@ def test2D():
     # Identity (Actually quicker to calculate outside of estimation)
     I = spmatrix(1.0, range(Lam.size[0]), range(Lam.size[0]))
 
-    # Obtaining permutation for PLS
+    # Obtaining permutation for PeLS
     P=cvxopt.amd.order(LamtZtZLam)
 
     # Run Penalized Least Squares
     t1 = time.time()
-    estimation = minimize(PLS2D, theta0, args=(ZtXtmp, ZtYtmp, XtXtmp, ZtZtmp, XtYtmp, YtXtmp, YtZtmp, XtZtmp, YtYtmp, n, P, I, tinds, rinds, cinds), method='L-BFGS-B', tol=tol)
+    estimation = minimize(PeLS2D, theta0, args=(ZtXtmp, ZtYtmp, XtXtmp, ZtZtmp, XtYtmp, YtXtmp, YtZtmp, XtZtmp, YtYtmp, n, P, I, tinds, rinds, cinds), method='L-BFGS-B', tol=tol)
     
     # llh
     llh = -estimation['fun']
@@ -217,22 +217,22 @@ def test2D():
     nit = estimation['nit']
 
     # Obtain Beta, sigma2 and D
-    beta_pls = PLS2D_getBeta(theta, ZtXtmp, ZtYtmp, XtXtmp, ZtZtmp, XtYtmp, YtXtmp, YtZtmp, XtZtmp, YtYtmp, n, P, tinds, rinds, cinds)
-    sigma2_pls = PLS2D_getSigma2(theta, ZtXtmp, ZtYtmp, XtXtmp, ZtZtmp, XtYtmp, YtXtmp, YtZtmp, XtZtmp, YtYtmp, n, P, I, tinds, rinds, cinds)
-    D_pls = PLS2D_getD(theta, tinds, rinds, cinds, sigma2_pls)
+    beta_pls = PeLS2D_getBeta(theta, ZtXtmp, ZtYtmp, XtXtmp, ZtZtmp, XtYtmp, YtXtmp, YtZtmp, XtZtmp, YtYtmp, n, P, tinds, rinds, cinds)
+    sigma2_pls = PeLS2D_getSigma2(theta, ZtXtmp, ZtYtmp, XtXtmp, ZtZtmp, XtYtmp, YtXtmp, YtZtmp, XtZtmp, YtYtmp, n, P, I, tinds, rinds, cinds)
+    D_pls = PeLS2D_getD(theta, tinds, rinds, cinds, sigma2_pls)
     t2 = time.time()
 
     # Record time, number of iterations and log likelihood
-    results.at['Time','PLS']=t2-t1
-    results.at['nit','PLS']=nit
-    results.at['llh','PLS']=llh
+    results.at['Time','PeLS']=t2-t1
+    results.at['nit','PeLS']=nit
+    results.at['llh','PeLS']=llh
 
     # Record beta parameters
     for i in range(p):
-        results.at[indexVec[i+3],'PLS']=beta_pls[i]
+        results.at[indexVec[i+3],'PeLS']=beta_pls[i]
 
     # Record sigma2 parameter
-    results.at['sigma2','PLS']=sigma2_pls[0]
+    results.at['sigma2','PeLS']=sigma2_pls[0]
     
     # Indices corresponding to random factors.
     Dinds = np.cumsum(nraneffs*(nraneffs+1)//2)+p+4
@@ -244,8 +244,8 @@ def test2D():
 
         # Save parameters
         for j in np.arange(len(vechDk)):
-            results.at[indexVec[Dinds[k]+j],'PLS']=vechDk[j,0]/sigma2_pls[0]
-            results.at[indexVec[Dinds[k]+qu+j],'PLS']=vechDk[j,0]
+            results.at[indexVec[Dinds[k]+j],'PeLS']=vechDk[j,0]/sigma2_pls[0]
+            results.at[indexVec[Dinds[k]+qu+j],'PeLS']=vechDk[j,0]
 
     #===============================================================================
     # cSFS

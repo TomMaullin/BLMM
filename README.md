@@ -219,8 +219,8 @@ The repository contains 5 main folders, plus 3 files at the head of the reposito
  - `lib`: Helper functions:
    - `npMatrix2d.py`: Helper functions for 2d numpy array operations.
    - `npMatrix3d.py`: Helper functions for 3d numpy array operations.
-   - `cvxMatrix2d.py`: Helper functions for 2d cvxopt matrix operations (used only by `PLS`).
-   - `PLS.py`: Code for the PLS method (only for benchmarking, currently unavailable in BLMM).
+   - `cvxMatrix2d.py`: Helper functions for 2d cvxopt matrix operations (used only by `PeLS`).
+   - `PeLS.py`: Code for the PeLS method (only for benchmarking, currently unavailable in BLMM).
    - `fileio.py`: Miscellenous functions for handling files.
    - `est2d.py`: Parameter estimation methods for inference on one voxel.
    - `est3d.py`: Parameter estimation methods for inference on multiple voxels.
@@ -237,7 +237,7 @@ The repository contains 5 main folders, plus 3 files at the head of the reposito
      - `npMatrix2d_tests.py`: Unit tests for all functions in `npMatrix2d.py`.
      - `npMatrix3d_tests.py`: Unit tests for all functions in `npMatrix3d.py`.
      - `cvxMatrix2d_tests.py`: Unit tests for all functions in `cvxMatrix2d.py`.
-     - `est2d_tests.py`: A function for comparing results of all methods in `est2d.py`, as well as `PLS.py`.
+     - `est2d_tests.py`: A function for comparing results of all methods in `est2d.py`, as well as `PeLS.py`.
      - `est3d_tests.py`: Functions for comparing results of all methods in `est3d.py`
  - `sim`: (WIP) Simulations. This will likely be deleted in future. It only remains currently as it has some useful code that does not yet exist elsewhere.
  - `scipts`: Bash scripts which run each individual stage of the BLMM pipeline.

@@ -4,8 +4,8 @@ from cvxopt import cholmod, umfpack, amd, matrix, spmatrix, lapack
 
 # ============================================================================
 #
-# The below function applies a mapping to a vector of parameters. (Used in PLS
-# - equivalent of what is described in Bates 2015)
+# The below function applies a mapping to a vector of parameters. (Used in 
+# PeLS - equivalent of what is described in Bates 2015)
 #
 # ----------------------------------------------------------------------------
 #

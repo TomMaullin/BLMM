@@ -17,8 +17,8 @@ from lib.npMatrix2d import *
 # - `pFS`: Pseudo-Simplified Fisher Scoring
 # - `cSFS`: Cholesky Simplified Fisher 
 # 
-# The PLS algorithm currently is not included here, but instead can be found 
-# in the file "PLS.py".
+# The PeLS algorithm currently is not included here, but instead can be found 
+# in the file "PeLS.py".
 #
 # ----------------------------------------------------------------------------
 #
