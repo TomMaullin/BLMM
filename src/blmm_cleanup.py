@@ -47,7 +47,8 @@ def main(ipath):
     # Clean up files
     # --------------------------------------------------------------------------------
     os.remove(os.path.join(OutDir, 'nb.txt'))
-    os.remove(os.path.join(OutDir, 'nvb.txt'))
+    if os.path.exists(os.path.join(OutDir, 'nvb.txt')):
+	    os.remove(os.path.join(OutDir, 'nvb.txt'))
     shutil.rmtree(os.path.join(OutDir, 'tmp'))
 
     print('Analysis complete!')
