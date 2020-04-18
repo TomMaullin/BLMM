@@ -3,6 +3,7 @@ import warnings as w
 # output.
 w.simplefilter(action = 'ignore', category = FutureWarning)
 import numpy as np
+from numpy.lib.format import open_memmap
 import subprocess
 import warnings
 import resource
@@ -34,7 +35,7 @@ import pandas as pd
 #
 # ------------------------------------------------------------------------------------
 #
-# Author: Tom Maullin (Last edited: 04/04/2020)
+# Author: Tom Maullin (Last edited: 17/04/2020)
 #
 # ------------------------------------------------------------------------------------
 #
@@ -211,9 +212,9 @@ def main(*args):
     # Verify input
     verifyInput(Y_files, M_files, Y0)
 
-    # Obtain Y, mask for Y, M (essentially the array Y!=0) n_sv and Mmap.
+    # Obtain Y, M (essentially the array Y!=0) n_sv and Mmap.
     # This mask is just for voxels with no studies present.
-    Y, Mask, n_sv, M, Mmap = obtainY(Y_files, M_files, M_t, M_a)
+    Y, n_sv, M, Mmap = obtainY(Y_files, M_files, M_t, M_a)
 
     # Work out voxel specific designs
     MX = applyMask(X, M)
@@ -226,9 +227,16 @@ def main(*args):
     # elements in Y should already be set to 0 and, as such, won't have 
     # any affect on these products.
     # ------------------------------------------------------------------
-    XtY = unmasked_AtB(X, Y, Mask)
-    YtY = unmasked_AtA(Y, Mask)
-    ZtY = unmasked_AtB(Z, Y, Mask) 
+
+    # We are careful how we compute X'Y and Z'Y, in case either p or q
+    # is large. We save these "chunk by chunk" as memory map objects just
+    # in case they don't fit in working memory (this is only usually a
+    # large issue for very large designs).
+    memorySafeAtB(Z.reshape(1,Z.shape[0],Z.shape[1]),Y,MAXMEM,os.path.join(OutDir,"tmp","ZtY" + str(batchNo)+'.npy'))
+    memorySafeAtB(X.reshape(1,X.shape[0],X.shape[1]),Y,MAXMEM,os.path.join(OutDir,"tmp","XtY" + str(batchNo)+'.npy'))
+
+    # Calculate Y
+    YtY = Y.transpose(0,2,1) @ Y
 
     # In a spatially varying design XtX has dimensions n by p by p. We
     # reshape to n by p^2 so that we can save as a csv.
@@ -245,20 +253,11 @@ def main(*args):
     ZtZ = MZ.transpose(0,2,1) @ MZ
     ZtZ = ZtZ.reshape([ZtZ.shape[0], ZtZ.shape[1]*ZtZ.shape[2]])
 
-    # Pandas reads and writes files much more quickly with nrows <<
-    # number of columns, so we transpose
-    XtY = XtY.transpose()
-    ZtY = ZtY.transpose()
-
-    # Record product matrices 
+    # Record product matrices X'X, Y'Y, Z'X and Z'Z.
     np.save(os.path.join(OutDir,"tmp","XtX" + str(batchNo)), 
-               XtX)
-    np.save(os.path.join(OutDir,"tmp","XtY" + str(batchNo)), 
-               XtY) 
+                XtX)
     np.save(os.path.join(OutDir,"tmp","YtY" + str(batchNo)), 
-               YtY) 
-    np.save(os.path.join(OutDir,"tmp","ZtY" + str(batchNo)), 
-               ZtY) 
+               YtY)
     np.save(os.path.join(OutDir,"tmp","ZtX" + str(batchNo)), 
                ZtX) 
     np.save(os.path.join(OutDir,"tmp","ZtZ" + str(batchNo)), 
@@ -421,8 +420,7 @@ def applyMask(X,M):
 #
 # ----------------------------------------------------------------------------
 #
-#  - `Y`: The masked observations, reshaped to be of dimension n by v
-#  - `Mask`: The overall mask (as a 3D numpy array).
+#  - `Y`: The masked observations, reshaped to be of dimension v by n by 1.
 #  - `n_sv`: The spatially varying number of observations (as a 3D numpy
 #            array).
 #  - `M`: The array Y!=0 (resized appropriately for later computation).
@@ -451,7 +449,7 @@ def obtainY(Y_files, M_files, M_t, M_a):
         # Read in each individual NIFTI.
         Y_indiv = loadFile(Y_files[i])
 
-        # Mask Y if necesart
+        # Mask Y if necesary
         if M_files:
         
             # Apply mask
@@ -483,11 +481,16 @@ def obtainY(Y_files, M_files, M_t, M_a):
     Mask = np.zeros([v])
     Mask[np.where(np.count_nonzero(Y, axis=0)>0)[0]] = 1
     
-    # Apply mask to Y
-    Y = Y[:, np.where(np.count_nonzero(Y, axis=0)>0)[0]]
+    # Apply full mask to Y
+    Y_fm = Y[:, np.where(np.count_nonzero(Y, axis=0)>0)[0]]
+
+    # Apply analysis mask to Y, we use the analysis mask here as the product
+    # matrices across all batches should have the same masking for convinience
+    # We can apply the full mask at a later stage.
+    Y = Y[:, np.where(M_a.reshape([v]))[0]]
 
     # Work out the mask.
-    M = (Y!=0)
+    M = (Y_fm!=0)
 
     # Get indices corresponding to the unique rows of M
     M_df = pd.DataFrame(M.transpose())
@@ -505,14 +508,23 @@ def obtainY(Y_files, M_files, M_t, M_a):
     _, idx = np.unique(M, axis=1, return_index=True)
     M = M[:,np.sort(idx)]
 
-    return Y, Mask, n_sv, M, Mmap
+    # Reshape Y
+    Y = Y.reshape(Y.shape[0], Y.shape[1], 1).transpose((1,0,2))
+
+    # Return results
+    return Y, n_sv, M, Mmap
 
 
 # ============================================================================
-# 
-# The below function takes in an array A and a 3D mask volume and returns a 
-# array AtA corresponding to A'A for all voxels inside the mask and zero for
-# all voxels outside the mask.
+#
+# Given two 3D numpy arrays, A and B, of shape (1, k1, k2) and (v, k1, k3)
+# respectively, the below function calculates the (v, k2, k3) matrix A'B
+# and outputs it to a file in a "memory safe" way, ensuring that the 
+# (v, k2, k3) matrix is calculated and output in managable chunks, one at a
+# time.
+#
+# This function is designed with the use case of the product matrices X'Y and
+# Z'Y in mind.
 #
 # ----------------------------------------------------------------------------
 #
@@ -520,76 +532,35 @@ def obtainY(Y_files, M_files, M_t, M_a):
 #
 # ----------------------------------------------------------------------------
 #
-#  - `A`: An (n by v) array.
-#  - `Mask`: The 3D mask array.
-#
-# ----------------------------------------------------------------------------
-#
-# This function gives as outputs:
-#
-# ----------------------------------------------------------------------------
-#
-#  - `AtA`: A array corresponding to A'A for all voxels inside the mask and
-#           zero for all voxels outside the mask.
+# - `A`: The (1, k1, k2) shaped matrix.
+# - `B`: The (v, k1, k3) shaped matrix.
+# - `MAXMEM`: The maximum memory allowed for usage, in bytes.
+# - `filename`: The name of the file.
 #
 # ============================================================================
-def unmasked_AtA(A, Mask):
+def memorySafeAtB(A,B,MAXMEM,filename):
 
-    # Read in number of observations and voxels.
-    n = A.shape[0]
-    v = A.shape[1]
+    # Record v and k3 (which is usually p or q)
+    v = B.shape[0]
+    pORq = A.shape[2]
+
+    # Create a memory-mapped .npy file with the dimensions and dtype we want
+    M = open_memmap(filename, mode='w+', dtype='float64', shape=(v,pORq))
+        
+    # Work out the number of voxels we can save at a time.
+    # (8 bytes per numpy float exponent multiplied by 10
+    # for a safe overhead)
+    vPerBlock = MAXMEM/(10*8*pORq)
+
+    # Work out the indices for each group of voxels
+    voxelGroups = np.array_split(np.arange(v, dtype='int32'), v//vPerBlock+1)
     
-    # Reshape A
-    A_rs = A.transpose().reshape(v, n, 1)
-    At_rs = A.transpose().reshape(v, 1, n)
-    del A
-
-    # Calculate A transpose A.
-    AtA_m = np.matmul(At_rs,A_rs).reshape([v, 1])
-
-    # Unmask YtY
-    AtA = np.zeros([Mask.shape[0], 1])
-    AtA[np.flatnonzero(Mask),:] = AtA_m[:]
-
-    return AtA
-
-
-# ============================================================================
-# 
-# The below function takes in two matrices, A and B, and a 3D mask volume and
-# returns an array AtB corresponding to A'B for all voxels inside the mask
-# and zero for all voxels outside the mask.
-#
-# ----------------------------------------------------------------------------
-#
-# This function takes in the following inputs:
-#
-# ----------------------------------------------------------------------------
-#
-#  - `A`: An (n by v) array.
-#  - `B`: An (v by n by p) array.
-#  - `Mask`: The 3D mask array.
-#
-# ----------------------------------------------------------------------------
-#
-# This function gives as outputs:
-#
-# ----------------------------------------------------------------------------
-#
-#  - `AtB`: A array corresponding to A'B for all voxels inside the mask and
-#           zero for all voxels outside the mask.
-#
-# ============================================================================
-def unmasked_AtB(A, B, Mask):
-    
-    # Calculate A transpose B (Masked)
-    AtB_m = A.transpose() @ B
-
-    # Unmask XtY
-    AtB = np.zeros([AtB_m.shape[0], Mask.shape[0]])
-    AtB[:,np.flatnonzero(Mask)] = AtB_m[:]
-
-    return AtB
+    # Loop through each group of voxels saving A'B for those voxels
+    for vb in range(int(v//vPerBlock+1)):
+        M[voxelGroups[vb],:]=(A.transpose(0,2,1) @ B[voxelGroups[vb],:,:]).reshape(len(voxelGroups[vb]),pORq)
+        
+    # Delete M from memory (important!)
+    del M
 
 
 if __name__ == "__main__":

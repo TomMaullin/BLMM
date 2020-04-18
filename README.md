@@ -26,6 +26,7 @@ The regression model for BLMM must be specified in `blmm_config.yml`. Below is a
 The following fields are mandatory:
 
  - `Y_files`: Text file containing a list of response variable images in NIFTI format.
+ - `analysis_mask`: A mask to be applied during analysis.
  - `X`: CSV file of the design matrix (no column header, no ID row).
  - `Z`: Random factors in the design. They should be listed as `f1,f2,...` etc and each random factor should contain the fields:
    - `name`: Name of the random factor.
@@ -48,12 +49,13 @@ The following fields are optional:
  - `Missingness`: This field allows the user to mask the image based on how many studies had recorded values for each voxel. This can be specified in 3 ways.
    - `MinPercent`: The percentage of studies present at a voxel necessary for that voxel to be included in the final analysis mask. For example, if this is set to `0.1` then any voxel with recorded values for at least 10% of studies will be kept in the analysis.
    - `MinN`: The number of studies present at a voxel necessary for that voxel to be included in the final analysis mask. For example, if this is set to `20` then any voxel with recorded values for at least 20 studies will be kept in the analysis.
- - `analysis_mask`: A mask to be applied during analysis.
  - `OutputCovB`: If set to `True` this will output between beta covariance maps. For studies with a large number of paramters this may not be desirable as, for example, 30 analysis paramters will create 30x30=900 between beta covariance maps. By default this is set to `True`.
  - `data_mask_thresh`: Any voxel with value below this threshold will be treated as missing data. (By default, no such thresholding  is done, i.e. `data_mask_thresh` is essentially -infinity). 
  - `minlog`: Any `-inf` values in the `-log10(p)` maps will be converted to the value of `minlog`. Currently, a default value of `-323.3062153431158` is used as this is the most negative value which was seen during testing before `-inf` was encountered (see [this thread](https://github.com/TomMaullin/BLMM/issues/76) for more details).
  - `method`: (Beta option). Which method to use for parameter estimation. Options are: `pSFS` (pseudo Simplified Fisher Scoring), `SFS` (Simplified Fisher Scoring), `pFS` (pseudo Fisher Scoring) and `FS` (Fisher Scoring). The (recommended) default is `pSFS`.
  - `tol`: Tolerance for convergence for the parameter estimation. Estimates will be output once the log-likelihood changes by less than `tol` from iteration to iteration. The default value is `1e-6`. 
+ - `voxelBatching`: (Recommended for large designs). If set to `1`, the parameter estimation and inference steps of the analysis will be performed on seperate groups (batches) of voxels concurrently/in parallel. By default this is set to `0`. This setting is purely for computation speed purposes.
+ - `maxnvb`: (Only used when `voxelBatching` is set to `1`). The maximum number of voxel batches/concurrent jobs allowed for estimation and inference. By default this is set to `60`. For large designs, this prevents the code from trying to submit thousands of jobs, should it decide this would be the quickest way to perform computation. This setting is purely for computation speed purposes.
 
 
  

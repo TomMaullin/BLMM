@@ -1,4 +1,5 @@
 import os
+import time
 import pandas as pd
 import nibabel as nib
 import numpy as np
@@ -176,6 +177,16 @@ def str2vec(c):
 # ============================================================================
 def addBlockToNifti(fname, block, blockInds,dim=None,volInd=None,aff=None,hdr=None):
 
+    # Check if file is in use
+    fileLocked = True
+    while fileLocked:
+        try:
+            # Create lock file, so other jobs know we are writing to this file
+            os.open(fname + ".lock", os.O_CREAT|os.O_EXCL|os.O_RDWR)
+            fileLocked = False
+        except FileExistsError:
+            fileLocked = True
+
     # Check volInd is correct datatype
     if volInd is not None:
 
@@ -270,4 +281,217 @@ def addBlockToNifti(fname, block, blockInds,dim=None,volInd=None,aff=None,hdr=No
     # Save NIFTI
     nib.save(nifti, fname)
 
+    # Delete lock file, so other jobs know they can now write to the
+    # file
+    os.remove(fname + ".lock")
+
     del nifti, fname, data_out, affine
+
+
+# ============================================================================
+#
+# The below function reads in a numpy file as a memory map and returns the 
+# specified lines from the file. The benefit of this is that the entire file
+# is not read into memory and we retrieve only the parts of the file we need.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `filename`: The name of the file.
+# - `lines`: Indices of the lines we wish to retrieve from the file.
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `data_lines`: The lines from the file we wanted to retrieve.  
+#
+# ============================================================================
+def readLinesFromNPY(filename, lines):
+
+    # Load in the file but in memory map mode
+    data_memmap = np.load(filename,mmap_mode='r')
+
+    # Read in the desired lines
+    data_lines = np.array(data_memmap[lines,:])
+
+    # We don't want this file hanging around
+    del data_memmap
+
+    return(data_lines)
+
+
+# ============================================================================
+#
+# The below function takes in an analysis mask and either; returns the mask in
+# flattened form, or, given a specified block number, vb, and number of blocks,
+# returns a mask, in flattened form, containing only the indices of the vb^th
+# block of voxels.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `am`: The analysis mask as a 3d volume.
+# - `vb`: The number of the voxel block of interest (less than 0 return all
+#         indices)
+# - `nvb`: The number of voxel blocks in total.
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `amInds`: The indices for the mask.
+#
+# ============================================================================
+def get_amInds(am, vb=None, nvb=None):
+
+  # Reshape the analysis mask
+  am = am.reshape([np.prod(am.shape),1])
+
+  # Work out analysis mask indices.
+  amInds=np.where(am==1)[0]
+
+  # Get vb^th block of voxels
+  if vb is not None and vb>=0:
+
+    # Split am into equal nvb "equally" (ish) sized blocks and take
+    # the vb^th block.
+    amInds = np.array_split(amInds, nvb)[vb]
+
+  return(amInds)
+
+
+# ============================================================================
+#
+# The below function computes the  number of voxel blocks we have to split the
+# data into, due to memory constraints.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `inputs`: The inputs dictionary read from a blmm inputs cfg file.
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `nvb`: The number of voxel blocks we have to split the data into in order
+#          to compute the design.
+#
+# ============================================================================
+def numVoxelBlocks(inputs):
+
+  # ----------------------------------------------------------------
+  # Number of levels and number of random effects
+  # ----------------------------------------------------------------
+  # Random factor variables.
+  rfxmats = inputs['Z']
+
+  # Number of random effects
+  r = len(rfxmats)
+
+  # Number of random effects for each factor, q
+  nraneffs = []
+
+  # Number of levels for each factor, l
+  nlevels = []
+
+  for k in range(r):
+
+    rfxdes = loadFile(rfxmats[k]['f' + str(k+1)]['design'])
+    rfxfac = loadFile(rfxmats[k]['f' + str(k+1)]['factor'])
+
+    nraneffs = nraneffs + [rfxdes.shape[1]]
+    nlevels = nlevels + [len(np.unique(rfxfac))]
+
+  # Get number of random effects
+  nraneffs = np.array(nraneffs)
+  nlevels = np.array(nlevels)
+  q = np.sum(nraneffs*nlevels)
+
+  # Check if the maximum memory is saved.    
+  if 'MAXMEM' in inputs:
+    MAXMEM = eval(inputs['MAXMEM'])
+  else:
+    MAXMEM = 2**32
+
+  # ----------------------------------------------------------------
+  # Work out number of voxels we'd ideally want in a block
+  # ----------------------------------------------------------------
+  # This is done by taking the maximum memory (in bytes), divided
+  # by roughly the amount of memory a float in numpy takes (8), 
+  # divided by 10 (allowing us to have up to 10 variables of
+  # allowed size at any one time), divided by q^2 (the number of 
+  # random effects squared/the largest matrix size we would
+  # look at).
+  vPerBlock = MAXMEM/(10*8*(q**2))
+
+  # Read in analysis mask (if present)
+  if 'analysis_mask' in inputs:
+    am = loadFile(inputs['analysis_mask'])
+    am = am.get_data()
+  else:
+    am = np.ones(Y0.shape)
+
+  # Work out number of non-zero voxels in analysis mask
+  v = np.sum(am!=0)
+
+  # Work out number of voxel blocks we would need.
+  nvb = v//vPerBlock+1
+
+  # Return number of voxel blocks
+  return(nvb)
+
+
+# ============================================================================
+#
+# The below function computes the  number of voxel blocks we are able to split
+# the data into for parallel computation.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `inputs`: The inputs dictionary read from a blmm inputs cfg file.
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `nvb`: The number of voxel blocks we can split the data into for parallel
+#          computation.
+#
+# ============================================================================
+def pracNumVoxelBlocks(inputs):
+
+  # Check if maximum number of voxel blocks specified,
+  # otherwise, default to 60
+  if 'maxnvb' in inputs:
+    maxnvb = inputs['maxnvb']
+  else:
+    maxnvb = 60
+
+  # Work out number of voxel blocks we should use.
+  nvb = np.min([numVoxelBlocks(inputs), maxnvb])
+
+  # Return number of voxel blocks
+  return(nvb)

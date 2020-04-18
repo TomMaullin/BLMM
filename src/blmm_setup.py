@@ -5,8 +5,9 @@ w.simplefilter(action = 'ignore', category = FutureWarning)
 import numpy as np
 import sys
 import os
+import shutil
 import yaml
-from lib.fileio import loadFile, str2vec
+from lib.fileio import loadFile, str2vec, pracNumVoxelBlocks
 
 # ====================================================================================
 #
@@ -111,6 +112,26 @@ def main(*args):
     # Output directory
     OutDir = inputs['outdir']
 
+    # --------------------------------------------------------------------------------
+    # Remove any files from the previous runs
+    #
+    # Note: This is important as if we are outputting blocks to files we want to be
+    # sure none of the previous results are lingering around anywhere.
+    # --------------------------------------------------------------------------------
+
+    files = ['blmm_vox_n.nii', 'blmm_vox_mask.nii', 'blmm_vox_edf.nii', 'blmm_vox_beta.nii',
+             'blmm_vox_llh.nii', 'blmm_vox_sigma2.nii', 'blmm_vox_D.nii', 'blmm_vox_resms.nii',
+             'blmm_vox_cov.nii', 'blmm_vox_conT_swedf.nii', 'blmm_vox_conT.nii', 'blmm_vox_conTlp.nii',
+             'blmm_vox_conSE.nii', 'blmm_vox_con.nii', 'blmm_vox_conF.nii', 'blmm_vox_conF_swedf.nii',
+             'blmm_vox_conFlp.nii', 'blmm_vox_conR2.nii']
+
+    for file in files:
+        if os.path.exists(os.path.join(OutDir, file)):
+            os.remove(os.path.join(OutDir, file))
+
+    if os.path.exists(os.path.join(OutDir, 'tmp')):  
+        shutil.rmtree(os.path.join(OutDir, 'tmp'))
+
     # Get number of parameters
     L1 = str2vec(inputs['contrasts'][0]['c' + str(1)]['vector'])
     L1 = np.array(L1)
@@ -168,6 +189,19 @@ def main(*args):
     # Output number of batches to a text file
     with open(os.path.join(OutDir, "nb.txt"), 'w') as f:
         print(int(np.ceil(len(Y_files)/int(blksize))), file=f)
+
+    # If in voxel batching mode, save the number of voxel batches we need
+    if 'voxelBatching' in inputs:
+
+        if inputs['voxelBatching']:
+
+            # Obtain number of voxel blocks for parallelization.
+            nvb = pracNumVoxelBlocks(inputs)
+
+            # Output number of voxel batches to a text file
+            with open(os.path.join(OutDir, "nvb.txt"), 'w') as f:
+                print(int(nvb), file=f)
+
 
     # Reset warnings
     w.resetwarnings()
