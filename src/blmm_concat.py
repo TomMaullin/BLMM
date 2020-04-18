@@ -21,17 +21,15 @@ import src.blmm_estimate as blmm_estimate
 # ====================================================================================
 #
 # This file is the third stage of the BLMM pipeline. This stage reads in the product
-# matrices output by each of the `blmm_batch` jobs during the second stage and s 
-# them to obtain the product matrices for the overall model. It also calculates n_sv
-# for the whole model and the overall mask.
+# matrices X'Y, Z'Y and Y'Y output by each of the `blmm_batch` jobs during the second
+# stage and use them to obtain the product matrices X'Y, Z'Y and Y'Y for the overall
+# model. It also calculates n_sv for the whole model and the overall mask.
 #
-# Following this, the `blmm_concat` code then seperates the voxels in the brain into
-# two categories; "inner" and "ring" (explained in the developer notes below). Once
-# this has been done the product matrices corresponding to "inner" and "ring" voxels
-# are passed to `blmm_estimate`, which estimates the parameters of the model; beta,
-# sigma2 and D. Following this, the product matrices and parameter estimates are 
-# passed to `blmm_inference`, which generates statistic maps and other miscelanoues 
-# output.
+# Currently, the product matrices Z'Z, Z'X and X'X are not concatenated as we have
+# only recorded the unique instances of these matrices during the batch stage,
+# instead of an instance for each voxel and concatenating these turns out to be both
+# less memory efficient and less time efficient than leaving them in their current
+# form.
 #
 # ------------------------------------------------------------------------------------
 #
