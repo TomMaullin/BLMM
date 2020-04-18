@@ -985,7 +985,7 @@ def initDk2D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict):
   infoMat = invDupMatdict[k] @ ZtZkronZtZ @ invDupMatdict[k].transpose()
 
   # Work out the final term.
-  Dkest = vech2mat2D(np.linalg.inv(infoMat) @ mat2vech2D(invSig2ZteetZminusZtZ)) 
+  Dkest = vech2mat2D(np.linalg.solve(infoMat, mat2vech2D(invSig2ZteetZminusZtZ))) 
   
   return(Dkest)
 

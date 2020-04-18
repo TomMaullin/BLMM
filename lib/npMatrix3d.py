@@ -395,7 +395,7 @@ def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict):
   infoMat = invDupMatdict[k] @ ZtZkronZtZ @ invDupMatdict[k].transpose()
 
   # Work out the final term.
-  Dkest = vech2mat3D(np.linalg.inv(infoMat) @ mat2vech3D(invSig2ZteetZminusZtZ)) 
+  Dkest = vech2mat3D(np.linalg.solve(infoMat, mat2vech3D(invSig2ZteetZminusZtZ)))
   
   
   return(Dkest)
@@ -1923,7 +1923,7 @@ def get_swdf_T3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs):
             n = n.reshape(sigma2.shape)
 
     # Get D(I+Z'ZD)^(-1)
-    DinvIplusZtZD = D @ np.linalg.inv(np.eye(ZtZ.shape[1]) + ZtZ @ D)
+    DinvIplusZtZD = np.linalg.solve(np.eye(ZtZ.shape[1]) + D @ ZtZ, D)
 
     # Get S^2 (= Var(L\beta))
     S2 = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
@@ -1935,7 +1935,7 @@ def get_swdf_T3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs):
     InfoMat = get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nraneffs, ZtZ)
 
     # Calculate df estimator
-    df = 2*(S2**2)/(dS2.transpose(0,2,1) @ np.linalg.inv(InfoMat) @ dS2)
+    df = 2*(S2**2)/(dS2.transpose(0,2,1) @ np.linalg.solve(InfoMat, dS2))
 
     # Return df
     return(df)

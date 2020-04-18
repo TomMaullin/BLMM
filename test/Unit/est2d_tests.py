@@ -38,7 +38,7 @@ def test2D():
     #===============================================================================
 
     # Generate test data
-    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D = genTestData2D(n=8000)
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D = genTestData2D()
 
     # Work out number of observations, parameters, random effects, etc
     n = X.shape[0]

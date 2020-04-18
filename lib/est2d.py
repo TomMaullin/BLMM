@@ -168,6 +168,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
 
                 D[Dinds[counter]:Dinds[counter+1], Dinds[counter]:Dinds[counter+1]] = Ddict[k]
                 counter = counter + 1
+        D = D.toarray()
 
         # Work out e'e
         ete = ssr2D(YtX, YtY, XtX, beta)
@@ -208,12 +209,12 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
 
                 D[Dinds[counter]:Dinds[counter+1], Dinds[counter]:Dinds[counter+1]] = Ddict[k]
                 counter = counter + 1
+        D = D.toarray()
 
     # ------------------------------------------------------------------------------
     # Obtain D(I+Z'ZD)^(-1)
     # ------------------------------------------------------------------------------
-    IplusZtZD = np.eye(q) + ZtZ @ D
-    DinvIplusZtZD = forceSym2D(D @ scipy.sparse.linalg.inv(scipy.sparse.csc_matrix(IplusZtZD)))
+    DinvIplusZtZD = forceSym2D(np.linalg.solve(np.eye(q) + D @ ZtZ, D))
 
     # ------------------------------------------------------------------------------
     # Initial lambda and likelihoods
@@ -245,7 +246,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
     # Number of iterations
     nit = 0
     while np.abs(llhprev-llhcurr)>tol:
-        
+
         # Change current likelihood to previous
         llhprev = llhcurr
 
@@ -304,7 +305,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             #-----------------------------------------------------------------------
             # Perform update
             #-----------------------------------------------------------------------
-            update = lam*forceSym2D(np.linalg.inv(covdldcholk)) @ dldcholk
+            update = lam*np.linalg.solve(forceSym2D(covdldcholk), dldcholk)
         
             #-----------------------------------------------------------------------
             # Update D_k and chol_k
@@ -321,8 +322,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             #-----------------------------------------------------------------------
             # Obtain D(I+Z'ZD)^(-1)
             #-----------------------------------------------------------------------
-            IplusZtZD = np.eye(q) + (ZtZ @ D)
-            DinvIplusZtZD = forceSym2D(D @ scipy.sparse.linalg.inv(scipy.sparse.csc_matrix(IplusZtZD)))
+            DinvIplusZtZD = forceSym2D(np.linalg.solve(np.eye(q) + D @ ZtZ, D))
 
         # --------------------------------------------------------------------------
         # Matrices for next iteration
@@ -332,6 +332,10 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
 
         # Sum of squared residuals
         ete = ssr2D(YtX, YtY, XtX, beta)
+
+        # Check sigma2 hasn't hit a boundary
+        if sigma2<0:
+            sigma2=1e-10
 
         #---------------------------------------------------------------------------
         # Update the step size and log likelihood
@@ -458,6 +462,7 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n,
                     D = Ddict[i]
                 else:
                     D = scipy.linalg.block_diag(D, Ddict[i])
+        D = D.toarray()
 
         # Work out e'e
         ete = ssr2D(YtX, YtY, XtX, beta)
@@ -526,12 +531,9 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n,
     # Number of iterations
     nit = 0
     while np.abs(llhprev-llhcurr)>tol:
-        
+
         # Update nit
         nit = nit+1
-        
-        # print('sigma2 2D ', nit)
-        # print(sigma2)
 
         # Change current likelihood to previous
         llhprev = llhcurr
@@ -545,8 +547,7 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n,
         # --------------------------------------------------------------------------
         # Obtain D(I+Z'ZD)^(-1)
         # --------------------------------------------------------------------------
-        IplusZtZD = np.eye(q) + (ZtZ @ D)
-        DinvIplusZtZD = forceSym2D(D @ scipy.sparse.linalg.inv(scipy.sparse.csc_matrix(IplusZtZD)))
+        DinvIplusZtZD = forceSym2D(np.linalg.solve(np.eye(q) + D @ ZtZ, D))
 
         # --------------------------------------------------------------------------
         # Derivatives
@@ -629,7 +630,7 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n,
         # ----------------------------------------------------------------------
         # Update step
         # ----------------------------------------------------------------------
-        paramVector = paramVector + lam*(np.linalg.inv(FisherInfoMat) @ derivVector)
+        paramVector = paramVector + lam*(np.linalg.solve(FisherInfoMat,derivVector))
 
         # ----------------------------------------------------------------------
         # Get the new parameters
@@ -659,8 +660,11 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n,
         ete = ssr2D(YtX, YtY, XtX, beta)
 
         # Inverse of (I+Z'ZD) multiplied by D
-        IplusZtZD = np.eye(q) + (ZtZ @ D)
-        DinvIplusZtZD = forceSym2D(D @ scipy.sparse.linalg.inv(scipy.sparse.csc_matrix(IplusZtZD)))
+        DinvIplusZtZD = forceSym2D(np.linalg.solve(np.eye(q) + D @ ZtZ, D))
+
+        # Check sigma2 hasn't hit a boundary
+        if sigma2<0:
+            sigma2=1e-10
 
         # ----------------------------------------------------------------------
         # Update the step size and log likelihood
@@ -826,8 +830,7 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
     # ------------------------------------------------------------------------------
     # Obtain D(I+Z'ZD)^(-1) 
     # ------------------------------------------------------------------------------
-    IplusZtZD = np.eye(q) + ZtZ @ D
-    DinvIplusZtZD = forceSym2D(D @ scipy.sparse.linalg.inv(scipy.sparse.csc_matrix(IplusZtZD)))
+    DinvIplusZtZD = forceSym2D(np.linalg.solve(np.eye(q) + D @ ZtZ, D))
 
     # ------------------------------------------------------------------------------
     # Initial lambda and likelihoods
@@ -859,7 +862,7 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
     # ------------------------------------------------------------------------------
     nit = 0
     while np.abs(llhprev-llhcurr)>tol:
-        
+
         # Update number of iterations
         nit = nit+1
         
@@ -952,7 +955,7 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
         # --------------------------------------------------------------------------
         # Update step
         # --------------------------------------------------------------------------
-        paramVector = paramVector + lam*(np.linalg.inv(FisherInfoMat) @ derivVector)
+        paramVector = paramVector + lam*(np.linalg.solve(FisherInfoMat, derivVector))
         
         # --------------------------------------------------------------------------
         # Get the new parameters
@@ -983,8 +986,11 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
         ete = ssr2D(YtX, YtY, XtX, beta)
 
         # Inverse of (I+Z'ZD) multiplied by D
-        IplusZtZD = np.eye(q) + (ZtZ @ D)
-        DinvIplusZtZD = forceSym2D(D @ scipy.sparse.linalg.inv(scipy.sparse.csc_matrix(IplusZtZD)))
+        DinvIplusZtZD = forceSym2D(np.linalg.solve(np.eye(q) + D @ ZtZ, D))
+
+        # Check sigma2 hasn't hit a boundary
+        if sigma2<0:
+            sigma2=1e-10
 
         # --------------------------------------------------------------------------
         # Update the step size and log likelihood
@@ -1154,6 +1160,7 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
                 # Add a block for each level of each factor.
                 D[Dinds[counter]:Dinds[counter+1], Dinds[counter]:Dinds[counter+1]] = Ddict[k]
                 counter = counter + 1
+        D = D.toarray()
 
         # Work out e'e
         ete = ssr2D(YtX, YtY, XtX, beta)
@@ -1189,12 +1196,12 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
                 # Add a block for each level of each factor.
                 D[Dinds[counter]:Dinds[counter+1], Dinds[counter]:Dinds[counter+1]] = Ddict[k]
                 counter = counter + 1
+        D = D.toarray()
 
     # ------------------------------------------------------------------------------
     # Obtain D(I+Z'ZD)^(-1)
     # ------------------------------------------------------------------------------
-    IplusZtZD = np.eye(q) + ZtZ @ D
-    DinvIplusZtZD = forceSym2D(D @ scipy.sparse.linalg.inv(scipy.sparse.csc_matrix(IplusZtZD)))
+    DinvIplusZtZD = forceSym2D(np.linalg.solve(np.eye(q) + np.array(D) @ ZtZ, D))
 
     # ------------------------------------------------------------------------------
     # Initial lambda and likelihoods
@@ -1226,11 +1233,11 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
     # Number of iterations
     nit = 0
     while np.abs(llhprev-llhcurr)>tol:
-        
+
         # Change current likelihood to previous
         llhprev = llhcurr
 
-        #print(nit)
+        # Number of iterations
         nit = nit+1
 
         #---------------------------------------------------------------------------
@@ -1268,7 +1275,7 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             #-----------------------------------------------------------------------
             # Update step
             #-----------------------------------------------------------------------
-            update = lam*forceSym2D(np.linalg.inv(covdldDk)) @ mat2vec2D(dldD)
+            update = lam*np.linalg.solve(forceSym2D(covdldDk),mat2vec2D(dldD))
             update = vec2vech2D(update)
             
             # Update D_k
@@ -1285,8 +1292,7 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             #-----------------------------------------------------------------------
             # Obtain D(I+Z'ZD)^(-1)
             #-----------------------------------------------------------------------
-            IplusZtZD = np.eye(q) + (ZtZ @ D)
-            DinvIplusZtZD = forceSym2D(D @ scipy.sparse.linalg.inv(scipy.sparse.csc_matrix(IplusZtZD)))
+            DinvIplusZtZD = forceSym2D(np.linalg.solve(np.eye(q) + D @ ZtZ, D))
 
         # --------------------------------------------------------------------------
         # Matrices for next iteration
@@ -1296,6 +1302,10 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
 
         # Sum of squared residuals
         ete = ssr2D(YtX, YtY, XtX, beta)
+
+        # Check sigma2 hasn't hit a boundary
+        if sigma2<0:
+            sigma2=1e-10
 
         # --------------------------------------------------------------------------
         # Update step size and likelihood
@@ -1476,8 +1486,7 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
     # ------------------------------------------------------------------------------
     # Obtain D(I+Z'ZD)^(-1) 
     # ------------------------------------------------------------------------------
-    IplusZtZD = np.eye(q) + ZtZ @ D
-    DinvIplusZtZD = forceSym2D(D @ scipy.sparse.linalg.inv(scipy.sparse.csc_matrix(IplusZtZD)))
+    DinvIplusZtZD = forceSym2D(np.linalg.solve(np.eye(q) + D @ ZtZ, D))
 
     # ------------------------------------------------------------------------------
     # Initial lambda and likelihoods
@@ -1568,7 +1577,7 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
             #-----------------------------------------------------------------------
             # Update step
             #-----------------------------------------------------------------------
-            update = lam*forceSym2D(np.linalg.inv(covdldDk)) @ mat2vech2D(dldD)
+            update = lam*np.linalg.solve(forceSym2D(covdldDk), mat2vech2D(dldD))
             
             # Update D_k
             Ddict[k] = makeDnnd2D(vech2mat2D(mat2vech2D(Ddict[k]) + update))
@@ -1584,8 +1593,7 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
             # ----------------------------------------------------------------------
             # Obtain D(I+Z'ZD)^(-1) 
             # ----------------------------------------------------------------------
-            IplusZtZD = np.eye(q) + (ZtZ @ D)
-            DinvIplusZtZD = forceSym2D(D @ np.linalg.inv(IplusZtZD)) 
+            DinvIplusZtZD = forceSym2D(np.linalg.solve(np.eye(q) + D @ ZtZ, D)) 
 
         # --------------------------------------------------------------------------
         # Matrices for next iteration
@@ -1595,6 +1603,10 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
 
         # Sum of squared residuals
         ete = ssr2D(YtX, YtY, XtX, beta)
+
+        # Check sigma2 hasn't hit a boundary
+        if sigma2<0:
+            sigma2=1e-10
 
         # --------------------------------------------------------------------------
         # Update step size and likelihood
