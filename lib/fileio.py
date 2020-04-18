@@ -180,21 +180,12 @@ def addBlockToNifti(fname, block, blockInds,dim=None,volInd=None,aff=None,hdr=No
     # Check if file is in use
     fileLocked = True
     while fileLocked:
-        time.sleep(0.002)
-        fileLocked = os.path.exists(fname + ".lock")
-
-    # While fileLocked:
-
-    # try:
-
-    # Create lock file, so other jobs know we are writing to this file
-    with open(fname + ".lock", 'w') as fp: # os.open("/home/tommaullin/Documents/BLMM_creation/BLMM/scripts/cluster_blmm_batch.sh", os.O_CREAT | os.O_EXCL)
-        pass
-    # fileLocked = False
-
-    # except FileExistsError:
-    #    fileLocked = True
-
+        try:
+            # Create lock file, so other jobs know we are writing to this file
+            os.open(fname + ".lock", os.O_CREAT|os.O_EXCL|os.O_RDWR)
+            fileLocked = False
+        except FileExistsError:
+            fileLocked = True
 
     # Check volInd is correct datatype
     if volInd is not None:
