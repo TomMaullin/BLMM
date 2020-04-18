@@ -56,7 +56,7 @@ The following fields are optional:
  - `tol`: Tolerance for convergence for the parameter estimation. Estimates will be output once the log-likelihood changes by less than `tol` from iteration to iteration. The default value is `1e-6`. 
  - `voxelBatching`: (Recommended for large designs). If set to `1`, the parameter estimation and inference steps of the analysis will be performed on seperate groups (batches) of voxels concurrently/in parallel. By default this is set to `0`. This setting is purely for computation speed purposes.
  - `maxnvb`: (Only used when `voxelBatching` is set to `1`). The maximum number of voxel batches/concurrent jobs allowed for estimation and inference. By default this is set to `60`. For large designs, this prevents the code from trying to submit thousands of jobs, should it decide this would be the quickest way to perform computation. This setting is purely for computation speed purposes.
-
+ - `resms`: If set to `1`, the `blmm_vox_resms` volume is output, if set to `0`, the `blmm_vox_resms` volume is not output.
 
  
 #### Examples
@@ -169,7 +169,7 @@ The maps are given the same ordering as the inputs. For example, in `blmm_vox_co
 
 \* These degrees of freedom are not used in inference and are only given as reference. The degrees of freedom used in inference are the Sattherthwaite approximations given in `blmm_vox_conT_swedf`  and `blmm_vox_conF_swedf` .
 \*\* The `D` estimates are ordered as `vech(D1)`,...,`vech(Dr)` where `Dk` is the Random effects covariance matrix for the `k`th random factor, `r` is the total number of random factors in the design and `vech` represents ["half-vectorisation"](https://en.wikipedia.org/wiki/Vectorization_(mathematics)#Half-vectorization).
-\*\*\* This may differ from the estimate of `sigma2`, which accounts for the random effects variance.
+\*\*\* This is optional and may differ from the estimate of `sigma2`, which accounts for the random effects variance.
 
 ## Developer Notes
 
