@@ -146,8 +146,7 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n):
     # Obtain D(I+Z'ZD)^(-1)
     # ------------------------------------------------------------------------------
     # Inverse of (I+Z'ZD) multiplied by D
-    IplusZtZD = np.eye(q) + ZtZ @ D
-    DinvIplusZtZD =  forceSym3D(D @ np.linalg.inv(IplusZtZD)) 
+    DinvIplusZtZD =  forceSym3D(np.linalg.solve(np.eye(q) + D @ ZtZ, D)) 
     
     # ------------------------------------------------------------------------------
     # Initial lambda and likelihoods
@@ -190,12 +189,9 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n):
     # Iteration
     # ------------------------------------------------------------------------------
     while np.any(np.abs(llhprev-llhcurr)>tol):
-        
+
         # Update number of iterations
         nit = nit + 1
-
-        # print('sigma2 3D ', nit)
-        # print(sigma2)
 
         # Change current likelihood to previous
         llhprev = llhcurr
@@ -292,7 +288,7 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n):
         # --------------------------------------------------------------------------
         # Update step
         # --------------------------------------------------------------------------
-        paramVector = paramVector + np.einsum('i,ijk->ijk',lam,(np.linalg.inv(FisherInfoMat) @ derivVector))
+        paramVector = paramVector + np.einsum('i,ijk->ijk',lam,(np.linalg.solve(FisherInfoMat, derivVector)))
         
         # --------------------------------------------------------------------------
         # Get the new parameters
@@ -318,9 +314,11 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n):
         Zte = ZtY - (ZtX @ beta)
         
         # Inverse of (I+Z'ZD) multiplied by D
-        IplusZtZD = np.eye(q) + (ZtZ @ D)
-        DinvIplusZtZD = forceSym3D(D @ np.linalg.inv(IplusZtZD)) 
+        DinvIplusZtZD = forceSym3D(np.linalg.solve(np.eye(q) + D @ ZtZ, D)) 
         
+        # Check sigma2 hasn't hit a boundary
+        sigma2[sigma2<0]=1e-10
+
         # --------------------------------------------------------------------------
         # Update the step size
         # --------------------------------------------------------------------------
@@ -533,8 +531,7 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
     # ------------------------------------------------------------------------------
     # Obtain D(I+Z'ZD)^(-1) 
     # ------------------------------------------------------------------------------
-    IplusZtZD = np.eye(q) + ZtZ @ D
-    DinvIplusZtZD =  forceSym3D(D @ np.linalg.inv(IplusZtZD)) 
+    DinvIplusZtZD =  forceSym3D(np.linalg.solve(np.eye(q) + D @ ZtZ, D)) 
     
     # ------------------------------------------------------------------------------
     # Initial lambda and likelihoods
@@ -675,7 +672,7 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
         # --------------------------------------------------------------------------
         # Update step
         # --------------------------------------------------------------------------
-        paramVector = paramVector + np.einsum('i,ijk->ijk',lam,(forceSym3D(np.linalg.inv(FisherInfoMat)) @ derivVector))
+        paramVector = paramVector + np.einsum('i,ijk->ijk',lam,np.linalg.solve(forceSym3D(FisherInfoMat), derivVector))
         
         # --------------------------------------------------------------------------
         # Get the new parameters
@@ -700,9 +697,11 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
         # --------------------------------------------------------------------------
         # Inverse of (I+Z'ZD) multiplied by D
         # --------------------------------------------------------------------------
-        IplusZtZD = np.eye(q) + (ZtZ @ D)
-        DinvIplusZtZD = forceSym3D(D @ np.linalg.inv(IplusZtZD)) 
+        DinvIplusZtZD = forceSym3D(np.linalg.solve(np.eye(q) + D @ ZtZ, D)) 
         
+        # Check sigma2 hasn't hit a boundary
+        sigma2[sigma2<0]=1e-10
+
         # --------------------------------------------------------------------------
         # Update the step size and likelihoods
         # --------------------------------------------------------------------------
@@ -921,7 +920,7 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
     # Obtain D(I+Z'ZD)^(-1)
     # ------------------------------------------------------------------------------
     IplusZtZD = np.eye(q) + ZtZ @ D
-    DinvIplusZtZD =  forceSym3D(D @ np.linalg.inv(IplusZtZD)) 
+    DinvIplusZtZD =  forceSym3D(np.linalg.solve(np.eye(q) + D @ ZtZ, D)) 
     
     # ------------------------------------------------------------------------------
     # Initial lambda and likelihoods
@@ -979,7 +978,7 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
     # ------------------------------------------------------------------------------
     nit=0
     while np.any(np.abs(llhprev-llhcurr)>tol):
-        
+
         # Update number of iterations
         nit = nit + 1
             
@@ -1030,7 +1029,7 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
             #-----------------------------------------------------------------------
             # Work out update amount
             #-----------------------------------------------------------------------
-            update = forceSym3D(np.linalg.inv(covdldDk1dDk2)) @ mat2vech3D(dldDk)
+            update = np.linalg.solve(forceSym3D(covdldDk1dDk2), mat2vech3D(dldDk))
             
             # Multiply by stepsize
             update = np.einsum('i,ijk->ijk',lam, update)
@@ -1044,14 +1043,16 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
                 counter = counter + 1
             
             # Inverse of (I+Z'ZD) multiplied by D
-            IplusZtZD = np.eye(q) + (ZtZ @ D)
-            DinvIplusZtZD = forceSym3D(D @ np.linalg.inv(IplusZtZD)) 
+            DinvIplusZtZD = forceSym3D(np.linalg.solve(np.eye(q) + D @ ZtZ, D)) 
         
         # --------------------------------------------------------------------------
         # Recalculate matrices
         # --------------------------------------------------------------------------
         ete = ssr3D(YtX, YtY, XtX, beta)
         Zte = ZtY - (ZtX @ beta)
+        
+        # Check sigma2 hasn't hit a boundary
+        sigma2[sigma2<0]=1e-10
         
         # --------------------------------------------------------------------------
         # Update the step size and log likelihoods
@@ -1286,8 +1287,7 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
     # ------------------------------------------------------------------------------
     # Obtain D(I+Z'ZD)^(-1)
     # ------------------------------------------------------------------------------
-    IplusZtZD = np.eye(q) + ZtZ @ D
-    DinvIplusZtZD =  forceSym3D(D @ np.linalg.inv(IplusZtZD)) 
+    DinvIplusZtZD =  forceSym3D(np.linalg.solve(np.eye(q) + D @ ZtZ, D)) 
     
     # ------------------------------------------------------------------------------
     # Step size and log likelihoods
@@ -1345,7 +1345,7 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
     # ------------------------------------------------------------------------------
     nit=0
     while np.any(np.abs(llhprev-llhcurr)>tol):
-        
+
         # Update number of iterations
         nit = nit + 1
             
@@ -1406,7 +1406,7 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             #-----------------------------------------------------------------------
             # Work out update amount
             #-----------------------------------------------------------------------
-            update_p = forceSym3D(np.linalg.inv(covdldDk1dDk2)) @ mat2vec3D(dldDk)
+            update_p = np.linalg.solve(forceSym3D(covdldDk1dDk2), mat2vec3D(dldDk))
             
             # Multiply by stepsize
             update_p = np.einsum('i,ijk->ijk',lam, update_p)
@@ -1423,8 +1423,7 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # --------------------------------------------------------------------------
         # Obtain D(I+Z'ZD)^(-1)
         # --------------------------------------------------------------------------
-        IplusZtZD = np.eye(q) + (ZtZ @ D)
-        DinvIplusZtZD = forceSym3D(D @ np.linalg.inv(IplusZtZD)) 
+        DinvIplusZtZD = forceSym3D(np.linalg.solve(np.eye(q) + D @ ZtZ, D)) 
         
         # --------------------------------------------------------------------------
         # Recalculate matrices
@@ -1432,6 +1431,9 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         ete = ssr3D(YtX, YtY, XtX, beta)
         Zte = ZtY - (ZtX @ beta)
         
+        # Check sigma2 hasn't hit a boundary
+        sigma2[sigma2<0]=1e-10
+
         # --------------------------------------------------------------------------
         # Update the step size and log likelihood
         # --------------------------------------------------------------------------

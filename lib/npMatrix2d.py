@@ -11,7 +11,7 @@ import scipy.sparse
 #   understand this may not be as readable for developers new to the code. For
 #   nice latexed versions of the documentation here please see the google 
 #   colab notebooks here:
-#     - PLS: https://colab.research.google.com/drive/1add6pX26d32WxfMUTXNz4wixYR1nOGi0
+#     - PeLS: https://colab.research.google.com/drive/1add6pX26d32WxfMUTXNz4wixYR1nOGi0
 #     - FS: https://colab.research.google.com/drive/12CzYZjpuLbENSFgRxLi9WZfF5oSwiy-e
 #     - GS: https://colab.research.google.com/drive/1sjfyDF_EhSZY60ziXoKGh4lfb737LFPD
 #
@@ -985,7 +985,7 @@ def initDk2D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict):
   infoMat = invDupMatdict[k] @ ZtZkronZtZ @ invDupMatdict[k].transpose()
 
   # Work out the final term.
-  Dkest = vech2mat2D(np.linalg.inv(infoMat) @ mat2vech2D(invSig2ZteetZminusZtZ)) 
+  Dkest = vech2mat2D(np.linalg.solve(infoMat, mat2vech2D(invSig2ZteetZminusZtZ))) 
   
   return(Dkest)
 

@@ -14,7 +14,7 @@ from lib.fileio import loadFile
 #   understand this may not be as readable for developers new to the code. For
 #   nice latexed versions of the documentation here please see the google 
 #   colab notebooks here:
-#     - PLS: https://colab.research.google.com/drive/1add6pX26d32WxfMUTXNz4wixYR1nOGi0
+#     - PeLS: https://colab.research.google.com/drive/1add6pX26d32WxfMUTXNz4wixYR1nOGi0
 #     - FS: https://colab.research.google.com/drive/12CzYZjpuLbENSFgRxLi9WZfF5oSwiy-e
 #     - GS: https://colab.research.google.com/drive/1sjfyDF_EhSZY60ziXoKGh4lfb737LFPD
 # - Tom Maullin (12/11/2019)
@@ -395,7 +395,7 @@ def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict):
   infoMat = invDupMatdict[k] @ ZtZkronZtZ @ invDupMatdict[k].transpose()
 
   # Work out the final term.
-  Dkest = vech2mat3D(np.linalg.inv(infoMat) @ mat2vech3D(invSig2ZteetZminusZtZ)) 
+  Dkest = vech2mat3D(np.linalg.solve(infoMat, mat2vech3D(invSig2ZteetZminusZtZ)))
   
   
   return(Dkest)
@@ -729,7 +729,7 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
     
   if reml==True:
 
-    invXtinvVX = np.linalg.inv(XtX - ZtX.transpose((0,2,1)) @ DinvIplusZtZD @ ZtX)
+    invXtinvVX = np.linalg.pinv(XtX - ZtX.transpose((0,2,1)) @ DinvIplusZtZD @ ZtX)
 
     # For each level j we need to add a term
     for j in np.arange(nlevels[k]):
@@ -1514,7 +1514,7 @@ def get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2):
     XtinvVX = XtX - XtZ @ DinvIplusZtZD @ XtZ.transpose((0,2,1))
 
     # Work out var(LB) = L'(X'V^{-1}X)^{-1}L
-    covB = np.linalg.inv(XtinvVX)
+    covB = np.linalg.pinv(XtinvVX)
 
     # Calculate sigma^2(X'V^{-1}X)^(-1)
     covB = np.einsum('i,ijk->ijk',sigma2,covB)
@@ -1700,7 +1700,7 @@ def get_F3D(L, XtX, XtZ, DinvIplusZtZD, betahat, sigma2):
     varLB = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
 
     # Work out F
-    F = LB.transpose(0,2,1) @ np.linalg.inv(varLB) @ LB/rL
+    F = LB.transpose(0,2,1) @ np.linalg.pinv(varLB) @ LB/rL
 
     # Return T
     return(F)
@@ -1923,7 +1923,7 @@ def get_swdf_T3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs):
             n = n.reshape(sigma2.shape)
 
     # Get D(I+Z'ZD)^(-1)
-    DinvIplusZtZD = D @ np.linalg.inv(np.eye(ZtZ.shape[1]) + ZtZ @ D)
+    DinvIplusZtZD = np.linalg.solve(np.eye(ZtZ.shape[1]) + D @ ZtZ, D)
 
     # Get S^2 (= Var(L\beta))
     S2 = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
@@ -1935,7 +1935,7 @@ def get_swdf_T3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs):
     InfoMat = get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nraneffs, ZtZ)
 
     # Calculate df estimator
-    df = 2*(S2**2)/(dS2.transpose(0,2,1) @ np.linalg.inv(InfoMat) @ dS2)
+    df = 2*(S2**2)/(dS2.transpose(0,2,1) @ np.linalg.solve(InfoMat, dS2))
 
     # Return df
     return(df)
@@ -1994,7 +1994,7 @@ def get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
     DerivInds = np.insert(DerivInds,0,1)
 
     # Work of derivative wrt to sigma^2
-    dS2dsigma2 = L @ np.linalg.inv(XtiVX) @ L.transpose()
+    dS2dsigma2 = L @ np.linalg.pinv(XtiVX) @ L.transpose()
 
     # Add to dS2
     dS2[:,0:1] = dS2dsigma2.reshape(dS2[:,0:1].shape)
@@ -2021,7 +2021,7 @@ def get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
 
             # Work out the term to put into the kronecker product
             # K = Z_(k,j)'V^{-1}X(X'V^{-1})^{-1}L'
-            K = ZkjtiVX @ np.linalg.inv(XtiVX) @ L.transpose()
+            K = ZkjtiVX @ np.linalg.pinv(XtiVX) @ L.transpose()
             
             # Sum terms
             dS2dvechDk = dS2dvechDk + mat2vech3D(kron3D(K,K.transpose(0,2,1)))

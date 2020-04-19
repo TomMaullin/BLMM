@@ -125,8 +125,10 @@ def main(inputs, nraneffs, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX
     #             expression for more general methods
     #
     # ----------------------------------------------------------------------
-    resms = get_resms3D(YtX, YtY, XtX, beta,n,p).reshape(v)
-    addBlockToNifti(os.path.join(OutDir, 'blmm_vox_resms.nii'), resms, inds,volInd=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
+    if "resms" in inputs:
+        if inputs["resms"]==1:    
+            resms = get_resms3D(YtX, YtY, XtX, beta,n,p).reshape(v)
+            addBlockToNifti(os.path.join(OutDir, 'blmm_vox_resms.nii'), resms, inds,volInd=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
 
     # ----------------------------------------------------------------------
     # Calculate beta covariance maps (Optionally output)

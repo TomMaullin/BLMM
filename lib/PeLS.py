@@ -8,7 +8,7 @@ import os
 from lib.npMatrix2d import *
 from lib.cvxMatrix2d import *
 
-def PLS2D(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds):
+def PeLS2D(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds):
 
     # Obtain Lambda
     Lambda = mapping2D(theta, tinds, rinds, cinds)
@@ -67,7 +67,7 @@ def PLS2D(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, ri
     
     return(-logllh)
 
-def PLS2D_getBeta(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, tinds, rinds, cinds):
+def PeLS2D_getBeta(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, tinds, rinds, cinds):
 
     # Obtain Lambda
     Lambda = mapping2D(theta, tinds, rinds, cinds)
@@ -112,7 +112,7 @@ def PLS2D_getBeta(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, tind
 
 
 
-def PLS2D_getSigma2(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds):
+def PeLS2D_getSigma2(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds):
 
     # Obtain Lambda
     #t1 = time.time()
@@ -203,7 +203,7 @@ def PLS2D_getSigma2(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I,
 
     return(pss/n)
 
-def PLS2D_getD(theta, tinds, rinds, cinds, sigma2):
+def PeLS2D_getD(theta, tinds, rinds, cinds, sigma2):
 
     # Obtain Lambda
     Lambda = mapping2D(theta, tinds, rinds, cinds)

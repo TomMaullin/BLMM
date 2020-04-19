@@ -56,7 +56,7 @@ The following fields are optional:
  - `tol`: Tolerance for convergence for the parameter estimation. Estimates will be output once the log-likelihood changes by less than `tol` from iteration to iteration. The default value is `1e-6`. 
  - `voxelBatching`: (Recommended for large designs). If set to `1`, the parameter estimation and inference steps of the analysis will be performed on seperate groups (batches) of voxels concurrently/in parallel. By default this is set to `0`. This setting is purely for computation speed purposes.
  - `maxnvb`: (Only used when `voxelBatching` is set to `1`). The maximum number of voxel batches/concurrent jobs allowed for estimation and inference. By default this is set to `60`. For large designs, this prevents the code from trying to submit thousands of jobs, should it decide this would be the quickest way to perform computation. This setting is purely for computation speed purposes.
-
+ - `resms`: If set to `1`, the `blmm_vox_resms` volume is output, if set to `0`, the `blmm_vox_resms` volume is not output.
 
  
 #### Examples
@@ -169,7 +169,7 @@ The maps are given the same ordering as the inputs. For example, in `blmm_vox_co
 
 \* These degrees of freedom are not used in inference and are only given as reference. The degrees of freedom used in inference are the Sattherthwaite approximations given in `blmm_vox_conT_swedf`  and `blmm_vox_conF_swedf` .
 \*\* The `D` estimates are ordered as `vech(D1)`,...,`vech(Dr)` where `Dk` is the Random effects covariance matrix for the `k`th random factor, `r` is the total number of random factors in the design and `vech` represents ["half-vectorisation"](https://en.wikipedia.org/wiki/Vectorization_(mathematics)#Half-vectorization).
-\*\*\* This may differ from the estimate of `sigma2`, which accounts for the random effects variance.
+\*\*\* This is optional and may differ from the estimate of `sigma2`, which accounts for the random effects variance.
 
 ## Developer Notes
 
@@ -211,7 +211,7 @@ The following subscripts are also common throughout the code:
 
 ### Structure of the repository
 
-The repository contains 5 main folders, plus 3 files at the head of the repository. These are:
+The repository contains 4 main folders, plus 3 files at the head of the repository. These are:
 
  - `README.md`: This file.
  - `blmm_config.yml`: The file the user must enter their design into.
@@ -219,17 +219,19 @@ The repository contains 5 main folders, plus 3 files at the head of the reposito
  - `lib`: Helper functions:
    - `npMatrix2d.py`: Helper functions for 2d numpy array operations.
    - `npMatrix3d.py`: Helper functions for 3d numpy array operations.
-   - `cvxMatrix2d.py`: Helper functions for 2d cvxopt matrix operations (used only by `PLS`).
-   - `PLS.py`: Code for the PLS method (only for benchmarking, currently unavailable in BLMM).
+   - `cvxMatrix2d.py`: Helper functions for 2d cvxopt matrix operations (used only by `PeLS`).
+   - `PeLS.py`: Code for the PeLS method (only for benchmarking, currently unavailable in BLMM).
    - `fileio.py`: Miscellenous functions for handling files.
    - `est2d.py`: Parameter estimation methods for inference on one voxel.
    - `est3d.py`: Parameter estimation methods for inference on multiple voxels.
- - `src`: The 5 main stages of the blmm pipeline:
+ - `src`: The main stages of the blmm pipeline:
    - `blmm_setup`: Formats inputs and works out the number of batches needed.
    - `blmm_batch`: Calculates the product matrices for individual batches of images.
-   - `blmm_concat`: Sums the product matrices across batches, to obtain the product matrices for the overall model. Seperate voxels into "Inner" and "Ring".
+   - `blmm_concat`: Sums the product matrices across batches, to obtain the product matrices for the overall model. 
+   - `blmm_results`: Seperate voxels into "Inner" and "Ring" and then calls to `blmm_estimate` and `blmm_inference`.
    - `blmm_estimate`: Estimates the parameters beta, sigma^2 and D.
    - `blmm_inference`: Performs statistical inference on parameters and outputs results.
+   - `blmm_cleanup`: Removes any leftover files from the analysis.
  - `test`: Test functions:
    - `Functional`: (WIP) Adapted from sister project `BLM`. Dummy analyses to check the changes to the code haven't affected the output.
    - `Unit`: Unit tests for individual parts of the code:
@@ -237,7 +239,6 @@ The repository contains 5 main folders, plus 3 files at the head of the reposito
      - `npMatrix2d_tests.py`: Unit tests for all functions in `npMatrix2d.py`.
      - `npMatrix3d_tests.py`: Unit tests for all functions in `npMatrix3d.py`.
      - `cvxMatrix2d_tests.py`: Unit tests for all functions in `cvxMatrix2d.py`.
-     - `est2d_tests.py`: A function for comparing results of all methods in `est2d.py`, as well as `PLS.py`.
-     - `est3d_tests.py`: Functions for comparing results of all methods in `est3d.py`
- - `sim`: (WIP) Simulations. This will likely be deleted in future. It only remains currently as it has some useful code that does not yet exist elsewhere.
+     - `est2d_tests.py`: A function for comparing results of all methods in `est2d.py`, as well as `PeLS.py`.
+     - `est3d_tests.py`: Functions for comparing results of all methods in `est3d.py`.
  - `scipts`: Bash scripts which run each individual stage of the BLMM pipeline.

@@ -20,7 +20,7 @@ from lib.cvxMatrix2d import *
 #   understand this may not be as readable for developers new to the code. For
 #   nice latexed versions of the documentation here please see the google 
 #   colab notebooks here:
-#     - PLS: https://colab.research.google.com/drive/1add6pX26d32WxfMUTXNz4wixYR1nOGi0
+#     - PeLS: https://colab.research.google.com/drive/1add6pX26d32WxfMUTXNz4wixYR1nOGi0
 #     - FS: https://colab.research.google.com/drive/12CzYZjpuLbENSFgRxLi9WZfF5oSwiy-e
 #     - GS: https://colab.research.google.com/drive/1sjfyDF_EhSZY60ziXoKGh4lfb737LFPD
 #
