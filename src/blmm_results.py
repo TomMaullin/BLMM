@@ -245,6 +245,36 @@ def main(ipath, vb):
             ZtZ_r = readAndSumUniqueAtB('ZtZ', OutDir, R_inds, n_b, True).reshape([v_r, q, q])
             ZtX_r = readAndSumUniqueAtB('ZtX', OutDir, R_inds, n_b, True).reshape([v_r, q, p])
             XtX_r = readAndSumUniqueAtB('XtX', OutDir, R_inds, n_b, True).reshape([v_r, p, p])
+
+            # ----------------------------------------------------------------------------
+            # Remove low rank designs
+            # ----------------------------------------------------------------------------
+
+            # Work out indices of low rank designs
+            lowrank_inds = np.where(np.linalg.matrix_rank(XtX_r)<p)[0]
+
+            # Work out number of low rank indices
+            v_lowrank = np.prod(lowrank_inds.shape)
+
+            # If we have low rank indices remove them from our working variables
+            if v_lowrank:
+
+                # Remove low rank designs from the NIFTI file
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_mask.nii'), np.zeros(v_lowrank), R_inds[lowrank_inds],volInd=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
+            
+                # Remove from R_inds
+                R_inds = R_inds[np.where(np.linalg.matrix_rank(XtX_r)==p)[0]]
+            
+                # Remove from product matrices
+                YtY_r = YtY_r[np.where(np.linalg.matrix_rank(YtY_r)==p)[0],:,:]
+                XtX_r = XtX_r[np.where(np.linalg.matrix_rank(XtX_r)==p)[0],:,:]
+                XtY_r = XtY_r[np.where(np.linalg.matrix_rank(XtY_r)==p)[0],:,:]
+                ZtX_r = ZtX_r[np.where(np.linalg.matrix_rank(ZtX_r)==p)[0],:,:]
+                ZtY_r = ZtY_r[np.where(np.linalg.matrix_rank(ZtY_r)==p)[0],:,:]
+                ZtZ_r = ZtZ_r[np.where(np.linalg.matrix_rank(ZtZ_r)==p)[0],:,:]
+            
+                # Recalculate number of voxels left in ring
+                v_r = R_inds.shape[0]
         
         if v_i:
                 
