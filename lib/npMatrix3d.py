@@ -729,7 +729,7 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
     
   if reml==True:
 
-    invXtinvVX = np.linalg.inv(XtX - ZtX.transpose((0,2,1)) @ DinvIplusZtZD @ ZtX)
+    invXtinvVX = np.linalg.pinv(XtX - ZtX.transpose((0,2,1)) @ DinvIplusZtZD @ ZtX)
 
     # For each level j we need to add a term
     for j in np.arange(nlevels[k]):
@@ -1514,7 +1514,7 @@ def get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2):
     XtinvVX = XtX - XtZ @ DinvIplusZtZD @ XtZ.transpose((0,2,1))
 
     # Work out var(LB) = L'(X'V^{-1}X)^{-1}L
-    covB = np.linalg.inv(XtinvVX)
+    covB = np.linalg.pinv(XtinvVX)
 
     # Calculate sigma^2(X'V^{-1}X)^(-1)
     covB = np.einsum('i,ijk->ijk',sigma2,covB)
@@ -1700,7 +1700,7 @@ def get_F3D(L, XtX, XtZ, DinvIplusZtZD, betahat, sigma2):
     varLB = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
 
     # Work out F
-    F = LB.transpose(0,2,1) @ np.linalg.inv(varLB) @ LB/rL
+    F = LB.transpose(0,2,1) @ np.linalg.pinv(varLB) @ LB/rL
 
     # Return T
     return(F)
@@ -1994,7 +1994,7 @@ def get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
     DerivInds = np.insert(DerivInds,0,1)
 
     # Work of derivative wrt to sigma^2
-    dS2dsigma2 = L @ np.linalg.inv(XtiVX) @ L.transpose()
+    dS2dsigma2 = L @ np.linalg.pinv(XtiVX) @ L.transpose()
 
     # Add to dS2
     dS2[:,0:1] = dS2dsigma2.reshape(dS2[:,0:1].shape)
@@ -2021,7 +2021,7 @@ def get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
 
             # Work out the term to put into the kronecker product
             # K = Z_(k,j)'V^{-1}X(X'V^{-1})^{-1}L'
-            K = ZkjtiVX @ np.linalg.inv(XtiVX) @ L.transpose()
+            K = ZkjtiVX @ np.linalg.pinv(XtiVX) @ L.transpose()
             
             # Sum terms
             dS2dvechDk = dS2dvechDk + mat2vech3D(kron3D(K,K.transpose(0,2,1)))
