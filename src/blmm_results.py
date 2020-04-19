@@ -259,6 +259,8 @@ def main(ipath, vb):
             # If we have low rank indices remove them from our working variables
             if v_lowrank:
 
+                print('Active')
+
                 # Remove low rank designs from the NIFTI file
                 addBlockToNifti(os.path.join(OutDir, 'blmm_vox_mask.nii'), np.zeros(v_lowrank), R_inds[lowrank_inds],volInd=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
             
