@@ -251,8 +251,8 @@ def main(ipath, vb):
             # ----------------------------------------------------------------------------
 
             # Work out indices of low rank designs
-            lowrank_inds = np.where(np.linalg.matrix_rank(XtX_r)==p)[0]
-            fullrank_inds = np.where(np.linalg.matrix_rank(XtX_r)<p)[0]
+            lowrank_inds = np.where(np.linalg.matrix_rank(XtX_r)<p)[0]
+            fullrank_inds = np.where(np.linalg.matrix_rank(XtX_r)==p)[0]
 
             # Work out number of low rank indices
             v_lowrank = np.prod(lowrank_inds.shape)
@@ -260,10 +260,10 @@ def main(ipath, vb):
             # If we have low rank indices remove them from our working variables
             if v_lowrank:
 
-                print('Active')
-
-                # Remove low rank designs from the NIFTI file
+                # Remove low rank designs from the existing NIFTI files
                 addBlockToNifti(os.path.join(OutDir, 'blmm_vox_mask.nii'), np.zeros(v_lowrank), R_inds[lowrank_inds],volInd=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_edf.nii'), np.zeros(v_lowrank), R_inds[lowrank_inds],volInd=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_n.nii'), np.zeros(v_lowrank), R_inds[lowrank_inds],volInd=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
             
                 # Remove from R_inds
                 R_inds = R_inds[fullrank_inds]
