@@ -251,7 +251,8 @@ def main(ipath, vb):
             # ----------------------------------------------------------------------------
 
             # Work out indices of low rank designs
-            lowrank_inds = np.where(np.linalg.matrix_rank(XtX_r)<p)[0]
+            lowrank_inds = np.where(np.linalg.matrix_rank(XtX_r)==p)[0]
+            fullrank_inds = np.where(np.linalg.matrix_rank(XtX_r)<p)[0]
 
             # Work out number of low rank indices
             v_lowrank = np.prod(lowrank_inds.shape)
@@ -265,15 +266,15 @@ def main(ipath, vb):
                 addBlockToNifti(os.path.join(OutDir, 'blmm_vox_mask.nii'), np.zeros(v_lowrank), R_inds[lowrank_inds],volInd=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
             
                 # Remove from R_inds
-                R_inds = R_inds[np.where(np.linalg.matrix_rank(XtX_r)==p)[0]]
+                R_inds = R_inds[fullrank_inds]
             
                 # Remove from product matrices
-                YtY_r = YtY_r[np.where(np.linalg.matrix_rank(YtY_r)==p)[0],:,:]
-                XtX_r = XtX_r[np.where(np.linalg.matrix_rank(XtX_r)==p)[0],:,:]
-                XtY_r = XtY_r[np.where(np.linalg.matrix_rank(XtY_r)==p)[0],:,:]
-                ZtX_r = ZtX_r[np.where(np.linalg.matrix_rank(ZtX_r)==p)[0],:,:]
-                ZtY_r = ZtY_r[np.where(np.linalg.matrix_rank(ZtY_r)==p)[0],:,:]
-                ZtZ_r = ZtZ_r[np.where(np.linalg.matrix_rank(ZtZ_r)==p)[0],:,:]
+                YtY_r = YtY_r[fullrank_inds,:,:]
+                XtX_r = XtX_r[fullrank_inds,:,:]
+                XtY_r = XtY_r[fullrank_inds,:,:]
+                ZtX_r = ZtX_r[fullrank_inds,:,:]
+                ZtY_r = ZtY_r[fullrank_inds,:,:]
+                ZtZ_r = ZtZ_r[fullrank_inds,:,:]
             
                 # Recalculate number of voxels left in ring
                 v_r = R_inds.shape[0]
@@ -284,6 +285,11 @@ def main(ipath, vb):
             ZtZ_i = readAndSumUniqueAtB('ZtZ', OutDir, I_inds, n_b, False).reshape([1, q, q])
             ZtX_i = readAndSumUniqueAtB('ZtX', OutDir, I_inds, n_b, False).reshape([1, q, p])
             XtX_i = readAndSumUniqueAtB('XtX', OutDir, I_inds, n_b, False).reshape([1, p, p])
+
+            # Check the design is full rank
+            if np.linalg.matrix_rank(XtX_i)<p:
+                raise Exception('The design matrix, X, is of insufficient rank.') 
+
 
         # --------------------------------------------------------------------------------
         # Calculate betahat = (X'X)^(-1)X'Y and output beta maps
