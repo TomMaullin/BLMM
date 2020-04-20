@@ -157,8 +157,8 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         cholDict = dict()
         for k in np.arange(len(nraneffs)):
 
-            cholDict[k] = vechTri2mat2D(init_paramVector[FishIndsDk[k]:FishIndsDk[k+1]])
-            Ddict[k] = cholDict[k] @ cholDict[k].transpose()
+            Ddict[k] = makeDpd2D(initDk2D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict))
+            cholDict[k] = np.linalg.cholesky(Ddict[k])
         
         # Matrix version
         D = scipy.sparse.lil_matrix((q,q))
