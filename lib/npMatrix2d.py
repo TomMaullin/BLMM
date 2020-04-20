@@ -1029,7 +1029,7 @@ def initDk2D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict):
 def makeDnnd2D(D):
   
   # Check if we have negative eigenvalues
-  if not np.all(np.linalg.eigvals(D)>0):
+  if not np.all(np.linalg.eigvals(D)>=0):
   
     # If we have negative eigenvalues
     eigvals,eigvecs = np.linalg.eigh(D)
@@ -1047,6 +1047,61 @@ def makeDnnd2D(D):
     
   return(D_nnd)
 
+# ============================================================================
+#
+# The below function takes in a covariance matrix D and finds a projection of 
+# it onto the space of positive definite matrices D_+'. It uses the following
+# method taken from Demidenko (2012), page 105:
+#
+# If D is has eigenvalue decomposition D=P\Lambda P' it's projection into D_+'
+# is defined by the matrix below:
+#
+# Dhat_+ = P\Lambda_+P'
+#
+# Where \Lambda_+ is defined by the elementwise maximum of \Lambda and 0; i.e.
+# \Lambda_+(i,j) = max(\Lambda_+(i,j),1e-6).
+#
+# Note: This is not to be confused with the generalized inverse of the
+# duplication matrix, also denoted with a D+.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `D`: A square symmetric matrix.
+#
+# ----------------------------------------------------------------------------
+#
+# It returns as outputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `D_nnd`: A projection of D onto the space of positive definite matrices 
+#            D_+.
+#
+# ============================================================================
+def makeDpd2D(D):
+  
+  # Check if we have negative or zero valued eigenvalues
+  if not np.all(np.linalg.eigvals(D)>0):
+  
+    # If we have negative eigenvalues
+    eigvals,eigvecs = np.linalg.eigh(D)
+    
+    # Work out elementwise max of lambda and 0
+    lamplus = np.diag(np.maximum(eigvals,1e-6))
+    
+    # Work out D+
+    D_pd = eigvecs @ lamplus @ np.linalg.inv(eigvecs)
+    
+  else:
+    
+    # D is already positive definite in this case
+    D_pd = D
+    
+  return(D_pd)
 
 # ============================================================================
 # This function returns the log likelihood of (\beta, \sigma^2, D) which is

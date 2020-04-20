@@ -1146,6 +1146,39 @@ def test_makeDnnd2D():
 
 # =============================================================================
 #
+# The below function tests the function `makeDpd2D`. It does this by checking
+# the function against a predefined example.
+#
+# =============================================================================
+def test_makeDpd2D():
+
+    # Examples usecase
+    test = np.eye(5)
+    test[3,3]=-1
+
+    # Expected outcome
+    expected = np.eye(5)
+    expected[3,3]=1e-6
+
+    # Check if the function gives as expected
+    testVal = np.allclose(makeDpd2D(test),expected)
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: makeDpd2D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+
+    return(result)
+
+
+# =============================================================================
+#
 # The below function tests the function `llh2D`. It does this by simulating 
 # data and checks that the function behaves the same as niave calculation of 
 # the same quantity.
@@ -1865,6 +1898,16 @@ def run_all2D():
     # Test makeDnnd2D
     name = 'makeDnnd2D'
     result = test_makeDnnd2D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test makeDpd2D
+    name = 'makeDpd2D'
+    result = test_makeDpd2D()
     # Add result to arrays.
     if result=='Passed':
         passedTests = np.append(passedTests, name)
