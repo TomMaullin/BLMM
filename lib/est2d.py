@@ -151,6 +151,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # beta and sigma2 initial values
         beta = init_paramVector[0:p]
         sigma2 = init_paramVector[p:(p+1)][0,0]
+        sigma2 = np.maximum(sigma2,1e-10) # Prevent hitting boundary
 
         # Initial cholesky decomposition and D.
         Ddict = dict()
@@ -186,6 +187,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
 
         # Initial sigma2
         sigma2 = initSigma22D(ete, n)
+        sigma2 = np.maximum(sigma2,1e-10) # Prevent hitting boundary
 
         # Z'e
         Zte = ZtY - (ZtX @ beta)
@@ -261,6 +263,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # Update sigma2
         #---------------------------------------------------------------------------
         sigma2 = 1/n*(ete - Zte.transpose() @ DinvIplusZtZD @ Zte)
+        sigma2 = np.maximum(sigma2,1e-10) # Prevent hitting boundary
         
         #---------------------------------------------------------------------------
         # Update Cholesky factor
@@ -444,11 +447,12 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n,
         # Initial beta and sigma2
         beta = init_paramVector[0:p]
         sigma2 = init_paramVector[p:(p+1)][0,0]
+        sigma2 = np.maximum(sigma2,1e-10) # Prevent hitting boundary
 
         # Initial D (dictionary version)
         Ddict = dict()
         for k in np.arange(len(nraneffs)):
-            Ddict[k] = makeDnnd2D(vech2mat2D(init_paramVector[FishIndsDk[k]:FishIndsDk[k+1]]))
+            Ddict[k] = makeDpd2D(vech2mat2D(init_paramVector[FishIndsDk[k]:FishIndsDk[k+1]]))
 
         # Initial D (matrix version)
         for i in np.arange(len(nraneffs)):
@@ -464,6 +468,7 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n,
 
         # Initial sigma2
         sigma2 = initSigma22D(ete, n)
+        sigma2 = np.maximum(sigma2,1e-10) # Prevent hitting boundary
 
     # If we don't have initial values estimate them
     else:
@@ -476,6 +481,7 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n,
 
         # Initial sigma2
         sigma2 = initSigma22D(ete, n)
+        sigma2 = np.maximum(sigma2,1e-10) # Prevent hitting boundary
 
         # Z'e, needed for first iteration
         Zte = ZtY - (ZtX @ beta)
@@ -483,7 +489,7 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n,
         # Inital D (Dictionary version)
         Ddict = dict()
         for k in np.arange(len(nraneffs)):
-            Ddict[k] = makeDnnd2D(initDk2D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict))
+            Ddict[k] = makeDpd2D(initDk2D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict))
             
         # Matrix version
         D = np.array([])
@@ -636,10 +642,11 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n,
         # ----------------------------------------------------------------------
         beta = paramVector[0:p]
         sigma2 = paramVector[p:(p+1)][0,0]
+        sigma2 = np.maximum(sigma2,1e-10) # Prevent hitting boundary
 
         # D (dict version)
         for k in np.arange(len(nraneffs)):
-            Ddict[k] = makeDnnd2D(vech2mat2D(paramVector[FishIndsDk[k]:FishIndsDk[k+1]]))
+            Ddict[k] = makeDpd2D(vech2mat2D(paramVector[FishIndsDk[k]:FishIndsDk[k+1]]))
         
         # D (matrix version)
         for i in np.arange(len(nraneffs)):
@@ -774,11 +781,12 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
         # Initial beta and sigma2
         beta = init_paramVector[0:p]
         sigma2 = init_paramVector[p:(p+1)][0,0]
+        sigma2 = np.maximum(sigma2,1e-10) # Prevent hitting boundary
 
         # Initial D (dictionary version)
         Ddict = dict()
         for k in np.arange(len(nraneffs)):
-            Ddict[k] = makeDnnd2D(vec2mat2D(init_paramVector[FishIndsDk[k]:FishIndsDk[k+1]]))
+            Ddict[k] = makeDpd2D(vec2mat2D(init_paramVector[FishIndsDk[k]:FishIndsDk[k+1]]))
             
         # Initial D (matrix version)
         for i in np.arange(len(nraneffs)):
@@ -805,6 +813,7 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
 
         # Initial sigma2
         sigma2 = initSigma22D(ete, n)
+        sigma2 = np.maximum(sigma2,1e-10) # Prevent hitting boundary
 
         # Z'e, needed for first iteration
         Zte = ZtY - (ZtX @ beta)
@@ -812,7 +821,7 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
         # Inital D (Dictionary version)
         Ddict = dict()
         for k in np.arange(len(nraneffs)):
-            Ddict[k] = makeDnnd2D(initDk2D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict))
+            Ddict[k] = makeDpd2D(initDk2D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict))
             
         # Inital D (Matrix version)
         D = np.array([])
@@ -959,10 +968,11 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
         # --------------------------------------------------------------------------
         beta = paramVector[0:p]
         sigma2 = paramVector[p:(p+1)][0,0]
+        sigma2 = np.maximum(sigma2,1e-10) # Prevent hitting boundary
 
         # D (dictionary version)
         for k in np.arange(len(nraneffs)):
-            Ddict[k] = makeDnnd2D(vec2mat2D(paramVector[FishIndsDk[k]:FishIndsDk[k+1]]))
+            Ddict[k] = makeDpd2D(vec2mat2D(paramVector[FishIndsDk[k]:FishIndsDk[k+1]]))
         
         # D (matrix version)
         for i in np.arange(len(nraneffs)):
@@ -1140,11 +1150,12 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # Initial beta and sigma2
         beta = init_paramVector[0:p]
         sigma2 = init_paramVector[p:(p+1)][0,0]
+        sigma2 = np.maximum(sigma2,1e-10) # Prevent hitting boundary
 
         # D (dict version)
         Ddict = dict()
         for k in np.arange(len(nraneffs)):
-            Ddict[k] = makeDnnd2D(vech2mat2D(init_paramVector[FishIndsDk[k]:FishIndsDk[k+1]]))
+            Ddict[k] = makeDpd2D(vech2mat2D(init_paramVector[FishIndsDk[k]:FishIndsDk[k+1]]))
             
         # D (matrix version)
         D = scipy.sparse.lil_matrix((q,q))
@@ -1172,6 +1183,7 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
 
         # Initial sigma2
         sigma2 = initSigma22D(ete, n)
+        sigma2 = np.maximum(sigma2,1e-10) # Prevent hitting boundary
 
         # Z'e; needed for initial D
         Zte = ZtY - (ZtX @ beta)
@@ -1179,7 +1191,7 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # Inital D (dict version)
         Ddict = dict()
         for k in np.arange(len(nraneffs)):
-            Ddict[k] = makeDnnd2D(initDk2D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict))
+            Ddict[k] = makeDpd2D(initDk2D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict))
             
         # Inital D (matrix version)
         D = scipy.sparse.lil_matrix((q,q))
@@ -1242,6 +1254,7 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # Update sigma^2
         #---------------------------------------------------------------------------
         sigma2 = 1/n*(ete - Zte.transpose() @ DinvIplusZtZD @ Zte)
+        sigma2 = np.maximum(sigma2,1e-10) # Prevent hitting boundary
         
         #---------------------------------------------------------------------------
         # Update D
@@ -1272,7 +1285,7 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             update = vec2vech2D(update)
             
             # Update D_k
-            Ddict[k] = makeDnnd2D(vech2mat2D(mat2vech2D(Ddict[k]) + update))
+            Ddict[k] = makeDpd2D(vech2mat2D(mat2vech2D(Ddict[k]) + update))
             
             #-----------------------------------------------------------------------
             # Add D_k back into D
@@ -1422,11 +1435,12 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
         # Inital beta and sigma2
         beta = init_paramVector[0:p]
         sigma2 = init_paramVector[p:(p+1)][0,0]
+        sigma2 = np.maximum(sigma2,1e-10) # Prevent hitting boundary
 
         # Initial D (dict version)
         Ddict = dict()
         for k in np.arange(len(nraneffs)):
-            Ddict[k] = makeDnnd2D(vech2mat2D(init_paramVector[FishIndsDk[k]:FishIndsDk[k+1]]))
+            Ddict[k] = makeDpd2D(vech2mat2D(init_paramVector[FishIndsDk[k]:FishIndsDk[k+1]]))
             
         # Initial D (matrix version)
         for i in np.arange(len(nraneffs)):
@@ -1454,6 +1468,7 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
 
         # Initial sigma2
         sigma2 = initSigma22D(ete, n)
+        sigma2 = np.maximum(sigma2,1e-10) # Prevent hitting boundary
 
         # Z'e; needed for initial D
         Zte = ZtY - (ZtX @ beta)
@@ -1461,7 +1476,7 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
         # Inital D (dict version)
         Ddict = dict()
         for k in np.arange(len(nraneffs)):
-            Ddict[k] = makeDnnd2D(initDk2D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict))
+            Ddict[k] = makeDpd2D(initDk2D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict))
             
         # Inital D (matrix version)
         D = np.array([])
@@ -1542,6 +1557,7 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
         # Update sigma^2
         #---------------------------------------------------------------------------
         sigma2 = 1/n*(ete - Zte.transpose() @ DinvIplusZtZD @ Zte)
+        sigma2 = np.maximum(sigma2,1e-10) # Prevent hitting boundary
         
         #---------------------------------------------------------------------------
         # Update D_k
@@ -1571,7 +1587,7 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
             update = lam*forceSym2D(np.linalg.inv(covdldDk)) @ mat2vech2D(dldD)
             
             # Update D_k
-            Ddict[k] = makeDnnd2D(vech2mat2D(mat2vech2D(Ddict[k]) + update))
+            Ddict[k] = makeDpd2D(vech2mat2D(mat2vech2D(Ddict[k]) + update))
             
             #-----------------------------------------------------------------------
             # Add D_k back into D
