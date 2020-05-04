@@ -1436,7 +1436,7 @@ def sumAijKronBij3D(A, B, p, perm=None):
 # The below function calculates the residual mean squares for a beta estimate
 # give by:
 #
-#   resms = (Y-X\beta)'(Y-X\beta)/(n-p)'
+#   resms = (Y-X\beta)'(Y-X\beta)/(n-p)
 #
 # ----------------------------------------------------------------------------
 #

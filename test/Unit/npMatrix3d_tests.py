@@ -10,6 +10,7 @@ import scipy.sparse.linalg
 import sys
 import nibabel as nib
 import nilearn
+from scipy import stats
 
 np.set_printoptions(threshold=sys.maxsize)
 
