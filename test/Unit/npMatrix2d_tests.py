@@ -2255,8 +2255,11 @@ def test_get_dS22D():
             # K = Z_(k,j)'V^{-1}X(X'V^{-1})^{-1}L'
             K = ZkjtiVX @ np.linalg.inv(XtiVX) @ L.transpose()
             
+            # Duplication matrix transposed
+            dupMatT = dupMat2D(nraneffs[k]).transpose()
+            
             # Sum terms
-            dS2dvechDk = dS2dvechDk + mat2vech2D(np.kron(K,K.transpose()))
+            dS2dvechDk = dS2dvechDk + dupMatT @ mat2vec2D(np.kron(K,K.transpose()))
 
         # Multiply by sigma^2
         dS2dvechDk = sigma2*dS2dvechDk
