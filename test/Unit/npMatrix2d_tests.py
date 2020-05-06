@@ -1047,6 +1047,7 @@ def test_initDk2D():
 
     # Work out derivative term (niave calculation):
     deriv = np.zeros((nraneffs[k]*(nraneffs[k]+1)//2,1))
+    dupMatT = dupMat2D(nraneffs[k]).transpose()
     for j in np.arange(nlevels[k]):
 
         # Get indices for factor k level j
@@ -1059,11 +1060,10 @@ def test_initDk2D():
         ZkjtZkj = Z[:,Ikj].transpose() @ Z[:,Ikj]
 
         # Work out running sum for derivative
-        deriv = deriv + mat2vech2D(1/sigma2hat*ZkjteetZkj - ZkjtZkj)
+        deriv = deriv + dupMatT @ mat2vec2D(1/sigma2hat*ZkjteetZkj - ZkjtZkj)
 
     # Work out Fisher information matrix (niave calculation)
     fishInfo = np.zeros((nraneffs[k]*(nraneffs[k]+1)//2,nraneffs[k]*(nraneffs[k]+1)//2))
-    iDupMat = invDupMat2D(nraneffs[k])
     for j in np.arange(nlevels[k]):
 
         for i in np.arange(nlevels[k]):
@@ -1077,22 +1077,22 @@ def test_initDk2D():
             # Get Z_(k,i)'Z_(k,j)
             ZkitZkj = Z[:,Iki].transpose() @ Z[:,Ikj]
 
-            fishInfo = fishInfo + iDupMat @ np.kron(ZkitZkj, ZkitZkj) @ iDupMat.transpose()
+            fishInfo = fishInfo + dupMatT @ np.kron(ZkitZkj, ZkitZkj) @ dupMatT.transpose()
 
     # This is the value we are testing against
     vecInitDk_expected = vech2mat2D(np.linalg.inv(fishInfo) @ deriv)
 
-    # Work out the inverse duplication matrices we need.
-    invDupMatdict = dict()
+    # Work out the transpose duplication matrices we need.
+    dupMatTdict = dict()
     for i in np.arange(len(nraneffs)):
       
-      invDupMatdict[i] = invDupMat2D(nraneffs[i])
+      dupMatTdict[i] = dupMat2D(nraneffs[i]).transpose()
 
     # Obtain Z'e and e'e
     Zte = ZtY - ZtX @ betahat
 
     # Now try to obtain the same using the function
-    vecInitDk_test = initDk2D(k, ZtZ, Zte, sigma2hat, nlevels, nraneffs, invDupMatdict)
+    vecInitDk_test = initDk2D(k, ZtZ, Zte, sigma2hat, nlevels, nraneffs, dupMatTdict)
 
     # Check if the function gives as expected
     testVal = np.allclose(vecInitDk_test,vecInitDk_expected)
@@ -1476,11 +1476,11 @@ def test_get_covdldDkdsigma22D():
     # Obtain D(I+Z'ZD)^(-1)
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
 
-    # Work out the inverse duplication matrices we need.
-    invDupMatdict = dict()
+    # Work out the transpose duplication matrices we need.
+    dupMatTdict = dict()
     for i in np.arange(len(nraneffs)):
       
-      invDupMatdict[i] = invDupMat2D(nraneffs[i])
+      dupMatTdict[i] = dupMat2D(nraneffs[i]).transpose()
 
     # Decide on a random factor
     k = np.random.randint(0,nraneffs.shape[0])
@@ -1511,10 +1511,10 @@ def test_get_covdldDkdsigma22D():
             sumTTt = sumTTt + TkjTkjt
 
     # Final niave computation
-    covdldDkdsigma2_expected = 1/(2*sigma2)*(invDupMatdict[k] @ mat2vec2D(sumTTt))
+    covdldDkdsigma2_expected = 1/(2*sigma2)*(dupMatTdict[k] @ mat2vec2D(sumTTt))
 
     # Computation using the function
-    covdldDkdsigma2_test = get_covdldDkdsigma22D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False,ZtZmat=None)[0]
+    covdldDkdsigma2_test = get_covdldDkdsigma22D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, vec=False,ZtZmat=None)[0]
   
     # Check if the function gives as expected
     testVal = np.allclose(covdldDkdsigma2_test,covdldDkdsigma2_expected)
@@ -1564,15 +1564,15 @@ def test_get_covdldDk1Dk22D():
     # Decide on another random factor
     k2 = np.random.randint(0,nraneffs.shape[0])
 
-    # Work out the inverse duplication matrices we need.
-    invDupMatdict = dict()
+    # Work out the transpose duplication matrices we need.
+    dupMatTdict = dict()
     for i in np.arange(len(nraneffs)):
       
-      invDupMatdict[i] = invDupMat2D(nraneffs[i])
+      dupMatTdict[i] = dupMat2D(nraneffs[i]).transpose()
 
     # Test the function
-    covdldDk1Dk2_test,perm = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict)
-    covdldDk1Dk2_test,_ = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict,perm=perm)
+    covdldDk1Dk2_test,perm = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict)
+    covdldDk1Dk2_test,_ = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict,perm=perm)
 
     # Perform the same calculation niavely
     for j in np.arange(nlevels[k1]):
@@ -1614,7 +1614,7 @@ def test_get_covdldDk1Dk22D():
             sumTtkTt = np.kron(Tkjt,Tkjt) + sumTtkTt
 
     # Expected result from the function
-    covdldDk1Dk2_expected = 1/2 * invDupMatdict[k1] @ sumTkT @ sumTtkTt @ invDupMatdict[k2].transpose()
+    covdldDk1Dk2_expected = 1/2 * dupMatTdict[k1] @ sumTkT @ sumTtkTt @ dupMatTdict[k2].transpose()
 
     # Check if the function gives as expected
     testVal = np.allclose(covdldDk1Dk2_test,covdldDk1Dk2_expected)
@@ -2310,10 +2310,10 @@ def test_get_InfoMat2D():
 
     # Duplication matrices
     # ------------------------------------------------------------------------------
-    invDupMatdict = dict()
+    dupMatTdict = dict()
     for i in np.arange(len(nraneffs)):
 
-        invDupMatdict[i] = np.asarray(invDupMat2D(nraneffs[i]).todense())
+        dupMatTdict[i] = np.asarray(dupMat2D(nraneffs[i]).todense()).transpose()
 
     # Index variables
     # ------------------------------------------------------------------------------
@@ -2337,7 +2337,7 @@ def test_get_InfoMat2D():
     for k in np.arange(len(nraneffs)):
 
         # Get covariance of dldsigma and dldD      
-        covdldsigmadD = get_covdldDkdsigma22D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict)[0].reshape(FishIndsDk[k+1]-FishIndsDk[k])
+        covdldsigmadD = get_covdldDkdsigma22D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict)[0].reshape(FishIndsDk[k+1]-FishIndsDk[k])
 
         # Assign to the relevant block
         FI_expected[0, FishIndsDk[k]:FishIndsDk[k+1]] = covdldsigmadD
@@ -2352,7 +2352,7 @@ def test_get_InfoMat2D():
             IndsDk2 = np.arange(FishIndsDk[k2],FishIndsDk[k2+1])
 
             # Get covariance between D_k1 and D_k2 
-            covdldDk1dDk2 = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict)[0]
+            covdldDk1dDk2 = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict)[0]
 
             # Add to FImat
             FI_expected[np.ix_(IndsDk1, IndsDk2)] = covdldDk1dDk2

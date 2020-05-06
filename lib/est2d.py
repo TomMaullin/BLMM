@@ -133,12 +133,12 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
     # ------------------------------------------------------------------------------
     # Duplication, Commutation and Elimination matrices
     # ------------------------------------------------------------------------------
-    invDupMatdict = dict()
+    dupMatTdict = dict()
     elimMatdict = dict()
     comMatdict = dict()
     for i in np.arange(len(nraneffs)):
 
-        invDupMatdict[i] = invDupMat2D(nraneffs[i])
+        dupMatTdict[i] = dupMat2D(nraneffs[i]).transpose()
         comMatdict[i] = comMat2D(nraneffs[i],nraneffs[i])
         elimMatdict[i] = elimMat2D(nraneffs[i])
         
@@ -158,7 +158,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         cholDict = dict()
         for k in np.arange(len(nraneffs)):
 
-            Ddict[k] = makeDpd2D(initDk2D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict))
+            Ddict[k] = makeDpd2D(initDk2D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict))
             cholDict[k] = np.linalg.cholesky(Ddict[k])
         
         # Matrix version
@@ -286,19 +286,19 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             # Calculate covariance of derivative with respect to D_k
             #-----------------------------------------------------------------------
             if permdict[str(k)] is None:
-                covdldDk,permdict[str(k)] = get_covdldDk1Dk22D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, perm=None)
+                covdldDk,permdict[str(k)] = get_covdldDk1Dk22D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, perm=None)
             else:
-                covdldDk,_ = get_covdldDk1Dk22D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, perm=permdict[str(k)])
+                covdldDk,_ = get_covdldDk1Dk22D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, perm=permdict[str(k)])
 
 
             #-----------------------------------------------------------------------
             # Transform to derivative with respect to chol_k
             #-----------------------------------------------------------------------
             # We need to modify by multiplying by this matrix to obtain the cholesky derivative.
-            chol_mod = elimMatdict[k] @ (scipy.sparse.identity(nraneffs[k]**2) + comMatdict[k]) @ scipy.sparse.kron(cholDict[k],np.eye(nraneffs[k])) @ elimMatdict[k].transpose()
+            chol_mod = dupMatTdict[k] @ (scipy.sparse.identity(nraneffs[k]**2) + comMatdict[k]) @ scipy.sparse.kron(cholDict[k],np.eye(nraneffs[k])) @ elimMatdict[k].transpose()
             
             # Transform to cholesky
-            dldcholk = chol_mod.transpose() @ mat2vech2D(dldD)
+            dldcholk = chol_mod.transpose() @ dupMatTdict[k] @ mat2vec2D(dldD)
 
             #-----------------------------------------------------------------------
             # Transform to covariance of derivative with respect to chol_k
@@ -438,10 +438,10 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n,
     # ------------------------------------------------------------------------------
     # Duplication matrices
     # ------------------------------------------------------------------------------
-    invDupMatdict = dict()
+    dupMatTdict = dict()
     for i in np.arange(len(nraneffs)):
 
-        invDupMatdict[i] = invDupMat2D(nraneffs[i])
+        dupMatTdict[i] = dupMat2D(nraneffs[i]).transpose()
         
     # ------------------------------------------------------------------------------
     # Initial estimates
@@ -494,7 +494,7 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n,
         # Inital D (Dictionary version)
         Ddict = dict()
         for k in np.arange(len(nraneffs)):
-            Ddict[k] = makeDpd2D(initDk2D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict))
+            Ddict[k] = makeDpd2D(initDk2D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict))
             
         # Matrix version
         D = np.array([])
@@ -594,9 +594,9 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n,
 
             # Assign to the relevant block
             if ZtZmatdict[k] is None:
-                covdldDksigma2,ZtZmatdict[k] = get_covdldDkdsigma22D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, ZtZmat=None)
+                covdldDksigma2,ZtZmatdict[k] = get_covdldDkdsigma22D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, ZtZmat=None)
             else:
-                covdldDksigma2,_ = get_covdldDkdsigma22D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, ZtZmat=ZtZmatdict[k])
+                covdldDksigma2,_ = get_covdldDkdsigma22D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, ZtZmat=ZtZmatdict[k])
 
             # Assign to the relevant block
             FisherInfoMat[p, FishIndsDk[k]:FishIndsDk[k+1]] = covdldDksigma2.reshape(FishIndsDk[k+1]-FishIndsDk[k])
@@ -612,9 +612,9 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n,
 
                 # Get covariance between D_k1 and D_k2 
                 if permdict[str(k1)+str(k2)] is None:
-                    FisherInfoMat[np.ix_(IndsDk1, IndsDk2)],permdict[str(k1)+str(k2)] = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict,perm=None)
+                    FisherInfoMat[np.ix_(IndsDk1, IndsDk2)],permdict[str(k1)+str(k2)] = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict,perm=None)
                 else:
-                    FisherInfoMat[np.ix_(IndsDk1, IndsDk2)],_ = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict,perm=permdict[str(k1)+str(k2)])
+                    FisherInfoMat[np.ix_(IndsDk1, IndsDk2)],_ = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict,perm=permdict[str(k1)+str(k2)])
 
                 # Get covariance between D_k1 and D_k2 
                 FisherInfoMat[np.ix_(IndsDk2, IndsDk1)] = FisherInfoMat[np.ix_(IndsDk1, IndsDk2)].transpose()
@@ -631,7 +631,7 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n,
         for k in np.arange(len(nraneffs)):
 
             paramVector = np.concatenate((paramVector, mat2vech2D(Ddict[k])))
-            derivVector = np.concatenate((derivVector, mat2vech2D(dldDdict[k])))
+            derivVector = np.concatenate((derivVector, dupMatTdict[k] @ mat2vec2D(dldDdict[k])))
         
         # ----------------------------------------------------------------------
         # Update step
@@ -771,10 +771,10 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
     # ------------------------------------------------------------------------------
     # Duplication matrices
     # ------------------------------------------------------------------------------
-    invDupMatdict = dict()
+    dupMatTdict = dict()
     for i in np.arange(len(nraneffs)):
 
-        invDupMatdict[i] = invDupMat2D(nraneffs[i])
+        dupMatTdict[i] = dupMat2D(nraneffs[i]).transpose()
         
     # ------------------------------------------------------------------------------
     # Initial estimates
@@ -825,7 +825,7 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
         # Inital D (Dictionary version)
         Ddict = dict()
         for k in np.arange(len(nraneffs)):
-            Ddict[k] = makeDpd2D(initDk2D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict))
+            Ddict[k] = makeDpd2D(initDk2D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict))
             
         # Inital D (Matrix version)
         D = np.array([])
@@ -924,9 +924,9 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
 
             # Assign to the relevant block
             if ZtZmatdict[k] is None:
-                covdldDksigma2,ZtZmatdict[k] = get_covdldDkdsigma22D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True, ZtZmat=None)
+                covdldDksigma2,ZtZmatdict[k] = get_covdldDkdsigma22D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, vec=True, ZtZmat=None)
             else:
-                covdldDksigma2,_ = get_covdldDkdsigma22D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True, ZtZmat=ZtZmatdict[k])
+                covdldDksigma2,_ = get_covdldDkdsigma22D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, vec=True, ZtZmat=ZtZmatdict[k])
 
             # Assign to the relevant block
             FisherInfoMat[p, FishIndsDk[k]:FishIndsDk[k+1]] = covdldDksigma2.reshape(FishIndsDk[k+1]-FishIndsDk[k])
@@ -942,9 +942,9 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
 
                 # Get covariance between D_k1 and D_k2 
                 if permdict[str(k1)+str(k2)] is None:
-                    FisherInfoMat[np.ix_(IndsDk1, IndsDk2)],permdict[str(k1)+str(k2)] = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict,vec=True,perm=None)
+                    FisherInfoMat[np.ix_(IndsDk1, IndsDk2)],permdict[str(k1)+str(k2)] = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict,vec=True,perm=None)
                 else:
-                    FisherInfoMat[np.ix_(IndsDk1, IndsDk2)],_ = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict,vec=True,perm=permdict[str(k1)+str(k2)])
+                    FisherInfoMat[np.ix_(IndsDk1, IndsDk2)],_ = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict,vec=True,perm=permdict[str(k1)+str(k2)])
 
                 FisherInfoMat[np.ix_(IndsDk2, IndsDk1)] = FisherInfoMat[np.ix_(IndsDk1, IndsDk2)].transpose()
 
@@ -1142,10 +1142,10 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
     # ------------------------------------------------------------------------------
     # Duplication matrices
     # ------------------------------------------------------------------------------
-    invDupMatdict = dict()
+    dupMatTdict = dict()
     for i in np.arange(len(nraneffs)):
 
-        invDupMatdict[i] = invDupMat2D(nraneffs[i])
+        dupMatTdict[i] = dupMat2D(nraneffs[i]).transpose()
         
     # ------------------------------------------------------------------------------
     # Initial estimates
@@ -1198,7 +1198,7 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # Inital D (dict version)
         Ddict = dict()
         for k in np.arange(len(nraneffs)):
-            Ddict[k] = makeDpd2D(initDk2D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict))
+            Ddict[k] = makeDpd2D(initDk2D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict))
             
         # Inital D (matrix version)
         D = scipy.sparse.lil_matrix((q,q))
@@ -1281,9 +1281,9 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             # Work out covariance of derivative of D_k
             #-----------------------------------------------------------------------
             if permdict[str(k)] is None:
-                covdldDk,permdict[str(k)] = get_covdldDk1Dk22D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True, perm=None)
+                covdldDk,permdict[str(k)] = get_covdldDk1Dk22D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, vec=True, perm=None)
             else:
-                covdldDk,_ = get_covdldDk1Dk22D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True, perm=permdict[str(k)])
+                covdldDk,_ = get_covdldDk1Dk22D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, vec=True, perm=permdict[str(k)])
 
             #-----------------------------------------------------------------------
             # Update step
@@ -1431,10 +1431,10 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
     # ------------------------------------------------------------------------------
     # Duplication matrices
     # ------------------------------------------------------------------------------
-    invDupMatdict = dict()
+    dupMatTdict = dict()
     for i in np.arange(len(nraneffs)):
 
-        invDupMatdict[i] = invDupMat2D(nraneffs[i])
+        dupMatTdict[i] = dupMat2D(nraneffs[i]).transpose()
 
     # ------------------------------------------------------------------------------
     # Initial estimates
@@ -1486,7 +1486,7 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
         # Inital D (dict version)
         Ddict = dict()
         for k in np.arange(len(nraneffs)):
-            Ddict[k] = makeDpd2D(initDk2D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict))
+            Ddict[k] = makeDpd2D(initDk2D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict))
             
         # Inital D (matrix version)
         D = np.array([])
@@ -1586,14 +1586,14 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
             # Work out covariance derivative of dl/dD_k
             #-----------------------------------------------------------------------
             if permdict[str(k)] is None:
-                covdldDk,permdict[str(k)] = get_covdldDk1Dk22D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict,perm=None)
+                covdldDk,permdict[str(k)] = get_covdldDk1Dk22D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict,perm=None)
             else:
-                covdldDk,_ = get_covdldDk1Dk22D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, perm=permdict[str(k)])
+                covdldDk,_ = get_covdldDk1Dk22D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, perm=permdict[str(k)])
 
             #-----------------------------------------------------------------------
             # Update step
             #-----------------------------------------------------------------------
-            update = lam*np.linalg.solve(forceSym2D(covdldDk), mat2vech2D(dldD))
+            update = lam*np.linalg.solve(forceSym2D(covdldDk), dupMatTdict[k] @ mat2vec2D(dldD))
             
             # Update D_k
             Ddict[k] = makeDpd2D(vech2mat2D(mat2vech2D(Ddict[k]) + update))

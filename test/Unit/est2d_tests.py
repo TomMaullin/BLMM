@@ -141,6 +141,8 @@ def test2D():
     llh = llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D)[0,0]-n/2*np.log(np.pi)
     results.at['llh','Truth']=llh
 
+    print('Truth Saved')
+
     #===============================================================================
     # pSFS
     #===============================================================================
@@ -170,6 +172,8 @@ def test2D():
     for i in np.arange(4+p,p+qu+4):
         results.at[indexVec[i+qu],'pSFS']=paramVector_pSFS[p,0]*paramVector_pSFS[i-3,0]
 
+    print('pSFS Saved')
+    
     #===============================================================================
     # PeLS
     #===============================================================================
@@ -247,6 +251,8 @@ def test2D():
             results.at[indexVec[Dinds[k]+j],'PeLS']=vechDk[j,0]/sigma2_pls[0]
             results.at[indexVec[Dinds[k]+qu+j],'PeLS']=vechDk[j,0]
 
+    print('PeLS Saved')
+    
     #===============================================================================
     # cSFS
     #===============================================================================
@@ -269,6 +275,8 @@ def test2D():
     for i in np.arange(4+p,p+qu+4):
         results.at[indexVec[i+qu],'cSFS']=paramVector_cSFS[p,0]*paramVector_cSFS[i-3,0]
         
+    print('cSFS Saved')
+    
     #===============================================================================
     # FS
     #===============================================================================
@@ -290,6 +298,8 @@ def test2D():
     # Record D*sigma2
     for i in np.arange(4+p,p+qu+4):
         results.at[indexVec[i+qu],'FS']=paramVector_FS[p,0]*paramVector_FS[i-3,0]
+
+    print('FS Saved')
 
     #===============================================================================
     # SFS
@@ -313,6 +323,8 @@ def test2D():
     for i in np.arange(4+p,p+qu+4):
         results.at[indexVec[i+qu],'SFS']=paramVector_SFS[p,0]*paramVector_SFS[i-3,0]
 
+    print('SFS Saved')
+    
     #===============================================================================
     # pFS
     #===============================================================================
@@ -335,8 +347,10 @@ def test2D():
     for i in np.arange(4+p,p+qu+4):
         results.at[indexVec[i+qu],'pFS']=paramVector_pFS[p,0]*paramVector_pFS[i-3,0]
 
+    print('pFS Saved')
+    
     # Print results
     print(results.to_string())
-
+    
     # Return results
     return(results)
