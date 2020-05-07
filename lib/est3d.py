@@ -115,10 +115,10 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n):
     # ------------------------------------------------------------------------------
     # Duplication matrices
     # ------------------------------------------------------------------------------
-    invDupMatdict = dict()
+    dupMatTdict = dict()
     for i in np.arange(len(nraneffs)):
 
-        invDupMatdict[i] = np.asarray(invDupMat2D(nraneffs[i]).todense())
+        dupMatTdict[i] = np.asarray(dupMat2D(nraneffs[i]).todense()).transpose()
         
     # ------------------------------------------------------------------------------
     # Inital D
@@ -127,7 +127,7 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n):
     Ddict = dict()
     for k in np.arange(len(nraneffs)):
 
-        Ddict[k] = makeDnnd3D(initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict))
+        Ddict[k] = makeDnnd3D(initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict))
     
     # Full version of D
     D = getDfromDict3D(Ddict, nraneffs, nlevels)
@@ -243,9 +243,9 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n):
 
             # Calculate covariance between sigma2 and D
             if ZtZmatdict[k] is None:
-                covdldsigma2dD,ZtZmatdict[k] = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, ZtZmat=None)
+                covdldsigma2dD,ZtZmatdict[k] = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, ZtZmat=None)
             else:
-                covdldsigma2dD,_ = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, ZtZmat=ZtZmatdict[k])
+                covdldsigma2dD,_ = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, ZtZmat=ZtZmatdict[k])
 
             # Assign to the relevant block
             FisherInfoMat[:,p, FishIndsDk[k]:FishIndsDk[k+1]] = covdldsigma2dD.reshape(FisherInfoMat[:,p, FishIndsDk[k]:FishIndsDk[k+1]].shape)
@@ -263,9 +263,9 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n):
                 # Calculate covariance of derivative with respect to D_k
                 #-----------------------------------------------------------------------
                 if permdict[str(k1)+str(k2)] is None:
-                    covdldDk1dDk2,permdict[str(k1)+str(k2)] = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, perm=None)
+                    covdldDk1dDk2,permdict[str(k1)+str(k2)] = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, perm=None)
                 else:
-                    covdldDk1dDk2,_ = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, perm=permdict[str(k1)+str(k2)])
+                    covdldDk1dDk2,_ = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, perm=permdict[str(k1)+str(k2)])
 
                 # Add to FImat
                 FisherInfoMat[np.ix_(np.arange(v_iter), IndsDk1, IndsDk2)] = covdldDk1dDk2
@@ -283,7 +283,7 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n):
         for k in np.arange(len(nraneffs)):
 
             paramVector = np.concatenate((paramVector, mat2vech3D(Ddict[k])),axis=1)
-            derivVector = np.concatenate((derivVector, mat2vech3D(dldDdict[k])),axis=1)
+            derivVector = np.concatenate((derivVector, dupMatTdict[k] @ mat2vec3D(dldDdict[k])),axis=1)
         
         # --------------------------------------------------------------------------
         # Update step
@@ -501,10 +501,10 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
     # ------------------------------------------------------------------------------
     # Duplication matrices
     # ------------------------------------------------------------------------------
-    invDupMatdict = dict()
+    dupMatTdict = dict()
     for i in np.arange(len(nraneffs)):
 
-        invDupMatdict[i] = np.asarray(invDupMat2D(nraneffs[i]).todense())
+        dupMatTdict[i] = np.asarray(dupMat2D(nraneffs[i]).todense()).transpose()
 
     # ------------------------------------------------------------------------------
     # Inital D
@@ -513,7 +513,7 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
     Ddict = dict()
     for k in np.arange(len(nraneffs)):
 
-        Ddict[k] = makeDnnd3D(initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict))
+        Ddict[k] = makeDnnd3D(initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict))
     
     # Full version of D
     D = getDfromDict3D(Ddict, nraneffs, nlevels)
@@ -630,9 +630,9 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
 
             # Calculate covariance between sigma2 and D
             if ZtZmatdict[k] is None:
-                covdldsigma2dD,ZtZmatdict[k] = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True, ZtZmat=None)
+                covdldsigma2dD,ZtZmatdict[k] = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, vec=True, ZtZmat=None)
             else:
-                covdldsigma2dD,_ = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True, ZtZmat=ZtZmatdict[k])
+                covdldsigma2dD,_ = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, vec=True, ZtZmat=ZtZmatdict[k])
 
             # Assign to the relevant block
             FisherInfoMat[:,p, FishIndsDk[k]:FishIndsDk[k+1]] = covdldsigma2dD.reshape(FisherInfoMat[:,p, FishIndsDk[k]:FishIndsDk[k+1]].shape)
@@ -650,9 +650,9 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
                 # Calculate covariance of derivative with respect to D_k
                 #-----------------------------------------------------------------------
                 if permdict[str(k1)+str(k2)] is None:
-                    covdldDk1dDk2,permdict[str(k1)+str(k2)] = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True, perm=None)
+                    covdldDk1dDk2,permdict[str(k1)+str(k2)] = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, vec=True, perm=None)
                 else:
-                    covdldDk1dDk2,_ = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True, perm=permdict[str(k1)+str(k2)])
+                    covdldDk1dDk2,_ = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, vec=True, perm=permdict[str(k1)+str(k2)])
 
                 # Add to FImat
                 FisherInfoMat[np.ix_(np.arange(v_iter), IndsDk1, IndsDk2)] = covdldDk1dDk2
@@ -886,12 +886,10 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
     # ------------------------------------------------------------------------------
     # Duplication matrices
     # ------------------------------------------------------------------------------
-    invDupMatdict = dict()
-    dupInvDupMatdict = dict()
-    dupDuptMatdict = dict()
+    dupMatTdict = dict()
     for i in np.arange(len(nraneffs)):
 
-        invDupMatdict[i] = np.asarray(invDupMat2D(nraneffs[i]).todense())
+        dupMatTdict[i] = np.asarray(dupMat2D(nraneffs[i]).todense()).transpose()
         
     # ------------------------------------------------------------------------------
     # Inital D
@@ -900,7 +898,7 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
     Ddict = dict()
     for k in np.arange(len(nraneffs)):
 
-        Ddict[k] = makeDnnd3D(initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict))
+        Ddict[k] = makeDnnd3D(initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict))
     
     # Full version of D
     D = getDfromDict3D(Ddict, nraneffs, nlevels)
@@ -1022,14 +1020,14 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
             # Calculate covariance of derivative with respect to D_k
             #-----------------------------------------------------------------------
             if permdict[str(k)] is None:
-                covdldDk1dDk2,permdict[str(k)] = get_covdldDk1Dk23D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, perm=None)
+                covdldDk1dDk2,permdict[str(k)] = get_covdldDk1Dk23D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, perm=None)
             else:
-                covdldDk1dDk2,_ = get_covdldDk1Dk23D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, perm=permdict[str(k)])
+                covdldDk1dDk2,_ = get_covdldDk1Dk23D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, perm=permdict[str(k)])
 
             #-----------------------------------------------------------------------
             # Work out update amount
             #-----------------------------------------------------------------------
-            update = np.linalg.solve(forceSym3D(covdldDk1dDk2), mat2vech3D(dldDk))
+            update = np.linalg.solve(forceSym3D(covdldDk1dDk2), dupMatTdict[k] @ mat2vec3D(dldDk))
             
             # Multiply by stepsize
             update = np.einsum('i,ijk->ijk',lam, update)
@@ -1255,12 +1253,10 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
     # ------------------------------------------------------------------------------
     # Duplication matrices
     # ------------------------------------------------------------------------------
-    invDupMatdict = dict()
-    dupInvDupMatdict = dict()
-    dupDuptMatdict = dict()
+    dupMatTdict = dict()
     for i in np.arange(len(nraneffs)):
 
-        invDupMatdict[i] = np.asarray(invDupMat2D(nraneffs[i]).todense())
+        dupMatTdict[i] = np.asarray(dupMat2D(nraneffs[i]).todense()).transpose()
         
     # ------------------------------------------------------------------------------
     # Inital D
@@ -1269,7 +1265,7 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
     Ddict = dict()
     for k in np.arange(len(nraneffs)):
 
-        Ddict[k] = makeDnnd3D(initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict))
+        Ddict[k] = makeDnnd3D(initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict))
     
     # Full version of D
     D = getDfromDict3D(Ddict, nraneffs, nlevels)
@@ -1399,9 +1395,9 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             # Calculate covariance of derivative with respect to D_k
             #-----------------------------------------------------------------------
             if permdict[str(k)] is None:
-                covdldDk1dDk2,permdict[str(k)] = get_covdldDk1Dk23D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True, perm=None)
+                covdldDk1dDk2,permdict[str(k)] = get_covdldDk1Dk23D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, vec=True, perm=None)
             else:
-                covdldDk1dDk2,_ = get_covdldDk1Dk23D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=True, perm=permdict[str(k)])
+                covdldDk1dDk2,_ = get_covdldDk1Dk23D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, vec=True, perm=permdict[str(k)])
 
             #-----------------------------------------------------------------------
             # Work out update amount

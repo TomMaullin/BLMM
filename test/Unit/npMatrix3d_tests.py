@@ -24,7 +24,7 @@ from genTestDat import prodMats3D, genTestData3D
 # file.
 #
 # Author: Tom Maullin
-# Last edited: 22/03/2020
+# Last edited: 22/03/2020su
 #
 # =============================================================================
 
@@ -477,11 +477,11 @@ def test_initDk3D():
     # Choose random voxel to check worked correctly
     testv = np.random.randint(0,v)
 
-    # Work out the inverse duplication matrices we need.
-    invDupMatdict = dict()
+    # Work out the transpose duplication matrices we need.
+    dupMatTdict = dict()
     for i in np.arange(len(nraneffs)):
       
-      invDupMatdict[i] = invDupMat2D(nraneffs[i]).toarray()
+      dupMatTdict[i] = dupMat2D(nraneffs[i]).toarray().transpose()
 
     # Work out Z'e
     Zte = ZtY - ZtX @ beta
@@ -491,15 +491,15 @@ def test_initDk3D():
     k = np.random.randint(0,nraneffs.shape[0])
 
     # First test spatially varying
-    initDk_sv_test = initDk3D(k, ZtZ_sv, Zte_sv, sigma2, nlevels, nraneffs, invDupMatdict)[testv,:,:]
-    initDk_sv_expected = initDk2D(k, ZtZ_sv[testv,:,:], Zte_sv[testv,:,:], sigma2[testv], nlevels, nraneffs, invDupMatdict)
+    initDk_sv_test = initDk3D(k, ZtZ_sv, Zte_sv, sigma2, nlevels, nraneffs, dupMatTdict)[testv,:,:]
+    initDk_sv_expected = initDk2D(k, ZtZ_sv[testv,:,:], Zte_sv[testv,:,:], sigma2[testv], nlevels, nraneffs, dupMatTdict)
     
     # Check if results are all close.
     sv_testVal = np.allclose(initDk_sv_test,initDk_sv_expected)
 
     # Now test non spatially varying
-    initDk_nsv_test = initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict)[testv,:,:]
-    initDk_nsv_expected = initDk2D(k, ZtZ[0,:,:], Zte[testv,:,:], sigma2[testv], nlevels, nraneffs, invDupMatdict)
+    initDk_nsv_test = initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict)[testv,:,:]
+    initDk_nsv_expected = initDk2D(k, ZtZ[0,:,:], Zte[testv,:,:], sigma2[testv], nlevels, nraneffs, dupMatTdict)
     
     # Check if results are all close.
     nsv_testVal = np.allclose(initDk_nsv_test,initDk_nsv_expected)
@@ -899,26 +899,26 @@ def test_get_covdldDkdsigma23D():
     # Decide on a random factor
     k = np.random.randint(0,nraneffs.shape[0])
 
-    # Work out the inverse duplication matrices we need.
-    invDupMatdict = dict()
+    # Work out the transpose duplication matrices we need.
+    dupMatTdict = dict()
     for i in np.arange(len(nraneffs)):
       
-      invDupMatdict[i] = invDupMat2D(nraneffs[i]).toarray()
+      dupMatTdict[i] = dupMat2D(nraneffs[i]).toarray().transpose()
 
     # First test spatially varying
-    covdldDsigma2_sv_test,ZtZmat = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ_sv, DinvIplusZtZD_sv, invDupMatdict)
-    covdldDsigma2_sv_test,_ = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ_sv, DinvIplusZtZD_sv, invDupMatdict, ZtZmat=ZtZmat)
+    covdldDsigma2_sv_test,ZtZmat = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ_sv, DinvIplusZtZD_sv, dupMatTdict)
+    covdldDsigma2_sv_test,_ = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ_sv, DinvIplusZtZD_sv, dupMatTdict, ZtZmat=ZtZmat)
     covdldDsigma2_sv_test = covdldDsigma2_sv_test[testv,:,:]
-    covdldDsigma2_sv_expected,_ = get_covdldDkdsigma22D(k, sigma2[testv], nlevels, nraneffs, ZtZ_sv[testv,:,:], DinvIplusZtZD_sv[testv,:,:], invDupMatdict)
+    covdldDsigma2_sv_expected,_ = get_covdldDkdsigma22D(k, sigma2[testv], nlevels, nraneffs, ZtZ_sv[testv,:,:], DinvIplusZtZD_sv[testv,:,:], dupMatTdict)
 
     # Check if results are all close.
     sv_testVal = np.allclose(covdldDsigma2_sv_test,covdldDsigma2_sv_expected)
 
     # Now test non spatially varying
-    covdldDsigma2_nsv_test,ZtZmat = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict)
-    covdldDsigma2_nsv_test,_ = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, ZtZmat=ZtZmat)
+    covdldDsigma2_nsv_test,ZtZmat = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict)
+    covdldDsigma2_nsv_test,_ = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, ZtZmat=ZtZmat)
     covdldDsigma2_nsv_test = covdldDsigma2_nsv_test[testv,:,:]
-    covdldDsigma2_nsv_expected,_ = get_covdldDkdsigma22D(k, sigma2[testv], nlevels, nraneffs, ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], invDupMatdict)
+    covdldDsigma2_nsv_expected,_ = get_covdldDkdsigma22D(k, sigma2[testv], nlevels, nraneffs, ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], dupMatTdict)
 
     # Check if results are all close.
     nsv_testVal = np.allclose(covdldDsigma2_nsv_test,covdldDsigma2_nsv_expected)
@@ -968,26 +968,26 @@ def test_get_covdldDk1Dk23D():
     k1 = np.random.randint(0,nraneffs.shape[0])
     k2 = np.random.randint(0,nraneffs.shape[0])
 
-    # Work out the inverse duplication matrices we need.
-    invDupMatdict = dict()
+    # Work out the transpose duplication matrices we need.
+    dupMatTdict = dict()
     for i in np.arange(len(nraneffs)):
       
-      invDupMatdict[i] = invDupMat2D(nraneffs[i]).toarray()
+      dupMatTdict[i] = dupMat2D(nraneffs[i]).toarray().transpose()
 
     # First test spatially varying
-    covdldD_sv_test,perm = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ_sv, DinvIplusZtZD_sv, invDupMatdict)
-    covdldD_sv_test,_ = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ_sv, DinvIplusZtZD_sv, invDupMatdict,perm=perm)
+    covdldD_sv_test,perm = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ_sv, DinvIplusZtZD_sv, dupMatTdict)
+    covdldD_sv_test,_ = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ_sv, DinvIplusZtZD_sv, dupMatTdict,perm=perm)
     covdldD_sv_test = covdldD_sv_test[testv,:,:]
-    covdldD_sv_expected = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ_sv[testv,:,:], DinvIplusZtZD_sv[testv,:,:], invDupMatdict)[0]
+    covdldD_sv_expected = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ_sv[testv,:,:], DinvIplusZtZD_sv[testv,:,:], dupMatTdict)[0]
   
     # Check if results are all close.
     sv_testVal = np.allclose(covdldD_sv_test,covdldD_sv_expected)
 
     # Now test non spatially varying
-    covdldD_nsv_test,perm = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict)
-    covdldD_nsv_test,_ = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict)
+    covdldD_nsv_test,perm = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict)
+    covdldD_nsv_test,_ = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict)
     covdldD_nsv_test = covdldD_nsv_test[testv,:,:]
-    covdldD_nsv_expected = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], invDupMatdict)[0]
+    covdldD_nsv_expected = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], dupMatTdict)[0]
     
     # Check if results are all close.
     nsv_testVal = np.allclose(covdldD_nsv_test,covdldD_nsv_expected)
@@ -1172,12 +1172,12 @@ def test_mat2vecb3D():
 def test_sumAijBijt3D():
 
     # Generate random matrix dimensions
-    v = np.random.randint(40,140)
+    v = np.random.randint(10,20)
     n1 = np.random.randint(2,10)
     n1prime = np.random.randint(2,10)
     n2 = np.random.randint(2,10)
-    l1 = np.random.randint(50,100)
-    l2 = np.random.randint(50,100)
+    l1 = np.random.randint(50,60)
+    l2 = np.random.randint(50,60)
 
     # Work out m1 and m2
     m1 = n1*l1
@@ -1220,11 +1220,11 @@ def test_sumAijBijt3D():
 def test_sumAijKronBij3D():
 
     # Generate random matrix dimensions
-    v = np.random.randint(40,140)
+    v = np.random.randint(40,50)
     n1 = np.random.randint(2,10)
     n2 = np.random.randint(2,10)
-    l1 = np.random.randint(50,100)
-    l2 = np.random.randint(50,100)
+    l1 = np.random.randint(50,60)
+    l2 = np.random.randint(50,60)
 
     # Work out m1 and m2
     m1 = n1*l1
@@ -1941,7 +1941,7 @@ def test_get_dS23D():
             K = ZkjtiVX @ np.linalg.inv(XtiVX) @ L.transpose()
             
             # Sum terms
-            dS2dvechDk = dS2dvechDk + mat2vech2D(np.kron(K,K.transpose()))
+            dS2dvechDk = dS2dvechDk + dupMat2D(nraneffs[k]).toarray().transpose() @ mat2vec2D(np.kron(K,K.transpose()))
 
         # Multiply by sigma^2
         dS2dvechDk = sigma2[testv]*dS2dvechDk
@@ -1998,10 +1998,10 @@ def test_get_InfoMat3D():
 
     # Duplication matrices
     # ------------------------------------------------------------------------------
-    invDupMatdict = dict()
+    dupMatTdict = dict()
     for i in np.arange(len(nraneffs)):
 
-        invDupMatdict[i] = np.asarray(invDupMat2D(nraneffs[i]).todense())
+        dupMatTdict[i] = np.asarray(dupMat2D(nraneffs[i]).todense()).transpose()
 
     # Index variables
     # ------------------------------------------------------------------------------
@@ -2025,7 +2025,7 @@ def test_get_InfoMat3D():
     for k in np.arange(len(nraneffs)):
 
         # Get covariance of dldsigma and dldD      
-        covdldsigmadD = get_covdldDkdsigma22D(k, sigma2[testv], nlevels, nraneffs, ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], invDupMatdict)[0].reshape(FishIndsDk[k+1]-FishIndsDk[k])
+        covdldsigmadD = get_covdldDkdsigma22D(k, sigma2[testv], nlevels, nraneffs, ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], dupMatTdict)[0].reshape(FishIndsDk[k+1]-FishIndsDk[k])
 
         # Assign to the relevant block
         FI_expected[0, FishIndsDk[k]:FishIndsDk[k+1]] = covdldsigmadD
@@ -2040,7 +2040,7 @@ def test_get_InfoMat3D():
             IndsDk2 = np.arange(FishIndsDk[k2],FishIndsDk[k2+1])
 
             # Get covariance between D_k1 and D_k2 
-            covdldDk1dDk2 = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], invDupMatdict)[0]
+            covdldDk1dDk2 = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], dupMatTdict)[0]
 
             # Add to FImat
             FI_expected[np.ix_(IndsDk1, IndsDk2)] = covdldDk1dDk2

@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.sparse
 from scipy import stats
-from lib.npMatrix2d import faclev_indices2D, fac_indices2D, permOfIkKkI2D, invDupMat2D
+from lib.npMatrix2d import faclev_indices2D, fac_indices2D, permOfIkKkI2D, dupMat2D
 from lib.fileio import loadFile
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -327,8 +327,8 @@ def initSigma23D(ete, n):
 # - `Zte`: The Z matrix transposed and then multiplied by the OLS residuals
 #          (Z'e=Z'(Y-X\beta) in the above notation).
 # - `sigma2`: The OLS estimate of \sigma^2 (\sigma^2$ in the above notation).
-# - `invDupMatdict`: A dictionary of inverse duplication matrices such that 
-#                   `invDupMatdict[k]` = DupMat_k^+.
+# - `dupMatTdict`: A dictionary of transpose duplication matrices such that 
+#                   `dupMatTdict[k]` = DupMat_k'.
 #
 # ----------------------------------------------------------------------------
 #
@@ -339,7 +339,7 @@ def initSigma23D(ete, n):
 # - `Dkest`: The inital estimate of D_k (Dhat_k in the above notation).
 #
 # ============================================================================
-def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict):
+def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict):
   
   # Small check on sigma2
   if len(sigma2.shape) > 1:
@@ -392,10 +392,10 @@ def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, invDupMatdict):
         ZtZkronZtZ = ZtZkronZtZ + kron3D(ZkitZkj,ZkitZkj.transpose(0,2,1))
 
   # Work out information matrix
-  infoMat = invDupMatdict[k] @ ZtZkronZtZ @ invDupMatdict[k].transpose()
+  infoMat = dupMatTdict[k] @ ZtZkronZtZ @ dupMatTdict[k].transpose()
 
   # Work out the final term.
-  Dkest = vech2mat3D(np.linalg.solve(infoMat, mat2vech3D(invSig2ZteetZminusZtZ)))
+  Dkest = vech2mat3D(np.linalg.solve(infoMat, dupMatTdict[k] @ mat2vec3D(invSig2ZteetZminusZtZ)))
   
   
   return(Dkest)
@@ -877,8 +877,8 @@ def get_covdldbeta3D(XtZ, XtX, ZtZ, DinvIplusZtZD, sigma2):
 #               random effects and the second factor has 1 random effect.
 # - `ZtZ`: Z transpose multiplied by Z.
 # - `DinvIplusZtZD`: D(I+Z'ZD)^(-1) in the above notation.
-# - `invDupMatdict`: A dictionary of inverse duplication matrices such that 
-#                   `invDupMatdict[k]` = DupMat_k^+.
+# - `dupMatTdict`: A dictionary of transpose duplication matrices such that 
+#                   `dupMatTdict[k]` = DupMat_k'.
 # - `vec`: This is a boolean value which by default is false. If True it gives
 #          the update vector for vec (i.e. duplicates included), otherwise it
 #          gives the update vector for vech.
@@ -900,7 +900,7 @@ def get_covdldbeta3D(XtZ, XtX, ZtZ, DinvIplusZtZD, sigma2):
 #             iteration.
 #
 # ============================================================================
-def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False, ZtZmat=None):
+def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, vec=False, ZtZmat=None):
   
   # Number of voxels
   v = DinvIplusZtZD.shape[0]
@@ -941,7 +941,7 @@ def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invD
 
   # Multiply by duplication matrices and 
   if not vec:
-    covdldDdldsigma2 = np.einsum('i,ijk->ijk', 1/(2*sigma2), invDupMatdict[k] @ mat2vec3D(RkSum))
+    covdldDdldsigma2 = np.einsum('i,ijk->ijk', 1/(2*sigma2), dupMatTdict[k] @ mat2vec3D(RkSum))
   else:
     covdldDdldsigma2 = np.einsum('i,ijk->ijk', 1/(2*sigma2), mat2vec3D(RkSum))
   
@@ -954,7 +954,7 @@ def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invD
 # left here in case it has any use for future development.
 #
 # ============================================================================
-# def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False):
+# def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, vec=False):
 #  
 #   # Number of voxels
 #   v = DinvIplusZtZD.shape[0]
@@ -975,7 +975,7 @@ def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invD
 #
 #   # Multiply by duplication matrices and 
 #   if not vec:
-#     covdldDdldsigma2 = np.einsum('i,ijk->ijk', 1/(2*sigma2), invDupMatdict[k] @ mat2vec3D(RkSum))
+#     covdldDdldsigma2 = np.einsum('i,ijk->ijk', 1/(2*sigma2), dupMatTdict[k] @ mat2vec3D(RkSum))
 #   else:
 #     covdldDdldsigma2 = np.einsum('i,ijk->ijk', 1/(2*sigma2), mat2vec3D(RkSum))
 #  
@@ -1012,8 +1012,8 @@ def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invD
 #               random effects and the second factor has 1 random effect.
 # - `ZtZ`: Z transpose multiplied by Z.
 # - `DinvIplusZtZD`: D(I+Z'ZD)^(-1) in the above notation.
-# - `invDupMatdict`: A dictionary of inverse duplication matrices such that 
-#                    `invDupMatdict[k]` = DupMat_k^+
+# - `dupMatTdict`: A dictionary of transpose duplication matrices such that 
+#                    `dupMatTdict[k]` = DupMat_k'
 # - `vec`: This is a boolean value which by default is false. If True it gives
 #          the update matrix for vec (i.e. duplicates included), otherwise it
 #          gives true covariance for vech.
@@ -1034,7 +1034,7 @@ def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invD
 #           only need be calculated once so can be passed between iterations.
 #
 # ============================================================================
-def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, perm=None, vec=False):
+def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, perm=None, vec=False):
   
   # Get the indices for the factors 
   Ik1 = fac_indices2D(k1, nlevels, nraneffs)
@@ -1051,7 +1051,7 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatd
 
   # Multiply by duplication matrices and save
   if not vec:
-    covdldDk1dldk2 = 1/2 * invDupMatdict[k1] @ RkRSum @ invDupMatdict[k2].transpose()
+    covdldDk1dldk2 = 1/2 * dupMatTdict[k1] @ RkRSum @ dupMatTdict[k2].transpose()
   else:
     covdldDk1dldk2 = 1/2 * RkRSum
 
@@ -1065,7 +1065,7 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatd
 # left here in case it has any use for future development.
 #
 # ============================================================================
-# def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict, vec=False):
+# def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, vec=False):
 #  
 #   # Sum of R_(k1, k2, i, j) kron R_(k1, k2, i, j) over i and j 
 #   for i in np.arange(nlevels[k1]):
@@ -1093,7 +1093,7 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatd
 #    
 #   # Multiply by duplication matrices and save
 #   if not vec:
-#     covdldDk1dldk2 = 1/2 * invDupMatdict[k1] @ RkRtSum @ invDupMatdict[k2].transpose()
+#     covdldDk1dldk2 = 1/2 * dupMatTdict[k1] @ RkRtSum @ dupMatTdict[k2].transpose()
 #   else:
 #     covdldDk1dldk2 = 1/2 * RkRtSum
 #
@@ -2024,7 +2024,7 @@ def get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
             K = ZkjtiVX @ np.linalg.pinv(XtiVX) @ L.transpose()
             
             # Sum terms
-            dS2dvechDk = dS2dvechDk + mat2vech3D(kron3D(K,K.transpose(0,2,1)))
+            dS2dvechDk = dS2dvechDk + dupMat2D(nraneffs[k]).toarray().transpose() @ mat2vec3D(kron3D(K,K.transpose(0,2,1)))
 
         # Multiply by sigma^2
         dS2dvechDk = np.einsum('i,ijk->ijk',sigma2,dS2dvechDk)
@@ -2076,10 +2076,10 @@ def get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nraneffs, ZtZ):
 
     # Duplication matrices
     # ------------------------------------------------------------------------------
-    invDupMatdict = dict()
+    dupMatTdict = dict()
     for i in np.arange(len(nraneffs)):
 
-        invDupMatdict[i] = np.asarray(invDupMat2D(nraneffs[i]).todense())
+        dupMatTdict[i] = np.asarray(dupMat2D(nraneffs[i]).todense()).transpose()
 
     # Index variables
     # ------------------------------------------------------------------------------
@@ -2104,7 +2104,7 @@ def get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nraneffs, ZtZ):
     for k in np.arange(len(nraneffs)):
 
         # Get covariance of dldsigma and dldD      
-        covdldsigma2dD = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict)[0].reshape(v,FishIndsDk[k+1]-FishIndsDk[k])
+        covdldsigma2dD = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict)[0].reshape(v,FishIndsDk[k+1]-FishIndsDk[k])
 
         # Assign to the relevant block
         FisherInfoMat[:,0, FishIndsDk[k]:FishIndsDk[k+1]] = covdldsigma2dD
@@ -2119,7 +2119,7 @@ def get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nraneffs, ZtZ):
             IndsDk2 = np.arange(FishIndsDk[k2],FishIndsDk[k2+1])
 
             # Get covariance between D_k1 and D_k2 
-            covdldDk1dDk2 = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, invDupMatdict)[0]
+            covdldDk1dDk2 = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict)[0]
 
             # Add to FImat
             FisherInfoMat[np.ix_(np.arange(v), IndsDk1, IndsDk2)] = covdldDk1dDk2
