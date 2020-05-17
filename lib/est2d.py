@@ -295,7 +295,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             # Transform to derivative with respect to chol_k
             #-----------------------------------------------------------------------
             # We need to modify by multiplying by this matrix to obtain the cholesky derivative.
-            chol_mod = dupMatTdict[k] @ (scipy.sparse.identity(nraneffs[k]**2) + comMatdict[k]) @ scipy.sparse.kron(cholDict[k],np.eye(nraneffs[k])) @ elimMatdict[k].transpose()
+            chol_mod = elimMatdict[k] @ (scipy.sparse.identity(nraneffs[k]**2) + comMatdict[k]) @ scipy.sparse.kron(cholDict[k],np.eye(nraneffs[k])) @ dupMatTdict[k].transpose()
             
             # Transform to cholesky
             dldcholk = chol_mod.transpose() @ dupMatTdict[k] @ mat2vec2D(dldD)
