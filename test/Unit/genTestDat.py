@@ -2,6 +2,7 @@ import numpy as np
 import scipy.sparse
 import scipy.sparse.linalg
 import sys
+import os
 
 np.set_printoptions(threshold=sys.maxsize)
 
@@ -44,6 +45,12 @@ np.set_printoptions(threshold=sys.maxsize)
 #                          each factor, e.g. `nraneffs=[2,1]` would mean the 
 #                          first factor has random effects and the second
 #                          factor has 1 random effect.
+#   - save (optional): Boolean value. If true, the design will be saved.
+#   - desInd (optional): Integer value. Index representing which design is
+#                        being run, only needed for saving.
+#   - simInd (optional): Integer value. Index representing which simulation is
+#                        being run, only needed for saving.
+#   - OutDir (optional): Output directory to save the design to, if saving.
 #
 # -----------------------------------------------------------------------------
 #
@@ -68,7 +75,7 @@ np.set_printoptions(threshold=sys.maxsize)
 #   - b: The random effects vector used to simulate the response vector.
 #
 # -----------------------------------------------------------------------------
-def genTestData2D(n=None, p=None, nlevels=None, nraneffs=None):
+def genTestData2D(n=None, p=None, nlevels=None, nraneffs=None, save=False, simInd=None, desInd=None, OutDir=None):
 
     # Check if we have n
     if n is None:
@@ -111,6 +118,15 @@ def genTestData2D(n=None, p=None, nlevels=None, nraneffs=None):
         # Generate random number of levels.
         nraneffs = np.random.randint(2,5,r)
 
+    # Assign outdir and simInd if needed:
+    if save:
+        if not OutDir:
+            OutDir = os.getcwd()
+        if not simInd:
+            simInd = ''
+        if not desInd:
+            desInd = ''
+
     # Generate random X.
     X = np.random.randn(n,p)
     
@@ -151,6 +167,12 @@ def genTestData2D(n=None, p=None, nlevels=None, nraneffs=None):
             # The factor is randomly arranged 
             factorVec = np.random.randint(0,nlevels[i],size=n) 
 
+        # If outputting, save the factor vector
+        if save:
+            np.savetxt(os.path.join(OutDir, 'Sim' + str(simInd) + '_Design' + str(desInd) + '_Zfactor' + str(i) + '.csv'), factorVec)
+            np.savetxt(os.path.join(OutDir, 'Sim' + str(simInd) + '_Design' + str(desInd) + '_Zdata' + str(i) + '.csv'), Zdata_factor)
+
+
         # Build a matrix showing where the elements of Z should be
         indicatorMatrix_factor = np.zeros((n,nlevels[i]))
         indicatorMatrix_factor[np.arange(n),factorVec] = 1
@@ -188,7 +210,7 @@ def genTestData2D(n=None, p=None, nlevels=None, nraneffs=None):
     for k in np.arange(r):
       
         # Create a random matrix
-        randMat = np.random.randn(nraneffs[k],nraneffs[k])
+        randMat = np.random.uniform(-1,1,(nraneffs[k],nraneffs[k]))
 
         # Record it as D^{1/2}
         Dhalfdict[k] = randMat
@@ -223,6 +245,10 @@ def genTestData2D(n=None, p=None, nlevels=None, nraneffs=None):
 
     # Generate the response vector
     Y = X @ beta + Z @ b + epsilon
+
+    if save:
+        np.savetxt(os.path.join(OutDir, 'Sim' + str(simInd) + '_Design' + str(desInd) + '_X' + '.csv'), X)
+        np.savetxt(os.path.join(OutDir, 'Sim' + str(simInd) + '_Design' + str(desInd) + '_Y' + '.csv'), Y)
 
     # Return values
     return(Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D)
