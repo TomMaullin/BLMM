@@ -36,7 +36,7 @@ from lib.PeLS import PeLS2D, PeLS2D_getSigma2, PeLS2D_getBeta, PeLS2D_getD
 # Author: Tom Maullin (06/04/2020)
 #
 # ==================================================================================
-def sim2D(OutDir='/home/tommaullin/Documents/BLMM_creation/tmp/tmp', desInd=1):
+def sim2D(desInd=3, OutDir='/home/tommaullin/Documents/BLMM_creation/tmp/tmp'):
 
 
     for simInd in range(1,101):

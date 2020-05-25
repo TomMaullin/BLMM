@@ -308,7 +308,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             #-----------------------------------------------------------------------
             # Perform update
             #-----------------------------------------------------------------------
-            update = lam*np.linalg.solve(forceSym2D(covdldcholk), dldcholk)
+            update = lam*np.linalg.pinv(forceSym2D(covdldcholk)) @ dldcholk #lam*np.linalg.solve(forceSym2D(covdldcholk), dldcholk)
         
             #-----------------------------------------------------------------------
             # Update D_k and chol_k
@@ -411,7 +411,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
 #  - `nit`: The number of iterations taken to converge.
 #
 # ============================================================================
-def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, init_paramVector=None):
+def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, sparseMode=False, init_paramVector=None):
     
     # ------------------------------------------------------------------------------
     # Useful scalars
@@ -636,7 +636,7 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n,
         # ----------------------------------------------------------------------
         # Update step
         # ----------------------------------------------------------------------
-        paramVector = paramVector + lam*(np.linalg.solve(FisherInfoMat,derivVector))
+        paramVector = paramVector + lam*(np.linalg.pinv(FisherInfoMat) @ derivVector)#lam*(np.linalg.solve(FisherInfoMat,derivVector))
 
         # ----------------------------------------------------------------------
         # Get the new parameters
@@ -964,7 +964,7 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
         # --------------------------------------------------------------------------
         # Update step
         # --------------------------------------------------------------------------
-        paramVector = paramVector + lam*(np.linalg.solve(FisherInfoMat, derivVector))
+        paramVector = paramVector + lam*(np.linalg.pinv(FisherInfoMat) @ derivVector)#lam*(np.linalg.solve(FisherInfoMat, derivVector))
         
         # --------------------------------------------------------------------------
         # Get the new parameters
@@ -1288,7 +1288,7 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             #-----------------------------------------------------------------------
             # Update step
             #-----------------------------------------------------------------------
-            update = lam*np.linalg.solve(forceSym2D(covdldDk),mat2vec2D(dldD))
+            update = lam*np.linalg.pinv(forceSym2D(covdldDk)) @ mat2vec2D(dldD)#lam*np.linalg.solve(forceSym2D(covdldDk),mat2vec2D(dldD))
             update = vec2vech2D(update)
             
             # Update D_k
@@ -1593,7 +1593,7 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
             #-----------------------------------------------------------------------
             # Update step
             #-----------------------------------------------------------------------
-            update = lam*np.linalg.solve(forceSym2D(covdldDk), dupMatTdict[k] @ mat2vec2D(dldD))
+            update = lam*np.linalg.pinv(forceSym2D(covdldDk)) @ dupMatTdict[k] @ mat2vec2D(dldD)#lam*np.linalg.solve(forceSym2D(covdldDk), dupMatTdict[k] @ mat2vec2D(dldD))
             
             # Update D_k
             Ddict[k] = makeDpd2D(vech2mat2D(mat2vech2D(Ddict[k]) + update))

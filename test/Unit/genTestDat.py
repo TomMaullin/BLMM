@@ -6,6 +6,9 @@ import os
 
 np.set_printoptions(threshold=sys.maxsize)
 
+# Add lib to the python path.
+sys.path.insert(1, os.path.join(sys.argv[0],'..','..','..','lib'))
+from lib.npMatrix2d import vech2mat2D
 
 # =============================================================================
 # This file contains functions for generating testdata and product matrices,
@@ -75,7 +78,7 @@ np.set_printoptions(threshold=sys.maxsize)
 #   - b: The random effects vector used to simulate the response vector.
 #
 # -----------------------------------------------------------------------------
-def genTestData2D(n=None, p=None, nlevels=None, nraneffs=None, save=False, simInd=None, desInd=None, OutDir=None):
+def genTestData2D(n=None, p=None, nlevels=None, nraneffs=None, save=False, simInd=None, desInd=0, OutDir=None):
 
     # Check if we have n
     if n is None:
@@ -196,10 +199,17 @@ def genTestData2D(n=None, p=None, nlevels=None, nraneffs=None, save=False, simIn
     Z = Z.toarray()
 
     # Make random beta
-    beta = np.random.randint(-5,5,p).reshape(p,1)
+    if desInd==0:
+        beta = np.random.randint(-5,5,p).reshape(p,1)
+    else:
+        beta = np.arange(1,p+1).reshape(p,1)
 
-    # Make random sigma2
-    sigma2 = 0.5*np.random.randn()**2
+
+    if desInd==0:
+        # Make random sigma2
+        sigma2 = 0.5*np.random.randn()**2
+    else:
+        sigma2 = 1
 
     # Make epsilon.
     epsilon = sigma2*np.random.randn(n).reshape(n,1)
@@ -207,16 +217,41 @@ def genTestData2D(n=None, p=None, nlevels=None, nraneffs=None, save=False, simIn
     # Make random D
     Ddict = dict()
     Dhalfdict = dict()
-    for k in np.arange(r):
+    if desInd==0:
+    
+        for k in np.arange(r):
       
-        # Create a random matrix
-        randMat = np.random.uniform(-1,1,(nraneffs[k],nraneffs[k]))
+            # Create a random matrix
+            randMat = np.random.uniform(-1,1,(nraneffs[k],nraneffs[k]))
 
-        # Record it as D^{1/2}
-        Dhalfdict[k] = randMat
+            # Record it as D^{1/2}
+            Dhalfdict[k] = randMat
 
-        # Work out D = D^{1/2} @ D^{1/2}'
-        Ddict[k] = randMat @ randMat.transpose()
+            # Work out D = D^{1/2} @ D^{1/2}'
+            Ddict[k] = randMat @ randMat.transpose()
+
+    elif desInd==1:
+
+        Ddict[0]=np.eye(2)
+
+    elif desInd==2:
+
+        Ddict[0]= vech2mat2D(np.array([[1,0.7,0.5,0.9,0.6,0.8]]).transpose())
+        Ddict[1]= np.eye(2)
+
+    elif desInd==3:
+
+        Ddict[0]=vech2mat2D(np.array([[1,0.75,0.5,0.25,1,0.75,0.5,1,0.75,1]]).transpose())
+        Ddict[1]=vech2mat2D(np.array([[1,0.7,0.5,0.9,0.6,0.8]]).transpose())
+        Ddict[2]=np.eye(2)
+
+    if desInd!=0:
+    
+        for k in np.arange(r):
+
+            # Record D^{1/2}
+            Dhalfdict[k] = np.linalg.cholesky(Ddict[k])
+
 
     # Matrix version
     D = np.array([])
