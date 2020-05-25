@@ -7,9 +7,9 @@
 library(MASS)
 library(Matrix)
 #install.packages("lme4", lib = "/users/nichols/inf852/BLMM/Rpackages/",dependencies=c("Depends", "Imports"))
-library(lme4, lib.loc="/users/nichols/inf852/BLMM/Rpackages/")
+require(lme4, lib.loc="/users/nichols/inf852/BLMM/Rpackages/")
 library(tictoc, lib.loc="/users/nichols/inf852/BLMM/Rpackages/")
-require(lme4)
+
 #trace(name_of_function, edit = T)
 
 desInd <- 3
