@@ -6,9 +6,9 @@ library(tictoc)
 #trace(name_of_function, edit = T)
 
 desInd <- 3
-simInd <- 1
+simInd <- 4
 
-dataDir <- '/home/tommaullin/Documents/BLMM_creation/tmp/tmp'
+dataDir <- '/well/nichols/users/inf852/PaperSims'
 if (desInd==3){
   
   results <- read.csv(file = paste(dataDir,'/Sim',toString(simInd),'_Design3_results.csv',sep=''))

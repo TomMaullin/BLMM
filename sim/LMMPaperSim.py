@@ -35,7 +35,7 @@ from lib.npMatrix2d import *
 def sim2D(desInd, OutDir):
 
 
-    for simInd in range(1,1001):
+    for simInd in range(1,101):
         
         #===============================================================================
         # Setup
