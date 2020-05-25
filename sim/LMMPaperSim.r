@@ -1,8 +1,8 @@
-#! /apps/well/R/3.4.3/bin/Rscript
+#!/apps/well/R/3.4.3/bin/Rscript
 #$ -cwd
-#$ -q short.qc                                                                                                                                                                                        
-#$ -o $HOME/log                                                                                                                                                                               
-#$ -e $HOME/log    
+#$ -q short.qc
+#$ -o ./loglmer/
+#$ -e ./loglmer/
 
 library(MASS)
 library(Matrix)
