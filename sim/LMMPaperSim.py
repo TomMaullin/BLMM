@@ -1,8 +1,6 @@
 import os
 import sys
 import numpy as np
-import cvxopt
-from cvxopt import matrix,spmatrix
 import pandas as pd
 import time
 import scipy.sparse
@@ -15,7 +13,6 @@ np.set_printoptions(threshold=sys.maxsize)
 from test.Unit.genTestDat import genTestData2D, prodMats2D
 from lib.est2d import *
 from lib.npMatrix2d import *
-from lib.cvxMatrix2d import *
 from lib.PeLS import PeLS2D, PeLS2D_getSigma2, PeLS2D_getBeta, PeLS2D_getD
 
 # ==================================================================================
@@ -36,10 +33,10 @@ from lib.PeLS import PeLS2D, PeLS2D_getSigma2, PeLS2D_getBeta, PeLS2D_getD
 # Author: Tom Maullin (06/04/2020)
 #
 # ==================================================================================
-def sim2D(desInd=3, OutDir='/home/tommaullin/Documents/BLMM_creation/tmp/tmp'):
+def sim2D(desInd=3, OutDir='/well/nichols/users/inf852/PaperSims'):
 
 
-    for simInd in range(1,101):
+    for simInd in range(1,1001):
         
         #===============================================================================
         # Setup
