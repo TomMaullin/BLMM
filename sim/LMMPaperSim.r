@@ -15,7 +15,7 @@ library(tictoc)#  , lib.loc="/users/nichols/inf852/BLMM/Rpackages/")
 desInd <- 3
 simInd <- 4
 
-dataDir <- '/well/nichols/users/inf852/PaperSims'
+dataDir <- '/well/nichols/users/inf852/PaperSims'#/home/tommaullin/Documents/BLMM_creation/tmp/tmp
 for (simInd in 1:100){
   if (desInd==3){
     
@@ -58,16 +58,17 @@ for (simInd in 1:100){
     devfun <- lmer(y ~ x2 + x3 + x4 + x5 + (0 + z01 + z02 + z03 + z04|Zfactor0) + (0 + z11 + z12 + z13|Zfactor1) + (0 + z21 + z22|Zfactor2), REML = FALSE, devFunOnly = TRUE) #Don't need intercepts in R - automatically assumed
     
     tic('lmer time 2')
-    optimizeLmer(devfun)
+    opt<-optimizeLmer(devfun)
     t<-toc()
     
     lmertime2 <- t$toc-t$tic
     
     
     results[1,'lmer']<-lmertime2
+    results[2,'lmer'] <- opt$feval
     results[3,'lmer']<-logLik(m)[1]
     results[4:8,'lmer'] <- fixef(m)
-    results[9,'lmer']<-as.data.frame(VarCorr(m))$vcov[3]
+    results[9,'lmer']<-as.data.frame(VarCorr(m))$vcov[20]
     
     Ds <- as.matrix(Matrix::bdiag(VarCorr(m)))
     
@@ -75,9 +76,9 @@ for (simInd in 1:100){
     vechD1 <- Ds[5:7,5:7][lower.tri(Ds[5:7,5:7],diag = TRUE)]
     vechD2 <- Ds[8:9,8:9][lower.tri(Ds[8:9,8:9],diag = TRUE)]
     
-    results[10:19,'lmer']<-vechD0/as.data.frame(VarCorr(m))$vcov[3]
-    results[20:25,'lmer']<-vechD1/as.data.frame(VarCorr(m))$vcov[3]
-    results[26:28,'lmer']<-vechD2/as.data.frame(VarCorr(m))$vcov[3]
+    results[10:19,'lmer']<-vechD0/as.data.frame(VarCorr(m))$vcov[20]
+    results[20:25,'lmer']<-vechD1/as.data.frame(VarCorr(m))$vcov[20]
+    results[26:28,'lmer']<-vechD2/as.data.frame(VarCorr(m))$vcov[20]
     results[29:38,'lmer']<-vechD0
     results[39:44,'lmer']<-vechD1
     results[45:47,'lmer']<-vechD2
@@ -122,19 +123,24 @@ for (simInd in 1:100){
     devfun <- lmer(y ~ x2 + x3 + x4 + x5 + (0 + z01 + z02 + z03|Zfactor0) + (0 + z11 + z12|Zfactor1), REML = FALSE, devFunOnly = TRUE) #Don't need intercepts in R - automatically assumed
     
     tic('lmer time 2')
-    optimizeLmer(devfun)
+    opt<-optimizeLmer(devfun)
     t<-toc()
     
     lmertime2 <- t$toc-t$tic
     
     results[1,'lmer']<-lmertime
+    results[2,'lmer'] <- opt$feval
     results[3,'lmer']<-logLik(m)[1]
     results[4:8,'lmer'] <- fixef(m)
+    results[9,'lmer']<-as.data.frame(VarCorr(m))$vcov[10]
     
     Ds <- as.matrix(Matrix::bdiag(VarCorr(m)))
     
     vechD0 <- Ds[1:3,1:3][lower.tri(Ds[1:3,1:3],diag = TRUE)]
     vechD1 <- Ds[4:5,4:5][lower.tri(Ds[4:5,4:5],diag = TRUE)]
+    
+    results[10:15,'lmer']<-vechD0/as.data.frame(VarCorr(m))$vcov[10]
+    results[16:18,'lmer']<-vechD1/as.data.frame(VarCorr(m))$vcov[10]
     
     results[19:24,'lmer']<-vechD0
     results[25:27,'lmer']<-vechD1
