@@ -4,7 +4,7 @@
 #$ -o ./loglmer/
 #$ -e ./loglmer/
 
-print(R.version())
+print(R.Version())
 
 library(MASS)
 library(Matrix)
