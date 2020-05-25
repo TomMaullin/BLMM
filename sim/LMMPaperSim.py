@@ -275,3 +275,37 @@ def sim2D(desInd, OutDir):
         # Save results
         results.to_csv(os.path.join(OutDir,'Sim'+str(simInd)+'_Design'+str(desInd)+'_results.csv'))
     
+
+def timings(desInd, OutDir):
+
+    # Make row indices
+    row = ['sim'+str(i) for i in range(1,101)]
+
+    # Make column indices
+    col = ['FS','pFS','SFS','pSFS','cSFS','lmer']
+
+    #-----------------------------------------------------------------------------
+    # Work out timing stats
+    #-----------------------------------------------------------------------------
+
+    # Make timing table
+    timesTable = pd.DataFrame(index=row, columns=col)
+
+    # Make sure pandas knows the table is numeric
+    timesTable = timesTable.apply(pd.to_numeric)
+
+    for simInd in range(1,101):
+        
+        # Name of results file
+        results_file = os.path.join(OutDir,'Sim'+str(simInd)+'_Design'+str(desInd)+'_results.csv')
+
+        # Read in results file
+        results_table = pandas.read_csv(results_table, index_col=0)
+
+        # Get the times
+        simTimes = results_table.loc['Time','FS':]
+
+        # Add them to the table
+        timesTable.loc['sim'+str(simInd),:]=simTimes
+
+    print(timesTable.describe())
