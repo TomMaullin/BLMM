@@ -6,8 +6,6 @@
 
 library(MASS)
 library(Matrix)
-install.packages("lme4", lib="/users/nichols/inf852/BLMM/Rpackages/")
-install.packages("tictoc", lib="/users/nichols/inf852/BLMM/Rpackages/")
 library(lme4, lib.loc="/users/nichols/inf852/BLMM/Rpackages/")
 library(tictoc, lib.loc="/users/nichols/inf852/BLMM/Rpackages/")
 
