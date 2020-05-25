@@ -67,7 +67,7 @@ for (simInd in 1:100){
     results[1,'lmer']<-lmertime2
     results[3,'lmer']<-logLik(m)[1]
     results[4:8,'lmer'] <- fixef(m)
-    results[9,'lmer']<-as.data.frame(VarCorr(m1))$vcov[3]
+    results[9,'lmer']<-as.data.frame(VarCorr(m))$vcov[3]
     
     Ds <- as.matrix(Matrix::bdiag(VarCorr(m)))
     
@@ -75,9 +75,9 @@ for (simInd in 1:100){
     vechD1 <- Ds[5:7,5:7][lower.tri(Ds[5:7,5:7],diag = TRUE)]
     vechD2 <- Ds[8:9,8:9][lower.tri(Ds[8:9,8:9],diag = TRUE)]
     
-    results[10:19,'lmer']<-vechD0/as.data.frame(VarCorr(m1))$vcov[3]
-    results[20:25,'lmer']<-vechD1/as.data.frame(VarCorr(m1))$vcov[3]
-    results[26:28,'lmer']<-vechD2/as.data.frame(VarCorr(m1))$vcov[3]
+    results[10:19,'lmer']<-vechD0/as.data.frame(VarCorr(m))$vcov[3]
+    results[20:25,'lmer']<-vechD1/as.data.frame(VarCorr(m))$vcov[3]
+    results[26:28,'lmer']<-vechD2/as.data.frame(VarCorr(m))$vcov[3]
     results[29:38,'lmer']<-vechD0
     results[39:44,'lmer']<-vechD1
     results[45:47,'lmer']<-vechD2
