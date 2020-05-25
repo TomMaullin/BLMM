@@ -32,7 +32,7 @@ from lib.npMatrix2d import *
 # Author: Tom Maullin (06/04/2020)
 #
 # ==================================================================================
-def sim2D(desInd=3, OutDir='/well/nichols/users/inf852/PaperSims'):
+def sim2D(desInd, OutDir):
 
 
     for simInd in range(1,1001):
