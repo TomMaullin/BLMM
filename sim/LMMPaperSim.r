@@ -4,6 +4,8 @@
 #$ -o ./loglmer/
 #$ -e ./loglmer/
 
+print(R.version())
+
 library(MASS)
 library(Matrix)
 library(lme4, lib.loc="/users/nichols/inf852/BLMM/Rpackages/")
