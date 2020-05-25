@@ -300,7 +300,7 @@ def timings(desInd, OutDir):
         results_file = os.path.join(OutDir,'Sim'+str(simInd)+'_Design'+str(desInd)+'_results.csv')
 
         # Read in results file
-        results_table = pandas.read_csv(results_table, index_col=0)
+        results_table = pd.read_csv(results_table, index_col=0)
 
         # Get the times
         simTimes = results_table.loc['Time','FS':]
