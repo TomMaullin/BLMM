@@ -13,7 +13,6 @@ np.set_printoptions(threshold=sys.maxsize)
 from test.Unit.genTestDat import genTestData2D, prodMats2D
 from lib.est2d import *
 from lib.npMatrix2d import *
-from lib.PeLS import PeLS2D, PeLS2D_getSigma2, PeLS2D_getBeta, PeLS2D_getD
 
 # ==================================================================================
 #
@@ -184,83 +183,6 @@ def sim2D(desInd=3, OutDir='/well/nichols/users/inf852/PaperSims'):
         # Record D*sigma2
         for i in np.arange(4+p,p+qu+4):
             results.at[indexVec[i+qu],'pSFS']=paramVector_pSFS[p,0]*paramVector_pSFS[i-3,0]
-        
-        #===============================================================================
-        # PeLS
-        #===============================================================================
-
-        # Convert matrices to cvxopt format.
-        XtZtmp = matrix(XtZ)
-        ZtXtmp = matrix(ZtX)
-        ZtZtmp = cvxopt.sparse(matrix(ZtZ))
-        XtXtmp = matrix(XtX)
-        XtYtmp = matrix(XtY) 
-        ZtYtmp = matrix(ZtY) 
-        YtYtmp = matrix(YtY) 
-        YtZtmp = matrix(YtZ)
-        YtXtmp = matrix(YtX)
-          
-        # Initial theta value. Bates (2005) suggests using [vech(I_q1),...,vech(I_qr)] where I is the identity matrix
-        theta0 = np.array([])
-        for i in np.arange(len(nraneffs)):
-            theta0 = np.hstack((theta0, mat2vech2D(np.eye(nraneffs[i])).reshape(np.int64(nraneffs[i]*(nraneffs[i]+1)/2))))
-          
-        # Obtain a random Lambda matrix with the correct sparsity for the permutation vector
-        tinds,rinds,cinds=get_mapping2D(nlevels, nraneffs)
-        Lam=mapping2D(np.random.randn(theta0.shape[0]),tinds,rinds,cinds)
-
-        # Obtain Lambda'Z'ZLambda
-        LamtZtZLam = spmatrix.trans(Lam)*cvxopt.sparse(matrix(ZtZtmp))*Lam
-
-        # Identity (Actually quicker to calculate outside of estimation)
-        I = spmatrix(1.0, range(Lam.size[0]), range(Lam.size[0]))
-
-        # Obtaining permutation for PeLS
-        P=cvxopt.amd.order(LamtZtZLam)
-
-        # Run Penalized Least Squares
-        t1 = time.time()
-        estimation = minimize(PeLS2D, theta0, args=(ZtXtmp, ZtYtmp, XtXtmp, ZtZtmp, XtYtmp, YtXtmp, YtZtmp, XtZtmp, YtYtmp, n, P, I, tinds, rinds, cinds), method='L-BFGS-B', tol=tol)
-        
-        # llh
-        llh = -estimation['fun']
-
-        # Theta parameters 
-        theta = estimation['x']
-
-        # Number of iterations
-        nit = estimation['nit']
-
-        # Obtain Beta, sigma2 and D
-        beta_pls = PeLS2D_getBeta(theta, ZtXtmp, ZtYtmp, XtXtmp, ZtZtmp, XtYtmp, YtXtmp, YtZtmp, XtZtmp, YtYtmp, n, P, tinds, rinds, cinds)
-        sigma2_pls = PeLS2D_getSigma2(theta, ZtXtmp, ZtYtmp, XtXtmp, ZtZtmp, XtYtmp, YtXtmp, YtZtmp, XtZtmp, YtYtmp, n, P, I, tinds, rinds, cinds)
-        D_pls = PeLS2D_getD(theta, tinds, rinds, cinds, sigma2_pls)
-        t2 = time.time()
-
-        # Record time, number of iterations and log likelihood
-        results.at['Time','PeLS']=t2-t1
-        results.at['nit','PeLS']=nit
-        results.at['llh','PeLS']=llh
-
-        # Record beta parameters
-        for i in range(p):
-            results.at[indexVec[i+3],'PeLS']=beta_pls[i]
-
-        # Record sigma2 parameter
-        results.at['sigma2','PeLS']=sigma2_pls[0]
-        
-        # Indices corresponding to random factors.
-        Dinds = np.cumsum(nraneffs*(nraneffs+1)//2)+p+4
-        Dinds = np.insert(Dinds,0,p+4)
-
-        # Work out vechDk for each random factor
-        for k in np.arange(len(nlevels)):
-            vechDk = mat2vech2D(np.array(matrix(D_pls[facInds[k]:(facInds[k]+nraneffs[k]),facInds[k]:(facInds[k]+nraneffs[k])])))
-
-            # Save parameters
-            for j in np.arange(len(vechDk)):
-                results.at[indexVec[Dinds[k]+j],'PeLS']=vechDk[j,0]/sigma2_pls[0]
-                results.at[indexVec[Dinds[k]+qu+j],'PeLS']=vechDk[j,0]
         
         #===============================================================================
         # cSFS
