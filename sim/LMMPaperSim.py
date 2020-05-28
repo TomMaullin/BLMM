@@ -373,16 +373,16 @@ def simT(paramVec, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevel
     for k in np.arange(len(nraneffs)):
 
         Ddict[k] = vech2mat2D(paramVec[IndsDk[k]:IndsDk[k+1],:])
-  
+        
     # Matrix version
-    D = scipy.sparse.lil_matrix((q,q))
-    counter = 0
-    for k in np.arange(len(nraneffs)):
+    D = np.array([])
+    for i in np.arange(len(nraneffs)):
         for j in np.arange(nlevels[i]):
-
-            D[Dinds[counter]:Dinds[counter+1], Dinds[counter]:Dinds[counter+1]] = Ddict[k]
-            counter = counter + 1
-    D = D.toarray()
+            # Add block
+            if i == 0 and j == 0:
+                D = Ddict[i]
+            else:
+                D = scipy.linalg.block_diag(D, Ddict[i])
 
     # Contrast vector (1 in last place 0 elsewhere)
     L = np.zeros(p)
