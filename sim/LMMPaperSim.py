@@ -112,6 +112,11 @@ def sim2D(desInd, OutDir):
             for j in np.arange(nraneffs[k]*(nraneffs[k]+1)//2):
                 indexVec = np.append(indexVec, 'sigma2*D'+str(k+1)+','+str(j+1))
 
+        # T value p value and Satterthwaite degrees of freedom estimate.
+        indexVec = np.append(indexVec,'T')
+        indexVec = np.append(indexVec,'p')
+        indexVec = np.append(indexVec,'swdf')
+
         # Construct dataframe
         results = pd.DataFrame(index=indexVec, columns=['Truth', 'PeLS', 'FS', 'pFS', 'SFS', 'pSFS', 'cSFS'])
 
@@ -183,7 +188,13 @@ def sim2D(desInd, OutDir):
         # Record D*sigma2
         for i in np.arange(4+p,p+qu+4):
             results.at[indexVec[i+qu],'pSFS']=paramVector_pSFS[p,0]*paramVector_pSFS[i-3,0]
-        
+                
+        # Get T statistic, p value and Satterthwaite degrees of freedom
+        T,p,df = simT(paramVector_pSFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels)
+        results.at[indexVec[p+4+2*qu]]=T
+        results.at[indexVec[p+5+2*qu]]=p
+        results.at[indexVec[p+6+2*qu]]=df
+
         #===============================================================================
         # cSFS
         #===============================================================================
@@ -206,6 +217,12 @@ def sim2D(desInd, OutDir):
         for i in np.arange(4+p,p+qu+4):
             results.at[indexVec[i+qu],'cSFS']=paramVector_cSFS[p,0]*paramVector_cSFS[i-3,0]
         
+        # Get T statistic, p value and Satterthwaite degrees of freedom
+        T,p,df = simT(paramVector_cSFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels)
+        results.at[indexVec[p+4+2*qu]]=T
+        results.at[indexVec[p+5+2*qu]]=p
+        results.at[indexVec[p+6+2*qu]]=df
+
         #===============================================================================
         # FS
         #===============================================================================
@@ -228,6 +245,12 @@ def sim2D(desInd, OutDir):
         for i in np.arange(4+p,p+qu+4):
             results.at[indexVec[i+qu],'FS']=paramVector_FS[p,0]*paramVector_FS[i-3,0]
 
+        # Get T statistic, p value and Satterthwaite degrees of freedom
+        T,p,df = simT(paramVector_FS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels)
+        results.at[indexVec[p+4+2*qu]]=T
+        results.at[indexVec[p+5+2*qu]]=p
+        results.at[indexVec[p+6+2*qu]]=df
+
         #===============================================================================
         # SFS
         #===============================================================================
@@ -249,7 +272,13 @@ def sim2D(desInd, OutDir):
         # Record D*sigma2
         for i in np.arange(4+p,p+qu+4):
             results.at[indexVec[i+qu],'SFS']=paramVector_SFS[p,0]*paramVector_SFS[i-3,0]
-            
+
+        # Get T statistic, p value and Satterthwaite degrees of freedom
+        T,p,df = simT(paramVector_SFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels)
+        results.at[indexVec[p+4+2*qu]]=T
+        results.at[indexVec[p+5+2*qu]]=p
+        results.at[indexVec[p+6+2*qu]]=df
+
         #===============================================================================
         # pFS
         #===============================================================================
@@ -271,6 +300,12 @@ def sim2D(desInd, OutDir):
         # Record D*sigma2
         for i in np.arange(4+p,p+qu+4):
             results.at[indexVec[i+qu],'pFS']=paramVector_pFS[p,0]*paramVector_pFS[i-3,0]
+
+        # Get T statistic, p value and Satterthwaite degrees of freedom
+        T,p,df = simT(paramVector_pFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels)
+        results.at[indexVec[p+4+2*qu]]=T
+        results.at[indexVec[p+5+2*qu]]=p
+        results.at[indexVec[p+6+2*qu]]=df
 
         # Save results
         results.to_csv(os.path.join(OutDir,'Sim'+str(simInd)+'_Design'+str(desInd)+'_results.csv'))
@@ -309,3 +344,59 @@ def timings(desInd, OutDir):
         timesTable.loc['sim'+str(simInd),:]=simTimes
 
     print(timesTable.describe())
+
+
+def simT(paramVec, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels):
+
+    # Scalar quantities
+    p = XtX.shape[1] # (Number of Fixed Effects parameters)
+    q = np.sum(nraneffs*nlevels) # (Total number of random effects)
+    qu = np.sum(nraneffs*(nraneffs+1)//2) # (Number of unique random effects)
+
+    # Output beta estimate
+    beta = paramVec[0:p,:]  
+    
+    # Output sigma2 estimate
+    sigma2 = paramVec[p:(p+1),:]
+
+    # Get unique D elements (i.e. [vech(D_1),...vech(D_r)])
+    vechD = paramVec[(p+1):,:]
+
+    # Get the indices in the paramvector corresponding to D matrices
+    IndsDk = np.int32(np.cumsum(nraneffs*(nraneffs+1)//2) + p + 1)
+    IndsDk = np.insert(IndsDk,0,p+1)
+
+    # Reconstruct D
+    Ddict = dict()
+
+    # D as a dictionary
+    for k in np.arange(len(nraneffs)):
+
+        Ddict[k] = vech2mat2D(paramVec[:,IndsDk[k]:IndsDk[k+1],:])
+      
+    # Full version of D
+    D = getDfromDict2D(Ddict, nraneffs, nlevels)
+
+    # Contrast vector (1 in last place 0 elsewhere)
+    L = np.zeros(p)
+    L[-1] = 1
+
+    # Miscellaneous matrix variables
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+    Zte = ZtY - (ZtX @ beta)
+    ete = ssr3D(YtX, YtY, XtX, beta)
+
+    # Get T statistic
+    T = get_T2D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2)
+
+    # Get Satterthwaite estimate of degrees of freedom
+    df = get_swdf_T2D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs)
+
+    # Get p value
+    # Do this seperately for >0 and <0 to avoid underflow
+    if T < 0:
+        P = 1-stats.t.cdf(T, df)
+    else:
+        P = stats.t.cdf(-T, df)
+
+    return(T,p,df)

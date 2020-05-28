@@ -202,7 +202,7 @@ def genTestData2D(n=None, p=None, nlevels=None, nraneffs=None, save=False, simIn
     if desInd==0:
         beta = np.random.randint(-5,5,p).reshape(p,1)
     else:
-        beta = np.arange(1,p+1).reshape(p,1)
+        beta = p-np.arange(1,p+1).reshape(p,1)
 
 
     if desInd==0:
