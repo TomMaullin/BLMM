@@ -372,7 +372,7 @@ def simT(paramVec, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevel
     # D as a dictionary
     for k in np.arange(len(nraneffs)):
 
-        Ddict[k] = vech2mat2D(paramVec[:,IndsDk[k]:IndsDk[k+1],:])
+        Ddict[k] = vech2mat2D(paramVec[IndsDk[k]:IndsDk[k+1],:])
       
     # Full version of D
     D = getDfromDict2D(Ddict, nraneffs, nlevels)
@@ -384,7 +384,7 @@ def simT(paramVec, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevel
     # Miscellaneous matrix variables
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
     Zte = ZtY - (ZtX @ beta)
-    ete = ssr3D(YtX, YtY, XtX, beta)
+    ete = ssr2D(YtX, YtY, XtX, beta)
 
     # Get T statistic
     T = get_T2D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2)
