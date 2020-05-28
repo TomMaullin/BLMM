@@ -189,8 +189,6 @@ def sim2D(desInd, OutDir):
         # Record D*sigma2
         for i in np.arange(4+p,p+qu+4):
             results.at[indexVec[i+qu],'pSFS']=paramVector_pSFS[p,0]*paramVector_pSFS[i-3,0]
-
-        print('pSFS')
                 
         # Get T statistic, p value and Satterthwaite degrees of freedom
         T,Pval,df = simT(paramVector_pSFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
@@ -219,8 +217,6 @@ def sim2D(desInd, OutDir):
         # Record D*sigma2
         for i in np.arange(4+p,p+qu+4):
             results.at[indexVec[i+qu],'cSFS']=paramVector_cSFS[p,0]*paramVector_cSFS[i-3,0]
-        
-        print('cSFS')
 
         # Get T statistic, p value and Satterthwaite degrees of freedom
         T,Pval,df = simT(paramVector_cSFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
@@ -250,8 +246,6 @@ def sim2D(desInd, OutDir):
         for i in np.arange(4+p,p+qu+4):
             results.at[indexVec[i+qu],'FS']=paramVector_FS[p,0]*paramVector_FS[i-3,0]
 
-        print('FS')
-
         # Get T statistic, p value and Satterthwaite degrees of freedom
         T,Pval,df = simT(paramVector_FS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
         results.at[indexVec[p+4+2*qu]]=T
@@ -280,8 +274,6 @@ def sim2D(desInd, OutDir):
         for i in np.arange(4+p,p+qu+4):
             results.at[indexVec[i+qu],'SFS']=paramVector_SFS[p,0]*paramVector_SFS[i-3,0]
 
-        print('SFS')
-
         # Get T statistic, p value and Satterthwaite degrees of freedom
         T,Pval,df = simT(paramVector_SFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
         results.at[indexVec[p+4+2*qu]]=T
@@ -309,8 +301,6 @@ def sim2D(desInd, OutDir):
         # Record D*sigma2
         for i in np.arange(4+p,p+qu+4):
             results.at[indexVec[i+qu],'pFS']=paramVector_pFS[p,0]*paramVector_pFS[i-3,0]
-
-        print('pFS')
 
         # Get T statistic, p value and Satterthwaite degrees of freedom
         T,Pval,df = simT(paramVector_pFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)

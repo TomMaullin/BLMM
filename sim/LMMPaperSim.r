@@ -9,6 +9,7 @@ library(Matrix)
 #install.packages("lme4", lib = "/users/nichols/inf852/BLMM/Rpackages/",dependencies=c("Depends", "Imports"))
 library(lme4)#, lib.loc="/users/nichols/inf852/BLMM/Rpackages/")
 library(tictoc)#  , lib.loc="/users/nichols/inf852/BLMM/Rpackages/")
+library(lmerTest)
 
 #trace(name_of_function, edit = T)
 
@@ -82,6 +83,20 @@ for (simInd in 1:100){
     results[29:38,'lmer']<-vechD0
     results[39:44,'lmer']<-vechD1
     results[45:47,'lmer']<-vechD2
+    
+    # Run T statistic inference
+    Tresults<-lmerTest::contest1D(m, c(0,0,0,0,1),ddf=c("Satterthwaite"))
+    p<-Tresults$`Pr(>|t|)`
+    Tstat<-Tresults$`t value`
+    df<-Tresults$df
+    
+    # Make p-values 1 sided
+    if (Tstat<0){p <- (1-p)/2}
+    if (Tstat>=0){p <- p/2}
+    
+    results[48,'lmer']<-Tstat
+    results[49,'lmer']<-p
+    results[50,'lmer']<-df
     
     write.csv(results,paste(dataDir,'/Sim',toString(simInd),'_Design3_results.csv',sep=''), row.names = FALSE)
     
