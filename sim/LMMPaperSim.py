@@ -5,6 +5,7 @@ import pandas as pd
 import time
 import scipy.sparse
 import scipy.sparse.linalg
+from scipy import stats
 from scipy.optimize import minimize
 
 np.set_printoptions(threshold=sys.maxsize)
@@ -190,7 +191,7 @@ def sim2D(desInd, OutDir):
             results.at[indexVec[i+qu],'pSFS']=paramVector_pSFS[p,0]*paramVector_pSFS[i-3,0]
                 
         # Get T statistic, p value and Satterthwaite degrees of freedom
-        T,p,df = simT(paramVector_pSFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels)
+        T,p,df = simT(paramVector_pSFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
         results.at[indexVec[p+4+2*qu]]=T
         results.at[indexVec[p+5+2*qu]]=p
         results.at[indexVec[p+6+2*qu]]=df
@@ -218,7 +219,7 @@ def sim2D(desInd, OutDir):
             results.at[indexVec[i+qu],'cSFS']=paramVector_cSFS[p,0]*paramVector_cSFS[i-3,0]
         
         # Get T statistic, p value and Satterthwaite degrees of freedom
-        T,p,df = simT(paramVector_cSFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels)
+        T,p,df = simT(paramVector_cSFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
         results.at[indexVec[p+4+2*qu]]=T
         results.at[indexVec[p+5+2*qu]]=p
         results.at[indexVec[p+6+2*qu]]=df
@@ -246,7 +247,7 @@ def sim2D(desInd, OutDir):
             results.at[indexVec[i+qu],'FS']=paramVector_FS[p,0]*paramVector_FS[i-3,0]
 
         # Get T statistic, p value and Satterthwaite degrees of freedom
-        T,p,df = simT(paramVector_FS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels)
+        T,p,df = simT(paramVector_FS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
         results.at[indexVec[p+4+2*qu]]=T
         results.at[indexVec[p+5+2*qu]]=p
         results.at[indexVec[p+6+2*qu]]=df
@@ -274,7 +275,7 @@ def sim2D(desInd, OutDir):
             results.at[indexVec[i+qu],'SFS']=paramVector_SFS[p,0]*paramVector_SFS[i-3,0]
 
         # Get T statistic, p value and Satterthwaite degrees of freedom
-        T,p,df = simT(paramVector_SFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels)
+        T,p,df = simT(paramVector_SFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
         results.at[indexVec[p+4+2*qu]]=T
         results.at[indexVec[p+5+2*qu]]=p
         results.at[indexVec[p+6+2*qu]]=df
@@ -302,7 +303,7 @@ def sim2D(desInd, OutDir):
             results.at[indexVec[i+qu],'pFS']=paramVector_pFS[p,0]*paramVector_pFS[i-3,0]
 
         # Get T statistic, p value and Satterthwaite degrees of freedom
-        T,p,df = simT(paramVector_pFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels)
+        T,p,df = simT(paramVector_pFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
         results.at[indexVec[p+4+2*qu]]=T
         results.at[indexVec[p+5+2*qu]]=p
         results.at[indexVec[p+6+2*qu]]=df
@@ -346,7 +347,7 @@ def timings(desInd, OutDir):
     print(timesTable.describe())
 
 
-def simT(paramVec, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels):
+def simT(paramVec, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n):
 
     # Scalar quantities
     p = XtX.shape[1] # (Number of Fixed Effects parameters)
