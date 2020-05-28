@@ -193,9 +193,9 @@ def sim2D(desInd, OutDir):
         print('pSFS')
                 
         # Get T statistic, p value and Satterthwaite degrees of freedom
-        T,p,df = simT(paramVector_pSFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
+        T,Pval,df = simT(paramVector_pSFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
         results.at[indexVec[p+4+2*qu]]=T
-        results.at[indexVec[p+5+2*qu]]=p
+        results.at[indexVec[p+5+2*qu]]=Pval
         results.at[indexVec[p+6+2*qu]]=df
 
         #===============================================================================
@@ -223,9 +223,9 @@ def sim2D(desInd, OutDir):
         print('cSFS')
 
         # Get T statistic, p value and Satterthwaite degrees of freedom
-        T,p,df = simT(paramVector_cSFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
+        T,Pval,df = simT(paramVector_cSFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
         results.at[indexVec[p+4+2*qu]]=T
-        results.at[indexVec[p+5+2*qu]]=p
+        results.at[indexVec[p+5+2*qu]]=Pval
         results.at[indexVec[p+6+2*qu]]=df
 
         #===============================================================================
@@ -253,9 +253,9 @@ def sim2D(desInd, OutDir):
         print('FS')
 
         # Get T statistic, p value and Satterthwaite degrees of freedom
-        T,p,df = simT(paramVector_FS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
+        T,Pval,df = simT(paramVector_FS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
         results.at[indexVec[p+4+2*qu]]=T
-        results.at[indexVec[p+5+2*qu]]=p
+        results.at[indexVec[p+5+2*qu]]=Pval
         results.at[indexVec[p+6+2*qu]]=df
 
         #===============================================================================
@@ -283,9 +283,9 @@ def sim2D(desInd, OutDir):
         print('SFS')
 
         # Get T statistic, p value and Satterthwaite degrees of freedom
-        T,p,df = simT(paramVector_SFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
+        T,Pval,df = simT(paramVector_SFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
         results.at[indexVec[p+4+2*qu]]=T
-        results.at[indexVec[p+5+2*qu]]=p
+        results.at[indexVec[p+5+2*qu]]=Pval
         results.at[indexVec[p+6+2*qu]]=df
 
         #===============================================================================
@@ -313,9 +313,9 @@ def sim2D(desInd, OutDir):
         print('pFS')
 
         # Get T statistic, p value and Satterthwaite degrees of freedom
-        T,p,df = simT(paramVector_pFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
+        T,Pval,df = simT(paramVector_pFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
         results.at[indexVec[p+4+2*qu]]=T
-        results.at[indexVec[p+5+2*qu]]=p
+        results.at[indexVec[p+5+2*qu]]=Pval
         results.at[indexVec[p+6+2*qu]]=df
 
         # Save results
@@ -414,8 +414,8 @@ def simT(paramVec, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevel
     # Get p value
     # Do this seperately for >0 and <0 to avoid underflow
     if T < 0:
-        P = 1-stats.t.cdf(T, df)
+        Pval = 1-stats.t.cdf(T, df)
     else:
-        P = stats.t.cdf(-T, df)
+        Pval = stats.t.cdf(-T, df)
 
-    return(T,p,df)
+    return(T,Pval,df)
