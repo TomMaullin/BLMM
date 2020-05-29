@@ -94,7 +94,7 @@ for (simInd in 1:100){
     # Make p-values 1 sided
     if (Tstat>0){
       print('T>0')
-      p <- p/2
+      p <- 1-p/2
     } else {
       print('T<0')
       p <- p/2
