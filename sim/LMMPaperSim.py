@@ -364,8 +364,10 @@ def TstatisticPPplots(desInd, OutDir):
     pTable = pd.DataFrame(index=row, columns=col)
     dfTable = pd.DataFrame(index=row, columns=col)
 
-    # Make sure pandas knows the table is numeric
-    tTable = timesTable.apply(pd.to_numeric)
+    # Make sure pandas knows the tables are numeric
+    tTable = tTable.apply(pd.to_numeric)
+    pTable = pTable.apply(pd.to_numeric)
+    dfTable = dfTable.apply(pd.to_numeric)
 
     for simInd in range(1,101):
         
