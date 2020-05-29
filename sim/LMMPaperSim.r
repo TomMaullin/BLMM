@@ -91,14 +91,17 @@ for (simInd in 1:100){
     df<-Tresults$df
     
     # Make p-values 1 sided
-    p <- (1-p)/2
+    if (T>0){
+      p <- (1-p)/2
+    } else {
+      p <- p/2
+    }
     
     results[48,'lmer']<-Tstat
     results[49,'lmer']<-p
     results[50,'lmer']<-df
     
     write.csv(results,paste(dataDir,'/Sim',toString(simInd),'_Design3_results.csv',sep=''), row.names = FALSE)
-    
     
     
   } else if (desInd==2){
@@ -160,6 +163,55 @@ for (simInd in 1:100){
     results[25:27,'lmer']<-vechD1
     
     write.csv(results,paste(dataDir,'/Sim',toString(simInd),'_Design2_results.csv',sep=''), row.names = FALSE)
+    
+  } else if (desInd==1){
+    
+    results <- read.csv(file = paste(dataDir,'/Sim',toString(simInd),'_Design1_results.csv',sep=''))
+    
+    X <- read.csv(file = paste(dataDir,'/Sim',toString(simInd),'_Design1_X.csv',sep=''),sep=' ', header=FALSE)
+    Y <- read.csv(file = paste(dataDir,'/Sim',toString(simInd),'_Design1_Y.csv',sep=''),sep=' ', header=FALSE)
+    Zfactor0 <- factor(read.csv(file = paste(dataDir,'/Sim',toString(simInd),'_Design1_Zfactor0.csv',sep=''), sep=' ', header=FALSE)[,1])
+    Zdata0 <- read.csv(file = paste(dataDir,'/Sim',toString(simInd),'_Design1_Zdata0.csv',sep=''),sep=' ', header=FALSE)
+    
+    y <- as.matrix(Y[,1])
+    
+    x2 <- as.matrix(X[,2])
+    x3 <- as.matrix(X[,3])
+    x4 <- as.matrix(X[,4])
+    x5 <- as.matrix(X[,5])
+    
+    
+    z01 <- as.matrix(Zdata0[,1])
+    
+    tic('lmer time')
+    m <- lmer(y ~ x2 + x3 + x4 + x5 + (0 + z01|Zfactor0), REML = FALSE) #Don't need intercepts in R - automatically assumed
+    t<-toc()
+    
+    lmertime <- t$toc-t$tic
+    
+    
+    devfun <- lmer(y ~ x2 + x3 + x4 + x5 + (0 + z01|Zfactor0), REML = FALSE, devFunOnly = TRUE) #Don't need intercepts in R - automatically assumed
+    
+    tic('lmer time 2')
+    opt<-optimizeLmer(devfun)
+    t<-toc()
+    
+    lmertime2 <- t$toc-t$tic
+    
+    results[1,'lmer']<-lmertime
+    results[2,'lmer'] <- opt$feval
+    results[3,'lmer']<-logLik(m)[1]
+    results[4:8,'lmer'] <- fixef(m)
+    results[9,'lmer']<-as.data.frame(VarCorr(m))$vcov[2]
+    
+    Ds <- as.matrix(Matrix::bdiag(VarCorr(m)))
+    
+    vechD0 <- Ds[1:1,1:1][lower.tri(Ds[1:1,1:1],diag = TRUE)]
+    
+    results[10,'lmer']<-vechD0/as.data.frame(VarCorr(m))$vcov[10]
+    results[11,'lmer']<-vechD0
+    
+    write.csv(results,paste(dataDir,'/Sim',toString(simInd),'_Design1_results.csv',sep=''), row.names = FALSE)
     
   }
 }
