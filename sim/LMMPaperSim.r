@@ -189,7 +189,7 @@ for (simInd in 1:100){
     z02 <- as.matrix(Zdata0[,2])
     
     tic('lmer time')
-    m <- lmer(y ~ x2 + x3 + x4 + x5 + (0 + z01|Zfactor0), REML = FALSE) #Don't need intercepts in R - automatically assumed
+    m <- lmer(y ~ x2 + x3 + x4 + x5 + (0 + z01 + z02|Zfactor0), REML = FALSE) #Don't need intercepts in R - automatically assumed
     t<-toc()
     
     lmertime <- t$toc-t$tic
