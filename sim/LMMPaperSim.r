@@ -9,12 +9,17 @@ library(Matrix)
 #install.packages("lme4", lib = "/users/nichols/inf852/BLMM/Rpackages/",dependencies=c("Depends", "Imports"))
 library(lme4)#, lib.loc="/users/nichols/inf852/BLMM/Rpackages/")
 library(tictoc)#  , lib.loc="/users/nichols/inf852/BLMM/Rpackages/")
-library(lmerTest)
+
+# If we are timing code, don't import lmerTest since it reduces the performance of lmer significantly
+timing <- FALSE
+if (!timing){
+  library(lmerTest)
+}
+
 
 #trace(name_of_function, edit = T)
 
 desInd <- 1
-simInd <- 4
 
 dataDir <- '/well/nichols/users/inf852/PaperSims'#/home/tommaullin/Documents/BLMM_creation/tmp/tmp
 for (simInd in 1:100){
@@ -84,26 +89,29 @@ for (simInd in 1:100){
     results[39:44,'lmer']<-vechD1
     results[45:47,'lmer']<-vechD2
     
-    # Run T statistic inference
-    Tresults<-lmerTest::contest1D(m, c(0,0,0,0,1),ddf=c("Satterthwaite"))
-    p<-Tresults$`Pr(>|t|)`
-    Tstat<-Tresults$`t value`
-    df<-Tresults$df
-    
-    print(p)
-    # Make p-values 1 sided
-    if (Tstat>0){
-      print('T>0')
-      p <- p/2
-    } else {
-      print('T<0')
-      p <- 1-p/2
+    # If we're not using the simulations to test performance, output everything we can.
+    if (!timing){
+      # Run T statistic inference
+      Tresults<-lmerTest::contest1D(m, c(0,0,0,0,1),ddf=c("Satterthwaite"))
+      p<-Tresults$`Pr(>|t|)`
+      Tstat<-Tresults$`t value`
+      df<-Tresults$df
+      
+      print(p)
+      # Make p-values 1 sided
+      if (Tstat>0){
+        print('T>0')
+        p <- p/2
+      } else {
+        print('T<0')
+        p <- 1-p/2
+      }
+      print(p)
+      
+      results[48,'lmer']<-Tstat
+      results[49,'lmer']<-p
+      results[50,'lmer']<-df
     }
-    print(p)
-    
-    results[48,'lmer']<-Tstat
-    results[49,'lmer']<-p
-    results[50,'lmer']<-df
     
     write.csv(results,paste(dataDir,'/Sim',toString(simInd),'_Design3_results.csv',sep=''), row.names = FALSE)
     
@@ -218,26 +226,29 @@ for (simInd in 1:100){
     results[10:12,'lmer']<-vechD0/as.data.frame(VarCorr(m))$vcov[10]
     results[13:15,'lmer']<-vechD0
     
-    # Run T statistic inference
-    Tresults<-lmerTest::contest1D(m, c(0,0,0,0,1),ddf=c("Satterthwaite"))
-    p<-Tresults$`Pr(>|t|)`
-    Tstat<-Tresults$`t value`
-    df<-Tresults$df
-    
-    print(p)
-    # Make p-values 1 sided
-    if (Tstat>0){
-      print('T>0')
-      p <- p/2
-    } else {
-      print('T<0')
-      p <- 1-p/2
+    # If we're not using the simulations to test performance, output everything we can.
+    if (!timing){
+      # Run T statistic inference
+      Tresults<-lmerTest::contest1D(m, c(0,0,0,0,1),ddf=c("Satterthwaite"))
+      p<-Tresults$`Pr(>|t|)`
+      Tstat<-Tresults$`t value`
+      df<-Tresults$df
+      
+      print(p)
+      # Make p-values 1 sided
+      if (Tstat>0){
+        print('T>0')
+        p <- p/2
+      } else {
+        print('T<0')
+        p <- 1-p/2
+      }
+      print(p)
+      
+      results[16,'lmer']<-Tstat
+      results[17,'lmer']<-p
+      results[18,'lmer']<-df
     }
-    print(p)
-    
-    results[16,'lmer']<-Tstat
-    results[17,'lmer']<-p
-    results[18,'lmer']<-df
     
     write.csv(results,paste(dataDir,'/Sim',toString(simInd),'_Design1_results.csv',sep=''), row.names = FALSE)
     
