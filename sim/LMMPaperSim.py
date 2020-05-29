@@ -347,6 +347,49 @@ def timings(desInd, OutDir):
     print(timesTable.describe())
 
 
+def TstatisticPPplots(desInd, OutDir):
+
+    # Make row indices
+    row = ['sim'+str(i) for i in range(1,101)]
+
+    # Make column indices
+    col = ['FS','lmer']
+
+    #-----------------------------------------------------------------------------
+    # Work out timing stats
+    #-----------------------------------------------------------------------------
+
+    # Make timing table
+    tTable = pd.DataFrame(index=row, columns=col)
+    pTable = pd.DataFrame(index=row, columns=col)
+    dfTable = pd.DataFrame(index=row, columns=col)
+
+    # Make sure pandas knows the table is numeric
+    tTable = timesTable.apply(pd.to_numeric)
+
+    for simInd in range(1,101):
+        
+        # Name of results file
+        results_file = os.path.join(OutDir,'Sim'+str(simInd)+'_Design'+str(desInd)+'_results.csv')
+
+        # Read in results file
+        results_table = pd.read_csv(results_file, index_col=0)
+
+        # Get the T, P and df values
+        simT = results_table.loc['T',['FS','lmer']]
+        simp = results_table.loc['p',['FS','lmer']]
+        simdf = results_table.loc['swdf',['FS','lmer']]
+
+        # Add them to the tables
+        tTable.loc['sim'+str(simInd),:]=simT
+        pTable.loc['sim'+str(simInd),:]=simp
+        dfTable.loc['sim'+str(simInd),:]=simdf
+
+    print(tTable.describe())
+    print(pTable.describe())
+    print(dfTable.describe())
+
+
 def simT(paramVec, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n):
 
     # Scalar quantities
