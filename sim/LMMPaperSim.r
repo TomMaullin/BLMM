@@ -92,13 +92,7 @@ for (simInd in 1:100){
     
     print(p)
     # Make p-values 1 sided
-    if (T>0){
-      print('T>0')
-      p <- 1-p/2
-    } else {
-      print('T<0')
-      p <- p/2
-    }
+    p <- p/2
     print(p)
     
     results[48,'lmer']<-Tstat
