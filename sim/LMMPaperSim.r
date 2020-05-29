@@ -91,8 +91,7 @@ for (simInd in 1:100){
     df<-Tresults$df
     
     # Make p-values 1 sided
-    if (Tstat<0){p <- (1-p)/2}
-    if (Tstat>=0){p <- p/2}
+    p <- (1-p)/2
     
     results[48,'lmer']<-Tstat
     results[49,'lmer']<-p
