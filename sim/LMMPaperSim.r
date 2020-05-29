@@ -186,6 +186,7 @@ for (simInd in 1:100){
     
     
     z01 <- as.matrix(Zdata0[,1])
+    z02 <- as.matrix(Zdata0[,2])
     
     tic('lmer time')
     m <- lmer(y ~ x2 + x3 + x4 + x5 + (0 + z01|Zfactor0), REML = FALSE) #Don't need intercepts in R - automatically assumed
@@ -194,7 +195,7 @@ for (simInd in 1:100){
     lmertime <- t$toc-t$tic
     
     
-    devfun <- lmer(y ~ x2 + x3 + x4 + x5 + (0 + z01|Zfactor0), REML = FALSE, devFunOnly = TRUE) #Don't need intercepts in R - automatically assumed
+    devfun <- lmer(y ~ x2 + x3 + x4 + x5 + (0 + z01 + z02|Zfactor0), REML = FALSE, devFunOnly = TRUE) #Don't need intercepts in R - automatically assumed
     
     tic('lmer time 2')
     opt<-optimizeLmer(devfun)
@@ -206,14 +207,37 @@ for (simInd in 1:100){
     results[2,'lmer'] <- opt$feval
     results[3,'lmer']<-logLik(m)[1]
     results[4:8,'lmer'] <- fixef(m)
-    results[9,'lmer']<-as.data.frame(VarCorr(m))$vcov[2]
+    results[9,'lmer']<-as.data.frame(VarCorr(m))$vcov[4]
     
     Ds <- as.matrix(Matrix::bdiag(VarCorr(m)))
     
-    vechD0 <- Ds[1:1,1:1][lower.tri(Ds[1:1,1:1],diag = TRUE)]
+    print(Ds)
     
-    results[10,'lmer']<-vechD0/as.data.frame(VarCorr(m))$vcov[10]
-    results[11,'lmer']<-vechD0
+    vechD0 <- Ds[1:3,1:3][lower.tri(Ds[1:3,1:3],diag = TRUE)]
+    
+    results[10:12,'lmer']<-vechD0/as.data.frame(VarCorr(m))$vcov[10]
+    results[13:15,'lmer']<-vechD0
+    
+    # Run T statistic inference
+    Tresults<-lmerTest::contest1D(m, c(0,0,0,0,1),ddf=c("Satterthwaite"))
+    p<-Tresults$`Pr(>|t|)`
+    Tstat<-Tresults$`t value`
+    df<-Tresults$df
+    
+    print(p)
+    # Make p-values 1 sided
+    if (Tstat>0){
+      print('T>0')
+      p <- p/2
+    } else {
+      print('T<0')
+      p <- 1-p/2
+    }
+    print(p)
+    
+    results[16,'lmer']<-Tstat
+    results[17,'lmer']<-p
+    results[18,'lmer']<-df
     
     write.csv(results,paste(dataDir,'/Sim',toString(simInd),'_Design1_results.csv',sep=''), row.names = FALSE)
     
