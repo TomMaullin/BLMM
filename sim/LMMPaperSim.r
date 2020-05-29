@@ -213,7 +213,7 @@ for (simInd in 1:100){
     
     print(Ds)
     
-    vechD0 <- Ds[1:3,1:3][lower.tri(Ds[1:3,1:3],diag = TRUE)]
+    vechD0 <- Ds[1:2,1:2][lower.tri(Ds[1:2,1:2],diag = TRUE)]
     
     results[10:12,'lmer']<-vechD0/as.data.frame(VarCorr(m))$vcov[10]
     results[13:15,'lmer']<-vechD0
