@@ -36,17 +36,17 @@ from lib.npMatrix2d import *
 def sim2D(desInd, OutDir):
 
 
-    for simInd in range(1,1001):
+    for simInd in range(1,101):
         
         #===============================================================================
         # Setup
         #===============================================================================
 
         if desInd==1:
-            nlevels = np.array([10])
+            nlevels = np.array([50])
             nraneffs = np.array([2])
         if desInd==2:
-            nlevels = np.array([50,10])
+            nlevels = np.array([10,3])
             nraneffs = np.array([3,2])
         if desInd==3:
             nlevels = np.array([100,30,10])
@@ -330,7 +330,7 @@ def timings(desInd, OutDir):
     # Make sure pandas knows the table is numeric
     timesTable = timesTable.apply(pd.to_numeric)
 
-    for simInd in range(1,1001):
+    for simInd in range(1,101):
         
         # Name of results file
         results_file = os.path.join(OutDir,'Sim'+str(simInd)+'_Design'+str(desInd)+'_results.csv')
@@ -369,7 +369,7 @@ def TstatisticPPplots(desInd, OutDir):
     pTable = pTable.apply(pd.to_numeric)
     dfTable = dfTable.apply(pd.to_numeric)
 
-    for simInd in range(1,1001):
+    for simInd in range(1,101):
         
         # Name of results file
         results_file = os.path.join(OutDir,'Sim'+str(simInd)+'_Design'+str(desInd)+'_results.csv')

@@ -19,10 +19,10 @@ if (!timing){
 
 #trace(name_of_function, edit = T)
 
-desInd <- 1
+desInd <- 2
 
 dataDir <- '/well/nichols/users/inf852/PaperSims'#/home/tommaullin/Documents/BLMM_creation/tmp/tmp
-for (simInd in 1:1000){
+for (simInd in 1:100){
   if (desInd==3){
     
     results <- read.csv(file = paste(dataDir,'/Sim',toString(simInd),'_Design3_results.csv',sep=''))
@@ -173,6 +173,30 @@ for (simInd in 1:1000){
     
     results[19:24,'lmer']<-vechD0
     results[25:27,'lmer']<-vechD1
+    
+    # If we're not using the simulations to test performance, output everything we can.
+    if (!timing){
+      # Run T statistic inference
+      Tresults<-lmerTest::contest1D(m, c(0,0,0,0,1),ddf=c("Satterthwaite"))
+      p<-Tresults$`Pr(>|t|)`
+      Tstat<-Tresults$`t value`
+      df<-Tresults$df
+      
+      print(p)
+      # Make p-values 1 sided
+      if (Tstat>0){
+        print('T>0')
+        p <- p/2
+      } else {
+        print('T<0')
+        p <- 1-p/2
+      }
+      print(p)
+      
+      results[28,'lmer']<-Tstat
+      results[29,'lmer']<-p
+      results[30,'lmer']<-df
+    }
     
     write.csv(results,paste(dataDir,'/Sim',toString(simInd),'_Design2_results.csv',sep=''), row.names = FALSE)
     
