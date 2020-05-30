@@ -36,7 +36,7 @@ from lib.npMatrix2d import *
 def sim2D(desInd, OutDir):
 
 
-    for simInd in range(1,101):
+    for simInd in range(1,1001):
         
         #===============================================================================
         # Setup
@@ -53,7 +53,7 @@ def sim2D(desInd, OutDir):
             nraneffs = np.array([4,3,2])
 
         # Generate test data
-        Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D = genTestData2D(n=40, p=5, nlevels=nlevels, nraneffs=nraneffs, save=True, simInd=simInd, desInd=desInd, OutDir=OutDir)
+        Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D = genTestData2D(n=30, p=5, nlevels=nlevels, nraneffs=nraneffs, save=True, simInd=simInd, desInd=desInd, OutDir=OutDir)
 
         # Work out number of observations, parameters, random effects, etc
         n = X.shape[0]
@@ -350,7 +350,7 @@ def timings(desInd, OutDir):
 def TstatisticPPplots(desInd, OutDir):
 
     # Make row indices
-    row = ['sim'+str(i) for i in range(1,101)]
+    row = ['sim'+str(i) for i in range(1,1001)]
 
     # Make column indices
     col = ['FS','lmer']
