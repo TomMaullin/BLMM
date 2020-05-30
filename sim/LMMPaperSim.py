@@ -36,7 +36,7 @@ from lib.npMatrix2d import *
 def sim2D(desInd, OutDir):
 
 
-    for simInd in range(1,101):
+    for simInd in range(1,1001):
         
         #===============================================================================
         # Setup
@@ -330,7 +330,7 @@ def timings(desInd, OutDir):
     # Make sure pandas knows the table is numeric
     timesTable = timesTable.apply(pd.to_numeric)
 
-    for simInd in range(1,101):
+    for simInd in range(1,1001):
         
         # Name of results file
         results_file = os.path.join(OutDir,'Sim'+str(simInd)+'_Design'+str(desInd)+'_results.csv')
@@ -344,7 +344,7 @@ def timings(desInd, OutDir):
         # Add them to the table
         timesTable.loc['sim'+str(simInd),:]=simTimes
 
-    print(timesTable.describe())
+    timesTable.to_csv(os.path.join(OutDir,'timesTable.csv'))
 
 
 def TstatisticPPplots(desInd, OutDir):

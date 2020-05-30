@@ -22,7 +22,7 @@ if (!timing){
 desInd <- 1
 
 dataDir <- '/well/nichols/users/inf852/PaperSims'#/home/tommaullin/Documents/BLMM_creation/tmp/tmp
-for (simInd in 1:100){
+for (simInd in 1:1000){
   if (desInd==3){
     
     results <- read.csv(file = paste(dataDir,'/Sim',toString(simInd),'_Design3_results.csv',sep=''))
