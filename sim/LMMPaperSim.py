@@ -387,9 +387,10 @@ def TstatisticPPplots(desInd, OutDir):
         pTable.loc['sim'+str(simInd),:]=simp
         dfTable.loc['sim'+str(simInd),:]=simdf
 
-    print(tTable.describe())
-    print(pTable.describe())
-    print(dfTable.describe())
+    tTable.to_csv(os.path.join(OutDir,'tTable.csv'))
+    pTable.to_csv(os.path.join(OutDir,'pTable.csv'))
+    dfTable.to_csv(os.path.join(OutDir,'dfTable.csv'))
+
 
 
 def simT(paramVec, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n):
