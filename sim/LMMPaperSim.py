@@ -53,7 +53,7 @@ def sim2D(desInd, OutDir):
             nraneffs = np.array([4,3,2])
 
         # Generate test data
-        Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D = genTestData2D(n=40, p=5, nlevels=nlevels, nraneffs=nraneffs, save=True, simInd=simInd, desInd=desInd, OutDir=OutDir)
+        Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D = genTestData2D(n=50, p=5, nlevels=nlevels, nraneffs=nraneffs, save=True, simInd=simInd, desInd=desInd, OutDir=OutDir)
 
         # Work out number of observations, parameters, random effects, etc
         n = X.shape[0]
