@@ -330,7 +330,7 @@ def timings(desInd, OutDir):
     # Make sure pandas knows the table is numeric
     timesTable = timesTable.apply(pd.to_numeric)
 
-    for simInd in range(1,501):
+    for simInd in range(1,101):
         
         # Name of results file
         results_file = os.path.join(OutDir,'Sim'+str(simInd)+'_Design'+str(desInd)+'_results.csv')
@@ -369,7 +369,7 @@ def TstatisticPPplots(desInd, OutDir):
     pTable = pTable.apply(pd.to_numeric)
     dfTable = dfTable.apply(pd.to_numeric)
 
-    for simInd in range(1,101):
+    for simInd in range(1,501):
         
         # Name of results file
         results_file = os.path.join(OutDir,'Sim'+str(simInd)+'_Design'+str(desInd)+'_results.csv')
