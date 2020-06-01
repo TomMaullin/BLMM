@@ -346,7 +346,7 @@ def timings(desInd, OutDir):
 
     timesTable.to_csv(os.path.join(OutDir,'timesTable.csv'))
 
-    print(timesTable.describe())
+    print(timesTable.describe().to_string())
 
 
 def differenceMetrics(desInd, OutDir):
@@ -395,8 +395,8 @@ def differenceMetrics(desInd, OutDir):
         diffTableBetas.loc['sim'+str(simInd),:]=maxRelDiffBetas
         diffTableVar.loc['sim'+str(simInd),:]=maxRelDiffVar
 
-    print(diffTableBetas.describe())
-    print(diffTableVar.describe())
+    print(diffTableBetas.describe().to_string())
+    print(diffTableVar.describe().to_string())
 
 
 def TstatisticPPplots(desInd, OutDir):
