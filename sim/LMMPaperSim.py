@@ -348,6 +348,33 @@ def timings(desInd, OutDir):
 
     print(timesTable.describe().to_string())
 
+    #-----------------------------------------------------------------------------
+    # Work out number of iteration stats
+    #-----------------------------------------------------------------------------
+
+    # Make timing table
+    nitTable = pd.DataFrame(index=row, columns=col)
+
+    # Make sure pandas knows the table is numeric
+    nitTable = nitTable.apply(pd.to_numeric)
+
+    for simInd in range(1,101):
+        
+        # Name of results file
+        results_file = os.path.join(OutDir,'Sim'+str(simInd)+'_Design'+str(desInd)+'_results.csv')
+
+        # Read in results file
+        results_table = pd.read_csv(results_file, index_col=0)
+
+        # Get the times
+        simNIT = results_table.loc['nit','FS':]
+
+        # Add them to the table
+        nitTable.loc['sim'+str(simInd),:]=simNIT
+
+    nitTable.to_csv(os.path.join(OutDir,'nitTable.csv'))
+
+    print(nitTable.describe().to_string())
 
 def differenceMetrics(desInd, OutDir):
 
