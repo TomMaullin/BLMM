@@ -192,9 +192,9 @@ def sim2D(desInd, OutDir):
                 
         # Get T statistic, p value and Satterthwaite degrees of freedom
         T,Pval,df = simT(paramVector_pSFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
-        results.at[indexVec[p+4+2*qu],'pSFS']=T
-        results.at[indexVec[p+5+2*qu],'pSFS']=Pval
-        results.at[indexVec[p+6+2*qu],'pSFS']=df
+        results.at[indexVec[p+4+2*qu],'pSFS']=T[0,0]
+        results.at[indexVec[p+5+2*qu],'pSFS']=Pval[0,0]
+        results.at[indexVec[p+6+2*qu],'pSFS']=df[0,0]
 
         #===============================================================================
         # cSFS
@@ -220,9 +220,9 @@ def sim2D(desInd, OutDir):
 
         # Get T statistic, p value and Satterthwaite degrees of freedom
         T,Pval,df = simT(paramVector_cSFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
-        results.at[indexVec[p+4+2*qu],'cSFS']=T
-        results.at[indexVec[p+5+2*qu],'cSFS']=Pval
-        results.at[indexVec[p+6+2*qu],'cSFS']=df
+        results.at[indexVec[p+4+2*qu],'cSFS']=T[0,0]
+        results.at[indexVec[p+5+2*qu],'cSFS']=Pval[0,0]
+        results.at[indexVec[p+6+2*qu],'cSFS']=df[0,0]
 
         #===============================================================================
         # FS
@@ -248,9 +248,9 @@ def sim2D(desInd, OutDir):
 
         # Get T statistic, p value and Satterthwaite degrees of freedom
         T,Pval,df = simT(paramVector_FS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
-        results.at[indexVec[p+4+2*qu],'FS']=T
-        results.at[indexVec[p+5+2*qu],'FS']=Pval
-        results.at[indexVec[p+6+2*qu],'FS']=df
+        results.at[indexVec[p+4+2*qu],'FS']=T[0,0]
+        results.at[indexVec[p+5+2*qu],'FS']=Pval[0,0]
+        results.at[indexVec[p+6+2*qu],'FS']=df[0,0]
 
         #===============================================================================
         # SFS
@@ -276,9 +276,9 @@ def sim2D(desInd, OutDir):
 
         # Get T statistic, p value and Satterthwaite degrees of freedom
         T,Pval,df = simT(paramVector_SFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
-        results.at[indexVec[p+4+2*qu],'SFS']=T
-        results.at[indexVec[p+5+2*qu],'SFS']=Pval
-        results.at[indexVec[p+6+2*qu],'SFS']=df
+        results.at[indexVec[p+4+2*qu],'SFS']=T[0,0]
+        results.at[indexVec[p+5+2*qu],'SFS']=Pval[0,0]
+        results.at[indexVec[p+6+2*qu],'SFS']=df[0,0]
 
         #===============================================================================
         # pFS
@@ -304,9 +304,9 @@ def sim2D(desInd, OutDir):
 
         # Get T statistic, p value and Satterthwaite degrees of freedom
         T,Pval,df = simT(paramVector_pFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
-        results.at[indexVec[p+4+2*qu],'pFS']=T
-        results.at[indexVec[p+5+2*qu],'pFS']=Pval
-        results.at[indexVec[p+6+2*qu],'pFS']=df
+        results.at[indexVec[p+4+2*qu],'pFS']=T[0,0]
+        results.at[indexVec[p+5+2*qu],'pFS']=Pval[0,0]
+        results.at[indexVec[p+6+2*qu],'pFS']=df[0,0]
 
         # Save results
         results.to_csv(os.path.join(OutDir,'Sim'+str(simInd)+'_Design'+str(desInd)+'_results.csv'))
