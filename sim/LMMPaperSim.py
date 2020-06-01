@@ -430,7 +430,7 @@ def differenceMetrics(desInd, OutDir):
 
         # Work out the maximum relative differences for sigma2D
         if desInd==2:
-            maxRelDiffVar = (simVar.sub(simVar['Truth'], axis=0)).abs().div(results_table.loc['sigma2*D1,1':'sigma2*D2,3','Truth'], axis=0).max()
+            maxRelDiffVar = (simVar.sub(simVar['Truth'], axis=0)).abs().div(results_table.loc['sigma2*D1,1':'sigma2*D2,3','Truth'], axis=0).dropna().max()
             
         # Add them to the tables
         diffTableBetas.loc['sim'+str(simInd),:]=maxRelDiffBetas
