@@ -359,11 +359,13 @@ def differenceMetrics(desInd, OutDir):
     # Work out timing stats
     #-----------------------------------------------------------------------------
 
-    # Make timing table
-    diffTable = pd.DataFrame(index=row, columns=col)
+    # Make difference tables
+    diffTableBetas = pd.DataFrame(index=row, columns=col)
+    diffTableVar = pd.DataFrame(index=row, columns=col)
 
     # Make sure pandas knows the table is numeric
-    diffTable = diffTable.apply(pd.to_numeric)
+    diffTableBetas = diffTableBetas.apply(pd.to_numeric)
+    diffTableVar = diffTableVar.apply(pd.to_numeric)
 
     for simInd in range(1,101):
         
@@ -374,13 +376,22 @@ def differenceMetrics(desInd, OutDir):
         results_table = pd.read_csv(results_file, index_col=0)
 
         # Get the betas
-        simBetas = results_table.loc['beta1':'sigma2',:]
+        simBetas = results_table.loc['beta1':'beta5',:]
 
-        # Subtract the lmer betas
-        (simBetas.sub(simBetas['lmer'], axis=0)).abs().div(simBetas['lmer'], axis=0)
+        if desInd==2:
+            # Get the variance components
+            simVar = results_table.loc['sigma2*D1,1':'sigma2*D2,3',:]
 
-        # Add them to the table
-        timesTable.loc['sim'+str(simInd),:]=simTimes
+        # Work out the maximum relative differences for betas
+        maxRelDiffBetas = (simBetas.sub(simBetas['lmer'], axis=0)).abs().div(results_table.loc['beta1':'beta5','lmer'], axis=0).max()
+
+        # Work out the maximum relative differences for sigma2D
+        if desInd==2:
+            maxRelDiffVar = (simVar.sub(simVar['lmer'], axis=0)).abs().div(results_table.loc['sigma2*D1,1':'sigma2*D2,3','lmer'], axis=0).max()
+            
+        # Add them to the tables
+        diffTableBetas.loc['sim'+str(simInd),:]=maxRelDiffBetas
+        diffTableVar.loc['sim'+str(simInd),:]=maxRelDiffVar
 
     timesTable.to_csv(os.path.join(OutDir,'timesTable.csv'))
 
