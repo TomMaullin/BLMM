@@ -380,6 +380,9 @@ def differenceMetrics(desInd, OutDir):
         # Get the betas
         simBetas = results_table.loc['beta1':'beta5',:]
 
+        if desInd==1:
+            # Get the variance components
+            simVar = results_table.loc['sigma2*D1,1':'sigma2*D1,3',:]
         if desInd==2:
             # Get the variance components
             simVar = results_table.loc['sigma2*D1,1':'sigma2*D2,3',:]
@@ -391,6 +394,8 @@ def differenceMetrics(desInd, OutDir):
         maxRelDiffBetas = (simBetas.sub(simBetas['lmer'], axis=0)).abs().div(results_table.loc['beta1':'beta5','lmer'], axis=0).max()
 
         # Work out the maximum relative differences for sigma2D
+        if desInd==1:
+            maxRelDiffVar = (simVar.sub(simVar['lmer'], axis=0)).abs().div(results_table.loc['sigma2*D1,1':'sigma2*D1,3','lmer'], axis=0).max()
         if desInd==2:
             maxRelDiffVar = (simVar.sub(simVar['lmer'], axis=0)).abs().div(results_table.loc['sigma2*D1,1':'sigma2*D2,3','lmer'], axis=0).max()
         if desInd==3:
@@ -426,6 +431,9 @@ def differenceMetrics(desInd, OutDir):
         # Get the betas
         simBetas = results_table.loc['beta1':'beta5',:]
 
+        if desInd==1:
+            # Get the variance components
+            simVar = results_table.loc['sigma2*D1,1':'sigma2*D1,3',:]
         if desInd==2:
             # Get the variance components
             simVar = results_table.loc['sigma2*D1,1':'sigma2*D2,3',:]
@@ -437,6 +445,8 @@ def differenceMetrics(desInd, OutDir):
         maxRelDiffBetas = (simBetas.sub(simBetas['Truth'], axis=0)).abs().div(results_table.loc['beta1':'beta5','Truth'], axis=0).dropna().max()
 
         # Work out the maximum relative differences for sigma2D
+        if desInd==1:
+            maxRelDiffVar = (simVar.sub(simVar['Truth'], axis=0)).abs().div(results_table.loc['sigma2*D1,1':'sigma2*D1,3','Truth'], axis=0).dropna().max()
         if desInd==2:
             maxRelDiffVar = (simVar.sub(simVar['Truth'], axis=0)).abs().div(results_table.loc['sigma2*D1,1':'sigma2*D2,3','Truth'], axis=0).dropna().max()
         if desInd==3:
