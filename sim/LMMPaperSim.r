@@ -11,7 +11,7 @@ library(lme4)#, lib.loc="/users/nichols/inf852/BLMM/Rpackages/")
 library(tictoc)#  , lib.loc="/users/nichols/inf852/BLMM/Rpackages/")
 
 # If we are timing code, don't import lmerTest since it reduces the performance of lmer significantly
-timing <- FALSE
+timing <- TRUE
 if (!timing){
   library(lmerTest)
 }
@@ -22,7 +22,7 @@ if (!timing){
 desInd <- 2
 
 dataDir <- '/well/nichols/users/inf852/PaperSims'#/home/tommaullin/Documents/BLMM_creation/tmp/tmp
-for (simInd in 1:1000){
+for (simInd in 1:100){
   if (desInd==3){
     
     results <- read.csv(file = paste(dataDir,'/Sim',toString(simInd),'_Design3_results.csv',sep=''))

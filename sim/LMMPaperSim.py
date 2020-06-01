@@ -36,7 +36,7 @@ from lib.npMatrix2d import *
 def sim2D(desInd, OutDir):
 
 
-    for simInd in range(1,1001):
+    for simInd in range(1,101):
         
         #===============================================================================
         # Setup
@@ -46,14 +46,14 @@ def sim2D(desInd, OutDir):
             nlevels = np.array([50])
             nraneffs = np.array([2])
         if desInd==2:
-            nlevels = np.array([10,3])
+            nlevels = np.array([50,25])
             nraneffs = np.array([3,2])
         if desInd==3:
             nlevels = np.array([100,30,10])
             nraneffs = np.array([4,3,2])
 
         # Generate test data
-        Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D = genTestData2D(n=50, p=5, nlevels=nlevels, nraneffs=nraneffs, save=True, simInd=simInd, desInd=desInd, OutDir=OutDir)
+        Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D = genTestData2D(n=1000, p=5, nlevels=nlevels, nraneffs=nraneffs, save=True, simInd=simInd, desInd=desInd, OutDir=OutDir)
 
         # Work out number of observations, parameters, random effects, etc
         n = X.shape[0]
@@ -347,10 +347,81 @@ def timings(desInd, OutDir):
     timesTable.to_csv(os.path.join(OutDir,'timesTable.csv'))
 
 
+def differenceMetrics(desInd, OutDir):
+
+    # Make row indices
+    row = ['sim'+str(i) for i in range(1,101)]
+
+    # Make column indices
+    col = ['FS','pFS','SFS','pSFS','cSFS','lmer']
+
+    #-----------------------------------------------------------------------------
+    # Work out timing stats
+    #-----------------------------------------------------------------------------
+
+    # Make timing table
+    diffTable = pd.DataFrame(index=row, columns=col)
+
+    # Make sure pandas knows the table is numeric
+    diffTable = diffTable.apply(pd.to_numeric)
+
+    for simInd in range(1,101):
+        
+        # Name of results file
+        results_file = os.path.join(OutDir,'Sim'+str(simInd)+'_Design'+str(desInd)+'_results.csv')
+
+        # Read in results file
+        results_table = pd.read_csv(results_file, index_col=0)
+
+        # Get the betas
+        simBetas = results_table.loc['beta1':'sigma2',:]
+
+        # Subtract the lmer betas
+        (simBetas.sub(simBetas['lmer'], axis=0)).abs().div(simBetas['lmer'], axis=0)
+
+        # Add them to the table
+        timesTable.loc['sim'+str(simInd),:]=simTimes
+
+    timesTable.to_csv(os.path.join(OutDir,'timesTable.csv'))
+
+def timings(desInd, OutDir):
+
+    # Make row indices
+    row = ['sim'+str(i) for i in range(1,101)]
+
+    # Make column indices
+    col = ['FS','pFS','SFS','pSFS','cSFS','lmer']
+
+    #-----------------------------------------------------------------------------
+    # Work out timing stats
+    #-----------------------------------------------------------------------------
+
+    # Make timing table
+    timesTable = pd.DataFrame(index=row, columns=col)
+
+    # Make sure pandas knows the table is numeric
+    timesTable = timesTable.apply(pd.to_numeric)
+
+    for simInd in range(1,101):
+        
+        # Name of results file
+        results_file = os.path.join(OutDir,'Sim'+str(simInd)+'_Design'+str(desInd)+'_results.csv')
+
+        # Read in results file
+        results_table = pd.read_csv(results_file, index_col=0)
+
+        # Get the times
+        simTimes = results_table.loc['Time','FS':]
+
+        # Add them to the table
+        timesTable.loc['sim'+str(simInd),:]=simTimes
+
+    timesTable.to_csv(os.path.join(OutDir,'timesTable.csv'))
+
 def TstatisticPPplots(desInd, OutDir):
 
     # Make row indices
-    row = ['sim'+str(i) for i in range(1,1001)]
+    row = ['sim'+str(i) for i in range(1,101)]
 
     # Make column indices
     col = ['FS','lmer']
@@ -369,7 +440,7 @@ def TstatisticPPplots(desInd, OutDir):
     pTable = pTable.apply(pd.to_numeric)
     dfTable = dfTable.apply(pd.to_numeric)
 
-    for simInd in range(1,501):
+    for simInd in range(1,101):
         
         # Name of results file
         results_file = os.path.join(OutDir,'Sim'+str(simInd)+'_Design'+str(desInd)+'_results.csv')
