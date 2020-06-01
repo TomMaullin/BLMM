@@ -19,7 +19,7 @@ if (!timing){
 
 #trace(name_of_function, edit = T)
 
-desInd <- 2
+desInd <- 3
 
 dataDir <- '/well/nichols/users/inf852/PaperSims'#/home/tommaullin/Documents/BLMM_creation/tmp/tmp
 for (simInd in 1:100){
