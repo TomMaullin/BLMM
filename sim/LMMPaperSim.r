@@ -11,7 +11,7 @@ library(lme4)#, lib.loc="/users/nichols/inf852/BLMM/Rpackages/")
 library(tictoc)#  , lib.loc="/users/nichols/inf852/BLMM/Rpackages/")
 
 # If we are timing code, don't import lmerTest since it reduces the performance of lmer significantly
-timing <- TRUE
+timing <- FALSE
 if (!timing){
   library(lmerTest)
 }
