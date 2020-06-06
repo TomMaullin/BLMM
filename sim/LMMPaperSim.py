@@ -598,6 +598,9 @@ def get_VarhatLB2D(X, Z, beta, sigma2, D, L, nlevels, nraneffs, tol):
 
     print('est varLB')
     print(varLB.shape)
+
+    meanvarLB = np.mean(varLB,axis=0)
+    
     print(meanvarLB)
 
     return(meanvarLB.reshape((1,1)))
