@@ -14,6 +14,7 @@ np.set_printoptions(threshold=sys.maxsize)
 from test.Unit.genTestDat import genTestData2D, prodMats2D
 from lib.est2d import *
 from lib.npMatrix2d import *
+from lib.npMatrix3d import *
 
 # ==================================================================================
 #
@@ -159,7 +160,19 @@ def sim2D(desInd, OutDir):
 
         # True log likelihood
         llh = llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D)[0,0]-n/2*np.log(np.pi)
+
         results.at['llh','Truth']=llh
+
+
+        # MARKER 
+        
+        # Contrast vector (1 in last place 0 elsewhere)
+        L = np.zeros(p)
+        L[-1] = 1
+        L = L.reshape(1,p)
+
+        groundTruth_TDF(X, Z, beta, sigma2, D, L, nlevels, nraneffs, tol)
+
 
         #===============================================================================
         # pSFS
@@ -485,6 +498,108 @@ def differenceMetrics(desInd, OutDir):
 
     print(diffTableBetas.describe().to_string())
     print(diffTableVar.describe().to_string())
+
+
+def groundTruth_TDF(X, Z, beta, sigma2, D, L, nlevels, nraneffs, tol):
+
+    # Required product matrices
+    XtX = X.transpose() @ X
+    XtZ = X.transpose() @ Z
+    ZtZ = Z.transpose() @ Z
+
+    # Inverse of (I+Z'ZD) multiplied by D
+    DinvIplusZtZD =  forceSym2D(np.linalg.solve(np.eye(q) + D @ ZtZ, D))
+
+    # Get the true variance of LB
+    True_varLB = get_varLB2D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
+
+    # Get the estimated variance of LB using the 3D code
+    est_varLB = get_VarhatLB2D(X, Z, beta, sigma2, D, L, nlevels, nraneffs, tol)
+
+    # Get ground truth degrees of freedom
+    v = 2*(True_varLB**2)/est_varLB
+
+    print('v')
+    print(v)
+    return(v)
+
+# Estimates \hat{Var}(L\hat{beta})
+def get_VarhatLB2D(X, Z, beta, sigma2, D, L, nlevels, nraneffs, tol):
+
+    # Work out dimensions
+    n = X.shape[0]
+    p = X.shape[1]
+    q = Z.shape[1]
+    qu = np.sum(nraneffs*(nraneffs+1)//2)
+
+    # Reshape to 3D dimensions
+    X = X.reshape((1,n,p))
+    Z = Z.reshape((1,n,q))
+    beta = beta.reshape((1,p,1))
+    D = D.reshape((1,q,q))
+
+    # New epsilon based on 1000 simulations
+    epsilon = np.random.randn(1000, n, 1)
+
+    # Work out cholesky of D
+    Dhalf = np.linalg.cholesky(D)
+
+    # New b based on 1000 simulations
+    b = Dhalf @ np.random.randn(1000,q,1)
+
+    # New Y based on 1000 simulations
+    Y = X @ beta + Z @ b + epsilon
+
+    # Delete b, epsilon, D, beta and sigma^2
+    del b, epsilon, D, beta, sigma2
+
+    # Calulcate product matrices
+    XtX = X.transpose() @ X
+    XtY = X.transpose() @ Y
+    XtZ = X.transpose() @ Z
+    YtX = Y.transpose() @ X
+    YtY = Y.transpose() @ Y
+    YtZ = Y.transpose() @ Z
+    ZtX = Z.transpose() @ X
+    ZtY = Z.transpose() @ Y
+    ZtZ = Z.transpose() @ Z
+
+    # Get parameter vector
+    paramVec = FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
+
+    # Get the indices in the paramvector corresponding to D matrices
+    IndsDk = np.int32(np.cumsum(nraneffs*(nraneffs+1)//2) + p + 1)
+    IndsDk = np.insert(IndsDk,0,p+1)
+
+    # Retrieve beta estimates
+    beta = paramVec[:, 0:p]
+    
+    # Retrieve sigma2 estimates
+    sigma2 = paramVec[:,p:(p+1),:]
+    
+    # Retrieve unique D estimates elements (i.e. [vech(D_1),...vech(D_r)])
+    vechD = paramVec[:,(p+1):,:].reshape((1000,qu))
+    
+    # Reconstruct D estimates
+    Ddict = dict()
+    # D as a dictionary
+    for k in np.arange(len(nraneffs)):
+        Ddict[k] = vech2mat3D(paramVec[:,IndsDk[k]:IndsDk[k+1],:])
+      
+    # Full version of D estimates
+    D = getDfromDict3D(Ddict, nraneffs, nlevels)
+
+    # Inverse of (I+Z'ZD) multiplied by D
+    DinvIplusZtZD =  forceSym3D(np.linalg.solve(np.eye(q) + D @ ZtZ, D))
+
+    # Get variance of Lbeta estimates
+    varLB = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
+
+    print('est varLB')
+    print(varLB.shape)
+    print(meanvarLB)
+
+    return(meanvarLB.reshape((1,1)))
 
 
 def TstatisticPPplots(desInd, OutDir):
