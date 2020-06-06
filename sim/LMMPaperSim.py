@@ -172,7 +172,8 @@ def sim2D(desInd, OutDir):
         L[-1] = 1
         L = L.reshape(1,p)
 
-        groundTruth_TDF(X, Z, beta, sigma2, D, L, nlevels, nraneffs, tol)
+        v = groundTruth_TDF(X, Z, beta, sigma2, D, L, nlevels, nraneffs, tol)
+        results.at[indexVec[p+6+2*qu],'Truth']=v[0,0]
 
 
         #===============================================================================
@@ -600,7 +601,7 @@ def get_VarhatLB2D(X, Z, beta, sigma2, D, L, nlevels, nraneffs, tol):
     print(varLB.shape)
 
     meanvarLB = np.mean(varLB,axis=0)
-    
+
     print(meanvarLB)
 
     return(meanvarLB.reshape((1,1)))
