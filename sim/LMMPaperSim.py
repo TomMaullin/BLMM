@@ -13,6 +13,7 @@ np.set_printoptions(threshold=sys.maxsize)
 # Add lib to the python path.
 from test.Unit.genTestDat import genTestData2D, prodMats2D
 from lib.est2d import *
+from lib.est3d import *
 from lib.npMatrix2d import *
 from lib.npMatrix3d import *
 
