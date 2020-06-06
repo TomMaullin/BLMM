@@ -554,15 +554,15 @@ def get_VarhatLB2D(X, Z, beta, sigma2, D, L, nlevels, nraneffs, tol):
     del b, epsilon, D, beta, sigma2
 
     # Calulcate product matrices
-    XtX = X.transpose() @ X
-    XtY = X.transpose() @ Y
-    XtZ = X.transpose() @ Z
-    YtX = Y.transpose() @ X
-    YtY = Y.transpose() @ Y
-    YtZ = Y.transpose() @ Z
-    ZtX = Z.transpose() @ X
-    ZtY = Z.transpose() @ Y
-    ZtZ = Z.transpose() @ Z
+    XtX = X.transpose(0,2,1) @ X
+    XtY = X.transpose(0,2,1) @ Y
+    XtZ = X.transpose(0,2,1) @ Z
+    YtX = Y.transpose(0,2,1) @ X
+    YtY = Y.transpose(0,2,1) @ Y
+    YtZ = Y.transpose(0,2,1) @ Z
+    ZtX = Z.transpose(0,2,1) @ X
+    ZtY = Z.transpose(0,2,1) @ Y
+    ZtZ = Z.transpose(0,2,1) @ Z
 
     # Get parameter vector
     paramVec = FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
