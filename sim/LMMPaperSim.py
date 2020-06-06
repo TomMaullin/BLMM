@@ -165,7 +165,7 @@ def sim2D(desInd, OutDir):
 
 
         # MARKER 
-        
+
         # Contrast vector (1 in last place 0 elsewhere)
         L = np.zeros(p)
         L[-1] = 1
@@ -508,7 +508,7 @@ def groundTruth_TDF(X, Z, beta, sigma2, D, L, nlevels, nraneffs, tol):
     ZtZ = Z.transpose() @ Z
 
     # Inverse of (I+Z'ZD) multiplied by D
-    DinvIplusZtZD =  forceSym2D(np.linalg.solve(np.eye(q) + D @ ZtZ, D))
+    DinvIplusZtZD =  forceSym2D(np.linalg.solve(np.eye(ZtZ.shape[0]) + D @ ZtZ, D))
 
     # Get the true variance of LB
     True_varLB = get_varLB2D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
