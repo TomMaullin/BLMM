@@ -515,11 +515,11 @@ def groundTruth_TDF(X, Z, beta, sigma2, D, L, nlevels, nraneffs, tol):
     # Get the true variance of LB
     True_varLB = get_varLB2D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
 
-    # Get the estimated variance of LB using the 3D code
-    est_varLB = get_VarhatLB2D(X, Z, beta, sigma2, D, L, nlevels, nraneffs, tol)
+    # Get the variance of the estimated variance of LB using the 3D code
+    var_est_varLB = get_VarhatLB2D(X, Z, beta, sigma2, D, L, nlevels, nraneffs, tol)
 
     # Get ground truth degrees of freedom
-    v = 2*(True_varLB**2)/est_varLB
+    v = 2*(True_varLB**2)/var_est_varLB
 
     print('v')
     print(v)
@@ -600,11 +600,11 @@ def get_VarhatLB2D(X, Z, beta, sigma2, D, L, nlevels, nraneffs, tol):
     print('est varLB')
     print(varLB.shape)
 
-    meanvarLB = np.mean(varLB,axis=0)
+    varofvarLB = np.var(varLB,axis=0)
 
-    print(meanvarLB)
+    print(varofvarLB)
 
-    return(meanvarLB.reshape((1,1)))
+    return(varofvarLB.reshape((1,1)))
 
 
 def TstatisticPPplots(desInd, OutDir):
