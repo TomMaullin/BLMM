@@ -2477,7 +2477,7 @@ def get_HessS22D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
     for k2 in np.arange(len(nraneffs)):
 
       # Work out q_k2
-      qk1 = np.int32(nraneffs[k1]*(nraneffs[k1]+1)/2)  
+      qk2 = np.int32(nraneffs[k2]*(nraneffs[k2]+1)/2)  
 
       # Empty zero matrix for hessian of factor k1 and factor k2
       Hessk1k2 = np.zeros((qk2**2,qk1**2))
