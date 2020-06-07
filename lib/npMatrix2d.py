@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.sparse
 from scipy import stats
+import time
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
@@ -158,6 +159,225 @@ def vechTri2mat2D(vech):
 
     # Return lower triangular
     return(np.tril(vech2mat2D(vech)))
+
+
+
+# ============================================================================
+# 
+# The below function inverts a block diagonal matrix with square diagonal 
+# blocks by inverting each block individually.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - `matrix`: The (scipy sparse) block diagonal matrix to be inverted.
+#  - `blockSize`: The size of the blocks on the diagonal. I.e. if block-size 
+#                 equals 5 then all blocks on the diagonal are 5 by 5 in size.
+#
+# ----------------------------------------------------------------------------
+#
+# This function gives as outputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - `invMatrix`: The inverse of `matrix`, in (scipy) sparse format.
+#
+# ----------------------------------------------------------------------------
+#
+# Developers note: Whilst this function, in principle, makes a lot of sense, 
+# in practice it does not outperform numpy and, unless Z'Z is so ridiculously
+# large it cannot be read into memory, I do not think there will ever be 
+# reason to use it. I have left it here just incase it can be useful in future
+# applications. (It does outperform scipy though!)
+#
+# ============================================================================
+def blockInverse2D2(matrix, blockSize):
+
+  # # Work out the number of blocks
+  numBlocks = matrix.shape[0]//blockSize
+
+  # # Initiate empty inverse matrix
+  # invMatrix = np.zeros(matrix.shape)
+
+  # # For each level, invert the corresponding block on the diagonal
+  # currentInd = 0
+  # for i in range(numBlocks):
+    
+  #   # The block is nraneffs by nraneffs
+  #   blockInds = np.ix_(np.arange(i*blockSize,(i+1)*blockSize),np.arange(i*blockSize,(i+1)*blockSize))
+    
+  #   # Get the block
+  #   block = matrix[blockInds]
+
+  #   # Work out the top right hand index of the next block to be added
+  #   nextInd = currentInd + blockSize
+
+  #   # Add inverse block matrix to invMatrix
+  #   invMatrix[currentInd:nextInd,currentInd:nextInd] = np.linalg.pinv(block)
+
+  #   currentInd = nextInd
+
+  t1 = time.time()
+  underlying=np.repeat(np.arange(numBlocks)*blockSize,blockSize**2)
+  t2 = time.time()
+  print(t2-t1)
+
+  t1 = time.time()
+  col = underlying + np.tile(np.repeat(np.arange(blockSize),blockSize), numBlocks)
+  t2 = time.time()
+  print(t2-t1)
+
+  t1 = time.time()
+  row = underlying + np.tile(np.arange(blockSize),blockSize*numBlocks)
+  t2 = time.time()
+  print(t2-t1)
+
+  t1 = time.time()
+  invMatrix = np.array(matrix,dtype=np.float64)
+  t2 = time.time()
+  print(t2-t1)
+  t1 = time.time()
+  tmp = invMatrix[row,col].reshape(numBlocks,blockSize,blockSize).transpose(0,2,1)
+  t2 = time.time()
+  print(t2-t1)
+  t1 = time.time()
+  tmp = np.linalg.pinv(tmp)
+  t2 = time.time()
+  print(t2-t1)
+  t1 = time.time()
+  tmp = tmp.reshape(numBlocks*blockSize*blockSize)
+  t2 = time.time()
+  print(t2-t1)
+  t1 = time.time()
+  invMatrix[row,col]=tmp
+  t2 = time.time()
+  print(t2-t1)
+
+  return(invMatrix)
+
+
+# ============================================================================
+# 
+# The below function inverts symmetric matrices with the same structure as Z'Z 
+# efficiently by recursively using the schur complement and noting that the 
+# only submatrices that need to be inverted are block diagonal.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - `M`: The symmetric matrix, with structure similar to Z'Z, to be inverted.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
+#  - `nlevels`: A vector containing the number of levels for each factor,
+#               e.g. `nlevels=[3,4]` would mean the first factor has 3
+#               levels and the second factor has 4 levels.
+#
+# ----------------------------------------------------------------------------
+#
+# This function gives as outputs:
+#
+# ----------------------------------------------------------------------------
+#
+#  - `Minv`: The inverse of `M`, in (scipy) sparse format.
+#
+# ----------------------------------------------------------------------------
+#
+# Developers note: Again, whilst this function, in principle, makes a lot of 
+# sense, in practice it was slow and is left here only for future reference.
+#
+# ============================================================================
+def recursiveInverse2D2(M, nraneffs, nlevels):
+  
+  # Check if we have a matrix we can partition into more than 1 block
+  if len(nraneffs) > 1:
+  
+    # Work out qc (current q)
+    qc = nraneffs[-1]*nlevels[-1]
+    # Make q
+    q = M.shape[0]
+
+    # Get A, B and C where M=[[A,B],[B',C]]
+    # A
+    t1 = time.time()
+    A_inds = np.ix_(np.arange(0,(q-qc)),np.arange(0,(q-qc)))
+    A = M[A_inds]
+
+    # B
+    B_inds = np.ix_(np.arange(0,(q-qc)),np.arange((q-qc),q))
+    B = M[B_inds] # B is dense
+
+    # C
+    C_inds = np.ix_(np.arange((q-qc),q),np.arange((q-qc),q))
+    C = M[C_inds] # C is small and now only involved in dense mutliplys
+
+    t2 = time.time()
+    print('got abc ', t2-t1)
+
+    # Recursive inverse A
+    if nraneffs[:-1].shape[0] > 1:
+
+      Ainv = recursiveInverse2D2(A, nraneffs[:-1], nlevels[:-1])
+
+    else:
+
+      Ainv = blockInverse2D2(A, nraneffs[0]) 
+
+    # Schur complement
+    S = C - B.transpose() @ Ainv @ B
+    print('schur')
+    t1 = time.time()
+    #Sinv = np.linalg.pinv(S)
+    t2 = time.time()
+    print(t2-t1)
+
+    t1= time.time()
+    Sinv = blockInverse2D2(S, nraneffs[0])
+    t2 = time.time()
+    print(t2-t1)
+
+    print(S.shape)
+    try:
+      np.linalg.inv(S)
+      print('S invertible')
+    except:
+      print('S not invertible')
+
+
+    # Top Left Hand Side of inverse
+    TLHS = Ainv + Ainv @ B @ Sinv @ B.transpose() @ Ainv
+
+
+    # Top Right Hand Side of inverse
+    TRHS = - Ainv @ B @ Sinv
+
+
+    # Bottom Right Hand Side of inverse
+    BRHS = Sinv
+
+    # Join together
+    print('stack time')
+    t1 = time.time()
+    top = np.hstack((TLHS,TRHS))
+    bottom = np.hstack((TRHS.transpose(), BRHS))
+
+    # Make Minv
+    Minv = np.vstack((top, bottom))
+    t2 = time.time()
+    print(t2-t1)
+    
+  else:
+    
+    # If we have only one block; invert it
+    Minv = blockInverse2D2(M, nraneffs[0]) 
+  
+  return(Minv)
 
 
 # ============================================================================
@@ -2116,6 +2336,10 @@ def get_swdf_T2D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs):
   # Calculate df estimator
   df = 2*(S2**2)/(dS2.transpose() @ np.linalg.solve(InfoMat, dS2))
 
+  # 2nd order approximation
+  print('Trying out Hessian computation')
+  get_HessS22D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2)
+
   # Return df
   return(df)
 
@@ -2209,6 +2433,180 @@ def get_dS22D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
     dS2[DerivInds[k]:DerivInds[k+1],0] = dS2dvechDk.reshape(dS2[DerivInds[k]:DerivInds[k+1],0].shape)
 
   return(dS2)
+
+#MARKER
+def get_HessS22D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
+
+  # ZtX
+  ZtX = XtZ.transpose()
+
+  # Calculate X'V^{-1}X=X'(I+ZDZ')^{-1}X=X'X-X'Z(I+DZ'Z)^{-1}DZ'X
+  XtiVX = XtX - XtZ @  DinvIplusZtZD @ ZtX
+
+  # Work out (X'V^(-1)X)^(-1)
+  iXtiVX = np.linalg.pinv(XtiVX)
+
+  # Duplication matrices
+  # ------------------------------------------------------------------------------
+  dupMatTdict = dict()
+  for i in np.arange(len(nraneffs)):
+
+      dupMatTdict[i] = np.asarray(dupMat2D(nraneffs[i]).todense()).transpose()
+
+  # Index variables
+  # ------------------------------------------------------------------------------
+  # Work out the total number of paramateres
+  tnp = np.int32(1 + np.sum(nraneffs*(nraneffs+1)/2))
+
+  # Indices for submatrics corresponding to Dks
+  HessIndsDk = np.int32(np.cumsum(nraneffs*(nraneffs+1)/2) + 1)
+  HessIndsDk = np.insert(FishIndsDk,0,1)
+
+  # Initialize Hessian
+  Hess = np.zeros((tnp,tnp))
+
+  # Now we need to work out ds2dVech(Dk)
+  for k1 in np.arange(len(nraneffs)):
+
+    # Work out q_k1
+    qk1 = np.int32(nraneffs[k1]*(nraneffs[k1]+1)/2)  
+
+    # Get permIKI
+    permIKI = permOfIkKkI2D(1,1,qk1,qk1)
+
+    for k2 in np.arange(len(nraneffs)):
+
+      # Work out q_k2
+      qk1 = np.int32(nraneffs[k1]*(nraneffs[k1]+1)/2)  
+
+      # Empty zero matrix for hessian of factor k1 and factor k2
+      Hessk1k2 = np.zeros((qk2**2,qk1**2))
+
+      # Loop through levels of factor k1
+      for j in np.arange(nlevels[k1]):
+
+        # Get the indices for this level and factor.
+        Ik1j = faclev_indices2D(k1, j, nlevels, nraneffs)
+                
+        # Work out Z_(k1,j)'Z
+        Zk1jtZ = ZtZ[Ik1j,:]
+
+        # Work out Z_(k1,j)'X
+        Zk1jtX = ZtX[Ik1j,:]
+
+        # Work out Z_(k1,j)'V^{-1}X
+        Zk1jtiVX = Zk1jtX - Zk1jtZ @ DinvIplusZtZD @ ZtX
+
+        # Work out B_(k1,j) = Z_(k1,j)'V^(-1)X(X'V^(-1)X)^(-1)L'
+        Bk1j = Zk1jtiVX @ iXtiVX @ L.transpose()
+
+        #---------------------------------------------------------------
+        # Work out the second kronecker product given by:
+        #
+        # G_j = sum_i B_(k2,i) kron W_(k1,j,k2,i) 
+        #
+        # Where:
+        #
+        # W_(k1,j,k2,i) = Z_(k2,i)'V^(-1)X(X'V^(-1)X)^(-1)X'V^(-1)Z_(k1,j) - Z_(k2,i)'V^(-1)Z_(k1,j)
+        #
+        # And:
+        # 
+        # B_(k2, i) = Z_(k2,i)'V^(-1)X(X'V^(-1)X)^(-1)L'
+        #---------------------------------------------------------------
+        # Initialize empty Gj
+        Gj = np.zeros((qk2**2,qk1))
+
+        # Loop through and sum
+        for i in np.arange(nlevels[k2]):
+
+          # Get the indices for this level and factor.
+          Ik2i = faclev_indices2D(k2, i, nlevels, nraneffs)
+
+          # Work out Z_(k2,j)'Z
+          Zk2itZ = ZtZ[Ik2i,:]
+
+          # Work out Z_(k2,i)'X
+          Zk2itX = ZtX[Ik2i,:]
+
+          # Work out Z_(k2,i)'V^{-1}X
+          Zk2itiVX = Zk2itX - Zk2itZ @ DinvIplusZtZD @ ZtX
+
+          # Work out Z_(k2,i)'Z_(k1,j)
+          Zk2itZk1j = ZtZ[np.ix_(Ik2i,Ik1j)] 
+
+          # Work out Z_(k2,i)'V^{-1}Z_(k1,j)
+          Zk2itiVZk1j = Zk2itZk1j - Zk2itZ @ DinvIplusZtZD @ Zk1jtZ.transpose()
+
+          # Work out W_(k1,j,k2,i)
+          Wk1jk2i = Zk2itiVX @ iXtiVX @ Zk1jtiVX.transpose() - Zk2itiVZk1j
+
+          # Work out B_(k2,i)
+          Bk2i = Zk2itiVX @ iXtiVX @ L.transpose()
+
+          # Work out G_(i,j) = B_(k2,i) kron W_(k1,j,k2,i)
+          Gij = np.linalg.kron(Bk2i,Wk1jk2i)
+
+          # Add to Gj
+          Gj = Gj + Gij
+
+        # Work out (B_(k1,j) kron I_qk1) + (I_qk1 kron B_(k1,j))
+        Bk1jKronIplusIKronBk1j = np.linalg.kron(Bk1j, np.eye(qk1)) + np.linalg.kron(np.eye(qk1), Bk1j) 
+
+        # Apply permutation to (B_(k1,j) kron I_qk1) + (I_qk1 kron B_(k1,j))
+        Bk1jKronIplusIKronBk1j = Bk1jKronIplusIKronBk1j[permIKI,:]
+
+        # Work out the contribution to the Hessian
+        Hessk1jk2 = Gj @ Bk1jKronIplusIKronBk1j.transpose() 
+
+        # Add it to the running sum for this Hessian element
+        Hessk1k2 = Hessk1k2 + Hessk1jk2
+
+      # Indices corresponding to Dk1 and Dk2
+      IndsDk1 = np.arange(HessIndsDk[k1],HessIndsDk[k1+1])
+      IndsDk2 = np.arange(HessIndsDk[k2],HessIndsDk[k2+1])
+
+      # Save Hessk
+      Hess[np.ix_(IndsDk2, IndsDk1),:]= sigma2*dupMatTdict[k2] @ Hessk1k2 @ dupMatTdict[k1].transpose()
+
+  # And finally the sigma components, given by:
+  # 
+  # H(sigma^2,vech(D_k)) = dupmat_k' @ sum_j B_(k,j) kron B_(k,j)
+  for k in np.arange(len(nraneffs)):
+
+    # Initialize empty BkB
+    sumBkB = np.zeros((qk**2,1))
+
+    # Loop through levels of factor k
+    for j in np.arange(nlevels[k]):
+
+      # Get the indices for this level and factor.
+      Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
+
+      # Work out Z_(k,j)'Z
+      ZkjtZ = ZtZ[Ikj,:]
+
+      # Work out Z_(k,j)'X
+      ZkjtX = ZtX[Ikj,:]
+
+      # Work out Z_(k,j)'V^{-1}X
+      ZkjtiVX = ZkjtX - ZkjtZ @ DinvIplusZtZD @ ZtX
+
+      # Work out B_(k,j)
+      Bkj = ZkjtiVX @ iXtiVX @ L.transpose()
+
+      # Add to running sum
+      sumBKB = sumBKB + np.linalg.kron(Bkj,Bkj)
+
+    # Index needed
+    IndsDk = np.arange(HessIndsDk[k],HessIndsDk[k+1])
+      
+    # Output into Hessian
+    Hess[IndsDk,0]= dupMatTdict[k] @ sumBkB
+    Hess[0,IndsDk]= Hess[IndsDk,0].transpose()
+    
+  # Return the Hessian... phew
+  return(Hess)
+
 
 
 # ============================================================================
