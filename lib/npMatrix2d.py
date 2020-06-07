@@ -2460,7 +2460,7 @@ def get_HessS22D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
 
   # Indices for submatrics corresponding to Dks
   HessIndsDk = np.int32(np.cumsum(nraneffs*(nraneffs+1)/2) + 1)
-  HessIndsDk = np.insert(FishIndsDk,0,1)
+  HessIndsDk = np.insert(HessIndsDk,0,1)
 
   # Initialize Hessian
   Hess = np.zeros((tnp,tnp))
