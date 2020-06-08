@@ -2476,9 +2476,6 @@ def get_HessS22D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
     # Work out q_k1
     qk1 = nraneffs[k1]
 
-    # Get permIKI
-    permIKI = permOfIkKkI2D(1,1,qk1,qk1)
-
     for k2 in np.arange(len(nraneffs)):
 
       # Work out q_k2
@@ -2557,9 +2554,6 @@ def get_HessS22D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
         # Work out (B_(k1,j) kron I_qk1) + (I_qk1 kron B_(k1,j))
         Bk1jKronIplusIKronBk1j = np.kron(Bk1j, np.eye(qk1)) + np.kron(np.eye(qk1), Bk1j) 
 
-        # Apply permutation to (B_(k1,j) kron I_qk1) + (I_qk1 kron B_(k1,j))
-        Bk1jKronIplusIKronBk1j = Bk1jKronIplusIKronBk1j[permIKI,:]
-
         # Work out the contribution to the Hessian
         Hessk1jk2 = Gj @ Bk1jKronIplusIKronBk1j.transpose() 
 
@@ -2611,6 +2605,9 @@ def get_HessS22D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
     # Output into Hessian
     Hess[IndsDk,0:1]= dupMatTdict[k] @ sumBkB
     Hess[0:1,IndsDk]= Hess[IndsDk,0:1].transpose()
+
+  print('Hess')
+  print(Hess)
     
   # Return the Hessian... phew
   return(Hess)
