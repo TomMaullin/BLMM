@@ -172,8 +172,8 @@ def sim2D(desInd, OutDir):
         L[-1] = 1
         L = L.reshape(1,p)
 
-        #v = groundTruth_TDF(X, Z, beta, sigma2, D, L, nlevels, nraneffs, tol)
-        #results.at[indexVec[p+6+2*qu],'Truth']=v[0,0]
+        v = groundTruth_TDF(X, Z, beta, sigma2, D, L, nlevels, nraneffs, tol)
+        results.at[indexVec[p+6+2*qu],'Truth']=v[0,0]
 
 
         #===============================================================================
