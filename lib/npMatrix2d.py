@@ -2598,7 +2598,7 @@ def get_HessS22D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
       Bkj = ZkjtiVX @ iXtiVX @ L.transpose()
 
       # Add to running sum
-      sumBKB = sumBKB + np.kron(Bkj,Bkj)
+      sumBkB = sumBkB + np.kron(Bkj,Bkj)
 
     # Index needed
     IndsDk = np.arange(HessIndsDk[k],HessIndsDk[k+1])
