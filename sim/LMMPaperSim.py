@@ -38,7 +38,7 @@ from lib.npMatrix3d import *
 def sim2D(desInd, OutDir):
 
 
-    for simInd in range(1,11):
+    for simInd in range(1,101):
         
         #===============================================================================
         # Setup
@@ -613,7 +613,7 @@ def TstatisticPPplots(desInd, OutDir):
     row = ['sim'+str(i) for i in range(1,101)]
 
     # Make column indices
-    col = ['FS','lmer']
+    col = ['Truth','FS','pFS','lmer']
 
     #-----------------------------------------------------------------------------
     # Work out timing stats
@@ -638,9 +638,9 @@ def TstatisticPPplots(desInd, OutDir):
         results_table = pd.read_csv(results_file, index_col=0)
 
         # Get the T, P and df values
-        simT = results_table.loc['T',['FS','lmer']]
-        simp = results_table.loc['p',['FS','lmer']]
-        simdf = results_table.loc['swdf',['FS','lmer']]
+        simT = results_table.loc['T',['Truth','FS','pFS','lmer']]
+        simp = results_table.loc['p',['Truth','FS','pFS','lmer']]
+        simdf = results_table.loc['swdf',['Truth','FS','pFS','lmer']]
 
         # Add them to the tables
         tTable.loc['sim'+str(simInd),:]=simT
