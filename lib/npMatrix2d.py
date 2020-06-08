@@ -2544,13 +2544,13 @@ def get_HessS22D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
           Bk2i = Zk2itiVX @ iXtiVX @ L.transpose()
 
           # Work out G_(i,j) = B_(k2,i) kron W_(k1,j,k2,i)
-          Gij = np.linalg.kron(Bk2i,Wk1jk2i)
+          Gij = np.kron(Bk2i,Wk1jk2i)
 
           # Add to Gj
           Gj = Gj + Gij
 
         # Work out (B_(k1,j) kron I_qk1) + (I_qk1 kron B_(k1,j))
-        Bk1jKronIplusIKronBk1j = np.linalg.kron(Bk1j, np.eye(qk1)) + np.linalg.kron(np.eye(qk1), Bk1j) 
+        Bk1jKronIplusIKronBk1j = np.kron(Bk1j, np.eye(qk1)) + np.kron(np.eye(qk1), Bk1j) 
 
         # Apply permutation to (B_(k1,j) kron I_qk1) + (I_qk1 kron B_(k1,j))
         Bk1jKronIplusIKronBk1j = Bk1jKronIplusIKronBk1j[permIKI,:]
@@ -2595,7 +2595,7 @@ def get_HessS22D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
       Bkj = ZkjtiVX @ iXtiVX @ L.transpose()
 
       # Add to running sum
-      sumBKB = sumBKB + np.linalg.kron(Bkj,Bkj)
+      sumBKB = sumBKB + np.kron(Bkj,Bkj)
 
     # Index needed
     IndsDk = np.arange(HessIndsDk[k],HessIndsDk[k+1])
