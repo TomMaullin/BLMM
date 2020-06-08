@@ -2341,7 +2341,7 @@ def get_swdf_T2D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs, Hessian
     print('Trying out Hessian computation')
     Hess = get_HessS22D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2)
 
-    SecondOrder = np.trace(Hess @ InfoMat)
+    SecondOrder = np.trace(Hess @ np.linalg.pinv(InfoMat))
 
     df = 2*(S2**2)/(dS2.transpose() @ np.linalg.solve(InfoMat, dS2) + SecondOrder)
 
