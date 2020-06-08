@@ -2566,7 +2566,7 @@ def get_HessS22D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
       IndsDk2 = np.arange(HessIndsDk[k2],HessIndsDk[k2+1])
 
       # Save Hessk
-      Hess[np.ix_(IndsDk2, IndsDk1),:]= sigma2*dupMatTdict[k2] @ Hessk1k2 @ dupMatTdict[k1].transpose()
+      Hess[np.ix_(IndsDk2, IndsDk1)]= sigma2*dupMatTdict[k2] @ Hessk1k2 @ dupMatTdict[k1].transpose()
 
   # And finally the sigma components, given by:
   # 
