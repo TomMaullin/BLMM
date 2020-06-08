@@ -262,7 +262,7 @@ def sim2D(desInd, OutDir):
             results.at[indexVec[i+qu],'FS']=paramVector_FS[p,0]*paramVector_FS[i-3,0]
 
         # Get T statistic, p value and Satterthwaite degrees of freedom
-        T,Pval,df = simT(paramVector_FS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
+        T,Pval,df = simT(paramVector_FS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n, Hessian=True)
         results.at[indexVec[p+4+2*qu],'FS']=T[0,0]
         results.at[indexVec[p+5+2*qu],'FS']=Pval[0,0]
         results.at[indexVec[p+6+2*qu],'FS']=df[0,0]
@@ -653,7 +653,7 @@ def TstatisticPPplots(desInd, OutDir):
 
 
 
-def simT(paramVec, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n):
+def simT(paramVec, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n, Hessian = False):
 
     # Scalar quantities
     p = XtX.shape[1] # (Number of Fixed Effects parameters)
@@ -705,7 +705,7 @@ def simT(paramVec, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevel
     T = get_T2D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2)
 
     # Get Satterthwaite estimate of degrees of freedom
-    df = get_swdf_T2D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs)
+    df = get_swdf_T2D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs, Hessian)
 
     # Get p value
     # Do this seperately for >0 and <0 to avoid underflow

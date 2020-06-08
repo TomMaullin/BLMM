@@ -2319,7 +2319,7 @@ def get_swdf_F2D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs):
 # - `df`: The Sattherthwaithe degrees of freedom estimate.
 #
 # ============================================================================
-def get_swdf_T2D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs): 
+def get_swdf_T2D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs, Hessian=False): 
 
   # Get D(I+Z'ZD)^(-1)
   DinvIplusZtZD = np.linalg.solve(np.eye(ZtZ.shape[1]) + D @ ZtZ, D)
@@ -2336,9 +2336,14 @@ def get_swdf_T2D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs):
   # Calculate df estimator
   df = 2*(S2**2)/(dS2.transpose() @ np.linalg.solve(InfoMat, dS2))
 
-  # 2nd order approximation
-  print('Trying out Hessian computation')
-  get_HessS22D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2)
+  if Hessian==True:
+    # 2nd order approximation
+    print('Trying out Hessian computation')
+    Hess = get_HessS22D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2)
+
+    SecondOrder = np.trace(Hess @ InfoMat)
+
+    df = 2*(S2**2)/(dS2.transpose() @ np.linalg.solve(InfoMat, dS2) + SecondOrder)
 
   # Return df
   return(df)
@@ -2604,8 +2609,8 @@ def get_HessS22D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
     IndsDk = np.arange(HessIndsDk[k],HessIndsDk[k+1])
       
     # Output into Hessian
-    Hess[IndsDk,0]= dupMatTdict[k] @ sumBkB
-    Hess[0,IndsDk]= Hess[IndsDk,0].transpose()
+    Hess[IndsDk,0:1]= dupMatTdict[k] @ sumBkB
+    Hess[0:1,IndsDk]= Hess[IndsDk,0:1].transpose()
     
   # Return the Hessian... phew
   return(Hess)
