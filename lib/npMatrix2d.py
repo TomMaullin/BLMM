@@ -2348,7 +2348,7 @@ def get_swdf_T2D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs, Hessian
     print('Infomat inv')
     print(np.linalg.pinv(InfoMat))
 
-    SecondOrder = np.trace(Hess @ np.linalg.pinv(InfoMat))
+    SecondOrder = np.trace(Hess @ np.linalg.pinv(InfoMat))**2
 
     print('2nd order')
     print(SecondOrder)
