@@ -2469,7 +2469,7 @@ def get_HessS22D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
   for k1 in np.arange(len(nraneffs)):
 
     # Work out q_k1
-    qk1 = np.int32(nraneffs[k1]*(nraneffs[k1]+1)/2)  
+    qk1 = nraneffs[k1]
 
     # Get permIKI
     permIKI = permOfIkKkI2D(1,1,qk1,qk1)
@@ -2477,7 +2477,7 @@ def get_HessS22D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
     for k2 in np.arange(len(nraneffs)):
 
       # Work out q_k2
-      qk2 = np.int32(nraneffs[k2]*(nraneffs[k2]+1)/2)  
+      qk2 = nraneffs[k2]
 
       # Empty zero matrix for hessian of factor k1 and factor k2
       Hessk1k2 = np.zeros((qk2**2,qk1**2))
@@ -2572,6 +2572,9 @@ def get_HessS22D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
   # 
   # H(sigma^2,vech(D_k)) = dupmat_k' @ sum_j B_(k,j) kron B_(k,j)
   for k in np.arange(len(nraneffs)):
+
+    # Get qk
+    qk = nraneffs[k]
 
     # Initialize empty BkB
     sumBkB = np.zeros((qk**2,1))
