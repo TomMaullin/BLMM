@@ -312,9 +312,9 @@ def main(ipath):
     v_m = np.prod(amInds.shape)
 
     # # Ring X'Y, Y'Y, Z'Y
-    memorySafeReadAndSumAtB('XtY', OutDir, n_b, np.array([v_m, p]), MAXMEM)
-    memorySafeReadAndSumAtB('YtY', OutDir, n_b, np.array([v_m, 1]), MAXMEM)
-    memorySafeReadAndSumAtB('ZtY', OutDir, n_b, np.array([v_m, q]), MAXMEM)
+    memorySafeReadAtB('XtY', OutDir, np.array([v_m, p]), MAXMEM)
+    memorySafeReadAtB('YtY', OutDir, np.array([v_m, 1]), MAXMEM)
+    memorySafeReadAtB('ZtY', OutDir, np.array([v_m, q]), MAXMEM)
 
     # Remove X'Y, Y'Y and Z'Y files here
     for batchNo in range(1,(n_b+1)):
@@ -358,23 +358,17 @@ def main(ipath):
 #          would have dimension (v by p).
 #
 # ============================================================================
-def readAndSumAtB(AtBstr, OutDir, vinds, nb):
+def readAtB(AtBstr, OutDir, vinds):
 
     # Read in first A'B
-    AtB = readLinesFromNPY(os.path.join(OutDir,"tmp",AtBstr + '1.npy'), vinds)
-
-    # Cycle through batches and add together results.
-    for batchNo in range(2,(nb+1)):
-
-        # Sum A'B
-        AtB = AtB + readLinesFromNPY(os.path.join(OutDir,"tmp",AtBstr + str(batchNo) + ".npy"), vinds)
+    AtB = readLinesFromNPY(os.path.join(OutDir,"tmp",AtBstr + '.npy'), vinds)
 
     # Return A'B
     return(AtB)
 
 # ============================================================================
 #
-# The below function reads and sums all files for the product matrix A'B from 
+# The below function reads the filesfor the product matrix A'B from 
 # the batch jobs and saves the result as a numpy file. It does this in a 
 # memory safe way by  working with memory maps and only loading in as much as 
 # it can at any one moment.
@@ -393,7 +387,7 @@ def readAndSumAtB(AtBstr, OutDir, vinds, nb):
 # - `MAXMEM`: The maximum memory allowed for computation, in bytes.
 #
 # ============================================================================
-def memorySafeReadAndSumAtB(AtBstr, OutDir, nb, dimAtB, MAXMEM):
+def memorySafeReadAtB(AtBstr, OutDir, dimAtB, MAXMEM):
 
     # Work out the filename for the output
     filename = os.path.join(OutDir,"tmp",AtBstr + '.npy')
@@ -417,7 +411,7 @@ def memorySafeReadAndSumAtB(AtBstr, OutDir, nb, dimAtB, MAXMEM):
     
     # Loop through each group of voxels saving A'B for those voxels
     for vb in range(int(v//vPerBlock+1)):
-        M[voxelGroups[vb],:]=readAndSumAtB(AtBstr, OutDir, voxelGroups[vb], nb).reshape(M[voxelGroups[vb],:].shape)
+        M[voxelGroups[vb],:]=readAtB(AtBstr, OutDir, voxelGroups[vb]).reshape(M[voxelGroups[vb],:].shape)
         
     # Delete M from memory (important!)
     del M
