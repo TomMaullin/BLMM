@@ -193,60 +193,58 @@ def main(*args):
     # Check if we are protecting disk quota as well.
     if 'diskMem' in inputs:
 
+        if inputs['diskMem']==1:
 
-        # PLAN
-        # IF MEM MASKS NOT ALREADY THERE, RUN THIS
+            # PLAN
+            # IF MEM MASKS NOT ALREADY THERE, RUN THIS
 
-        # --------------------------------------------------------------------------------
-        # Read Mask 
-        # --------------------------------------------------------------------------------
-            
-        # Read in the mask nifti.
-        Mask = loadFile(os.path.join(OutDir,'blmm_vox_mask.nii')).get_data().reshape([v,1])
+            # --------------------------------------------------------------------------------
+            # Read Mask 
+            # --------------------------------------------------------------------------------
 
-        if 'analysis_mask' in inputs:
+            if 'analysis_mask' in inputs:
 
-            amask_path = inputs["analysis_mask"]
-            
-            # Read in the mask nifti.
-            amask = loadFile(amask_path).get_data().reshape([v,1])
+                amask_path = inputs["analysis_mask"]
+                
+                # Read in the mask nifti.
+                amask = loadFile(amask_path).get_data().reshape([v,1])
 
-        else:
+            else:
 
-            # By default make amask ones
-            amask = np.ones([v,1])
+                # By default make amask ones
+                amask = np.ones([v,1])
 
-        # Get indices for whole analysis mask. 
-        amInds = get_amInds(amask)
+            # Get indices for whole analysis mask. 
+            amInds = get_amInds(amask)
 
-        # ------------------------------------------------------------------------
-        # Split the voxels into computable groups
-        # ------------------------------------------------------------------------
+            # ------------------------------------------------------------------------
+            # Split the voxels into computable groups
+            # ------------------------------------------------------------------------
 
-        # Work out the number of voxels we can actually save at a time.
-        nvb = MAXMEM/(10*8*q)
+            # Work out the number of voxels we can actually save at a time.
+            nvb = MAXMEM/(10*8*q)
 
-        # Work out number of groups we have to split indices into.
-        nvg = int(len(amInds)//nvb+1)
+            # Work out number of groups we have to split indices into.
+            nvg = int(len(amInds)//nvb+1)
 
-        # Split voxels we want to look at into groups we can compute
-        voxelGroups = np.array_split(bamInds, nvg)
+            # Split voxels we want to look at into groups we can compute
+            voxelGroups = np.array_split(amInds, nvg)
 
-        # Loop through list of voxel indices, saving each group of voxels, in
-        # turn.
-        for cv in range(nvg):
+            # Loop through list of voxel indices, saving each group of voxels, in
+            # turn.
+            for cv in range(nvg):
 
-            # Save the masks for each block
-            addBlockToNifti(os.path.join(OutDir, 'blmm_vox_memmask'+str(cvg+1)+'.nii'), np.ones(len(voxelGroups[cv])), voxelGroups[cv],volInd=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
-                  
-        # Change analysis mask in inputs to the first blmm_vox_memmask 
-        inputs['analysis_mask'] = os.path.join(OutDir, 'blmm_vox_memmask'+str(1)+'.nii')
-        with open(ipath, 'w') as outfile:
-            yaml.dump(inputs, outfile, default_flow_style=False)
+                # Save the masks for each block
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_memmask'+str(cvg+1)+'.nii'), np.ones(len(voxelGroups[cv])), voxelGroups[cv],volInd=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
+                      
+            # Change analysis mask in inputs to the first blmm_vox_memmask 
+            inputs['analysis_mask'] = os.path.join(OutDir, 'blmm_vox_memmask'+str(1)+'.nii')
+            with open(ipath, 'w') as outfile:
+                yaml.dump(inputs, outfile, default_flow_style=False)
 
-        # ELSE SET ANALYSIS MASK TO FIRST ONE THAT COMES UP WITH LS, RUN THAT AND THEN DELETE DURING CLEANUP
+            # ELSE SET ANALYSIS MASK TO FIRST ONE THAT COMES UP WITH LS, RUN THAT AND THEN DELETE DURING CLEANUP
 
-        # NEED TO MOVE ALL CODE THAT USES ANALYSIS MASKS PAST HERE:
+            # NEED TO MOVE ALL CODE THAT USES ANALYSIS MASKS PAST HERE:
 
     # If in voxel batching mode, save the number of voxel batches we need
     if 'voxelBatching' in inputs:
