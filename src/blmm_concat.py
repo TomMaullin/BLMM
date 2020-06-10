@@ -20,10 +20,9 @@ import src.blmm_estimate as blmm_estimate
 
 # ====================================================================================
 #
-# This file is the third stage of the BLMM pipeline. This stage reads in the product
-# matrices X'Y, Z'Y and Y'Y output by each of the `blmm_batch` jobs during the second
-# stage and use them to obtain the product matrices X'Y, Z'Y and Y'Y for the overall
-# model. It also calculates n_sv for the whole model and the overall mask.
+# This file is the third stage of the BLMM pipeline. This stage calculates n_sv for
+# the whole model and the overall mask. This file used to contain concatenation of the
+# product matrices. However, for X'Y, Z'Y and Y'Y this now happens in the batch stage.
 #
 # Currently, the product matrices Z'Z, Z'X and X'X are not concatenated as we have
 # only recorded the unique instances of these matrices during the batch stage,
@@ -304,123 +303,8 @@ def main(ipath):
     nib.save(dfmap, os.path.join(OutDir,'blmm_vox_edf.nii'))
     del df, dfmap
 
-    # --------------------------------------------------------------------------------
-    # Load X'X, X'Y, Y'Y, X'Z, Y'Z, Z'Z
-    # --------------------------------------------------------------------------------
-
-    # Number of voxels in mask
-    v_m = np.prod(amInds.shape)
-
-    # # Ring X'Y, Y'Y, Z'Y
-    memorySafeReadAndSumAtB('XtY', OutDir, n_b, np.array([v_m, p]), MAXMEM)
-    memorySafeReadAndSumAtB('YtY', OutDir, n_b, np.array([v_m, 1]), MAXMEM)
-    memorySafeReadAndSumAtB('ZtY', OutDir, n_b, np.array([v_m, q]), MAXMEM)
-
-    # Remove X'Y, Y'Y and Z'Y files here
-    for batchNo in range(1,(n_b+1)):
-        os.remove(os.path.join(OutDir, "tmp","XtY" + str(batchNo) + ".npy"))
-        os.remove(os.path.join(OutDir, "tmp","YtY" + str(batchNo) + ".npy"))
-        os.remove(os.path.join(OutDir, "tmp","ZtY" + str(batchNo) + ".npy"))
-
     w.resetwarnings()
 
-
-# ============================================================================
-#
-# For a specified set of voxels, the below function reads in the product
-# matrix A'B from each batch job, sums the batch product matrices and returns
-# the sum, i.e. the product matrix for the entire analysis, at each voxel.
-#
-# Note: This function is only designed for the product matrices; X'Y, Z'Y and
-# Y'Y.
-#
-# ----------------------------------------------------------------------------
-#
-# This function takes in the following inputs:
-#
-# ----------------------------------------------------------------------------
-#
-# - `AtBstr`: A string representing which product matrix we are looking at. 
-#             i.e. "XtY" for X'Y, "ZtY" for Z'Y and "YtY" for Y'Y.
-# - `OutDir`: Output directory.
-# - `vinds`: Voxel indices; (flattened) indices representing which voxels we 
-#            are interested in looking at.
-# - `n_b`: The number of batches run during the batch stage.
-#
-# ----------------------------------------------------------------------------
-#
-# And gives the following output:
-#
-# ----------------------------------------------------------------------------
-#
-# - `AtB`: The product matrix (flattened), for every voxel; If we had wanted 
-#          X'Y (which is dimension p by 1) for v voxels, the output would here
-#          would have dimension (v by p).
-#
-# ============================================================================
-def readAndSumAtB(AtBstr, OutDir, vinds, nb):
-
-    # Read in first A'B
-    AtB = readLinesFromNPY(os.path.join(OutDir,"tmp",AtBstr + '1.npy'), vinds)
-
-    # Cycle through batches and add together results.
-    for batchNo in range(2,(nb+1)):
-
-        # Sum A'B
-        AtB = AtB + readLinesFromNPY(os.path.join(OutDir,"tmp",AtBstr + str(batchNo) + ".npy"), vinds)
-
-    # Return A'B
-    return(AtB)
-
-# ============================================================================
-#
-# The below function reads and sums all files for the product matrix A'B from 
-# the batch jobs and saves the result as a numpy file. It does this in a 
-# memory safe way by  working with memory maps and only loading in as much as 
-# it can at any one moment.
-#
-# ----------------------------------------------------------------------------
-#
-# This function takes in the following inputs:
-#
-# ----------------------------------------------------------------------------
-#
-# - `AtBstr`: A string representing which product matrix we are looking at. 
-#             i.e. "XtY" for X'Y, "ZtY" for Z'Y and "YtY" for Y'Y.
-# - `OutDir`: Output directory.
-# - `nb`: The number of batches run during the batch stage.
-# - `dimAtB`: The expected dimension of the output numpy file.
-# - `MAXMEM`: The maximum memory allowed for computation, in bytes.
-#
-# ============================================================================
-def memorySafeReadAndSumAtB(AtBstr, OutDir, nb, dimAtB, MAXMEM):
-
-    # Work out the filename for the output
-    filename = os.path.join(OutDir,"tmp",AtBstr + '.npy')
-
-    # Work out total number of voxels
-    v = dimAtB[0]
-
-    # Work out p/q
-    pORq = dimAtB[1]
-
-    # Create a memory-mapped .npy file with the dimensions and dtype we want
-    M = open_memmap(filename, mode='w+', dtype='float64', shape=(v,pORq))
-        
-    # Work out the number of voxels we can save at a time.
-    # (8 bytes per numpy float exponent multiplied by 5
-    # for a safe overhead)
-    vPerBlock = MAXMEM/(5*8*pORq)
-
-    # Work out the indices for each group of voxels
-    voxelGroups = np.array_split(np.arange(v, dtype='int32'), v//vPerBlock+1)
-    
-    # Loop through each group of voxels saving A'B for those voxels
-    for vb in range(int(v//vPerBlock+1)):
-        M[voxelGroups[vb],:]=readAndSumAtB(AtBstr, OutDir, voxelGroups[vb], nb).reshape(M[voxelGroups[vb],:].shape)
-        
-    # Delete M from memory (important!)
-    del M
 
 if __name__ == "__main__":
     main()
