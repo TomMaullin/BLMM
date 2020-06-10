@@ -203,10 +203,9 @@ def main(*args):
     # Mask volumes (if they are given)
     if 'analysis_mask' in inputs:
         M_a = loadFile(inputs['analysis_mask']).get_data()
+        M_a = M_a.reshape((M_a.shape[0],M_a.shape[1],M_a.shape[2]))
     else:
         M_a = None
-
-    print(M_a.shape)
 
     # Reduce Y_files to only Y files for this block
     Y_files = Y_files[(blksize*(batchNo-1)):min((blksize*batchNo),len(Y_files))]
