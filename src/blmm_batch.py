@@ -572,7 +572,7 @@ def memorySafeAtB(A,B,MAXMEM,filename):
     else:
 
         # Load in the file but in memory map mode
-        M = np.load(filename,mmap_mode='r')
+        M = np.load(filename,mmap_mode='w+')
 
         # Work out the number of voxels we can save at a time.
         # (8 bytes per numpy float exponent multiplied by 10
