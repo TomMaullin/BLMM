@@ -7,7 +7,7 @@ import sys
 import os
 import shutil
 import yaml
-from lib.fileio import loadFile, str2vec, pracNumVoxelBlocks
+from lib.fileio import loadFile, str2vec, pracNumVoxelBlocks, get_amInds
 
 # ====================================================================================
 #
@@ -189,6 +189,64 @@ def main(*args):
     # Output number of batches to a text file
     with open(os.path.join(OutDir, "nb.txt"), 'w') as f:
         print(int(np.ceil(len(Y_files)/int(blksize))), file=f)
+    
+    # Check if we are protecting disk quota as well.
+    if 'diskMem' in inputs:
+
+
+        # PLAN
+        # IF MEM MASKS NOT ALREADY THERE, RUN THIS
+
+        # --------------------------------------------------------------------------------
+        # Read Mask 
+        # --------------------------------------------------------------------------------
+            
+        # Read in the mask nifti.
+        Mask = loadFile(os.path.join(OutDir,'blmm_vox_mask.nii')).get_data().reshape([v,1])
+
+        if 'analysis_mask' in inputs:
+
+            amask_path = inputs["analysis_mask"]
+            
+            # Read in the mask nifti.
+            amask = loadFile(amask_path).get_data().reshape([v,1])
+
+        else:
+
+            # By default make amask ones
+            amask = np.ones([v,1])
+
+        # Get indices for whole analysis mask. 
+        amInds = get_amInds(amask)
+
+        # ------------------------------------------------------------------------
+        # Split the voxels into computable groups
+        # ------------------------------------------------------------------------
+
+        # Work out the number of voxels we can actually save at a time.
+        nvb = MAXMEM/(10*8*q)
+
+        # Work out number of groups we have to split indices into.
+        nvg = int(len(amInds)//nvb+1)
+
+        # Split voxels we want to look at into groups we can compute
+        voxelGroups = np.array_split(bamInds, nvg)
+
+        # Loop through list of voxel indices, saving each group of voxels, in
+        # turn.
+        for cv in range(nvg):
+
+            # Save the masks for each block
+            addBlockToNifti(os.path.join(OutDir, 'blmm_vox_memmask'+str(cvg+1)+'.nii'), np.ones(len(voxelGroups[cv])), voxelGroups[cv],volInd=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
+                  
+        # Change analysis mask in inputs to the first blmm_vox_memmask 
+        inputs['analysis_mask'] = os.path.join(OutDir, 'blmm_vox_memmask'+str(1)+'.nii')
+        with open(ipath, 'w') as outfile:
+            yaml.dump(inputs, outfile, default_flow_style=False)
+
+        # ELSE SET ANALYSIS MASK TO FIRST ONE THAT COMES UP WITH LS, RUN THAT AND THEN DELETE DURING CLEANUP
+
+        # NEED TO MOVE ALL CODE THAT USES ANALYSIS MASKS PAST HERE:
 
     # If in voxel batching mode, save the number of voxel batches we need
     if 'voxelBatching' in inputs:
