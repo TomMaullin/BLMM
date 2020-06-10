@@ -7,7 +7,7 @@ import sys
 import os
 import shutil
 import yaml
-from lib.fileio import loadFile, str2vec, pracNumVoxelBlocks, get_amInds
+from lib.fileio import loadFile, str2vec, pracNumVoxelBlocks, get_amInds, addBlockToNifti
 
 # ====================================================================================
 #
