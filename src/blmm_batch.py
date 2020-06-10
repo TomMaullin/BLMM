@@ -555,10 +555,7 @@ def memorySafeAtB(A,B,MAXMEM,filename):
 
         # Create a memory-mapped .npy file with the dimensions and dtype we want
         M = open_memmap(filename, mode='w+', dtype='float64', shape=(v,pORq))
-            
-        print(filename)
-        print(M.shape)
-
+        
         # Work out the number of voxels we can save at a time.
         # (8 bytes per numpy float exponent multiplied by 10
         # for a safe overhead)
@@ -566,15 +563,9 @@ def memorySafeAtB(A,B,MAXMEM,filename):
 
         # Work out the indices for each group of voxels
         voxelGroups = np.array_split(np.arange(v, dtype='int32'), v//vPerBlock+1)
-        
-        print(len(voxelGroups))
-        print(v//vPerBlock+1)
 
         # Loop through each group of voxels saving A'B for those voxels
         for vb in range(int(v//vPerBlock+1)):
-            print(len(voxelGroups[vb]))
-            print((A.transpose(0,2,1) @ B[voxelGroups[vb],:,:]).shape)
-            print(pORq)
             M[voxelGroups[vb],:]=(A.transpose(0,2,1) @ B[voxelGroups[vb],:,:]).reshape(len(voxelGroups[vb]),pORq)
     
     # Otherwise we add to the memory map that does exist
@@ -582,10 +573,6 @@ def memorySafeAtB(A,B,MAXMEM,filename):
 
         # Load in the file but in memory map mode
         M = np.load(filename,mmap_mode='r+')
-
-        print(filename)
-        print(M.shape)
-
         M = M.reshape((v,pORq))
 
         # Work out the number of voxels we can save at a time.
