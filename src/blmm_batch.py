@@ -581,7 +581,7 @@ def memorySafeAtB(A,B,MAXMEM,filename):
     else:
 
         # Load in the file but in memory map mode
-        M = np.load(filename,mmap_mode='w+')
+        M = np.load(filename,mmap_mode='r+')
 
         print(filename)
         print(M.shape)
