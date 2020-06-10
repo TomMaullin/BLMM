@@ -267,7 +267,7 @@ def main(*args):
             for cv in range(nvg):
 
                 # Save the masks for each block
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_memmask'+str(cvg+1)+'.nii'), np.ones(len(voxelGroups[cv])), voxelGroups[cv],volInd=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
+                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_memmask'+str(cv+1)+'.nii'), np.ones(len(voxelGroups[cv])), voxelGroups[cv],volInd=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
                       
             # Change analysis mask in inputs to the first blmm_vox_memmask 
             inputs['analysis_mask'] = os.path.join(OutDir, 'blmm_vox_memmask'+str(1)+'.nii')
