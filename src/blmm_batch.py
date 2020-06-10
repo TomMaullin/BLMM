@@ -206,6 +206,8 @@ def main(*args):
     else:
         M_a = None
 
+    print(M_a.shape)
+
     # Reduce Y_files to only Y files for this block
     Y_files = Y_files[(blksize*(batchNo-1)):min((blksize*batchNo),len(Y_files))]
     
