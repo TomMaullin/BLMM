@@ -567,8 +567,14 @@ def memorySafeAtB(A,B,MAXMEM,filename):
         # Work out the indices for each group of voxels
         voxelGroups = np.array_split(np.arange(v, dtype='int32'), v//vPerBlock+1)
         
+        print(len(voxelGroups))
+        print(v//vPerBlock+1)
+
         # Loop through each group of voxels saving A'B for those voxels
         for vb in range(int(v//vPerBlock+1)):
+            print(len(voxelGroups[vb]))
+            print((A.transpose(0,2,1) @ B[voxelGroups[vb],:,:]).shape)
+            print(pORq)
             M[voxelGroups[vb],:]=(A.transpose(0,2,1) @ B[voxelGroups[vb],:,:]).reshape(len(voxelGroups[vb]),pORq)
     
     # Otherwise we add to the memory map that does exist
