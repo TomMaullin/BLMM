@@ -3,6 +3,7 @@ import scipy.sparse
 from scipy import stats
 from lib.npMatrix2d import faclev_indices2D, fac_indices2D, permOfIkKkI2D, dupMat2D
 from lib.fileio import loadFile
+import time
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
@@ -782,6 +783,7 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
   # Number of voxels
   v = Zte.shape[0]
+  q = ZtZ.shape[1]
 
   # We only need calculate this once across all iterations
   if ZtZmat is None:
@@ -808,10 +810,13 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
   # Work out block size
   qk = nraneffs[k]
-  p = np.array([qk,1])
+  p = np.array([qk,q])
 
+  t1 = time.time()
   # Work out the second term in TT'
   secondTerm = sumAijBijt3D(ZtZ[:,Ik,:] @ DinvIplusZtZD, ZtZ[:,Ik,:], p, p)
+  t2 = time.time()
+  print('Second term time:', t2-t1)
 
   # Obtain RkSum=sum (TkjTkj')
   RkSum = ZtZmat - secondTerm
@@ -819,8 +824,11 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
   # Work out T_ku*sigma
   TuSig = Zte[:,Ik,:] - (ZtZ[:,Ik,:] @ DinvIplusZtZD @ Zte)
 
+  t1 = time.time()
   # Obtain Sum Tu(Tu)'
   TuuTSum = np.einsum('i,ijk->ijk',1/sigma2,sumAijBijt3D(TuSig, TuSig, p, p))
+  t2 = time.time()
+  print('TuuT time:', t2-t1)
 
   # Work out dldDk
   dldDk = 0.5*(forceSym3D(TuuTSum - RkSum))
@@ -1031,8 +1039,11 @@ def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupM
   qk = nraneffs[k]
   p = np.array([qk,q])
 
+  t1 = time.time()
   # Work out the second term
   secondTerm = sumAijBijt3D(ZtZ[:,Ik,:] @ DinvIplusZtZD, ZtZ[:,Ik,:], p, p)
+  t2 = time.time()
+  print('Second term time: ', t2 -t1)
 
   # Obtain ZtZmat
   RkSum = ZtZmat - secondTerm
