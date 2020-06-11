@@ -89,7 +89,7 @@ def main(inputs, inds, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, n, nlevels, 
 
     # Convergence tolerance
     if "tol" in inputs:
-        tol=inputs['tol']
+        tol=eval(inputs['tol'])
     else:
         tol=1e-6
 
