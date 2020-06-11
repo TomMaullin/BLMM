@@ -178,7 +178,7 @@ def main(ipath, vb):
     # Work out the number of voxels we can actually compute at a time.
     # (This is really just a rule of thumb guess but works reasonably in
     # practice)
-    nvb = MAXMEM/(10*8*(q**2.1))
+    nvb = MAXMEM/(10*8*(q**2.3))
 
     # Work out number of groups we have to split iindices into.
     nvg = int(len(bamInds)//nvb+1)
@@ -291,10 +291,14 @@ def main(ipath, vb):
         
         if v_i:
                 
+            print('reading and sum unique2')
+            t1 = time.time()
             # Inner Z'Z. Z'X, X'X
             ZtZ_i = readAndSumUniqueAtB('ZtZ', OutDir, I_inds, n_b, False).reshape([1, q, q])
             ZtX_i = readAndSumUniqueAtB('ZtX', OutDir, I_inds, n_b, False).reshape([1, q, p])
             XtX_i = readAndSumUniqueAtB('XtX', OutDir, I_inds, n_b, False).reshape([1, p, p])
+            t2 = time.time()
+            print(t2-t1)
 
             # Check the design is full rank
             if np.linalg.matrix_rank(XtX_i)<p:

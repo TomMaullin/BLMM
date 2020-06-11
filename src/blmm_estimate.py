@@ -118,16 +118,16 @@ def main(inputs, inds, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, n, nlevels, 
     # ----------------------------------------------------------------------  
 
     if method=='pSFS': # Recommended, default method
-        paramVec = pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6, n, reml=REML)
+        paramVec = pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=REML)
     
     if method=='FS': 
-        paramVec = FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6, n)
+        paramVec = FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n)
 
     if method=='SFS': 
-        paramVec = SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6, n)
+        paramVec = SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n)
 
     if method=='pFS': 
-        paramVec = pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6, n)
+        paramVec = pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n)
 
     # ----------------------------------------------------------------------
     # Parameter outputting

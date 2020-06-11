@@ -255,10 +255,10 @@ def main(*args):
 
             # Work out the number of voxels we can actually save at a time (rough
             # guess).
-            nvb = MAXMEM/(1000*q)
+            nvs = MAXMEM/(1000*q)
 
             # Work out number of groups we have to split indices into.
-            nvg = int(len(amInds)//nvb+1)
+            nvg = int(len(amInds)//nvs+1)
 
             # Split voxels we want to look at into groups we can compute
             voxelGroups = np.array_split(amInds, nvg)
