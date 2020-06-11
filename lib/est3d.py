@@ -1426,8 +1426,7 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         DinvIplusZtZD = get_DinvIplusZtZD3D(Ddict, D, ZtZ, nlevels, nraneffs)  
         t2 = time.time()
         print('DinvIplusZtZD time: ', t2-t1)
-        raise Exception('spam', 'eggs')
-        
+
         # --------------------------------------------------------------------------
         # Recalculate matrices
         # --------------------------------------------------------------------------
@@ -1444,6 +1443,7 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         llhcurr = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,reml, XtX, XtZ, ZtX)
         t2 = time.time()
         print('llh time: ', t2-t1)
+        raise Exception('spam', 'eggs')
 
 
         lam[llhprev>llhcurr] = lam[llhprev>llhcurr]/2
