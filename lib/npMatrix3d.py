@@ -810,11 +810,16 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
   # Work out block size
   qk = nraneffs[k]
-  p = np.array([qk,q])
+  p = np.array([qk,1])
 
   t1 = time.time()
-  # Work out the second term in TT'
-  secondTerm = sumAijBijt3D(ZtZ[:,Ik,:] @ DinvIplusZtZD, ZtZ[:,Ik,:], p, p)
+  # Number of random factors in model
+  r = len(nlevels)
+  if r == 1 and nparams[0]==1:
+    secondTerm = sumTTt_1factor3D(ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ik,Ik)], DinvIplusZtZD[np.ix_(np.arange(v),Ik,Ik)], nlevels[k], nraneffs[k])
+  else:
+    # Work out the second term in TT'
+    secondTerm = sumAijBijt3D(ZtZ[:,Ik,:] @ DinvIplusZtZD, ZtZ[:,Ik,:], p, p)
   t2 = time.time()
   print('Second term time:', t2-t1)
 
@@ -1040,10 +1045,15 @@ def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupM
   p = np.array([qk,q])
 
   t1 = time.time()
-  # Work out the second term
-  secondTerm = sumAijBijt3D(ZtZ[:,Ik,:] @ DinvIplusZtZD, ZtZ[:,Ik,:], p, p)
+  # Number of random factors in model
+  r = len(nlevels)
+  if r == 1 and nparams[0]==1:
+    secondTerm = sumTTt_1factor3D(ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ik,Ik)], DinvIplusZtZD[np.ix_(np.arange(v),Ik,Ik)], nlevels[k], nraneffs[k])
+  else:
+    # Work out the second term
+    secondTerm = sumAijBijt3D(ZtZ[:,Ik,:] @ DinvIplusZtZD, ZtZ[:,Ik,:], p, p)
   t2 = time.time()
-  print('Second term time: ', t2 -t1)
+  print('Second term time:', t2-t1)
 
   # Obtain ZtZmat
   RkSum = ZtZmat - secondTerm
@@ -1472,6 +1482,22 @@ def sumAijBijt3D(A, B, pA, pB):
   # Return result
   return(S)
 
+def sumTTt_1factor3D(ZtZk, DinvIplusZtZDk, l0, q0):
+
+  # Number of voxels, v
+  v = DinvIplusZtZDk.shape[0]
+
+  # Work out the diagonal values the matrix product Z'Z_(k)D_(k)(I+Z'Z_(k)D_(k))^(-1)Z'Z_(k)
+  DiagVals = np.einsum('ijj->ij', DinvIplusZtZDk)*np.einsum('ijj->ij', ZtZk)**2
+
+  # Reshape diag vals and sum apropriately
+  DiagVals = np.sum(DiagVals.reshape(v,q0,l0),axis=2)
+
+  # Put values back into a matrix
+  sumTTt = np.zeros((v,q0,q0))
+  np.einsum('ijj->ij', sumTTt)[...] = DiagVals
+
+  return(sumTTt)
 
 # ============================================================================
 #
