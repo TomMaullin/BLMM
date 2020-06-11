@@ -828,7 +828,7 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
   t1 = time.time()
   # Work out T_ku*sigma
-  TuSig = Zte[:,Ik,:] - (ZtZ[:,Ik,:] @ DinvIplusZtZD @ Zte)
+  TuSig = Zte[:,Ik,:] - (ZtZ[:,Ik,:] @ (DinvIplusZtZD @ Zte))
   t2 = time.time()
   print('TuSig time: ', t2-t1)
 
@@ -1166,20 +1166,29 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
   Ik1 = fac_indices2D(k1, nlevels, nraneffs)
   Ik2 = fac_indices2D(k2, nlevels, nraneffs)
 
+  t1 = time.time()
   # Work out R_(k1,k2)
   Rk1k2 = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ik1,Ik2)] - (ZtZ[:,Ik1,:] @ DinvIplusZtZD @ ZtZ[:,:,Ik2])
+  t2 = time.time()
+  print('Rk1 time: ', t2-t1)
 
   # Work out block sizes
   p = np.array([nraneffs[k1],nraneffs[k2]])
 
   # Obtain permutation
+  t1 = time.time()
   RkRSum,perm=sumAijKronBij3D(Rk1k2, Rk1k2, p, perm)
+  t2 = time.time()
+  print('RkSum time: ', t2-t1)
 
+  t1 = time.time()
   # Multiply by duplication matrices and save
   if not vec:
     covdldDk1dldk2 = 1/2 * dupMatTdict[k1] @ RkRSum @ dupMatTdict[k2].transpose()
   else:
     covdldDk1dldk2 = 1/2 * RkRSum
+  t2 = time.time()
+  print('CovdldDk time: ', t2-t1)
 
   # Return the result
   return(covdldDk1dldk2, perm)
