@@ -1410,16 +1410,23 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             # Update D_k
             Ddict[k] = makeDnnd3D(vec2mat3D(mat2vec3D(Ddict[k]) + update_p))
             
+            t1 = time.time()
             # Add D_k back into D and recompute DinvIplusZtZD
             for j in np.arange(nlevels[k]):
 
                 D[:, Dinds[counter]:Dinds[counter+1], Dinds[counter]:Dinds[counter+1]] = Ddict[k]
                 counter = counter + 1
+            t2 = time.time()
+            print('D assignment time: ', t2-t1)
         
         # --------------------------------------------------------------------------
         # Obtain D(I+Z'ZD)^(-1)
         # --------------------------------------------------------------------------
+        t1 = time.time()
         DinvIplusZtZD = get_DinvIplusZtZD3D(Ddict, D, ZtZ, nlevels, nraneffs)  
+        t2 = time.time()
+        print('DinvIplusZtZD time: ', t2-t1)
+        raise Exception('spam', 'eggs')
         
         # --------------------------------------------------------------------------
         # Recalculate matrices
@@ -1433,7 +1440,12 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # --------------------------------------------------------------------------
         # Update the step size and log likelihood
         # --------------------------------------------------------------------------
+        t1 = time.time()
         llhcurr = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,reml, XtX, XtZ, ZtX)
+        t2 = time.time()
+        print('llh time: ', t2-t1)
+
+
         lam[llhprev>llhcurr] = lam[llhprev>llhcurr]/2
         
         # --------------------------------------------------------------------------
