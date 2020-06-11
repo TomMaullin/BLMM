@@ -99,7 +99,7 @@ def main(inputs, nraneffs, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX
             n = n.reshape(v) # (Number of inputs)
 
     # Miscellaneous matrix variables
-    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+    DinvIplusZtZD = get_DinvIplusZtZD3D(Ddict, D, ZtZ, nlevels, nraneffs)
     Zte = ZtY - (ZtX @ beta)
     ete = ssr3D(YtX, YtY, XtX, beta)
 
@@ -127,7 +127,8 @@ def main(inputs, nraneffs, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX
     # ----------------------------------------------------------------------
     if "resms" in inputs:
         if inputs["resms"]==1:    
-            resms = get_resms3D(YtX, YtY, XtX, beta,n,p).reshape(v)
+            r
+            esms = get_resms3D(YtX, YtY, XtX, beta,n,p).reshape(v)
             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_resms.nii'), resms, inds,volInd=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
 
     # ----------------------------------------------------------------------
