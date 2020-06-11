@@ -123,7 +123,7 @@ def main(inputs, nraneffs, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX
     # ---------------------------------------------------------------------- 
 
     # Output log likelihood
-    llh = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD, D, Ddict, nlevels, nraneffs, reml, XtX, XtZ, ZtX) - (0.5*(n)*np.log(2*np.pi))
+    llh = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD, D, Ddict, nlevels, nraneffs, REML, XtX, XtZ, ZtX) - (0.5*(n)*np.log(2*np.pi))
     addBlockToNifti(os.path.join(OutDir, 'blmm_vox_llh.nii'), llh, inds,volInd=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
 
     # ----------------------------------------------------------------------
