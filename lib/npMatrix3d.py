@@ -826,8 +826,11 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
   # Obtain RkSum=sum (TkjTkj')
   RkSum = ZtZmat - secondTerm
 
+  t1 = time.time()
   # Work out T_ku*sigma
   TuSig = Zte[:,Ik,:] - (ZtZ[:,Ik,:] @ DinvIplusZtZD @ Zte)
+  t2 = time.time()
+  print('TuSig time: ', t2-t1)
 
   t1 = time.time()
   # Obtain Sum Tu(Tu)'
@@ -835,8 +838,12 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
   t2 = time.time()
   print('TuuT time:', t2-t1)
 
+  t1 = time.time()
   # Work out dldDk
   dldDk = 0.5*(forceSym3D(TuuTSum - RkSum))
+  t2 = time.time()
+  print('force sym time:', t2-t1)
+
     
   if reml==True:
 
