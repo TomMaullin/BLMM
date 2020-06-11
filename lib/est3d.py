@@ -146,7 +146,7 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n):
     # Obtain D(I+Z'ZD)^(-1)
     # ------------------------------------------------------------------------------
     # Inverse of (I+Z'ZD) multiplied by D
-    DinvIplusZtZD =  forceSym3D(np.linalg.solve(np.eye(q) + D @ ZtZ, D)) 
+    DinvIplusZtZD = get_DinvIplusZtZD3D(Ddict, D, ZtZ, nlevels, nraneffs) 
     
     # ------------------------------------------------------------------------------
     # Initial lambda and likelihoods
@@ -314,7 +314,7 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n):
         Zte = ZtY - (ZtX @ beta)
         
         # Inverse of (I+Z'ZD) multiplied by D
-        DinvIplusZtZD = forceSym3D(np.linalg.solve(np.eye(q) + D @ ZtZ, D)) 
+        DinvIplusZtZD = get_DinvIplusZtZD3D(Ddict, D, ZtZ, nlevels, nraneffs)  
         
         # Check sigma2 hasn't hit a boundary
         sigma2[sigma2<0]=1e-10
@@ -531,7 +531,7 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
     # ------------------------------------------------------------------------------
     # Obtain D(I+Z'ZD)^(-1) 
     # ------------------------------------------------------------------------------
-    DinvIplusZtZD =  forceSym3D(np.linalg.solve(np.eye(q) + D @ ZtZ, D)) 
+    DinvIplusZtZD = get_DinvIplusZtZD3D(Ddict, D, ZtZ, nlevels, nraneffs) 
     
     # ------------------------------------------------------------------------------
     # Initial lambda and likelihoods
@@ -697,7 +697,7 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
         # --------------------------------------------------------------------------
         # Inverse of (I+Z'ZD) multiplied by D
         # --------------------------------------------------------------------------
-        DinvIplusZtZD = forceSym3D(np.linalg.solve(np.eye(q) + D @ ZtZ, D)) 
+        DinvIplusZtZD = get_DinvIplusZtZD3D(Ddict, D, ZtZ, nlevels, nraneffs)  
         
         # Check sigma2 hasn't hit a boundary
         sigma2[sigma2<0]=1e-10
@@ -918,7 +918,7 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
     # Obtain D(I+Z'ZD)^(-1)
     # ------------------------------------------------------------------------------
     IplusZtZD = np.eye(q) + ZtZ @ D
-    DinvIplusZtZD =  forceSym3D(np.linalg.solve(np.eye(q) + D @ ZtZ, D)) 
+    DinvIplusZtZD = get_DinvIplusZtZD3D(Ddict, D, ZtZ, nlevels, nraneffs) 
     
     # ------------------------------------------------------------------------------
     # Initial lambda and likelihoods
@@ -1041,7 +1041,7 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
                 counter = counter + 1
             
             # Inverse of (I+Z'ZD) multiplied by D
-            DinvIplusZtZD = forceSym3D(np.linalg.solve(np.eye(q) + D @ ZtZ, D)) 
+            DinvIplusZtZD = get_DinvIplusZtZD3D(Ddict, D, ZtZ, nlevels, nraneffs)  
         
         # --------------------------------------------------------------------------
         # Recalculate matrices
@@ -1283,8 +1283,8 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
     # ------------------------------------------------------------------------------
     # Obtain D(I+Z'ZD)^(-1)
     # ------------------------------------------------------------------------------
-    DinvIplusZtZD =  forceSym3D(np.linalg.solve(np.eye(q) + D @ ZtZ, D)) 
-    
+    DinvIplusZtZD = get_DinvIplusZtZD3D(Ddict, D, ZtZ, nlevels, nraneffs) 
+
     # ------------------------------------------------------------------------------
     # Step size and log likelihoods
     # ------------------------------------------------------------------------------
@@ -1419,7 +1419,7 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # --------------------------------------------------------------------------
         # Obtain D(I+Z'ZD)^(-1)
         # --------------------------------------------------------------------------
-        DinvIplusZtZD = forceSym3D(np.linalg.solve(np.eye(q) + D @ ZtZ, D)) 
+        DinvIplusZtZD = get_DinvIplusZtZD3D(Ddict, D, ZtZ, nlevels, nraneffs)  
         
         # --------------------------------------------------------------------------
         # Recalculate matrices

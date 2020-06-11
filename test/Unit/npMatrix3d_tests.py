@@ -521,6 +521,69 @@ def test_initDk3D():
     return(result)
 
 
+
+# =============================================================================
+#
+# The below function tests the function `get_DinvIplusZtZD3D`. It does this by 
+# simulating random test data and testing against niave calculation
+#
+# =============================================================================
+def test_get_DinvIplusZtZD3D():
+    
+    # Setup variables
+    nraneffs = np.array([1])
+    nlevels = np.array([800])
+    q = np.sum(nlevels*nraneffs)
+
+    # Generate test data
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=10, nlevels=nlevels, nraneffs=nraneffs)
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Work out the indices in D where a new block Dk appears
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+
+    # New empty D dict
+    Ddict = dict()
+
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+        
+    # Expected result (nsv)
+    DinvIplusZtZD_nsv_expected = forceSym3D(np.linalg.solve(np.eye(q) + D @ ZtZ, D))
+
+    # Test result (nsv)
+    DinvIplusZtZD_nsv_test = get_DinvIplusZtZD3D(Ddict, D, ZtZ, nlevels, nraneffs) 
+
+    # Expected result (sv)
+    DinvIplusZtZD_sv_expected = forceSym3D(np.linalg.solve(np.eye(q) + D @ ZtZ_sv, D))
+
+    # Test result (sv)
+    DinvIplusZtZD_sv_test = get_DinvIplusZtZD3D(Ddict, D, ZtZ_sv, nlevels, nraneffs) 
+
+    # Check if results are all close.
+    testVal_nsv = np.allclose(DinvIplusZtZD_nsv_test,DinvIplusZtZD_nsv_expected)
+    testVal_sv = np.allclose(DinvIplusZtZD_sv_test,DinvIplusZtZD_sv_expected)
+    testVal = testVal_nsv and testVal_sv
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: get_DinvIplusZtZD3D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+    
+    return(result)
+
 # =============================================================================
 #
 # The below function tests the function `makeDnnd3D`. It does this by 
@@ -2138,6 +2201,15 @@ def run_all3D():
     # Test ssr3D
     name = 'ssr3D'
     result = test_ssr3D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+    # Test get_DinvIplusZtZD3D
+    name = 'get_DinvIplusZtZD3D'
+    result = test_get_DinvIplusZtZD3D()
     # Add result to arrays.
     if result=='Passed':
         passedTests = np.append(passedTests, name)

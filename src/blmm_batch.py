@@ -592,7 +592,7 @@ def memorySafeAtB(A,B,MAXMEM,filename):
         # Work out the number of voxels we can save at a time.
         # (8 bytes per numpy float exponent multiplied by 10
         # for a safe overhead)
-        vPerBlock = MAXMEM/(10*8*pORq)
+        vPerBlock = MAXMEM/(15*8*pORq)
 
         # Work out the indices for each group of voxels
         voxelGroups = np.array_split(np.arange(v, dtype='int32'), v//vPerBlock+1)

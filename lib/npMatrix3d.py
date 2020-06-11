@@ -530,6 +530,73 @@ def llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,reml=False, XtX=0, XtZ=0, Zt
 
 
 # ============================================================================
+#
+# The below function calculates the matrix D(I+Z'ZD)^(-1). Whilst in general,
+# this computation can't be streamlined, many common usecases are easier to
+# calculate. This function takes those into account.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `Ddict`: a dictionary in which entry `k` is a 3D array of the kth diagonal 
+#            block of D for every voxel.
+# - `D`: The matrix equivalent of Ddict.
+# - `ZtZ`: The Z matrix transposed and then multiplied by itself (Z'Z in the
+#          above notation).
+# - `nlevels`: A vector containing the number of levels for each factor, e.g.
+#              `nlevels=[3,4]` would mean the first factor has 3 levels and
+#              the second factor has 4 levels.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
+#
+# ----------------------------------------------------------------------------
+#
+# It returns as outputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `DinvIplusZtZD`: The matrix D(I+Z'ZD)^(-1).
+#
+# ============================================================================
+def get_DinvIplusZtZD3D(Ddict, D, ZtZ, nlevels, nraneffs):
+
+  # Work out how many factors we're looking at
+  r = len(nlevels)
+  q = ZtZ.shape[1]
+  v = Ddict[0].shape[0]
+
+  # If one factor and one random effect, Z'Z is diagonal
+  if r==1 and nraneffs[0]==1:
+
+    # In this case Z'Z and D are diagonal so we can
+    # do 1/(I+Z'ZD)_ii to get the inverses.
+
+    # Work out Diag(Z'ZD)
+    DiagZtZD = np.einsum('ijj->ij', ZtZ)*Ddict[0].reshape(v,1)
+
+    # Work out Diag(D(I+Z'ZD)^(-1))
+    DiaginvIplusZtZD = Ddict[0].reshape(v,1)/(1+DiagZtZD)
+
+    # Map back to DinvIpluZtZD
+    DinvIplusZtZD = np.zeros((v,q,q))
+    np.einsum('ijj->ij', DinvIplusZtZD)[...] = DiaginvIplusZtZD
+
+  # TODO
+  # ELIF: r=1, still block diagonal so can be spedup
+
+  # ELIF: q>1400: best start using recursive inverse
+
+  else:
+
+    DinvIplusZtZD = forceSym3D(np.linalg.solve(np.eye(q) + D @ ZtZ, D))
+
+  return(DinvIplusZtZD)
+
+# ============================================================================
 # The below function calculates the derivative of the log likelihood with
 # respect to \beta. This is given by the following equation:
 #
