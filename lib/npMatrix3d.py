@@ -815,7 +815,7 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
   t1 = time.time()
   # Number of random factors in model
   r = len(nlevels)
-  if r == 1 and nparams[0]==1:
+  if r == 1 and nraneffs[0]==1:
     secondTerm = sumTTt_1factor3D(ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ik,Ik)], DinvIplusZtZD[np.ix_(np.arange(v),Ik,Ik)], nlevels[k], nraneffs[k])
   else:
     # Work out the second term in TT'
@@ -1047,7 +1047,7 @@ def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupM
   t1 = time.time()
   # Number of random factors in model
   r = len(nlevels)
-  if r == 1 and nparams[0]==1:
+  if r == 1 and nraneffs[0]==1:
     secondTerm = sumTTt_1factor3D(ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ik,Ik)], DinvIplusZtZD[np.ix_(np.arange(v),Ik,Ik)], nlevels[k], nraneffs[k])
   else:
     # Work out the second term
