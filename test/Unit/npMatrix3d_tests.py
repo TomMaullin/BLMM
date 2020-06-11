@@ -655,15 +655,24 @@ def test_llh3D():
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
     DinvIplusZtZD_sv = D @ np.linalg.inv(np.eye(q) + ZtZ_sv @ D)
 
+    # Get D dict
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+    Ddict = dict()
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+
     # First test spatially varying
-    llh_sv_test = llh3D(n, ZtZ_sv, Zte_sv, ete_sv, sigma2, DinvIplusZtZD_sv,D)[testv]
+    llh_sv_test = llh3D(n, ZtZ_sv, Zte_sv, ete_sv, sigma2, DinvIplusZtZD_sv,D, Ddict, nlevels, nraneffs)[testv]
     llh_sv_expected = llh2D(n, ZtZ_sv[testv,:,:], Zte_sv[testv,:,:], ete_sv[testv,:,:], sigma2[testv], DinvIplusZtZD_sv[testv,:,:],D[testv,:,:])[0,0]
     
     # Check if results are all close.
     sv_testVal = np.allclose(llh_sv_test,llh_sv_expected)
 
     # Now test non spatially varying
-    llh_nsv_test = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D)[testv]
+    llh_nsv_test = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D, Ddict, nlevels, nraneffs)[testv]
     llh_nsv_expected = llh2D(n, ZtZ[0,:,:], Zte[testv,:,:], ete[testv,:,:], sigma2[testv], DinvIplusZtZD[testv,:,:],D[testv,:,:])[0,0]
     # Check if results are all close.
     nsv_testVal = np.allclose(llh_nsv_test,llh_nsv_expected)

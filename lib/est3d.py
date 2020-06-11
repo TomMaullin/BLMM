@@ -81,6 +81,9 @@ from lib.npMatrix2d import *
 # ============================================================================
 def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n):
     
+    # Reml has not been implemented here
+    reml=False
+
     # ------------------------------------------------------------------------------
     # Useful scalars
     # ------------------------------------------------------------------------------
@@ -322,7 +325,7 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n):
         # --------------------------------------------------------------------------
         # Update the step size
         # --------------------------------------------------------------------------
-        llhcurr = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D)
+        llhcurr = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D, Ddict, nlevels, nraneffs, reml, XtX, XtZ, ZtX)
         lam[llhprev>llhcurr] = lam[llhprev>llhcurr]/2
                 
         # --------------------------------------------------------------------------
@@ -467,6 +470,9 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n):
 # ============================================================================
 def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n):
     
+    # Reml has not been implemented here
+    reml=False
+
     # ------------------------------------------------------------------------------
     # Useful scalars
     # ------------------------------------------------------------------------------
@@ -705,7 +711,7 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
         # --------------------------------------------------------------------------
         # Update the step size and likelihoods
         # --------------------------------------------------------------------------
-        llhcurr = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D)
+        llhcurr = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D, Ddict, nlevels, nraneffs, reml, XtX, XtZ, ZtX)
         lam[llhprev>llhcurr] = lam[llhprev>llhcurr]/2
                 
         # --------------------------------------------------------------------------
@@ -852,6 +858,9 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
 # ============================================================================
 def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n):
     
+    # Reml has not been implemented here
+    reml=False 
+
     # ------------------------------------------------------------------------------
     # Useful scalars
     # ------------------------------------------------------------------------------
@@ -1055,7 +1064,7 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
         # --------------------------------------------------------------------------
         # Update the step size and log likelihoods
         # --------------------------------------------------------------------------
-        llhcurr = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D)
+        llhcurr = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D, Ddict, nlevels, nraneffs, reml, XtX, XtZ, ZtX)
         lam[llhprev>llhcurr] = lam[llhprev>llhcurr]/2
         
         # --------------------------------------------------------------------------
@@ -1440,10 +1449,9 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # Update the step size and log likelihood
         # --------------------------------------------------------------------------
         t1 = time.time()
-        llhcurr = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,reml, XtX, XtZ, ZtX)
+        llhcurr = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D, Ddict, nlevels, nraneffs, reml, XtX, XtZ, ZtX)
         t2 = time.time()
         print('llh time: ', t2-t1)
-        raise Exception('spam', 'eggs')
 
 
         lam[llhprev>llhcurr] = lam[llhprev>llhcurr]/2

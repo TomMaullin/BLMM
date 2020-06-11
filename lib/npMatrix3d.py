@@ -484,6 +484,14 @@ def makeDnnd3D(D):
 # - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1).
 # - `D`: The random effects variance-covariance matrix (D in the above
 #        notation)
+# - `Ddict`: Dictionary version of the random effects variance-covariance
+#            matrix.
+# - `nlevels`: A vector containing the number of levels for each factor, e.g.
+#              `nlevels=[3,4]` would mean the first factor has 3 levels and
+#              the second factor has 4 levels.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 #
 # ----------------------------------------------------------------------------
 #
@@ -495,17 +503,39 @@ def makeDnnd3D(D):
 #          the above notation).
 #
 # ============================================================================
-def llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,reml=False, XtX=0, XtZ=0, ZtX=0):
-  
+def llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D, Ddict, nlevels, nraneffs, reml=False, XtX=0, XtZ=0, ZtX=0):
+
+  # Number of random effects and number of voxels
+  r = len(nlevels)
+  v = ete.shape[0]
+
   if hasattr(n, "ndim"):
 
     if np.prod(n.shape) > 1:
 
       n = n.reshape(sigma2.shape)
-  
-  # Work out log|I+ZtZD|
-  logdet = np.linalg.slogdet(np.eye(ZtZ.shape[1]) + D @ ZtZ)
-  logdet = (logdet[0]*logdet[1]).reshape(ete.shape[0])
+
+  # If we have only one factor and one random effect computation can be
+  # sped up a lot
+  if r==1 and nraneffs[0]==1:
+    
+    # Work out the diagonal entries of I+Z'ZD
+    DiagIplusZtZD = 1 + np.einsum('ijj->ij', ZtZ)*Ddict[0].reshape(v,1)
+
+    # Get the log of them
+    logDiagIplusZtZD = np.log(DiagIplusZtZD)
+
+    # The result should be the log of their sum.
+    logdet = np.sum(logDiagIplusZtZD,axis=1).reshape(ete.shape[0])
+
+  # TODO IF one factor and multi random effects
+
+  # Else we have to use niave computation
+  else:
+
+    # Work out log|I+ZtZD|
+    logdet = np.linalg.slogdet(np.eye(ZtZ.shape[1]) + D @ ZtZ)
+    logdet = (logdet[0]*logdet[1]).reshape(ete.shape[0])
 
   # Work out -1/2(nln(sigma^2) + ln|I+DZ'Z|)
   if reml==False:
@@ -517,16 +547,17 @@ def llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,reml=False, XtX=0, XtZ=0, Zt
 
   # Work out sigma^(-2)*(e'e - e'ZD(I+Z'ZD)^(-1)Z'e)
   secondterm = -0.5*np.einsum('i,ijk->ijk',(1/sigma2).reshape(ete.shape[0]),(ete - forceSym3D(Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte))).reshape(ete.shape[0])
-  
+
   # Work out the log likelihood
   llh = (firstterm + secondterm).reshape(ete.shape[0])
 
   if reml:
     logdet = np.linalg.slogdet(XtX - XtZ @ DinvIplusZtZD @ ZtX)
     llh = llh - 0.5*logdet[0]*logdet[1]
-  
+
   # Return result
   return(llh)
+
 
 
 # ============================================================================
