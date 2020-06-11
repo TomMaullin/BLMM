@@ -1366,7 +1366,10 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # --------------------------------------------------------------------------
         # Update beta
         # --------------------------------------------------------------------------
+        t1 = time.time()
         beta = np.linalg.solve(XtX - XtZ @ DinvIplusZtZD @ ZtX, XtY - XtZ @ DinvIplusZtZD @ ZtY)
+        t2 = time.time()
+        print('beta time: ', t2-t1)
         
         # Update sigma^2
         ete = ssr3D(YtX, YtY, XtX, beta)
@@ -1380,10 +1383,13 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # --------------------------------------------------------------------------
         # REML update to sigma2
         # --------------------------------------------------------------------------
+        t1 = time.time()
         if reml == False:
             sigma2 = (1/n*(ete - Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte)).reshape(v_iter)
         else:
             sigma2 = (1/(n-p)*(ete - Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte)).reshape(v_iter)
+        t2 = time.time()
+        print('sigma2 time: ', t2-t1)
         
         # --------------------------------------------------------------------------
         # Update D
@@ -1394,19 +1400,25 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             #-----------------------------------------------------------------------
             # Calculate derivative with respect to D_k
             #-----------------------------------------------------------------------
+            t1 = time.time()
             # Work out derivative
             if ZtZmatdict[k] is None:
                 dldDk,ZtZmatdict[k] = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None)
             else:
                 dldDk,_ = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k])
+            t2 = time.time()
+            print('dldDk time: ', t2-t1)
         
             #-----------------------------------------------------------------------
             # Calculate covariance of derivative with respect to D_k
             #-----------------------------------------------------------------------
+            t1 = time.time()
             if permdict[str(k)] is None:
                 covdldDk1dDk2,permdict[str(k)] = get_covdldDk1Dk23D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, vec=True, perm=None)
             else:
                 covdldDk1dDk2,_ = get_covdldDk1Dk23D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, vec=True, perm=permdict[str(k)])
+            t2 = time.time()
+            print('Cov time: ', t2-t1)
 
             #-----------------------------------------------------------------------
             # Work out update amount
@@ -1416,8 +1428,11 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             # Multiply by stepsize
             update_p = np.einsum('i,ijk->ijk',lam, update_p)
 
+            t1 = time.time()
             # Update D_k
             Ddict[k] = makeDnnd3D(vec2mat3D(mat2vec3D(Ddict[k]) + update_p))
+            t2 = time.time()
+            print('DnndTime: ', t2-t1)
             
             t1 = time.time()
             # Add D_k back into D and recompute DinvIplusZtZD
@@ -1460,7 +1475,10 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # Work out which voxels converged
         # --------------------------------------------------------------------------
         # Obatin indices of converged voxels
+        t1 = time.time()
         indices_ConAfterIt, indices_notConAfterIt, indices_ConDuringIt, localconverged, localnotconverged = getConvergedIndices(converged_global, (np.abs(llhprev-llhcurr)<tol))
+        t2 = time.time()
+        print('Converge asses: ', t2-t1)
 
         # Record which voxels converged.
         converged_global[indices_ConDuringIt] = 1
@@ -1543,6 +1561,10 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # X transpose e and Z transpose e
         Xte = XtY - (XtX @ beta)
         Zte = ZtY - (ZtX @ beta)
+
+        if nit > 5:
+
+            raise NameError('HiThere')
     
     return(savedparams)
 
