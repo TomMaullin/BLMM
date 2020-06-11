@@ -231,6 +231,8 @@ def main(ipath, vb):
         # Load X'X, X'Y, Y'Y, X'Z, Y'Z, Z'Z
         # --------------------------------------------------------------------------------
 
+        print('reading in files')
+        t1 = time.time()
         # Ring X'Y, Y'Y, Z'Y
         XtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp",'XtY.npy'), R_inds_am).reshape([v_r, p, 1])
         YtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp",'YtY.npy'), R_inds_am).reshape([v_r, 1, 1])
@@ -240,13 +242,19 @@ def main(ipath, vb):
         XtY_i = readLinesFromNPY(os.path.join(OutDir,"tmp",'XtY.npy'), I_inds_am).reshape([v_i, p, 1])
         YtY_i = readLinesFromNPY(os.path.join(OutDir,"tmp",'YtY.npy'), I_inds_am).reshape([v_i, 1, 1])
         ZtY_i = readLinesFromNPY(os.path.join(OutDir,"tmp",'ZtY.npy'), I_inds_am).reshape([v_i, q, 1])
+        t2 = time.time()
+        print(t2-t1)
 
         # Ring Z'Z. Z'X, X'X
         if v_r:
 
+            print('reading and sum unique')
+            t1 = time.time()
             ZtZ_r = readAndSumUniqueAtB('ZtZ', OutDir, R_inds, n_b, True).reshape([v_r, q, q])
             ZtX_r = readAndSumUniqueAtB('ZtX', OutDir, R_inds, n_b, True).reshape([v_r, q, p])
             XtX_r = readAndSumUniqueAtB('XtX', OutDir, R_inds, n_b, True).reshape([v_r, p, p])
+            t2 = time.time()
+            print(t2-t1)
 
             # ----------------------------------------------------------------------------
             # Remove low rank designs
@@ -312,8 +320,12 @@ def main(ipath, vb):
             YtZ_r = ZtY_r.transpose(0,2,1) 
             XtZ_r = ZtX_r.transpose(0,2,1)
 
+            print('Parameter estimation')
+            t1 = time.time()
             # Run parameter estimation
             beta_r, sigma2_r, D_r = blmm_estimate.main(inputs, R_inds, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r, n_sv_r, nlevels, nraneffs)
+            t2 = time.time()
+            print(t2-t1)
 
             # Run inference
             blmm_inference.main(inputs, nraneffs, nlevels, R_inds, beta_r, D_r, sigma2_r, n_sv_r, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r)       
@@ -325,8 +337,12 @@ def main(ipath, vb):
             YtZ_i = ZtY_i.transpose(0,2,1) 
             XtZ_i = ZtX_i.transpose(0,2,1)
 
+            print('Parameter estimation2')
+            t1 = time.time()
             # Run parameter estimation
             beta_i, sigma2_i, D_i = blmm_estimate.main(inputs, I_inds,  XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i, n, nlevels, nraneffs)
+            t2 = time.time()
+            print(t2-t1)
 
             # Run inference
             blmm_inference.main(inputs, nraneffs, nlevels, I_inds, beta_i, D_i, sigma2_i, n, XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i)

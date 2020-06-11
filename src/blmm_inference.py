@@ -98,6 +98,17 @@ def main(inputs, nraneffs, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX
             # Reshape
             n = n.reshape(v) # (Number of inputs)
 
+    # Work out the indices in D where a new block Dk appears
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+    
+    # New empty D dict
+    Ddict = dict()
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+
     # Miscellaneous matrix variables
     DinvIplusZtZD = get_DinvIplusZtZD3D(Ddict, D, ZtZ, nlevels, nraneffs)
     Zte = ZtY - (ZtX @ beta)
