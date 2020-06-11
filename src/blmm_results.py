@@ -176,7 +176,9 @@ def main(ipath, vb):
     # ------------------------------------------------------------------------
 
     # Work out the number of voxels we can actually compute at a time.
-    nvb = MAXMEM/(10*8*(q**2))
+    # (This is really just a rule of thumb guess but works reasonably in
+    # practice)
+    nvb = MAXMEM/(10*8*(q**2.1))
 
     # Work out number of groups we have to split iindices into.
     nvg = int(len(bamInds)//nvb+1)
