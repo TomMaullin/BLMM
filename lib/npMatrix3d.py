@@ -844,7 +844,7 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
   t1 = time.time()
   # Work out T_ku*sigma
   if r == 1 and nraneffs[0]==1:
-    TuSig = Zte - np.einsum('ijj,ijj,ijk->ijk', ZtZ, DinvIplusZtZDk, Zte)
+    TuSig = Zte - np.einsum('ijj,ijj,ijk->ijk', ZtZ, DinvIplusZtZD, Zte)
   else:
     TuSig = Zte[:,Ik,:] - (ZtZ[:,Ik,:] @ (DinvIplusZtZD @ Zte))
   t2 = time.time()
