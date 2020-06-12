@@ -1206,7 +1206,7 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
     # Get diagonal values of R and sum the squares. This is equivalent
     # to the kron operation in the one factor case
     RkRSum2 = np.sum(Rk1k2diag**2,axis=1).reshape(v, q0**2, q0**2)
-
+    t2 = time.time()
     print('Rk1 time: ', t2-t1)
 
     t1 = time.time()
