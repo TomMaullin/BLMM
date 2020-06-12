@@ -1191,6 +1191,12 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
     # Rk1Rk2 diag
     Rk1Rk2diag = ZtZdiag - DinvIplusZtZDdiag*ZtZdiag**2
 
+    print('Rk1Rk2diag shape')
+    print(Rk1Rk2diag.shape)
+
+    print('Rk1Rk2 diag vals')
+    print(DiagVals[0,1:5])
+
     # lk and qk for the first factor (zero indexed)
     l0 = nlevels[0]
     q0 = nraneffs[0]
@@ -1199,6 +1205,9 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
 
     # Get diagonal values of R and reshape them
     DiagVals = Rk1Rk2diag.reshape(v, q0, l0)
+
+    print('Diag vals')
+    print(DiagVals[0,0,1:5])
 
     # Get Kron of the diagonal values and sum lk out
     kronDiagSum = np.sum(kron3D(DiagVals,DiagVals),axis=2)
@@ -1223,6 +1232,9 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
 
     Rk1k2 = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ik1,Ik2)] - (ZtZ[:,Ik1,:] @ DinvIplusZtZD @ ZtZ[:,:,Ik2])
   
+  Rk1k22 = ZtZ - (ZtZ @ DinvIplusZtZD @ ZtZ)
+
+  print('Rk1k2 check: ', np.allclose(Rk1k2, Rk1k22))
 
   # Work out block sizes
   p = np.array([nraneffs[k1],nraneffs[k2]])
@@ -1232,6 +1244,10 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
   RkRSum,perm=sumAijKronBij3D(Rk1k2, Rk1k2, p, perm)
   t2 = time.time()
   print('RkSum time: ', t2-t1)
+  print('RkSum max: ', np.max(RkRSum))
+  print('RkSum2 max: ', np.max(RkRSum2))
+  print('RkSum diff max: ', np.max(RkRSum2-RkRsum))
+  print('Rkshapes: ', RkRSum.shape, RkRsum2.shape)
   print('RkSum check: ', np.allclose(RkRSum, RkRSum2))
 
   t1 = time.time()

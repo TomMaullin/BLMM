@@ -43,7 +43,7 @@ def sumTTt_1factor3D(ZtZk, DinvIplusZtZDk, l0, q0):
 nraneffs = np.array([1])
 nlevels = np.array([1500])
 q = np.sum(nlevels*nraneffs)
-v = 10
+v = 13
 
 # Generate test data
 Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
