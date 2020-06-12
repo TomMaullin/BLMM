@@ -1203,22 +1203,10 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
 
     t3 = time.time()-t1
 
-    # Get diagonal values of R and reshape them
-    DiagVals = Rk1k2diag.reshape(v, q0, l0)
+    # Get diagonal values of R and sum the squares. This is equivalent
+    # to the kron operation in the one factor case
+    RkRSum2 = np.sum(Rk1k2diag**2,axis=1).reshape(v, q0**2, q0**2)
 
-    print('Diag vals')
-    print(DiagVals[0,0,1:5])
-
-    # Get Kron of the diagonal values and sum lk out
-    kronDiagSum = np.sum(kron3D(DiagVals,DiagVals),axis=2)
-
-    # Make zero array to hold result
-    RkRSum2 = np.zeros((v, q0**2, q0**2))
-
-    # Add result in
-    np.einsum('ijj->ij', RkRSum2)[...] = kronDiagSum
-
-    t2 = time.time()
     print('Rk1 time: ', t2-t1)
 
     t1 = time.time()
