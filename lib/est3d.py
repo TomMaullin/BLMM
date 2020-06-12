@@ -1369,11 +1369,6 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # Update beta
         # --------------------------------------------------------------------------
         t1 = time.time()
-        beta2 = np.linalg.solve(XtX - XtZ @ DinvIplusZtZD @ ZtX, XtY - XtZ @ DinvIplusZtZD @ ZtY)
-        t2 = time.time()
-        print('beta old time: ', t2 - t1)
-        
-        t1 = time.time()
         # This can be performed factor in the one factor, one random effect case by
         # using only the diagonal elements of DinvIplusZtZD 
         if r == 1 and nraneffs[0] == 1:
@@ -1390,7 +1385,7 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         XtiVY = XtY - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtY
         beta = np.linalg.solve(XtiVX, XtiVY)
         t2 = time.time()
-        print('new beta time: ', t2-t1)
+        print('Beta time: ', t2-t1)
 
         print(np.allclose(beta,beta2))
 
@@ -1588,10 +1583,6 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         t2it = time.time()
         
         print('iteration time: ', t2it-t1it)
-
-        if nit > 5:
-
-            raise NameError('HiThere')
     
     return(savedparams)
 
