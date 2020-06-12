@@ -61,6 +61,8 @@ def main(ipath):
             # during this run. Check which part it was and delete that so it
             # isn't run next time.
             memmaskFiles = glob.glob(os.path.join(OutDir, 'blmm_vox_memmask*.nii'))
+            print(memmaskFiles[0])
+            os.remove(memmaskFiles[0])
 
 
 
