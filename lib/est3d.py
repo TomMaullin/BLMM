@@ -1561,10 +1561,6 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # X transpose e and Z transpose e
         Xte = XtY - (XtX @ beta)
         Zte = ZtY - (ZtX @ beta)
-
-        if nit > 5:
-
-            raise NameError('HiThere')
     
     return(savedparams)
 
