@@ -1001,7 +1001,34 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
         # --------------------------------------------------------------------------
         # Update beta
         # --------------------------------------------------------------------------
-        beta = np.linalg.solve(XtX - XtZ @ DinvIplusZtZD @ ZtX, XtY - XtZ @ DinvIplusZtZD @ ZtY)
+        t1 = time.time()
+        beta2 = np.linalg.solve(XtX - XtZ @ DinvIplusZtZD @ ZtX, XtY - XtZ @ DinvIplusZtZD @ ZtY)
+        t2 = time.time()
+        print('old beta time: ', t2-t1)
+
+        # DinvIplusZtZDdiag = np.einsum('ijj->ij', DinvIplusZtZD)
+        
+        t1 = time.time()
+        # This can be performed factor in the one factor, one random effect case by
+        # using only the diagonal elements of DinvIplusZtZD
+        if r == 1 and nraneffs[0] == 1:
+
+            # Multiply by Z'X
+            DinvIplusZtZDZtX = np.einsum('ijj,ijk->ijk', DinvIplusZtZD, ZtX)
+
+        else:
+
+            # Multiply by Z'X
+            DinvIplusZtZDZtX = DinvIplusZtZD @ ZtX
+
+        XtiVX = XtX - DinvIplusZtZDZtX.transpose() @ ZtX
+        XtiVY = XtY - DinvIplusZtZDZtX.transpose() @ ZtY
+        beta = np.linalg.solve(XtiVX, XtiVY)
+        t2 = time.time()
+        print('new beta time: ', t2-t1)
+
+        print(np.allclose(beta,beta2))
+
         
         # --------------------------------------------------------------------------
         # Update sigma^2
