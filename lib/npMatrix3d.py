@@ -1210,7 +1210,7 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
 
     covdldDk1dldk22 = 1/2*RkRSum2
 
-    print('new deriv time: ', t2-t1)
+    print('new cov time: ', t2-t1)
 
     t1 = time.time()
     # Put values back into a matrix
@@ -1234,11 +1234,6 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
   t1 = time.time()
   RkRSum,perm=sumAijKronBij3D(Rk1k2, Rk1k2, p, perm)
   t2 = time.time()
-  print('RkSum time: ', t2-t1)
-  print('RkSum max: ', np.max(RkRSum))
-  print('RkSum2 max: ', np.max(RkRSum2))
-  print('RkSum diff max: ', np.max(RkRSum2-RkRSum))
-  print('RkSum check: ', np.allclose(RkRSum, RkRSum2))
 
   t1 = time.time()
   # Multiply by duplication matrices and save
@@ -1247,7 +1242,7 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
   else:
     covdldDk1dldk2 = 1/2 * RkRSum
 
-  print('covdldDk check: ', np.allclose(covdldDk1dldk2))
+  print('covdldDk check: ', np.allclose(covdldDk1dldk2,covdldDk1dldk22))
 
   t2 = time.time()
   print('CovdldDk time: ', t2-t1)
