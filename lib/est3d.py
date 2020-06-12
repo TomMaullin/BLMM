@@ -1387,8 +1387,6 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         t2 = time.time()
         print('Beta time: ', t2-t1)
 
-        print(np.allclose(beta,beta2))
-
         # Update sigma^2
         ete = ssr3D(YtX, YtY, XtX, beta)
         Zte = ZtY - (ZtX @ beta)
