@@ -1212,6 +1212,8 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
     l0 = nlevels[0]
     q0 = nraneffs[0]
 
+    t3 = time.time()-t1
+
     # Get diagonal values of R and reshape them
     DiagVals = Rk1Rk2diag.reshape(v, q0, l0)
 
@@ -1219,10 +1221,10 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
     kronDiagSum = np.sum(kron3D(DiagVals,DiagVals),axis=2)
 
     # Make zero array to hold result
-    RkSum2 = np.zeros((v, q0**2, q0**2))
+    RkRSum2 = np.zeros((v, q0**2, q0**2))
 
     # Add result in
-    np.einsum('ijj->ij', RkSum2)[...] = kronDiagSum
+    np.einsum('ijj->ij', RkRSum2)[...] = kronDiagSum
 
     t2 = time.time()
     print('Rk1 time: ', t2-t1)
@@ -1232,7 +1234,7 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
     Rk1k2 = np.zeros((v,q0*l0,q0*l0))
     np.einsum('ijj->ij', Rk1k2)[...] = Rk1Rk2diag
     t2 = time.time()
-    print('Rk1k2 old time: ', t2-t1)
+    print('Rk1k2 old time: ', t2-t1+t3)
 
   else:
 
@@ -1247,7 +1249,7 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
   RkRSum,perm=sumAijKronBij3D(Rk1k2, Rk1k2, p, perm)
   t2 = time.time()
   print('RkSum time: ', t2-t1)
-  print('RkSum check: ', np.allclose(RkSum, RkSum2))
+  print('RkSum check: ', np.allclose(RkRSum, RkRSum2))
 
   t1 = time.time()
   # Multiply by duplication matrices and save
