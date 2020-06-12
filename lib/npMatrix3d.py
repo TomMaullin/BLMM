@@ -1183,8 +1183,12 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
     # Rk1Rk2 diag
     Rk1Rk2diag = ZtZdiag - DinvIplusZtZDdiag*ZtZdiag**2
 
+    # lk and qk for the first factor (zero indexed)
+    l0 = nlevels[0]
+    q0 = nraneffs[0]
+
     # Put values back into a matrix
-    Rk1k2 = np.zeros((v,nraneffs[0]**2,nraneffs[0]**2))
+    Rk1k2 = np.zeros((v,(q0*l0)**2,(q0*l0)**2))
     np.einsum('ijj->ij', Rk1k2)[...] = Rk1Rk2diag
 
   else:
