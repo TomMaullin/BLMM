@@ -1369,7 +1369,7 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # Update beta
         # --------------------------------------------------------------------------
         t1 = time.time()
-        # This can be performed factor in the one factor, one random effect case by
+        # This can be performed faster in the one factor, one random effect case by
         # using only the diagonal elements of DinvIplusZtZD 
         if r == 1 and nraneffs[0] == 1:
 
@@ -1400,19 +1400,20 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # REML update to sigma2
         # --------------------------------------------------------------------------
         t1 = time.time()
-        if reml == False:
-            sigma2 = (1/n*(ete - Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte)).reshape(v_iter)
+        # This can be performed faster in the one factor, one random effect case by
+        # using only the diagonal elements of DinvIplusZtZD 
+        if r == 1 and nraneffs[0] == 1:
+            if reml == False:
+                sigma2 = (1/n*(ete - Zte.transpose((0,2,1)) @ np.einsum('ijj,ijk->ijk',DinvIplusZtZD, Zte))).reshape(v_iter)
+            else:
+                sigma2 = (1/(n-p)*(ete - Zte.transpose((0,2,1)) @ np.einsum('ijj,ijk->ijk',DinvIplusZtZD, Zte))).reshape(v_iter)
         else:
-            sigma2 = (1/(n-p)*(ete - Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte)).reshape(v_iter)
+            if reml == False:
+                sigma2 = (1/n*(ete - Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte)).reshape(v_iter)
+            else:
+                sigma2 = (1/(n-p)*(ete - Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte)).reshape(v_iter)
         t2 = time.time()
-        print('sigma2 time old: ', t2-t1)
-
-        t1 = time.time()
-        sigma22 = (1/n*(ete - Zte.transpose((0,2,1)) @ np.einsum('ijj,ijk->ijk',DinvIplusZtZD, Zte))).reshape(v_iter)
-        t2 = time.time()
-        print('sigma2 time new: ', t2-t1)
-
-        print('sigma2 check: ', np.allclose(sigma2, sigma22))
+        print('sigma2 time: ', t2-t1)
         
         # --------------------------------------------------------------------------
         # Update D

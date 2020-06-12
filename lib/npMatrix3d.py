@@ -851,13 +851,6 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
   print('TuSig time: ', t2-t1)
 
   t1 = time.time()
-  TuSig2 = Zte[:,Ik,:] - (ZtZ[:,Ik,:] @ (DinvIplusZtZD @ Zte))
-  t2 = time.time()
-  print('TuSig old time: ', t2-t1)
-
-  print('Tusig check: ', np.allclose(TuSig, TuSig2))
-
-  t1 = time.time()
   # Obtain Sum Tu(Tu)'
   TuuTSum = np.einsum('i,ijk->ijk',1/sigma2,sumAijBijt3D(TuSig, TuSig, p, p))
   t2 = time.time()
@@ -1215,7 +1208,7 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
     t3 = time.time()-t1
 
     # Get diagonal values of R and reshape them
-    DiagVals = Rk1Rk2diag.reshape(v, q0, l0)
+    DiagVals = Rk1Rk2diag.transpose().reshape(v, q0, l0)
 
     # Get Kron of the diagonal values and sum lk out
     kronDiagSum = np.sum(kron3D(DiagVals,DiagVals),axis=2)
