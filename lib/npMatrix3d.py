@@ -1201,7 +1201,7 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
   Rk1k22 = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ik1,Ik2)] - (ZtZ[:,Ik1,:] @ DinvIplusZtZD @ ZtZ[:,:,Ik2])
   t2 = time.time()
   print('Rk check time: ', t2 - t1)
-  print(np.allclose(Rk1Rk2,Rk1k22))
+  print(np.allclose(Rk1k2,Rk1k22))
 
 
   # Work out block sizes
