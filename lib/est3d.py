@@ -1386,8 +1386,8 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             # Multiply by Z'X
             DinvIplusZtZDZtX = DinvIplusZtZD @ ZtX
 
-        XtiVX = XtX - DinvIplusZtZDZtX.transpose() @ ZtX
-        XtiVY = XtY - DinvIplusZtZDZtX.transpose() @ ZtY
+        XtiVX = XtX - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtX
+        XtiVY = XtY - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtY
         beta = np.linalg.solve(XtiVX, XtiVY)
         t2 = time.time()
         print('new beta time: ', t2-t1)
