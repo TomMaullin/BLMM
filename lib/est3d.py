@@ -1397,6 +1397,8 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         counter = 0
         for k in np.arange(len(nraneffs)):
 
+            t1it = time.time()
+
             #-----------------------------------------------------------------------
             # Calculate derivative with respect to D_k
             #-----------------------------------------------------------------------
@@ -1561,6 +1563,14 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # X transpose e and Z transpose e
         Xte = XtY - (XtX @ beta)
         Zte = ZtY - (ZtX @ beta)
+
+        t2it = time.time()
+        
+        print('iteration time: ', t2it-t1it)
+
+        if nit > 5:
+
+            raise NameError('HiThere')
     
     return(savedparams)
 

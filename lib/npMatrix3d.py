@@ -816,7 +816,7 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
   # Number of random factors in model
   r = len(nlevels)
   if r == 1 and nraneffs[0]==1:
-    secondTerm = sumTTt_1factor3D(ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ik,Ik)], DinvIplusZtZD[np.ix_(np.arange(v),Ik,Ik)], nlevels[k], nraneffs[k])
+    secondTerm = sumTTt_1factor3D(ZtZ, DinvIplusZtZD, nlevels[k], nraneffs[k])
   else:
     # Work out the second term in TT'
     secondTerm = sumAijBijt3D(ZtZ[:,Ik,:] @ DinvIplusZtZD, ZtZ[:,Ik,:], p, p)
@@ -1055,7 +1055,7 @@ def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupM
   # Number of random factors in model
   r = len(nlevels)
   if r == 1 and nraneffs[0]==1:
-    secondTerm = sumTTt_1factor3D(ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ik,Ik)], DinvIplusZtZD[np.ix_(np.arange(v),Ik,Ik)], nlevels[k], nraneffs[k])
+    secondTerm = sumTTt_1factor3D(ZtZ, DinvIplusZtZD, nlevels[k], nraneffs[k])
   else:
     # Work out the second term
     secondTerm = sumAijBijt3D(ZtZ[:,Ik,:] @ DinvIplusZtZD, ZtZ[:,Ik,:], p, p)
@@ -1174,7 +1174,7 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
 
   t1 = time.time()
   # Work out R_(k1,k2) (in the one factor, one raneff setting we can speed this up a lot)
-  if r==1 and nraneffs[0]==1:
+  if r == 1 and nraneffs[0] == 1:
 
     # Get the diagonal of Z'Z and DinvIplusZ'ZD
     ZtZdiag = np.einsum('ijj->ij', ZtZ)
@@ -1197,6 +1197,12 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
   
   t2 = time.time()
   print('Rk1 time: ', t2-t1)
+  t1 = time.time()
+  Rk1k22 = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ik1,Ik2)] - (ZtZ[:,Ik1,:] @ DinvIplusZtZD @ ZtZ[:,:,Ik2])
+  t2 = time.time()
+  print('Rk check time: ', t2 - t1)
+  print(np.allclose(Rk1Rk2,Rk1k22))
+
 
   # Work out block sizes
   p = np.array([nraneffs[k1],nraneffs[k2]])
