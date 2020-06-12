@@ -1405,7 +1405,14 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         else:
             sigma2 = (1/(n-p)*(ete - Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte)).reshape(v_iter)
         t2 = time.time()
-        print('sigma2 time: ', t2-t1)
+        print('sigma2 time old: ', t2-t1)
+
+        t1 = time.time()
+        sigma22 = (1/n*(ete - Zte.transpose((0,2,1)) @ np.einsum('ijj,ijk->ijk',DinvIplusZtZD, Zte))).reshape(v_iter)
+        t2 = time.time()
+        print('sigma2 time new: ', t2-t1)
+
+        print('sigma2 check: ', np.allclose(sigma2, sigma22))
         
         # --------------------------------------------------------------------------
         # Update D
@@ -1581,6 +1588,10 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         t2it = time.time()
         
         print('iteration time: ', t2it-t1it)
+
+        if nit > 5:
+
+            raise NameError('HiThere')
     
     return(savedparams)
 
