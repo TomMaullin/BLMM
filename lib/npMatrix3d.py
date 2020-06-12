@@ -1166,9 +1166,31 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
   Ik1 = fac_indices2D(k1, nlevels, nraneffs)
   Ik2 = fac_indices2D(k2, nlevels, nraneffs)
 
+  # Work out number of random factors
+  r = len(nlevels)
+
+  # Work out number of voxels
+  v = DinvIplusZtZD.shape[0]
+
   t1 = time.time()
-  # Work out R_(k1,k2)
-  Rk1k2 = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ik1,Ik2)] - (ZtZ[:,Ik1,:] @ DinvIplusZtZD @ ZtZ[:,:,Ik2])
+  # Work out R_(k1,k2) (in the one factor, one raneff setting we can speed this up a lot)
+  if r==1 and nraneffs[0]==1:
+
+    # Get the diagonal of Z'Z and DinvIplusZ'ZD
+    ZtZdiag = np.einsum('ijj->ij', ZtZ)
+    DinvIplusZtZDdiag = np.einsum('ijj->ij', DinvIplusZtZD)
+
+    # Rk1Rk2 diag
+    Rk1Rk2diag = ZtZdiag - DinvIplusZtZDdiag*ZtZdiag**2
+
+    # Put values back into a matrix
+    Rk1k2 = np.zeros((v,nraneffs[0]**2,nraneffs[0]**2))
+    np.einsum('ijj->ij', Rk1k2)[...] = Rk1Rk2diag
+
+  else:
+
+    Rk1k2 = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ik1,Ik2)] - (ZtZ[:,Ik1,:] @ DinvIplusZtZD @ ZtZ[:,:,Ik2])
+  
   t2 = time.time()
   print('Rk1 time: ', t2-t1)
 
