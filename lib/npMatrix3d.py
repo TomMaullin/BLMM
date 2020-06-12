@@ -1188,14 +1188,14 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
     ZtZdiag = np.einsum('ijj->ij', ZtZ)
     DinvIplusZtZDdiag = np.einsum('ijj->ij', DinvIplusZtZD)
 
-    # Rk1Rk2 diag
-    Rk1Rk2diag = ZtZdiag - DinvIplusZtZDdiag*ZtZdiag**2
+    # Rk1k2 diag
+    Rk1k2diag = ZtZdiag - DinvIplusZtZDdiag*ZtZdiag**2
 
-    print('Rk1Rk2diag shape')
-    print(Rk1Rk2diag.shape)
+    print('Rk1k2diag shape')
+    print(Rk1k2diag.shape)
 
-    print('Rk1Rk2 diag vals')
-    print(DiagVals[0,1:5])
+    print('Rk1k2 diag vals')
+    print(Rk1k2diag[0,1:5])
 
     # lk and qk for the first factor (zero indexed)
     l0 = nlevels[0]
@@ -1204,7 +1204,7 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
     t3 = time.time()-t1
 
     # Get diagonal values of R and reshape them
-    DiagVals = Rk1Rk2diag.reshape(v, q0, l0)
+    DiagVals = Rk1k2diag.reshape(v, q0, l0)
 
     print('Diag vals')
     print(DiagVals[0,0,1:5])
@@ -1224,7 +1224,7 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
     t1 = time.time()
     # Put values back into a matrix
     Rk1k2 = np.zeros((v,q0*l0,q0*l0))
-    np.einsum('ijj->ij', Rk1k2)[...] = Rk1Rk2diag
+    np.einsum('ijj->ij', Rk1k2)[...] = Rk1k2diag
     t2 = time.time()
     print('Rk1k2 old time: ', t2-t1+t3)
 
