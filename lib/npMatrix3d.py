@@ -548,21 +548,11 @@ def llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D, Ddict, nlevels, nraneffs, r
 
   # If we have only one factor and one random effect computation can be
   # sped up a lot
-  t1 = time.time()
   if r==1 and nraneffs[0]==1:
     secondterm = -0.5*np.einsum('i,ijk->ijk',(1/sigma2).reshape(ete.shape[0]),(ete - forceSym3D(Zte.transpose((0,2,1)) @ np.einsum('ijj,ijk->ijk',DinvIplusZtZD, Zte)))).reshape(ete.shape[0])
   else:
     # Work out sigma^(-2)*(e'e - e'ZD(I+Z'ZD)^(-1)Z'e)
     secondterm = -0.5*np.einsum('i,ijk->ijk',(1/sigma2).reshape(ete.shape[0]),(ete - forceSym3D(Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte))).reshape(ete.shape[0])
-  t2 = time.time()
-  print('llh 2nd new: ', t2-t1)
-
-  t1 = time.time()
-  secondterm2 = -0.5*np.einsum('i,ijk->ijk',(1/sigma2).reshape(ete.shape[0]),(ete - forceSym3D(Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte))).reshape(ete.shape[0])
-  t2 = time.time()
-  print('llh 2nd old: ', t2-t1)
-
-  print('llh second check: ', np.allclose(secondterm,secondterm2))
 
   # Work out the log likelihood
   llh = (firstterm + secondterm).reshape(ete.shape[0])
@@ -1208,7 +1198,7 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
     t3 = time.time()-t1
 
     # Get diagonal values of R and reshape them
-    DiagVals = Rk1Rk2diag.reshape(v, l0, q0).transpose((0,2,1))
+    DiagVals = Rk1Rk2diag.reshape(v, q0, l0)
 
     # Get Kron of the diagonal values and sum lk out
     kronDiagSum = np.sum(kron3D(DiagVals,DiagVals),axis=2)
