@@ -1010,7 +1010,7 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
         
         t1 = time.time()
         # This can be performed factor in the one factor, one random effect case by
-        # using only the diagonal elements of DinvIplusZtZD
+        # using only the diagonal elements of DinvIplusZtZD 
         if r == 1 and nraneffs[0] == 1:
 
             # Multiply by Z'X
