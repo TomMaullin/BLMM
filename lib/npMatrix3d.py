@@ -1207,7 +1207,10 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
     # to the kron operation in the one factor case
     RkRSum2 = np.sum(Rk1k2diag**2,axis=1).reshape(v, q0**2, q0**2)
     t2 = time.time()
-    print('Rk1 time: ', t2-t1)
+
+    covdldDk1dldk22 = 1/2*RkRSum2
+
+    print('new deriv time: ', t2-t1)
 
     t1 = time.time()
     # Put values back into a matrix
@@ -1234,8 +1237,7 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
   print('RkSum time: ', t2-t1)
   print('RkSum max: ', np.max(RkRSum))
   print('RkSum2 max: ', np.max(RkRSum2))
-  print('RkSum diff max: ', np.max(RkRSum2-RkRsum))
-  print('Rkshapes: ', RkRSum.shape, RkRsum2.shape)
+  print('RkSum diff max: ', np.max(RkRSum2-RkRSum))
   print('RkSum check: ', np.allclose(RkRSum, RkRSum2))
 
   t1 = time.time()
@@ -1244,6 +1246,9 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
     covdldDk1dldk2 = 1/2 * dupMatTdict[k1] @ RkRSum @ dupMatTdict[k2].transpose()
   else:
     covdldDk1dldk2 = 1/2 * RkRSum
+
+  print('covdldDk check: ', np.allclose(covdldDk1dldk2))
+
   t2 = time.time()
   print('CovdldDk time: ', t2-t1)
 
