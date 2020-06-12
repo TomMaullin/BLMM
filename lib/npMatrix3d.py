@@ -3,7 +3,6 @@ import scipy.sparse
 from scipy import stats
 from lib.npMatrix2d import faclev_indices2D, fac_indices2D, permOfIkKkI2D, dupMat2D
 from lib.fileio import loadFile
-import time
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
@@ -817,7 +816,6 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
   qk = nraneffs[k]
   p = np.array([qk,1])
 
-  t1 = time.time()
   # Number of random factors in model
   r = len(nlevels)
   if r == 1 and nraneffs[0]==1:
@@ -825,34 +823,22 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
   else:
     # Work out the second term in TT'
     secondTerm = sumAijBijt3D(ZtZ[:,Ik,:] @ DinvIplusZtZD, ZtZ[:,Ik,:], p, p)
-  t2 = time.time()
-  print('Second term time:', t2-t1)
 
   # Obtain RkSum=sum (TkjTkj')
   RkSum = ZtZmat - secondTerm
 
-  t1 = time.time()
   # Work out T_ku*sigma
   if r == 1 and nraneffs[0]==1:
     TuSig = Zte - np.einsum('ijj,ijj,ijk->ijk', ZtZ, DinvIplusZtZD, Zte)
   else:
     TuSig = Zte[:,Ik,:] - (ZtZ[:,Ik,:] @ (DinvIplusZtZD @ Zte))
-  t2 = time.time()
-  print('TuSig time: ', t2-t1)
 
-  t1 = time.time()
   # Obtain Sum Tu(Tu)'
   TuuTSum = np.einsum('i,ijk->ijk',1/sigma2,sumAijBijt3D(TuSig, TuSig, p, p))
-  t2 = time.time()
-  print('TuuT time:', t2-t1)
 
-  t1 = time.time()
   # Work out dldDk
   dldDk = 0.5*(forceSym3D(TuuTSum - RkSum))
-  t2 = time.time()
-  print('force sym time:', t2-t1)
 
-    
   if reml==True:
 
     invXtinvVX = np.linalg.pinv(XtX - ZtX.transpose((0,2,1)) @ DinvIplusZtZD @ ZtX)
@@ -1059,7 +1045,6 @@ def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupM
   qk = nraneffs[k]
   p = np.array([qk,q])
 
-  t1 = time.time()
   # Number of random factors in model
   r = len(nlevels)
   if r == 1 and nraneffs[0]==1:
@@ -1067,8 +1052,6 @@ def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupM
   else:
     # Work out the second term
     secondTerm = sumAijBijt3D(ZtZ[:,Ik,:] @ DinvIplusZtZD, ZtZ[:,Ik,:], p, p)
-  t2 = time.time()
-  print('Second term time:', t2-t1)
 
   # Obtain ZtZmat
   RkSum = ZtZmat - secondTerm
@@ -1180,7 +1163,6 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
   # Work out number of voxels
   v = DinvIplusZtZD.shape[0]
 
-  t1 = time.time()
   # Work out R_(k1,k2) (in the one factor, one raneff setting we can speed this up a lot)
   if r == 1 and nraneffs[0] == 1:
 
@@ -1191,61 +1173,32 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
     # Rk1k2 diag
     Rk1k2diag = ZtZdiag - DinvIplusZtZDdiag*ZtZdiag**2
 
-    print('Rk1k2diag shape')
-    print(Rk1k2diag.shape)
-
-    print('Rk1k2 diag vals')
-    print(Rk1k2diag[0,1:5])
-
     # lk and qk for the first factor (zero indexed)
     l0 = nlevels[0]
     q0 = nraneffs[0]
 
-    t3 = time.time()-t1
-
     # Get diagonal values of R and sum the squares. This is equivalent
     # to the kron operation in the one factor case
-    RkRSum2 = np.sum(Rk1k2diag**2,axis=1).reshape(v, q0**2, q0**2)
-    t2 = time.time()
+    RkRSum = np.sum(Rk1k2diag**2,axis=1).reshape(v, q0**2, q0**2)
 
-    covdldDk1dldk22 = 1/2*RkRSum2
-
-    print('new cov time: ', t2-t1)
-
-    t1 = time.time()
-    # Put values back into a matrix
-    Rk1k2 = np.zeros((v,q0*l0,q0*l0))
-    np.einsum('ijj->ij', Rk1k2)[...] = Rk1k2diag
-    t2 = time.time()
-    print('Rk1k2 old time: ', t2-t1+t3)
+    # This is the covariance
+    covdldDk1dldk2 = 1/2*RkRSum
 
   else:
 
     Rk1k2 = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ik1,Ik2)] - (ZtZ[:,Ik1,:] @ DinvIplusZtZD @ ZtZ[:,:,Ik2])
-  
-  Rk1k22 = ZtZ - (ZtZ @ DinvIplusZtZD @ ZtZ)
+    
+    # Work out block sizes
+    p = np.array([nraneffs[k1],nraneffs[k2]])
 
-  print('Rk1k2 check: ', np.allclose(Rk1k2, Rk1k22))
+    # Obtain permutation
+    RkRSum,perm=sumAijKronBij3D(Rk1k2, Rk1k2, p, perm)
 
-  # Work out block sizes
-  p = np.array([nraneffs[k1],nraneffs[k2]])
-
-  # Obtain permutation
-  t1 = time.time()
-  RkRSum,perm=sumAijKronBij3D(Rk1k2, Rk1k2, p, perm)
-  t2 = time.time()
-
-  t1 = time.time()
-  # Multiply by duplication matrices and save
-  if not vec:
-    covdldDk1dldk2 = 1/2 * dupMatTdict[k1] @ RkRSum @ dupMatTdict[k2].transpose()
-  else:
-    covdldDk1dldk2 = 1/2 * RkRSum
-
-  print('covdldDk check: ', np.allclose(covdldDk1dldk2,covdldDk1dldk22))
-
-  t2 = time.time()
-  print('CovdldDk time: ', t2-t1)
+    # Multiply by duplication matrices and save
+    if not vec:
+      covdldDk1dldk2 = 1/2 * dupMatTdict[k1] @ RkRSum @ dupMatTdict[k2].transpose()
+    else:
+      covdldDk1dldk2 = 1/2 * RkRSum
 
   # Return the result
   return(covdldDk1dldk2, perm)

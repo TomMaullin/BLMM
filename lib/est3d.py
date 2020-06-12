@@ -1351,8 +1351,6 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
     nit=0
     while np.any(np.abs(llhprev-llhcurr)>tol):
 
-        t1it = time.time()
-        
         # Update number of iterations
         nit = nit + 1
             
@@ -1368,7 +1366,6 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # --------------------------------------------------------------------------
         # Update beta
         # --------------------------------------------------------------------------
-        t1 = time.time()
         # This can be performed faster in the one factor, one random effect case by
         # using only the diagonal elements of DinvIplusZtZD 
         if r == 1 and nraneffs[0] == 1:
@@ -1384,8 +1381,6 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         XtiVX = XtX - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtX
         XtiVY = XtY - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtY
         beta = np.linalg.solve(XtiVX, XtiVY)
-        t2 = time.time()
-        print('Beta time: ', t2-t1)
 
         # Update sigma^2
         ete = ssr3D(YtX, YtY, XtX, beta)
@@ -1399,7 +1394,6 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # --------------------------------------------------------------------------
         # REML update to sigma2
         # --------------------------------------------------------------------------
-        t1 = time.time()
         # This can be performed faster in the one factor, one random effect case by
         # using only the diagonal elements of DinvIplusZtZD 
         if r == 1 and nraneffs[0] == 1:
@@ -1412,8 +1406,6 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
                 sigma2 = (1/n*(ete - Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte)).reshape(v_iter)
             else:
                 sigma2 = (1/(n-p)*(ete - Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte)).reshape(v_iter)
-        t2 = time.time()
-        print('sigma2 time: ', t2-t1)
         
         # --------------------------------------------------------------------------
         # Update D
@@ -1424,25 +1416,19 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             #-----------------------------------------------------------------------
             # Calculate derivative with respect to D_k
             #-----------------------------------------------------------------------
-            t1 = time.time()
             # Work out derivative
             if ZtZmatdict[k] is None:
                 dldDk,ZtZmatdict[k] = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None)
             else:
                 dldDk,_ = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k])
-            t2 = time.time()
-            print('dldDk time: ', t2-t1)
         
             #-----------------------------------------------------------------------
             # Calculate covariance of derivative with respect to D_k
             #-----------------------------------------------------------------------
-            t1 = time.time()
             if permdict[str(k)] is None:
                 covdldDk1dDk2,permdict[str(k)] = get_covdldDk1Dk23D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, vec=True, perm=None)
             else:
                 covdldDk1dDk2,_ = get_covdldDk1Dk23D(k, k, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, vec=True, perm=permdict[str(k)])
-            t2 = time.time()
-            print('Cov time: ', t2-t1)
 
             #-----------------------------------------------------------------------
             # Work out update amount
@@ -1452,28 +1438,19 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             # Multiply by stepsize
             update_p = np.einsum('i,ijk->ijk',lam, update_p)
 
-            t1 = time.time()
             # Update D_k
             Ddict[k] = makeDnnd3D(vec2mat3D(mat2vec3D(Ddict[k]) + update_p))
-            t2 = time.time()
-            print('DnndTime: ', t2-t1)
-            
-            t1 = time.time()
+
             # Add D_k back into D and recompute DinvIplusZtZD
             for j in np.arange(nlevels[k]):
 
                 D[:, Dinds[counter]:Dinds[counter+1], Dinds[counter]:Dinds[counter+1]] = Ddict[k]
                 counter = counter + 1
-            t2 = time.time()
-            print('D assignment time: ', t2-t1)
         
         # --------------------------------------------------------------------------
         # Obtain D(I+Z'ZD)^(-1)
         # --------------------------------------------------------------------------
-        t1 = time.time()
         DinvIplusZtZD = get_DinvIplusZtZD3D(Ddict, D, ZtZ, nlevels, nraneffs)  
-        t2 = time.time()
-        print('DinvIplusZtZD time: ', t2-t1)
 
         # --------------------------------------------------------------------------
         # Recalculate matrices
@@ -1487,11 +1464,7 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # --------------------------------------------------------------------------
         # Update the step size and log likelihood
         # --------------------------------------------------------------------------
-        t1 = time.time()
         llhcurr = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D, Ddict, nlevels, nraneffs, reml, XtX, XtZ, ZtX)
-        t2 = time.time()
-        print('llh time: ', t2-t1)
-
 
         lam[llhprev>llhcurr] = lam[llhprev>llhcurr]/2
         
@@ -1499,10 +1472,7 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # Work out which voxels converged
         # --------------------------------------------------------------------------
         # Obatin indices of converged voxels
-        t1 = time.time()
         indices_ConAfterIt, indices_notConAfterIt, indices_ConDuringIt, localconverged, localnotconverged = getConvergedIndices(converged_global, (np.abs(llhprev-llhcurr)<tol))
-        t2 = time.time()
-        print('Converge asses: ', t2-t1)
 
         # Record which voxels converged.
         converged_global[indices_ConDuringIt] = 1
@@ -1585,14 +1555,6 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # X transpose e and Z transpose e
         Xte = XtY - (XtX @ beta)
         Zte = ZtY - (ZtX @ beta)
-
-        t2it = time.time()
-        
-        print('iteration time: ', t2it-t1it)
-
-        if nit > 5:
-
-            raise NameError('HiThere')
     
     return(savedparams)
 
