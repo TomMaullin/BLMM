@@ -119,11 +119,28 @@ def main(*args):
     # sure none of the previous results are lingering around anywhere.
     # --------------------------------------------------------------------------------
 
+    # We don't do it if we are in diskMem mode though, as in this mode we run several
+    # smaller analyses instead of one large one in order to preserve disk memory.
+
+    if 'diskMem' not in inputs:
+
     files = ['blmm_vox_n.nii', 'blmm_vox_mask.nii', 'blmm_vox_edf.nii', 'blmm_vox_beta.nii',
              'blmm_vox_llh.nii', 'blmm_vox_sigma2.nii', 'blmm_vox_D.nii', 'blmm_vox_resms.nii',
              'blmm_vox_cov.nii', 'blmm_vox_conT_swedf.nii', 'blmm_vox_conT.nii', 'blmm_vox_conTlp.nii',
              'blmm_vox_conSE.nii', 'blmm_vox_con.nii', 'blmm_vox_conF.nii', 'blmm_vox_conF_swedf.nii',
              'blmm_vox_conFlp.nii', 'blmm_vox_conR2.nii']
+
+    else:
+
+        # Check if this is the first run of the disk memory code
+        if inputs['diskMem']==1 and not glob.glob(os.path.join(OutDir, 'blmm_vox_memmask*.nii')):
+
+            files = ['blmm_vox_n.nii', 'blmm_vox_mask.nii', 'blmm_vox_edf.nii', 'blmm_vox_beta.nii',
+                     'blmm_vox_llh.nii', 'blmm_vox_sigma2.nii', 'blmm_vox_D.nii', 'blmm_vox_resms.nii',
+                     'blmm_vox_cov.nii', 'blmm_vox_conT_swedf.nii', 'blmm_vox_conT.nii', 'blmm_vox_conTlp.nii',
+                     'blmm_vox_conSE.nii', 'blmm_vox_con.nii', 'blmm_vox_conF.nii', 'blmm_vox_conF_swedf.nii',
+                     'blmm_vox_conFlp.nii', 'blmm_vox_conR2.nii']
+
 
     for file in files:
         if os.path.exists(os.path.join(OutDir, file)):
@@ -195,89 +212,93 @@ def main(*args):
 
         if inputs['diskMem']==1:
 
-            # PLAN
-            # IF MEM MASKS NOT ALREADY THERE, RUN THIS
+            # Check if this is the first run of the disk memory code
+            if not glob.glob(os.path.join(OutDir, 'blmm_vox_memmask*.nii')):
 
+
+                # --------------------------------------------------------------------------------
+                # Get q and v
+                # --------------------------------------------------------------------------------
+                # Random factor variables.
+                rfxmats = inputs['Z']
+
+                # Number of random effects
+                r = len(rfxmats)
+
+                # Number of random effects for each factor, q
+                nraneffs = []
+
+                # Number of levels for each factor, l
+                nlevels = []
+
+                for k in range(r):
+
+                    rfxdes = loadFile(rfxmats[k]['f' + str(k+1)]['design'])
+                    rfxfac = loadFile(rfxmats[k]['f' + str(k+1)]['factor'])
+
+                    nraneffs = nraneffs + [rfxdes.shape[1]]
+                    nlevels = nlevels + [len(np.unique(rfxfac))]
+
+                # Get number of random effects
+                nraneffs = np.array(nraneffs)
+                nlevels = np.array(nlevels)
+                q = np.sum(nraneffs*nlevels)
+
+                # Get v
+                NIFTIsize = Y0.shape
+                v = int(np.prod(NIFTIsize))
+
+                # --------------------------------------------------------------------------------
+                # Read Mask 
+                # --------------------------------------------------------------------------------
+                if 'analysis_mask' in inputs:
+
+                    amask_path = inputs["analysis_mask"]
+                    
+                    # Read in the mask nifti.
+                    amask = loadFile(amask_path).get_data().reshape([v,1])
+
+                else:
+
+                    # By default make amask ones
+                    amask = np.ones([v,1])
+
+                # Get indices for whole analysis mask. 
+                amInds = get_amInds(amask)
+
+                # ------------------------------------------------------------------------
+                # Split the voxels into computable groups
+                # ------------------------------------------------------------------------
+
+                # Work out the number of voxels we can actually save at a time (rough
+                # guess).
+                nvs = MAXMEM/(1000*q)
+
+                # Work out number of groups we have to split indices into.
+                nvg = int(len(amInds)//nvs+1)
+
+                # Split voxels we want to look at into groups we can compute
+                voxelGroups = np.array_split(amInds, nvg)
+
+                # Loop through list of voxel indices, saving each group of voxels, in
+                # turn.
+                for cv in range(nvg):
+
+                    # Save the masks for each block
+                    addBlockToNifti(os.path.join(OutDir, 'blmm_vox_memmask'+str(cv+1)+'.nii'), np.ones(len(voxelGroups[cv])), voxelGroups[cv],volInd=0,dim=NIFTIsize,aff=Y0.affine,hdr=Y0.header)
 
             # --------------------------------------------------------------------------------
-            # Get q and v
+            # Set the analysis mask to the first one that comes up with ls, run that and then
+            # delete it during cleanup ready for the next run.
             # --------------------------------------------------------------------------------
-            # Random factor variables.
-            rfxmats = inputs['Z']
 
-            # Number of random effects
-            r = len(rfxmats)
+            # Get the analysis masks
+            memmaskFiles = glob.glob(os.path.join(OutDir, 'blmm_vox_memmask*.nii'))
 
-            # Number of random effects for each factor, q
-            nraneffs = []
-
-            # Number of levels for each factor, l
-            nlevels = []
-
-            for k in range(r):
-
-                rfxdes = loadFile(rfxmats[k]['f' + str(k+1)]['design'])
-                rfxfac = loadFile(rfxmats[k]['f' + str(k+1)]['factor'])
-
-                nraneffs = nraneffs + [rfxdes.shape[1]]
-                nlevels = nlevels + [len(np.unique(rfxfac))]
-
-            # Get number of random effects
-            nraneffs = np.array(nraneffs)
-            nlevels = np.array(nlevels)
-            q = np.sum(nraneffs*nlevels)
-
-            # Get v
-            NIFTIsize = Y0.shape
-            v = int(np.prod(NIFTIsize))
-
-            # --------------------------------------------------------------------------------
-            # Read Mask 
-            # --------------------------------------------------------------------------------
-            if 'analysis_mask' in inputs:
-
-                amask_path = inputs["analysis_mask"]
-                
-                # Read in the mask nifti.
-                amask = loadFile(amask_path).get_data().reshape([v,1])
-
-            else:
-
-                # By default make amask ones
-                amask = np.ones([v,1])
-
-            # Get indices for whole analysis mask. 
-            amInds = get_amInds(amask)
-
-            # ------------------------------------------------------------------------
-            # Split the voxels into computable groups
-            # ------------------------------------------------------------------------
-
-            # Work out the number of voxels we can actually save at a time (rough
-            # guess).
-            nvs = MAXMEM/(1000*q)
-
-            # Work out number of groups we have to split indices into.
-            nvg = int(len(amInds)//nvs+1)
-
-            # Split voxels we want to look at into groups we can compute
-            voxelGroups = np.array_split(amInds, nvg)
-
-            # Loop through list of voxel indices, saving each group of voxels, in
-            # turn.
-            for cv in range(nvg):
-
-                # Save the masks for each block
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_memmask'+str(cv+1)+'.nii'), np.ones(len(voxelGroups[cv])), voxelGroups[cv],volInd=0,dim=NIFTIsize,aff=Y0.affine,hdr=Y0.header)
-                      
-            # Change analysis mask in inputs to the first blmm_vox_memmask 
-            inputs['analysis_mask'] = os.path.join(OutDir, 'blmm_vox_memmask'+str(1)+'.nii')
+            # Set the analysis mask for this analysis 
+            inputs['analysis_mask'] = memmaskFiles[0]
             with open(ipath, 'w') as outfile:
                 yaml.dump(inputs, outfile, default_flow_style=False)
-
-            # ELSE SET ANALYSIS MASK TO FIRST ONE THAT COMES UP WITH LS, RUN THAT AND THEN DELETE DURING CLEANUP
-
-            # NEED TO MOVE ALL CODE THAT USES ANALYSIS MASKS PAST HERE:
 
     # If in voxel batching mode, save the number of voxel batches we need
     if 'voxelBatching' in inputs:

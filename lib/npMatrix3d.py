@@ -828,9 +828,19 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
   t1 = time.time()
   # Work out T_ku*sigma
-  TuSig = Zte[:,Ik,:] - (ZtZ[:,Ik,:] @ (DinvIplusZtZD @ Zte))
+  if r == 1 and nraneffs[0]==1:
+    TuSig = Zte - np.einsum('ijj,ijj,ijk->ijk', ZtZ, DinvIplusZtZDk, Zte)
+  else:
+    TuSig = Zte[:,Ik,:] - (ZtZ[:,Ik,:] @ (DinvIplusZtZD @ Zte))
   t2 = time.time()
   print('TuSig time: ', t2-t1)
+
+  t1 = time.time()
+  TuSig2 = Zte[:,Ik,:] - (ZtZ[:,Ik,:] @ (DinvIplusZtZD @ Zte))
+  t2 = time.time()
+  print('TuSig old time: ', t2-t1)
+
+  print('Tusig check: ', np.allclose(TuSig, TuSig2))
 
   t1 = time.time()
   # Obtain Sum Tu(Tu)'
@@ -1187,16 +1197,32 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
     l0 = nlevels[0]
     q0 = nraneffs[0]
 
+    # Get diagonal values of R and reshape them
+    DiagVals = Rk1Rk2diag.reshape(v, q0, l0)
+
+    # Get Kron of the diagonal values and sum lk out
+    kronDiagSum = np.sum(kron3D(DiagVals,DiagVals),axis=2)
+
+    # Make zero array to hold result
+    RkSum2 = np.zeros((v, q0**2, q0**2))
+
+    # Add result in
+    np.einsum('ijj->ij', RkSum2)[...] = kronDiagSum
+
+    t2 = time.time()
+    print('Rk1 time: ', t2-t1)
+
+    t1 = time.time()
     # Put values back into a matrix
     Rk1k2 = np.zeros((v,q0*l0,q0*l0))
     np.einsum('ijj->ij', Rk1k2)[...] = Rk1Rk2diag
+    t2 = time.time()
+    print('Rk1k2 old time: ', t2-t1)
 
   else:
 
     Rk1k2 = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ik1,Ik2)] - (ZtZ[:,Ik1,:] @ DinvIplusZtZD @ ZtZ[:,:,Ik2])
   
-  t2 = time.time()
-  print('Rk1 time: ', t2-t1)
 
   # Work out block sizes
   p = np.array([nraneffs[k1],nraneffs[k2]])
@@ -1206,6 +1232,7 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
   RkRSum,perm=sumAijKronBij3D(Rk1k2, Rk1k2, p, perm)
   t2 = time.time()
   print('RkSum time: ', t2-t1)
+  print('RkSum check: ', np.allclose(RkSum, RkSum2))
 
   t1 = time.time()
   # Multiply by duplication matrices and save
