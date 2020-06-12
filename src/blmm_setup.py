@@ -142,6 +142,10 @@ def main(*args):
                      'blmm_vox_conSE.nii', 'blmm_vox_con.nii', 'blmm_vox_conF.nii', 'blmm_vox_conF_swedf.nii',
                      'blmm_vox_conFlp.nii', 'blmm_vox_conR2.nii']
 
+        else:
+
+            files = []
+
 
     for file in files:
         if os.path.exists(os.path.join(OutDir, file)):
