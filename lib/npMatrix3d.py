@@ -1208,7 +1208,7 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
     t3 = time.time()-t1
 
     # Get diagonal values of R and reshape them
-    DiagVals = Rk1Rk2diag.transpose().reshape(v, q0, l0)
+    DiagVals = Rk1Rk2diag.reshape(v, l0, q0).transpose((0,2,1))
 
     # Get Kron of the diagonal values and sum lk out
     kronDiagSum = np.sum(kron3D(DiagVals,DiagVals),axis=2)
