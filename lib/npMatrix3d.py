@@ -2166,6 +2166,47 @@ def get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
     # Add to dS2
     dS2[:,0:1] = dS2dsigma2.reshape(dS2[:,0:1].shape)
 
+
+    # Work out T_ku*sigma
+    if r == 1 and nraneffs[0]==1:
+
+      # sum f( ZkjX - ZkjZ D(I+Z'ZD)^(-1) ZtX )
+      # = sum f( ZtX_(j,:) - (Z'ZD(I+Z'ZD)^(-1))_jj ZtX_(j,:)
+      # =  f( ZtX.sum(axis=1)
+
+      # for each level, get (1-(Z'ZD(I+Z'ZD)^(-1))_jj) times ZtX_(j,:)
+
+
+      # ZkjtiVX @ np.linalg.pinv(XtiVX) @ L.transpose() = 
+      # ZkjtX np.linalg.pinv(XtiVX) @ L.transpose() - ZkjtZ @ DinvIplusZtZD @ ZtX @ np.linalg.pinv(XtiVX) @ L.transpose() 
+      #
+      # ZkjtZ @ DinvIplusZtZD @ ZtX @ np.linalg.pinv(XtiVX) @ L.transpose() = diag(Z'ZD(I+Z'ZD)^(-1))*ZtX(X'V^(-1)X)^(-1)L'
+      #
+      # ZkjtX np.linalg.pinv(XtiVX) @ L.transpose()
+
+
+
+      # Obtain ZtX(XtiVX)^(-1)L'
+      ZtXinvXtiVXLt = ZtX @ np.linalg.pinv(XtiVX) @ L.transpose()
+
+
+      # Get the diagonal of Z'Z and DinvIplusZ'ZD
+      ZtZdiag = np.einsum('ijj->ij', ZtZ)
+      DinvIplusZtZDdiag = np.einsum('ijj->ij', DinvIplusZtZD)
+
+      # Obtain diag(Z'ZD(I+Z'ZD)^(-1))
+      DiagVals = DinvIplusZtZDdiag*ZtZdiag
+
+      # Obtain diag(Z'ZD(I+Z'ZD)^(-1))*ZtX(X'V^(-1)X)^(-1)L'
+      DiagDot = DiagVals.reshape(ZtXinvXtiVXLt.shape)*ZtXinvXtiVXLt
+
+      # Get the squared elements of Z'X(X'V^(-1)X)^(-1)L'. These are the terms in the
+      # sum of the kronecker product.
+      kronTerms = (ZtXinvXtiVXLt - DiagDot)**2
+
+      # Get the derivative by summing the kronecker product terms
+      dS22 = np.sum(kronTerms, axis=1) 
+
     # Now we need to work out ds2dVech(Dk)
     for k in np.arange(len(nraneffs)):
 
@@ -2198,6 +2239,9 @@ def get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
 
         # Add to dS2
         dS2[:,DerivInds[k]:DerivInds[k+1]] = dS2dvechDk.reshape(dS2[:,DerivInds[k]:DerivInds[k+1]].shape)
+
+    print('deriv check')
+    print(np.allclose(dS2, dS22))
 
     return(dS2)
 
