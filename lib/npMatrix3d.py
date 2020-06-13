@@ -3,6 +3,7 @@ import scipy.sparse
 from scipy import stats
 from lib.npMatrix2d import faclev_indices2D, fac_indices2D, permOfIkKkI2D, dupMat2D
 from lib.fileio import loadFile
+import time
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
@@ -1014,6 +1015,8 @@ def get_covdldbeta3D(XtZ, XtX, ZtZ, DinvIplusZtZD, sigma2):
 # ============================================================================
 def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, vec=False, ZtZmat=None):
   
+  t1 = time.time()
+
   # Number of voxels
   v = DinvIplusZtZD.shape[0]
 
@@ -1061,7 +1064,10 @@ def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupM
     covdldDdldsigma2 = np.einsum('i,ijk->ijk', 1/(2*sigma2), dupMatTdict[k] @ mat2vec3D(RkSum))
   else:
     covdldDdldsigma2 = np.einsum('i,ijk->ijk', 1/(2*sigma2), mat2vec3D(RkSum))
-  
+
+  t2 = time.time()
+  print(t2-t1)
+
   return(covdldDdldsigma2, ZtZmat)
 
 
