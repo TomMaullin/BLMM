@@ -331,9 +331,12 @@ def main(ipath, vb):
             t2 = time.time()
             print(t2-t1)
 
+            t1 = time.time()
             # Run inference
             blmm_inference.main(inputs, nraneffs, nlevels, R_inds, beta_r, D_r, sigma2_r, n_sv_r, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r)       
-            
+            t2 = time.time()
+            print('Parameter estimation1: ' t2-t1)
+
         if v_i:
 
             # Transposed matrices
@@ -348,8 +351,11 @@ def main(ipath, vb):
             t2 = time.time()
             print(t2-t1)
 
+            t1 = time.time()
             # Run inference
             blmm_inference.main(inputs, nraneffs, nlevels, I_inds, beta_i, D_i, sigma2_i, n, XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i)
+            t2 = time.time()
+            print('Parameter estimation2: ' t2-t1)
 
     w.resetwarnings()
 
