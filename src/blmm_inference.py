@@ -206,13 +206,19 @@ def main(inputs, nraneffs, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX
             # Work out the dimension of the T-stat-related volumes
             dimT = (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],nt)
 
+            t1 = time.time()
             # Work out L\beta
             Lbeta = L @ beta
             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_con.nii'), Lbeta, inds,volInd=current_nt,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+            t2 = time.time()
+            print('LB time: ', t2-t1)
 
+            t1 = time.time()
             # Work out s.e.(L\beta)
             seLB = np.sqrt(get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs).reshape(v))
             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conSE.nii'), seLB, inds,volInd=current_nt,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+            t2 = time.time()
+            print('seLB time: ', t2-t1)
 
             t1 = time.time()
             # Calculate sattherwaite estimate of the degrees of freedom of this statistic
@@ -221,13 +227,19 @@ def main(inputs, nraneffs, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX
             t2 = time.time()
             print('sw time: ', t2-t1)
 
+            t1 = time.time()
             # Obtain and output T statistic
             Tc = get_T3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2, nraneffs).reshape(v)
             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT.nii'), Tc, inds,volInd=current_nt,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+            t2 = time.time()
+            print('T time: ', t2-t1)
 
+            t1 = time.time()
             # Obatin and output p-values
             pc = T2P3D(Tc,swdfc,minlog)
             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conTlp.nii'), pc, inds,volInd=current_nt,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+            t2 = time.time()
+            print('p time: ', t2-t1)
 
             # Record that we have seen another T contrast
             current_nt = current_nt + 1
