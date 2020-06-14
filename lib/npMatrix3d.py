@@ -2169,29 +2169,11 @@ def get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
     # Add to dS2
     dS2[:,0:1] = dS2dsigma2.reshape(dS2[:,0:1].shape)
 
-
     # Work out T_ku*sigma
     if r == 1 and nraneffs[0]==1:
 
-      # sum f( ZkjX - ZkjZ D(I+Z'ZD)^(-1) ZtX )
-      # = sum f( ZtX_(j,:) - (Z'ZD(I+Z'ZD)^(-1))_jj ZtX_(j,:)
-      # =  f( ZtX.sum(axis=1)
-
-      # for each level, get (1-(Z'ZD(I+Z'ZD)^(-1))_jj) times ZtX_(j,:)
-
-
-      # ZkjtiVX @ np.linalg.pinv(XtiVX) @ L.transpose() = 
-      # ZkjtX np.linalg.pinv(XtiVX) @ L.transpose() - ZkjtZ @ DinvIplusZtZD @ ZtX @ np.linalg.pinv(XtiVX) @ L.transpose() 
-      #
-      # ZkjtZ @ DinvIplusZtZD @ ZtX @ np.linalg.pinv(XtiVX) @ L.transpose() = diag(Z'ZD(I+Z'ZD)^(-1))*ZtX(X'V^(-1)X)^(-1)L'
-      #
-      # ZkjtX np.linalg.pinv(XtiVX) @ L.transpose()
-
-
-
       # Obtain ZtX(XtiVX)^(-1)L'
       ZtXinvXtiVXLt = ZtX @ (np.linalg.pinv(XtiVX) @ L.transpose())
-
 
       # Get the diagonal of Z'Z and DinvIplusZ'ZD
       ZtZdiag = np.einsum('ijj->ij', ZtZ)
@@ -2208,43 +2190,44 @@ def get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
       kronTerms = (ZtXinvXtiVXLt - DiagDot)**2
 
       # Get the derivative by summing the kronecker product terms
-      dS2dvechDk2 = np.einsum('i,ij->ij',sigma2, np.sum(kronTerms, axis=1)).reshape((v,1,1)) 
+      dS2dvechDk = np.einsum('i,ij->ij',sigma2, np.sum(kronTerms, axis=1)).reshape((v,1,1)) 
 
-    # Now we need to work out ds2dVech(Dk)
-    for k in np.arange(len(nraneffs)):
+      dS2[:,DerivInds[k]:DerivInds[k+1]] = dS2dvechDk.reshape(dS2[:,DerivInds[k]:DerivInds[k+1]].shape)
 
-        # Initialize an empty zeros matrix
-        dS2dvechDk = np.zeros((np.int32(nraneffs[k]*(nraneffs[k]+1)/2),1))#...
+    else:
 
-        for j in np.arange(nlevels[k]):
+      # Now we need to work out ds2dVech(Dk)
+      for k in np.arange(len(nraneffs)):
 
-            # Get the indices for this level and factor.
-            Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
-                    
-            # Work out Z_(k,j)'Z
-            ZkjtZ = ZtZ[:,Ikj,:]
+          # Initialize an empty zeros matrix
+          dS2dvechDk = np.zeros((np.int32(nraneffs[k]*(nraneffs[k]+1)/2),1))#...
 
-            # Work out Z_(k,j)'X
-            ZkjtX = ZtX[:,Ikj,:]
+          for j in np.arange(nlevels[k]):
 
-            # Work out Z_(k,j)'V^{-1}X
-            ZkjtiVX = ZkjtX - ZkjtZ @ DinvIplusZtZD @ ZtX
+              # Get the indices for this level and factor.
+              Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
+                      
+              # Work out Z_(k,j)'Z
+              ZkjtZ = ZtZ[:,Ikj,:]
 
-            # Work out the term to put into the kronecker product
-            # K = Z_(k,j)'V^{-1}X(X'V^{-1})^{-1}L'
-            K = ZkjtiVX @ np.linalg.pinv(XtiVX) @ L.transpose()
-            
-            # Sum terms
-            dS2dvechDk = dS2dvechDk + dupMat2D(nraneffs[k]).toarray().transpose() @ mat2vec3D(kron3D(K,K.transpose(0,2,1)))
+              # Work out Z_(k,j)'X
+              ZkjtX = ZtX[:,Ikj,:]
 
-        # Multiply by sigma^2
-        dS2dvechDk = np.einsum('i,ijk->ijk',sigma2,dS2dvechDk)
+              # Work out Z_(k,j)'V^{-1}X
+              ZkjtiVX = ZkjtX - ZkjtZ @ DinvIplusZtZD @ ZtX
 
-        # Add to dS2
-        dS2[:,DerivInds[k]:DerivInds[k+1]] = dS2dvechDk.reshape(dS2[:,DerivInds[k]:DerivInds[k+1]].shape)
+              # Work out the term to put into the kronecker product
+              # K = Z_(k,j)'V^{-1}X(X'V^{-1})^{-1}L'
+              K = ZkjtiVX @ np.linalg.pinv(XtiVX) @ L.transpose()
+              
+              # Sum terms
+              dS2dvechDk = dS2dvechDk + dupMat2D(nraneffs[k]).toarray().transpose() @ mat2vec3D(kron3D(K,K.transpose(0,2,1)))
 
-    print('deriv check')
-    print(np.allclose(dS2dvechDk, dS2dvechDk2))
+          # Multiply by sigma^2
+          dS2dvechDk = np.einsum('i,ijk->ijk',sigma2,dS2dvechDk)
+
+          # Add to dS2
+          dS2[:,DerivInds[k]:DerivInds[k+1]] = dS2dvechDk.reshape(dS2[:,DerivInds[k]:DerivInds[k+1]].shape)
 
     return(dS2)
 
