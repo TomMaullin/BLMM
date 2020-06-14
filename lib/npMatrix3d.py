@@ -2143,6 +2143,9 @@ def get_swdf_T3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs):
 # ============================================================================
 def get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
 
+    # Number of random effects, r
+    r = len(nraneffs)
+
     # ZtX
     ZtX = XtZ.transpose(0,2,1)
 
