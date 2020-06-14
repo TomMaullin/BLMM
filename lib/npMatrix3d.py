@@ -2082,7 +2082,7 @@ def get_swdf_F3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs):
 # - `df`: The spatially varying Sattherthwaithe degrees of freedom estimate.
 #
 # ============================================================================
-def get_swdf_T3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs): 
+def get_swdf_T3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nraneffs): 
 
     # Reshape sigma2 if necessary
     sigma2 = sigma2.reshape(sigma2.shape[0])
@@ -2094,9 +2094,6 @@ def get_swdf_T3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs):
         if np.prod(n.shape)>1:
     
             n = n.reshape(sigma2.shape)
-
-    # Get D(I+Z'ZD)^(-1)
-    DinvIplusZtZD = np.linalg.solve(np.eye(ZtZ.shape[1]) + D @ ZtZ, D)
 
     # Get S^2 (= Var(L\beta))
     S2 = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs)
