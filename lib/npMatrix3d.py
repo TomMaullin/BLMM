@@ -1667,7 +1667,10 @@ def get_resms3D(YtX, YtY, XtX, beta, n, p):
 # - `covB`: The covariance of the beta estimates.
 #
 # ============================================================================
-def get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2):
+def get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs):
+
+    # Number of random factors r
+    r = len(nraneffs)
 
     # Reshape n if necessary
     if isinstance(sigma2,np.ndarray):
@@ -1678,13 +1681,10 @@ def get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2):
             sigma2 = sigma2.reshape(sigma2.shape[0])
 
     # Work out X'V^{-1}X = X'X - X'ZD(I+Z'ZD)^{-1}Z'X
-    XtinvVX = XtX - XtZ @ DinvIplusZtZD @ XtZ.transpose((0,2,1))
-
-
-    XtinvVX2 = XtX - XtZ @ np.einsum('ijj,ikj->ijk', DinvIplusZtZD, XtZ)
-
-    print('XtinvVX2 check: ', np.allclose(XtinvVX, XtinvVX2))
-
+    if r == 1 and nraneffs[0]==1:
+        XtinvVX = XtX - XtZ @ np.einsum('ijj,ikj->ijk', DinvIplusZtZD, XtZ)
+    else:
+        XtinvVX = XtX - XtZ @ DinvIplusZtZD @ XtZ.transpose((0,2,1))
 
     # Work out var(LB) = L'(X'V^{-1}X)^{-1}L
     covB = np.linalg.pinv(XtinvVX)
@@ -1734,7 +1734,7 @@ def get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2):
             sigma2 = sigma2.reshape(sigma2.shape[0])
 
     # Work out var(LB) = L'(X'V^{-1}X)^{-1}L
-    varLB = L @ get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2) @ L.transpose()
+    varLB = L @ get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs) @ L.transpose()
 
     # Return result
     return(varLB)
@@ -2159,11 +2159,10 @@ def get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
     v = DinvIplusZtZD.shape[0]
 
     # Calculate X'V^{-1}X=X'(I+ZDZ')^{-1}X=X'X-X'Z(I+DZ'Z)^{-1}DZ'X
-    XtiVX = XtX - XtZ @  DinvIplusZtZD @ ZtX
-
-    XtiVX2 = XtX - XtZ @ np.einsum('ijj,ijk->ijk', DinvIplusZtZD, ZtX)
-
-    print('XtiVX2 check: ', np.allclose(XtiVX, XtiVX2))
+    if r == 1 and nraneffs[0]==1:
+        XtiVX = XtX - XtZ @ np.einsum('ijj,ijk->ijk', DinvIplusZtZD, ZtX)
+    else:
+        XtiVX = XtX - XtZ @  DinvIplusZtZD @ ZtX
 
     # New empty array for differentiating S^2 wrt (sigma2, vech(D1),...vech(Dr)).
     dS2 = np.zeros((v, 1+np.int32(np.sum(nraneffs*(nraneffs+1)/2)),1))
@@ -2202,7 +2201,8 @@ def get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
       # Get the derivative by summing the kronecker product terms
       dS2dvechDk = np.einsum('i,ij->ij',sigma2, np.sum(kronTerms, axis=1)).reshape((v,1,1)) 
 
-      dS2[:,DerivInds[k]:DerivInds[k+1]] = dS2dvechDk.reshape(dS2[:,DerivInds[k]:DerivInds[k+1]].shape)
+      # Add to dS2
+      dS2[:,DerivInds[0]:DerivInds[1]] = dS2dvechDk.reshape(dS2[:,DerivInds[0]:DerivInds[1]].shape)
 
     else:
 
