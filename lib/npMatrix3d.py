@@ -1723,7 +1723,7 @@ def get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs):
 # - `varLB`: The (usually scalar) variance of L\beta.
 #
 # ============================================================================
-def get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2):
+def get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs):
 
     # Reshape n if necessary
     if isinstance(sigma2,np.ndarray):
@@ -1814,7 +1814,7 @@ def get_R23D(L, F, df):
 # - `T`: A matrix of T statistics.
 #
 # ============================================================================
-def get_T3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2):
+def get_T3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2, nraneffs):
 
     # Work out the rank of L
     rL = np.linalg.matrix_rank(L)
@@ -1823,7 +1823,7 @@ def get_T3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2):
     LB = L @ beta
 
     # Work out se(T)
-    varLB = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
+    varLB = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs)
 
     # Work out T
     T = LB/np.sqrt(varLB)
@@ -1861,7 +1861,7 @@ def get_T3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2):
 # - `F`: A matrix of F statistics.
 #
 # ============================================================================
-def get_F3D(L, XtX, XtZ, DinvIplusZtZD, betahat, sigma2):
+def get_F3D(L, XtX, XtZ, DinvIplusZtZD, betahat, sigma2, nraneffs):
 
     # Work out the rank of L
     rL = np.linalg.matrix_rank(L)
@@ -1870,7 +1870,7 @@ def get_F3D(L, XtX, XtZ, DinvIplusZtZD, betahat, sigma2):
     LB = L @ betahat
 
     # Work out se(F)
-    varLB = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
+    varLB = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs)
 
     # Work out F
     F = LB.transpose(0,2,1) @ np.linalg.pinv(varLB) @ LB/rL
@@ -2099,7 +2099,7 @@ def get_swdf_T3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs):
     DinvIplusZtZD = np.linalg.solve(np.eye(ZtZ.shape[1]) + D @ ZtZ, D)
 
     # Get S^2 (= Var(L\beta))
-    S2 = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
+    S2 = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs)
     
     # Get derivative of S^2
     dS2 = get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2)
