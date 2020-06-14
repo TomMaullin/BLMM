@@ -7,6 +7,7 @@ import os
 np.set_printoptions(threshold=np.nan)
 from lib.npMatrix3d import *
 from lib.fileio import *
+import time
 
 
 # ====================================================================================
@@ -213,10 +214,12 @@ def main(inputs, nraneffs, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX
             seLB = np.sqrt(get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs).reshape(v))
             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conSE.nii'), seLB, inds,volInd=current_nt,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
-
+            t1 = time.time()
             # Calculate sattherwaite estimate of the degrees of freedom of this statistic
             swdfc = get_swdf_T3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs).reshape(v)
             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT_swedf.nii'), swdfc, inds,volInd=current_nt,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+            t2 = time.time()
+            print('sw time: ', t2-t1)
 
             # Obtain and output T statistic
             Tc = get_T3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2, nraneffs).reshape(v)
