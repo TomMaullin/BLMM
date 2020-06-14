@@ -2190,7 +2190,7 @@ def get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
 
 
       # Obtain ZtX(XtiVX)^(-1)L'
-      ZtXinvXtiVXLt = ZtX @ np.linalg.pinv(XtiVX) @ L.transpose()
+      ZtXinvXtiVXLt = ZtX @ (np.linalg.pinv(XtiVX) @ L.transpose())
 
 
       # Get the diagonal of Z'Z and DinvIplusZ'ZD
@@ -2208,7 +2208,7 @@ def get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
       kronTerms = (ZtXinvXtiVXLt - DiagDot)**2
 
       # Get the derivative by summing the kronecker product terms
-      dS22 = np.sum(kronTerms, axis=1) 
+      dS2dvechDk2 = np.einsum('i,ij->ij',sigma2, np.sum(kronTerms, axis=1)).reshape((v,1,1)) 
 
     # Now we need to work out ds2dVech(Dk)
     for k in np.arange(len(nraneffs)):
@@ -2244,7 +2244,7 @@ def get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
         dS2[:,DerivInds[k]:DerivInds[k+1]] = dS2dvechDk.reshape(dS2[:,DerivInds[k]:DerivInds[k+1]].shape)
 
     print('deriv check')
-    print(np.allclose(dS2, dS22))
+    print(np.allclose(dS2dvechDk, dS2dvechDk2))
 
     return(dS2)
 
