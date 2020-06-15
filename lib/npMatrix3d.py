@@ -342,6 +342,9 @@ def initSigma23D(ete, n):
 # ============================================================================
 def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict):
   
+  # Number of voxels v
+  v = Zte.shape[0]
+
   # Small check on sigma2
   if len(sigma2.shape) > 1:
 
