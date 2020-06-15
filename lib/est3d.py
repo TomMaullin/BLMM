@@ -1272,12 +1272,20 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
     # ------------------------------------------------------------------------------
     # Dictionary version
     Ddict = dict()
+    t1 = time.time()
     for k in np.arange(len(nraneffs)):
 
         Ddict[k] = makeDnnd3D(initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict))
     
-    # Full version of D
-    D = getDfromDict3D(Ddict, nraneffs, nlevels)
+    t2 = time.time()
+    print('Init Dk time: ', t2-t1)
+
+    # Full version of D (not needed in the 1 random effect 1 random factor case as there
+    # is only one unique element in D)
+    if r == 1 and nraneffs[0] == 1:
+        D = None
+    else:
+        D = getDfromDict3D(Ddict, nraneffs, nlevels)
     
     # ------------------------------------------------------------------------------
     # Index variables
@@ -1441,12 +1449,16 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             # Update D_k
             Ddict[k] = makeDnnd3D(vec2mat3D(mat2vec3D(Ddict[k]) + update_p))
 
-            # Add D_k back into D and recompute DinvIplusZtZD
-            for j in np.arange(nlevels[k]):
+            # Add D_k back into D and recompute DinvIplusZtZD (This isn't necessary for the
+            # one random effect, one random factor use case as D only contains one unique 
+            # element)
+            if not (r == 1 and nraneffs[0] == 1):
 
-                D[:, Dinds[counter]:Dinds[counter+1], Dinds[counter]:Dinds[counter+1]] = Ddict[k]
-                counter = counter + 1
-        
+                for j in np.arange(nlevels[k]):
+
+                    D[:, Dinds[counter]:Dinds[counter+1], Dinds[counter]:Dinds[counter+1]] = Ddict[k]
+                    counter = counter + 1
+            
         # --------------------------------------------------------------------------
         # Obtain D(I+Z'ZD)^(-1)
         # --------------------------------------------------------------------------
@@ -1544,7 +1556,11 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # --------------------------------------------------------------------------
         beta = beta[localnotconverged, :, :]
         sigma2 = sigma2[localnotconverged]
-        D = D[localnotconverged, :, :]
+
+        # We don't need this representation of D in the simple case of 1 random 
+        # factor, 1 random effect
+        if not (r == 1 and nraneffs[0] == 1):
+            D = D[localnotconverged, :, :]
 
         for k in np.arange(len(nraneffs)):
             Ddict[k] = Ddict[k][localnotconverged, :, :]
