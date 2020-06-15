@@ -177,9 +177,13 @@ def main(ipath, vb):
 
     # Work out the number of voxels we can actually compute at a time.
     # (This is really just a rule of thumb guess but works reasonably in
-    # practice)
-    nvb = MAXMEM/(10*8*(q**2))
-
+    # practice). We allow slightly more for the random intercept model since
+    # we do not construct any additional q by q matrices.
+    if nraneffs[0]==1 and r==1:
+        nvb = MAXMEM/(10*8*(q**1.5))
+    else:
+        nvb = MAXMEM/(10*8*(q**2))
+    
     # Work out number of groups we have to split iindices into.
     nvg = int(len(bamInds)//nvb+1)
 

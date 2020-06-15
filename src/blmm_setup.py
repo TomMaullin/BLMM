@@ -277,7 +277,7 @@ def main(*args):
 
                 # Work out the number of voxels we can actually save at a time (rough
                 # guess).
-                nvs = MAXMEM/(500*q)
+                nvs = MAXMEM/(150*q)
 
                 # Work out number of groups we have to split indices into.
                 nvg = int(len(amInds)//nvs+1)
