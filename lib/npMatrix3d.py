@@ -549,7 +549,7 @@ def llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D, Ddict, nlevels, nraneffs, r
   # If we have only one factor and one random effect computation can be
   # sped up a lot
   if r==1 and nraneffs[0]==1:
-    secondterm = -0.5*np.einsum('i,ijk->ijk',(1/sigma2).reshape(ete.shape[0]),(ete - forceSym3D(Zte.transpose((0,2,1)) @ np.einsum('ijj,ijk->ijk',DinvIplusZtZD, Zte)))).reshape(ete.shape[0])
+    secondterm = -0.5*np.einsum('i,ijk->ijk',(1/sigma2).reshape(ete.shape[0]),(ete - forceSym3D(Zte.transpose((0,2,1)) @ np.einsum('ij,ijk->ijk',DinvIplusZtZD, Zte)))).reshape(ete.shape[0])
   else:
     # Work out sigma^(-2)*(e'e - e'ZD(I+Z'ZD)^(-1)Z'e)
     secondterm = -0.5*np.einsum('i,ijk->ijk',(1/sigma2).reshape(ete.shape[0]),(ete - forceSym3D(Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte))).reshape(ete.shape[0])
@@ -615,12 +615,13 @@ def get_DinvIplusZtZD3D(Ddict, D, ZtZ, nlevels, nraneffs):
     # Work out Diag(Z'ZD)
     DiagZtZD = np.einsum('ijj->ij', ZtZ)*Ddict[0].reshape(v,1)
 
-    # Work out Diag(D(I+Z'ZD)^(-1))
-    DiaginvIplusZtZD = Ddict[0].reshape(v,1)/(1+DiagZtZD)
+    # Work out Diag(D(I+Z'ZD)^(-1)) (In the 1 factor 1 raneff mode we only
+    # need the diagonal elements)
+    DinvIplusZtZD = Ddict[0].reshape(v,1)/(1+DiagZtZD)
 
-    # Map back to DinvIpluZtZD
-    DinvIplusZtZD = np.zeros((v,q,q))
-    np.einsum('ijj->ij', DinvIplusZtZD)[...] = DiaginvIplusZtZD
+    # # Map back to DinvIpluZtZD
+    # DinvIplusZtZD = np.zeros((v,q,q))
+    # np.einsum('ijj->ij', DinvIplusZtZD)[...] = DiaginvIplusZtZD
 
   # TODO
   # ELIF: r=1, still block diagonal so can be spedup
@@ -830,7 +831,7 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
   # Work out T_ku*sigma
   if r == 1 and nraneffs[0]==1:
-    TuSig = Zte - np.einsum('ijj,ijj,ijk->ijk', ZtZ, DinvIplusZtZD, Zte)
+    TuSig = Zte - np.einsum('ijj,ij,ijk->ijk', ZtZ, DinvIplusZtZD, Zte)
   else:
     TuSig = Zte[:,Ik,:] - (ZtZ[:,Ik,:] @ (DinvIplusZtZD @ Zte))
 
@@ -1172,12 +1173,11 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
   # Work out R_(k1,k2) (in the one factor, one raneff setting we can speed this up a lot)
   if r == 1 and nraneffs[0] == 1:
 
-    # Get the diagonal of Z'Z and DinvIplusZ'ZD
+    # Get the diagonal of Z'Z (DinvIplusZ'ZD is already in diagonal form for the one factor model)
     ZtZdiag = np.einsum('ijj->ij', ZtZ)
-    DinvIplusZtZDdiag = np.einsum('ijj->ij', DinvIplusZtZD)
 
     # Rk1k2 diag
-    Rk1k2diag = ZtZdiag - DinvIplusZtZDdiag*ZtZdiag**2
+    Rk1k2diag = ZtZdiag - DinvIplusZtZD*ZtZdiag**2
 
     # lk and qk for the first factor (zero indexed)
     l0 = nlevels[0]
@@ -1514,13 +1514,13 @@ def sumAijBijt3D(A, B, pA, pB):
   # Return result
   return(S)
 
-def sumTTt_1factor3D(ZtZk, DinvIplusZtZDk, l0, q0):
+def sumTTt_1factor3D(ZtZ, DinvIplusZtZD, l0, q0):
 
   # Number of voxels, v
-  v = DinvIplusZtZDk.shape[0]
+  v = DinvIplusZtZD.shape[0]
 
   # Work out the diagonal values the matrix product Z'Z_(k)D_(k)(I+Z'Z_(k)D_(k))^(-1)Z'Z_(k)
-  DiagVals = np.einsum('ijj->ij', DinvIplusZtZDk)*np.einsum('ijj->ij', ZtZk)**2
+  DiagVals = DinvIplusZtZD*np.einsum('ijj->ij', ZtZ)**2
 
   # Reshape diag vals and sum apropriately
   DiagVals = np.sum(DiagVals.reshape(v,q0,l0),axis=2)
@@ -1682,7 +1682,7 @@ def get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs):
 
     # Work out X'V^{-1}X = X'X - X'ZD(I+Z'ZD)^{-1}Z'X
     if r == 1 and nraneffs[0]==1:
-        XtinvVX = XtX - XtZ @ np.einsum('ijj,ikj->ijk', DinvIplusZtZD, XtZ)
+        XtinvVX = XtX - XtZ @ np.einsum('ij,ikj->ijk', DinvIplusZtZD, XtZ)
     else:
         XtinvVX = XtX - XtZ @ DinvIplusZtZD @ XtZ.transpose((0,2,1))
 
@@ -2001,7 +2001,7 @@ def F2P3D(F, L, df_denom, minlog):
 # - `df`: The spatially varying Sattherthwaithe degrees of freedom estimate.
 #
 # ============================================================================
-def get_swdf_F3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs): 
+def get_swdf_F3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nraneffs): 
 
     # Reshape sigma2 if necessary
     sigma2 = sigma2.reshape(sigma2.shape[0])
@@ -2024,7 +2024,7 @@ def get_swdf_F3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs):
     for i in np.arange(rL):
 
         # Work out the swdf for each row of L
-        swdf_row = get_swdf_T3D(L[i:(i+1),:], D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs)
+        swdf_row = get_swdf_T3D(L[i:(i+1),:], D, sigma2, XtX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nraneffs)
 
         # Work out adjusted df = df/(df-2)
         swdf_adj = swdf_row/(swdf_row-2)
@@ -2157,7 +2157,7 @@ def get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
 
     # Calculate X'V^{-1}X=X'(I+ZDZ')^{-1}X=X'X-X'Z(I+DZ'Z)^{-1}DZ'X
     if r == 1 and nraneffs[0]==1:
-        XtiVX = XtX - XtZ @ np.einsum('ijj,ijk->ijk', DinvIplusZtZD, ZtX)
+        XtiVX = XtX - XtZ @ np.einsum('ij,ijk->ijk', DinvIplusZtZD, ZtX)
     else:
         XtiVX = XtX - XtZ @  DinvIplusZtZD @ ZtX
 
@@ -2181,12 +2181,11 @@ def get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
       # Obtain ZtX(XtiVX)^(-1)L'
       ZtXinvXtiVXLt = ZtX @ (np.linalg.pinv(XtiVX) @ L.transpose())
 
-      # Get the diagonal of Z'Z and DinvIplusZ'ZD
+      # Get the diagonal of Z'Z (DinvIplusZ'ZD is already diagonal)
       ZtZdiag = np.einsum('ijj->ij', ZtZ)
-      DinvIplusZtZDdiag = np.einsum('ijj->ij', DinvIplusZtZD)
 
       # Obtain diag(Z'ZD(I+Z'ZD)^(-1))
-      DiagVals = DinvIplusZtZDdiag*ZtZdiag
+      DiagVals = DinvIplusZtZD*ZtZdiag
 
       # Obtain diag(Z'ZD(I+Z'ZD)^(-1))*ZtX(X'V^(-1)X)^(-1)L'
       DiagDot = DiagVals.reshape(ZtXinvXtiVXLt.shape)*ZtXinvXtiVXLt

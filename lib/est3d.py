@@ -1371,7 +1371,7 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         if r == 1 and nraneffs[0] == 1:
 
             # Multiply by Z'X
-            DinvIplusZtZDZtX = np.einsum('ijj,ijk->ijk', DinvIplusZtZD, ZtX)
+            DinvIplusZtZDZtX = np.einsum('ij,ijk->ijk', DinvIplusZtZD, ZtX)
 
         else:
 
@@ -1398,9 +1398,9 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # using only the diagonal elements of DinvIplusZtZD 
         if r == 1 and nraneffs[0] == 1:
             if reml == False:
-                sigma2 = (1/n*(ete - Zte.transpose((0,2,1)) @ np.einsum('ijj,ijk->ijk',DinvIplusZtZD, Zte))).reshape(v_iter)
+                sigma2 = (1/n*(ete - Zte.transpose((0,2,1)) @ np.einsum('ij,ijk->ijk',DinvIplusZtZD, Zte))).reshape(v_iter)
             else:
-                sigma2 = (1/(n-p)*(ete - Zte.transpose((0,2,1)) @ np.einsum('ijj,ijk->ijk',DinvIplusZtZD, Zte))).reshape(v_iter)
+                sigma2 = (1/(n-p)*(ete - Zte.transpose((0,2,1)) @ np.einsum('ij,ijk->ijk',DinvIplusZtZD, Zte))).reshape(v_iter)
         else:
             if reml == False:
                 sigma2 = (1/n*(ete - Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte)).reshape(v_iter)
@@ -1530,7 +1530,7 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
                 if n.ndim == 3:
                     n = n[localnotconverged,:,:]
                 
-        DinvIplusZtZD = DinvIplusZtZD[localnotconverged, :, :]
+        DinvIplusZtZD = DinvIplusZtZD[localnotconverged, :]
 
         # --------------------------------------------------------------------------
         # Update step size and log likelihoods
