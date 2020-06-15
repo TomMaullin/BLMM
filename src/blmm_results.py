@@ -180,7 +180,7 @@ def main(ipath, vb):
     # practice). We allow slightly more for the random intercept model since
     # we do not construct any additional q by q matrices.
     if nraneffs[0]==1 and r==1:
-        nvb = MAXMEM/(10*8*(q**1.5))
+        nvb = MAXMEM/(10*(q**2))
     else:
         nvb = MAXMEM/(10*8*(q**2))
     
