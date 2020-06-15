@@ -350,87 +350,81 @@ def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict):
 
     sigma2 = sigma2.reshape(sigma2.shape[0])
 
-  t1 = time.time()
-  # Initalize D to zeros
-  invSig2ZteetZminusZtZ = np.zeros((Zte.shape[0],nraneffs[k],nraneffs[k]))
-
-  # First we work out the derivative we require.
-  for j in np.arange(nlevels[k]):
+  # If we have only one factor and one random effect computation can be
+  # sped up a lot
+  if r==1 and nraneffs[0]==1:
     
-    Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
+    # Get the diagonal of Z'Z
+    diagZtZ = np.einsum('ijj->ij', ZtZ)
 
-    # Work out Z_(k, j)'Z_(k, j)
-    ZkjtZkj = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ikj,Ikj)]
+    # Work out block size
+    qk = nraneffs[k]
+    p = np.array([qk,1])
 
-    # Work out Z_(k,j)'e
-    Zkjte = Zte[:, Ikj,:]
+    # Work out Z'ee'Z/sigma^2 - Z'Z
+    invSig2ZteetZminusZtZ = np.einsum('i,ijk->ijk',1/sigma2,sumAijBijt3D(Zte, Zte, p, p)) - np.sum(diagZtZ,axis=1).reshape(ZtZ.shape[0],1,1)
+    
+  else:
 
-    if j==0:
+    # Initalize D to zeros
+    invSig2ZteetZminusZtZ = np.zeros((Zte.shape[0],nraneffs[k],nraneffs[k]))
+
+    # First we work out the derivative we require.
+    for j in np.arange(nlevels[k]):
       
-      # Add first \sigma^{-2}Z'ee'Z - Z_(k,j)'Z_(k,j)
-      invSig2ZteetZminusZtZ = np.einsum('i,ijk->ijk',1/sigma2,(Zkjte @ Zkjte.transpose(0,2,1))) - ZkjtZkj
-      
-    else:
-      
-      # Add next \sigma^{-2}Z'ee'Z - Z_(k,j)'Z_(k,j)
-      invSig2ZteetZminusZtZ = invSig2ZteetZminusZtZ + np.einsum('i,ijk->ijk',1/sigma2,(Zkjte @ Zkjte.transpose(0,2,1))) - ZkjtZkj
-  t2 = time.time()
-  print('old time: ', t2-t1)
-
-  t1 = time.time()
-  # Get the diagonal of Z'Z
-  diagZtZ = np.einsum('ijj->ij', ZtZ)
-
-  # Work out block size
-  qk = nraneffs[k]
-  p = np.array([qk,1])
-
-  # Work out Z'ee'Z/sigma^2 - Z'Z
-  invSig2ZteetZminusZtZ2 = np.einsum('i,ijk->ijk',1/sigma2,sumAijBijt3D(Zte, Zte, p, p)) - np.sum(diagZtZ,axis=1).reshape(ZtZ.shape[0],1,1)
-  t2 = time.time()
-  print('new time: ', t2-t1)
-
-  print('invSig2ZteetZminusZtZ check: ', np.allclose(invSig2ZteetZminusZtZ, invSig2ZteetZminusZtZ2))
-
-  t1 = time.time()
-  # Second we need to work out the double sum of Z_(k,i)'Z_(k,j)
-  for j in np.arange(nlevels[k]):
-
-    for i in np.arange(nlevels[k]):
-      
-      Iki = faclev_indices2D(k, i, nlevels, nraneffs)
       Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
 
       # Work out Z_(k, j)'Z_(k, j)
-      ZkitZkj = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Iki,Ikj)]
-      
-      if j==0 and i==0:
+      ZkjtZkj = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ikj,Ikj)]
+
+      # Work out Z_(k,j)'e
+      Zkjte = Zte[:, Ikj,:]
+
+      if j==0:
         
-        # Add first Z_(k,j)'Z_(k,j) kron Z_(k,j)'Z_(k,j)
-        ZtZkronZtZ = kron3D(ZkitZkj,ZkitZkj.transpose(0,2,1))
-     
+        # Add first \sigma^{-2}Z'ee'Z - Z_(k,j)'Z_(k,j)
+        invSig2ZteetZminusZtZ = np.einsum('i,ijk->ijk',1/sigma2,(Zkjte @ Zkjte.transpose(0,2,1))) - ZkjtZkj
+        
       else:
         
-        # Add next Z_(k,j)'Z_(k,j) kron Z_(k,j)'Z_(k,j)
-        ZtZkronZtZ = ZtZkronZtZ + kron3D(ZkitZkj,ZkitZkj.transpose(0,2,1))
+        # Add next \sigma^{-2}Z'ee'Z - Z_(k,j)'Z_(k,j)
+        invSig2ZteetZminusZtZ = invSig2ZteetZminusZtZ + np.einsum('i,ijk->ijk',1/sigma2,(Zkjte @ Zkjte.transpose(0,2,1))) - ZkjtZkj
 
-  # Work out information matrix
-  infoMat = dupMatTdict[k] @ ZtZkronZtZ @ dupMatTdict[k].transpose()
-  t2 = time.time()
-  print('old time (kron): ', t2-t1)
+  # Again, if we have only one factor and one random effect computation can 
+  # be sped up a lot
+  if r==1 and nraneffs[0]==1:
 
-  t1 = time.time()
-  ZtZkronZtZ2 = np.sum(diagZtZ**2,axis=1).reshape((ZtZ.shape[0],1,1))
-  t2 = time.time()
-  print('new time (kron): ', t2-t1)
+    # Information matrix for initial estimate
+    infoMat = np.sum(diagZtZ**2,axis=1).reshape((ZtZ.shape[0],1,1))
 
-  print('kron check: ', np.allclose(ZtZkronZtZ, ZtZkronZtZ2))
+  else:
 
-  raise ValueError('Test error')
+    # Second we need to work out the double sum of Z_(k,i)'Z_(k,j)
+    for j in np.arange(nlevels[k]):
+
+      for i in np.arange(nlevels[k]):
+        
+        Iki = faclev_indices2D(k, i, nlevels, nraneffs)
+        Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
+
+        # Work out Z_(k, j)'Z_(k, j)
+        ZkitZkj = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Iki,Ikj)]
+        
+        if j==0 and i==0:
+          
+          # Add first Z_(k,j)'Z_(k,j) kron Z_(k,j)'Z_(k,j)
+          ZtZkronZtZ = kron3D(ZkitZkj,ZkitZkj.transpose(0,2,1))
+       
+        else:
+          
+          # Add next Z_(k,j)'Z_(k,j) kron Z_(k,j)'Z_(k,j)
+          ZtZkronZtZ = ZtZkronZtZ + kron3D(ZkitZkj,ZkitZkj.transpose(0,2,1))
+
+    # Work out information matrix
+    infoMat = dupMatTdict[k] @ ZtZkronZtZ @ dupMatTdict[k].transpose()
 
   # Work out the final term.
   Dkest = vech2mat3D(np.linalg.solve(infoMat, dupMatTdict[k] @ mat2vec3D(invSig2ZteetZminusZtZ)))
-  
   
   return(Dkest)
 
