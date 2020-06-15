@@ -347,6 +347,7 @@ def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict):
 
     sigma2 = sigma2.reshape(sigma2.shape[0])
 
+  t1 = time.time()
   # Initalize D to zeros
   invSig2ZteetZminusZtZ = np.zeros((Zte.shape[0],nraneffs[k],nraneffs[k]))
 
@@ -370,8 +371,26 @@ def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict):
       
       # Add next \sigma^{-2}Z'ee'Z - Z_(k,j)'Z_(k,j)
       invSig2ZteetZminusZtZ = invSig2ZteetZminusZtZ + np.einsum('i,ijk->ijk',1/sigma2,(Zkjte @ Zkjte.transpose(0,2,1))) - ZkjtZkj
+  t2 = time.time()
+  print('old time: ', t2-t1)
 
-  # Second we need to work out the double sum of Z_(k,j)'Z_(k,j)
+  t1 = time.time()
+  # Get the diagonal of Z'Z
+  diagZtZ = np.einsum('ijj->ij', ZtZ)
+
+  # Work out block size
+  qk = nraneffs[k]
+  p = np.array([qk,1])
+
+  # Work out Z'ee'Z/sigma^2 - Z'Z
+  invSig2ZteetZminusZtZ2 = np.einsum('i,ijk->ijk',1/sigma2,sumAijBijt3D(Zte, Zte, p, p)) - np.sum(diagZtZ,axis=1).reshape(v,1,1)
+  t2 = time.time()
+  print('new time: ', t2-t1)
+
+  print('invSig2ZteetZminusZtZ check: ', np.allclose(invSig2ZteetZminusZtZ, invSig2ZteetZminusZtZ2))
+
+  t1 = time.time()
+  # Second we need to work out the double sum of Z_(k,i)'Z_(k,j)
   for j in np.arange(nlevels[k]):
 
     for i in np.arange(nlevels[k]):
@@ -394,6 +413,17 @@ def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict):
 
   # Work out information matrix
   infoMat = dupMatTdict[k] @ ZtZkronZtZ @ dupMatTdict[k].transpose()
+  t2 = time.time()
+  print('old time (kron): ', t2-t1)
+
+  t1 = time.time()
+  ZtZkronZtZ2 = np.sum(diagZtZ**2,axis=1).reshape((v,1,1))
+  t2 = time.time()
+  print('new time (kron): ', t2-t1)
+
+  print('kron check: ', np.allclose(ZtZkronZtZ, ZtZkronZtZ2))
+
+  raise ValueError('Test error')
 
   # Work out the final term.
   Dkest = vech2mat3D(np.linalg.solve(infoMat, dupMatTdict[k] @ mat2vec3D(invSig2ZteetZminusZtZ)))
