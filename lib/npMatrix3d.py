@@ -386,7 +386,7 @@ def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict):
   p = np.array([qk,1])
 
   # Work out Z'ee'Z/sigma^2 - Z'Z
-  invSig2ZteetZminusZtZ2 = np.einsum('i,ijk->ijk',1/sigma2,sumAijBijt3D(Zte, Zte, p, p)) - np.sum(diagZtZ,axis=1).reshape(v,1,1)
+  invSig2ZteetZminusZtZ2 = np.einsum('i,ijk->ijk',1/sigma2,sumAijBijt3D(Zte, Zte, p, p)) - np.sum(diagZtZ,axis=1).reshape(ZtZ.shape[0],1,1)
   t2 = time.time()
   print('new time: ', t2-t1)
 
@@ -420,7 +420,7 @@ def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict):
   print('old time (kron): ', t2-t1)
 
   t1 = time.time()
-  ZtZkronZtZ2 = np.sum(diagZtZ**2,axis=1).reshape((v,1,1))
+  ZtZkronZtZ2 = np.sum(diagZtZ**2,axis=1).reshape((ZtZ.shape[0],1,1))
   t2 = time.time()
   print('new time (kron): ', t2-t1)
 
