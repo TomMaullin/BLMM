@@ -826,7 +826,7 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
   if r == 1 and nraneffs[0]==1:
     
     # We assume ZtZ is already diagonal
-    ZtZmat = np.sum(ZtZ,axis=1).reshape((v,1,1))
+    ZtZmat = np.sum(ZtZ,axis=1).reshape((ZtZ.shape[0],1,1))
 
   else:
 
@@ -1066,7 +1066,7 @@ def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupM
   if r == 1 and nraneffs[0]==1:
     
     # We assume ZtZ is already diagonal
-    ZtZmat = np.sum(ZtZ,axis=1).reshape((v,1,1))
+    ZtZmat = np.sum(ZtZ,axis=1).reshape((ZtZ.shape[0],1,1))
 
   else:
 
