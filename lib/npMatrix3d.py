@@ -820,7 +820,7 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
   q = ZtZ.shape[1]
 
   # Number of random factors r
-  r = len(raneffs)
+  r = len(nraneffs)
 
   # We only need calculate this once across all iterations
   if r == 1 and nraneffs[0]==1:
@@ -1060,7 +1060,7 @@ def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupM
   v = DinvIplusZtZD.shape[0]
 
   # Number of random factors r
-  r = len(raneffs)
+  r = len(nraneffs)
 
   # We only need calculate this once across all iterations
   if r == 1 and nraneffs[0]==1:
