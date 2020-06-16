@@ -289,6 +289,10 @@ def main(ipath, vb):
                 ZtX_r = ZtX_r[fullrank_inds,:,:]
                 ZtY_r = ZtY_r[fullrank_inds,:,:]
                 ZtZ_r = ZtZ_r[fullrank_inds,:,:]
+
+                # MARKER
+                if r == 1 and nraneffs[0]==1:
+                    ZtZ_r = np.einsum('ijj->ij', ZtZ_r)
             
                 # Recalculate number of voxels left in ring
                 v_r = R_inds.shape[0]
@@ -299,6 +303,13 @@ def main(ipath, vb):
             t1 = time.time()
             # Inner Z'Z. Z'X, X'X
             ZtZ_i = readAndSumUniqueAtB('ZtZ', OutDir, I_inds, n_b, False).reshape([1, q, q])
+
+            # MARKER
+            if r == 1 and nraneffs[0]==1:
+                ZtZ_i = np.einsum('ijj->ij', ZtZ_i)
+    
+
+
             ZtX_i = readAndSumUniqueAtB('ZtX', OutDir, I_inds, n_b, False).reshape([1, q, p])
             XtX_i = readAndSumUniqueAtB('XtX', OutDir, I_inds, n_b, False).reshape([1, p, p])
             t2 = time.time()

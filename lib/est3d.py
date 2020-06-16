@@ -1520,9 +1520,16 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
 
             XtX = XtX[localnotconverged, :, :]
             ZtX = ZtX[localnotconverged, :, :]
-            ZtZ = ZtZ[localnotconverged, :, :]
             XtZ = XtZ[localnotconverged, :, :]
                 
+            # In the one factor, one random effect case we only have the diagonal 
+            # Z'Z elements because Z'Z is diagonal in this use case.
+            if r==1 and nraneffs[0]==1:
+                ZtZ = ZtZ[localnotconverged, :]
+            else:
+                ZtZ = ZtZ[localnotconverged, :, :]
+
+
             # ----------------------------------------------------------------------
             # Update ZtZmat
             # ----------------------------------------------------------------------

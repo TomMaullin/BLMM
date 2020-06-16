@@ -356,16 +356,13 @@ def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict):
   # If we have only one factor and one random effect computation can be
   # sped up a lot
   if r==1 and nraneffs[0]==1:
-    
-    # Get the diagonal of Z'Z
-    diagZtZ = np.einsum('ijj->ij', ZtZ)
 
     # Work out block size
     qk = nraneffs[k]
     p = np.array([qk,1])
 
     # Work out Z'ee'Z/sigma^2 - Z'Z
-    invSig2ZteetZminusZtZ = np.einsum('i,ijk->ijk',1/sigma2,sumAijBijt3D(Zte, Zte, p, p)) - np.sum(diagZtZ,axis=1).reshape(ZtZ.shape[0],1,1)
+    invSig2ZteetZminusZtZ = np.einsum('i,ijk->ijk',1/sigma2,sumAijBijt3D(Zte, Zte, p, p)) - np.sum(ZtZ,axis=1).reshape(ZtZ.shape[0],1,1)
     
   else:
 
@@ -398,7 +395,7 @@ def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict):
   if r==1 and nraneffs[0]==1:
 
     # Information matrix for initial estimate
-    infoMat = np.sum(diagZtZ**2,axis=1).reshape((ZtZ.shape[0],1,1))
+    infoMat = np.sum(ZtZ**2,axis=1).reshape((ZtZ.shape[0],1,1))
 
   else:
 
@@ -550,8 +547,9 @@ def llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D, Ddict, nlevels, nraneffs, r
   # sped up a lot
   if r==1 and nraneffs[0]==1:
     
-    # Work out the diagonal entries of I+Z'ZD
-    DiagIplusZtZD = 1 + np.einsum('ijj->ij', ZtZ)*Ddict[0].reshape(v,1)
+    # Work out the diagonal entries of I+Z'ZD (we assume ZtZ is already just the
+    # diagonal elements in this use case)
+    DiagIplusZtZD = 1 + ZtZ*Ddict[0].reshape(v,1)
 
     # Get the log of them
     logDiagIplusZtZD = np.log(DiagIplusZtZD)
@@ -642,8 +640,8 @@ def get_DinvIplusZtZD3D(Ddict, D, ZtZ, nlevels, nraneffs):
     # In this case Z'Z and D are diagonal so we can
     # do 1/(I+Z'ZD)_ii to get the inverses.
 
-    # Work out Diag(Z'ZD)
-    DiagZtZD = np.einsum('ijj->ij', ZtZ)*Ddict[0].reshape(v,1)
+    # Work out Diag(Z'ZD) (We assume ZtZ is already diagonal here)
+    DiagZtZD = ZtZ*Ddict[0].reshape(v,1)
 
     # Work out Diag(D(I+Z'ZD)^(-1)) (In the 1 factor 1 raneff mode we only
     # need the diagonal elements)
@@ -822,21 +820,28 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
   q = ZtZ.shape[1]
 
   # We only need calculate this once across all iterations
-  if ZtZmat is None:
+  if r == 1 and nraneffs[0]==1:
+    
+    # We assume ZtZ is already diagonal
+    ZtZmat = np.sum(ZtZ,axis=1).reshape((v,1,1))
 
-    # Instantiate to zeros
-    ZtZmat = np.zeros((ZtZ.shape[0],nraneffs[k],nraneffs[k]))
+  else:
 
-    for j in np.arange(nlevels[k]):
+    if ZtZmat is None:
 
-      # Get the indices for the kth factor jth level
-      Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
+      # Instantiate to zeros
+      ZtZmat = np.zeros((ZtZ.shape[0],nraneffs[k],nraneffs[k]))
 
-      # Work out Z_(k,j)'Z_(k,j)
-      ZtZterm = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ikj,Ikj)]
+      for j in np.arange(nlevels[k]):
 
-      # Add together
-      ZtZmat = ZtZmat + ZtZterm
+        # Get the indices for the kth factor jth level
+        Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
+
+        # Work out Z_(k,j)'Z_(k,j)
+        ZtZterm = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ikj,Ikj)]
+
+        # Add together
+        ZtZmat = ZtZmat + ZtZterm
 
   # Get the indices for the factors 
   Ik = fac_indices2D(k, nlevels, nraneffs)
@@ -861,7 +866,7 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
   # Work out T_ku*sigma
   if r == 1 and nraneffs[0]==1:
-    TuSig = Zte - np.einsum('ijj,ij,ijk->ijk', ZtZ, DinvIplusZtZD, Zte)
+    TuSig = Zte - np.einsum('ij,ij,ijk->ijk', ZtZ, DinvIplusZtZD, Zte)
   else:
     TuSig = Zte[:,Ik,:] - (ZtZ[:,Ik,:] @ (DinvIplusZtZD @ Zte))
 
@@ -1052,21 +1057,28 @@ def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupM
   v = DinvIplusZtZD.shape[0]
 
   # We only need calculate this once across all iterations
-  if ZtZmat is None:
+  if r == 1 and nraneffs[0]==1:
+    
+    # We assume ZtZ is already diagonal
+    ZtZmat = np.sum(ZtZ,axis=1).reshape((v,1,1))
 
-    # Instantiate to zeros
-    ZtZmat = np.zeros((ZtZ.shape[0],nraneffs[k],nraneffs[k]))
+  else:
 
-    for j in np.arange(nlevels[k]):
+    if ZtZmat is None:
 
-      # Get the indices for the kth factor jth level
-      Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
+      # Instantiate to zeros
+      ZtZmat = np.zeros((ZtZ.shape[0],nraneffs[k],nraneffs[k]))
 
-      # Work out Z_(k,j)'Z_(k,j)
-      ZtZterm = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ikj,Ikj)]
+      for j in np.arange(nlevels[k]):
 
-      # Add together
-      ZtZmat = ZtZmat + ZtZterm
+        # Get the indices for the kth factor jth level
+        Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
+
+        # Work out Z_(k,j)'Z_(k,j)
+        ZtZterm = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ikj,Ikj)]
+
+        # Add together
+        ZtZmat = ZtZmat + ZtZterm
 
   # Get the indices for the factors 
   Ik = fac_indices2D(k, nlevels, nraneffs)
@@ -1203,11 +1215,9 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
   # Work out R_(k1,k2) (in the one factor, one raneff setting we can speed this up a lot)
   if r == 1 and nraneffs[0] == 1:
 
-    # Get the diagonal of Z'Z (DinvIplusZ'ZD is already in diagonal form for the one factor model)
-    ZtZdiag = np.einsum('ijj->ij', ZtZ)
-
-    # Rk1k2 diag
-    Rk1k2diag = ZtZdiag - DinvIplusZtZD*ZtZdiag**2
+    # Rk1k2 diag (we assume in this setting that ZtZ and DinvIplusZtZD only contain the diagonal
+    # elements here)
+    Rk1k2diag = ZtZ - DinvIplusZtZD*ZtZ**2
 
     # lk and qk for the first factor (zero indexed)
     l0 = nlevels[0]
@@ -1549,8 +1559,8 @@ def sumTTt_1factor3D(ZtZ, DinvIplusZtZD, l0, q0):
   # Number of voxels, v
   v = DinvIplusZtZD.shape[0]
 
-  # Work out the diagonal values the matrix product Z'Z_(k)D_(k)(I+Z'Z_(k)D_(k))^(-1)Z'Z_(k)
-  DiagVals = DinvIplusZtZD*np.einsum('ijj->ij', ZtZ)**2
+  # Work out the diagonal values of the matrix product Z'Z_(k)D_(k)(I+Z'Z_(k)D_(k))^(-1)Z'Z_(k)
+  DiagVals = DinvIplusZtZD*ZtZ**2
 
   # Reshape diag vals and sum apropriately
   DiagVals = np.sum(DiagVals.reshape(v,q0,l0),axis=2)
@@ -2211,11 +2221,9 @@ def get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
       # Obtain ZtX(XtiVX)^(-1)L'
       ZtXinvXtiVXLt = ZtX @ (np.linalg.pinv(XtiVX) @ L.transpose())
 
-      # Get the diagonal of Z'Z (DinvIplusZ'ZD is already diagonal)
-      ZtZdiag = np.einsum('ijj->ij', ZtZ)
-
-      # Obtain diag(Z'ZD(I+Z'ZD)^(-1))
-      DiagVals = DinvIplusZtZD*ZtZdiag
+      # Obtain diag(Z'ZD(I+Z'ZD)^(-1)) (DinvIplusZtZD and ZtZ are already just the
+      # diagonal elements)
+      DiagVals = DinvIplusZtZD*ZtZ
 
       # Obtain diag(Z'ZD(I+Z'ZD)^(-1))*ZtX(X'V^(-1)X)^(-1)L'
       DiagDot = DiagVals.reshape(ZtXinvXtiVXLt.shape)*ZtXinvXtiVXLt
