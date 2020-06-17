@@ -1554,7 +1554,7 @@ def get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
   if reml==True:
 
-    invXtinvVX = np.linalg.pinv(XtX - ZtX.transpose((0,2,1)) @ DinvIplusZtZD @ ZtX)
+    invXtinvVX = np.linalg.pinv(XtX - ZtX.transpose() @ DinvIplusZtZD @ ZtX)
 
     # For each level j we need to add a term
     for j in np.arange(nlevels[k]):
@@ -1567,7 +1567,7 @@ def get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
       Z_kjtinvVX = Z_kjtX - Z_kjtZ @ DinvIplusZtZD @ ZtX
 
-      dldDk = dldDk + 0.5*Z_kjtinvVX @ invXtinvVX @ Z_kjtinvVX.transpose((0,2,1))
+      dldDk = dldDk + 0.5*Z_kjtinvVX @ invXtinvVX @ Z_kjtinvVX.transpose()
 
   # Store it in the dictionary
   return(dldDk,ZtZmat)
