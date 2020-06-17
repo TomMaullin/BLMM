@@ -78,7 +78,7 @@ from lib.npMatrix2d import vech2mat2D
 #   - b: The random effects vector used to simulate the response vector.
 #
 # -----------------------------------------------------------------------------
-def genTestData2D(n=None, p=None, nlevels=None, nraneffs=None, save=False, simInd=None, desInd=0, OutDir=None):
+def genTestData2D(n=None, p=None, nlevels=None, nraneffs=None, save=False, simInd=None, desInd=0, OutDir=None, factorVectors=None):
 
     # Check if we have n
     if n is None:
@@ -139,6 +139,10 @@ def genTestData2D(n=None, p=None, nlevels=None, nraneffs=None, save=False, simIn
     # Generate beta (used integers to make test results clear).
     beta = np.random.randint(-10,10,p)
 
+    # Dictionary of factor vectors
+    if factorVectors is not None:
+        factorVectors = dict()
+
     # Create Z
     # We need to create a block of Z for each level of each factor
     for i in np.arange(r):
@@ -147,28 +151,51 @@ def genTestData2D(n=None, p=None, nlevels=None, nraneffs=None, save=False, simIn
 
         if i==0:
 
-            #The first factor should be block diagonal, so the factor indices are grouped
-            factorVec = np.repeat(np.arange(nlevels[i]), repeats=np.floor(n/max(nlevels[i],1)))
+            if factorVectors is None:
 
-            if len(factorVec) < n:
+                #The first factor should be block diagonal, so the factor indices are grouped
+                factorVec = np.repeat(np.arange(nlevels[i]), repeats=np.floor(n/max(nlevels[i],1)))
 
-                # Quick fix incase rounding leaves empty columns
-                factorVecTmp = np.zeros(n)
-                factorVecTmp[0:len(factorVec)] = factorVec
-                factorVecTmp[len(factorVec):n] = nlevels[i]-1
-                factorVec = np.int64(factorVecTmp)
+                if len(factorVec) < n:
 
+                    # Quick fix incase rounding leaves empty columns
+                    factorVecTmp = np.zeros(n)
+                    factorVecTmp[0:len(factorVec)] = factorVec
+                    factorVecTmp[len(factorVec):n] = nlevels[i]-1
+                    factorVec = np.int64(factorVecTmp)
 
-                # Crop the factor vector - otherwise have a few too many
-                factorVec = factorVec[0:n]
+                    # Crop the factor vector - otherwise have a few too many
+                    factorVec = factorVec[0:n]
+
+                # Give the data an intercept
+                Zdata_factor[:,0]=1
+
+            else:
+
+                # If we specified a factor vec to use, use it
+                factorVec = factorVectors[i]
 
                 # Give the data an intercept
                 Zdata_factor[:,0]=1
 
         else:
 
-            # The factor is randomly arranged 
-            factorVec = np.random.randint(0,nlevels[i],size=n) 
+            if factorVectors is None:
+    
+                # The factor is randomly arranged 
+                factorVec = np.random.randint(0,nlevels[i],size=n) 
+                while len(np.unique(factorVec))<nlevels[i]:
+                    factorVec = np.random.randint(0,nlevels[i],size=n)
+
+            else:
+
+                # The factor is randomly arranged 
+                factorVec = factorVectors[i]
+
+        # Save the factor vectors if we don't have it already
+        if factorVectors is None:
+
+            factorVectors[i]=factorVec
 
         # If outputting, save the factor vector
         if save:
@@ -286,7 +313,7 @@ def genTestData2D(n=None, p=None, nlevels=None, nraneffs=None, save=False, simIn
         np.savetxt(os.path.join(OutDir, 'Sim' + str(simInd) + '_Design' + str(desInd) + '_Y' + '.csv'), Y)
 
     # Return values
-    return(Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D)
+    return(Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D, factorVectors)
 
 
 # =============================================================================

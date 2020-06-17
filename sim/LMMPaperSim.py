@@ -38,6 +38,7 @@ from lib.npMatrix3d import *
 def sim2D(desInd, OutDir):
 
 
+    fvs = None
     for simInd in range(1,101):
         
         #===============================================================================
@@ -45,7 +46,7 @@ def sim2D(desInd, OutDir):
         #===============================================================================
 
         if desInd==1:
-            nlevels = np.array([20])
+            nlevels = np.array([50])
             nraneffs = np.array([2])
         if desInd==2:
             nlevels = np.array([50,25])
@@ -55,7 +56,7 @@ def sim2D(desInd, OutDir):
             nraneffs = np.array([4,3,2])
 
         # Generate test data
-        Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D = genTestData2D(n=50, p=5, nlevels=nlevels, nraneffs=nraneffs, save=True, simInd=simInd, desInd=desInd, OutDir=OutDir)
+        Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D, fvs = genTestData2D(n=1000, p=5, nlevels=nlevels, nraneffs=nraneffs, save=True, simInd=simInd, desInd=desInd, OutDir=OutDir, factorVectors=fvs)
 
         # Work out number of observations, parameters, random effects, etc
         n = X.shape[0]

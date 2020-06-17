@@ -16,6 +16,9 @@ if (!timing){
   library(lmerTest)
 }
 
+# REML
+reml <- TRUE
+
 
 #trace(name_of_function, edit = T)
 
@@ -56,12 +59,12 @@ for (simInd in 1:100){
     z22 <- as.matrix(Zdata2[,2])
     
     tic('lmer time')
-    m <- lmer(y ~ x2 + x3 + x4 + x5 + (0 + z01 + z02 + z03 + z04|Zfactor0) + (0 + z11 + z12 + z13|Zfactor1) + (0 + z21 + z22|Zfactor2), REML = FALSE) #Don't need intercepts in R - automatically assumed
+    m <- lmer(y ~ x2 + x3 + x4 + x5 + (0 + z01 + z02 + z03 + z04|Zfactor0) + (0 + z11 + z12 + z13|Zfactor1) + (0 + z21 + z22|Zfactor2), REML=reml) #Don't need intercepts in R - automatically assumed
     t<-toc()
     
     lmertime <- t$toc-t$tic
     
-    devfun <- lmer(y ~ x2 + x3 + x4 + x5 + (0 + z01 + z02 + z03 + z04|Zfactor0) + (0 + z11 + z12 + z13|Zfactor1) + (0 + z21 + z22|Zfactor2), REML = FALSE, devFunOnly = TRUE) #Don't need intercepts in R - automatically assumed
+    devfun <- lmer(y ~ x2 + x3 + x4 + x5 + (0 + z01 + z02 + z03 + z04|Zfactor0) + (0 + z11 + z12 + z13|Zfactor1) + (0 + z21 + z22|Zfactor2), REML=reml, devFunOnly = TRUE) #Don't need intercepts in R - automatically assumed
     
     tic('lmer time 2')
     opt<-optimizeLmer(devfun)
@@ -143,13 +146,13 @@ for (simInd in 1:100){
     z12 <- as.matrix(Zdata1[,2])
     
     tic('lmer time')
-    m <- lmer(y ~ x2 + x3 + x4 + x5 + (0 + z01 + z02 + z03|Zfactor0) + (0 + z11 + z12|Zfactor1), REML = FALSE) #Don't need intercepts in R - automatically assumed
+    m <- lmer(y ~ x2 + x3 + x4 + x5 + (0 + z01 + z02 + z03|Zfactor0) + (0 + z11 + z12|Zfactor1), REML=reml) #Don't need intercepts in R - automatically assumed
     t<-toc()
     
     lmertime <- t$toc-t$tic
     
     
-    devfun <- lmer(y ~ x2 + x3 + x4 + x5 + (0 + z01 + z02 + z03|Zfactor0) + (0 + z11 + z12|Zfactor1), REML = FALSE, devFunOnly = TRUE) #Don't need intercepts in R - automatically assumed
+    devfun <- lmer(y ~ x2 + x3 + x4 + x5 + (0 + z01 + z02 + z03|Zfactor0) + (0 + z11 + z12|Zfactor1), REML=reml, devFunOnly = TRUE) #Don't need intercepts in R - automatically assumed
     
     tic('lmer time 2')
     opt<-optimizeLmer(devfun)
@@ -219,35 +222,21 @@ for (simInd in 1:100){
     
     z01 <- as.matrix(Zdata0[,1])
     z02 <- as.matrix(Zdata0[,2])
-    
-    if (!timing){
-      tic('lmer time')
-      m <- lmer(y ~ x2 + x3 + x4 + x5 + (0 + z01 + z02|Zfactor0), REML = TRUE) #Don't need intercepts in R - automatically assumed
-      t<-toc()
-    } else {
-      tic('lmer time')
-      m <- lmer(y ~ x2 + x3 + x4 + x5 + (0 + z01 + z02|Zfactor0), REML = FALSE) #Don't need intercepts in R - automatically assumed
-      t<-toc()
+  
+    tic('lmer time')
+    m <- lmer(y ~ x2 + x3 + x4 + x5 + (0 + z01 + z02|Zfactor0), REML=reml) #Don't need intercepts in R - automatically assumed
+    t<-toc()
 
-    }
     
     lmertime <- t$toc-t$tic
     
+  
+    devfun <- lmer(y ~ x2 + x3 + x4 + x5 + (0 + z01 + z02|Zfactor0), REML=reml, devFunOnly = TRUE) #Don't need intercepts in R - automatically assumed
     
-    if (!timing){
-      devfun <- lmer(y ~ x2 + x3 + x4 + x5 + (0 + z01 + z02|Zfactor0), REML = TRUE, devFunOnly = TRUE) #Don't need intercepts in R - automatically assumed
-      
-      tic('lmer time 2')
-      opt<-optimizeLmer(devfun)
-      t<-toc()
-    } else {
-      devfun <- lmer(y ~ x2 + x3 + x4 + x5 + (0 + z01 + z02|Zfactor0), REML = FALSE, devFunOnly = TRUE) #Don't need intercepts in R - automatically assumed
-      
-      tic('lmer time 2')
-      opt<-optimizeLmer(devfun)
-      t<-toc()
-    }
-    
+    tic('lmer time 2')
+    opt<-optimizeLmer(devfun)
+    t<-toc()
+  
     lmertime2 <- t$toc-t$tic
     
     results[1,'lmer']<-lmertime
