@@ -170,6 +170,7 @@ def main(*args):
     # Get number of random effects
     nraneffs = np.array(nraneffs)
     nlevels = np.array(nlevels)
+    print('nlevels: ', nlevels)
 
     # Mask volumes (if they are given)
     if 'data_mask_files' in inputs:
