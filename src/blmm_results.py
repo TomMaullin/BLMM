@@ -289,13 +289,13 @@ def main(ipath, vb):
                 ZtX_r = ZtX_r[fullrank_inds,:,:]
                 ZtY_r = ZtY_r[fullrank_inds,:,:]
                 ZtZ_r = ZtZ_r[fullrank_inds,:,:]
-
-                # MARKER
-                if r == 1 and nraneffs[0]==1:
-                    ZtZ_r = np.einsum('ijj->ij', ZtZ_r)
             
                 # Recalculate number of voxels left in ring
                 v_r = R_inds.shape[0]
+                
+            # MARKER
+            if r == 1 and nraneffs[0]==1:
+                ZtZ_r = np.einsum('ijj->ij', ZtZ_r)
         
         if v_i:
                 
