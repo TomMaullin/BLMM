@@ -125,7 +125,7 @@ def main(*args):
 
     # Number of levels for each factor, l
     nlevels = []
-    
+
     # Read in each factor
     for i in range(0,r):
 
@@ -271,7 +271,7 @@ def main(*args):
         ZtZ = np.einsum('ijj->ij',ZtZ)
 
         # We reshape to n by q^2 so that we can save as a csv.
-        ZtZ = ZtZ.reshape([ZtZ.shape[0], nraneffs[0]])
+        ZtZ = ZtZ.reshape([ZtZ.shape[0], nlevels[0]])
 
     else:
 
