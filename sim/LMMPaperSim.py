@@ -122,7 +122,7 @@ def sim2D(desInd, OutDir):
         indexVec = np.append(indexVec,'swdf')
 
         # Construct dataframe
-        results = pd.DataFrame(index=indexVec, columns=['Truth', 'FS', 'pFS', 'SFS', 'pSFS', 'cSFS'])
+        results = pd.DataFrame(index=indexVec, columns=['Truth', 'FS', 'pFS', 'SFS', 'pSFS', 'cSFS', 'FS (hess)'])
 
         # ------------------------------------------------------------------------------------
         # Truth
@@ -267,6 +267,11 @@ def sim2D(desInd, OutDir):
         results.at[indexVec[p+4+2*qu],'FS']=T[0,0]
         results.at[indexVec[p+5+2*qu],'FS']=Pval[0,0]
         results.at[indexVec[p+6+2*qu],'FS']=df[0,0]
+
+        T,Pval,df = simT(paramVector_FS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n, Hessian=True)
+        results.at[indexVec[p+4+2*qu],'FS (hess)']=T[0,0]
+        results.at[indexVec[p+5+2*qu],'FS (hess)']=Pval[0,0]
+        results.at[indexVec[p+6+2*qu],'FS (hess)']=df[0,0]
 
         #===============================================================================
         # SFS
