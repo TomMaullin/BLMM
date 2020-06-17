@@ -118,10 +118,10 @@ def main(*args):
     
 
     # Number of random effects factors.
-    n_f = len(inputs['Z'])
+    r = len(inputs['Z'])
 
     # Read in each factor
-    for i in range(0,n_f):
+    for i in range(0,r):
 
         # Read in the "factor vector" representing which level each observation
         # belongs to
