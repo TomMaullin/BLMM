@@ -136,6 +136,10 @@ def main(*args):
         # Read the random effects design in
         Zi_design = loadFile(inputs['Z'][i]['f' + str(i+1)]['design'])
 
+        # Number of random effects and number of levels
+        nraneffs = nraneffs + [Zi_design.shape[1]]
+        nlevels = nlevels + [len(np.unique(Zi_factor))]
+
         # Number of levels for factor i
         l_i = np.amax(Zi_factor)
 
@@ -163,9 +167,6 @@ def main(*args):
         else:
 
             Z = np.hstack((Z,Zi))
-
-        nraneffs = nraneffs + [Zi_design.shape[1]]
-        nlevels = nlevels + [len(np.unique(Zi_factor))]
 
     # Get number of random effects
     nraneffs = np.array(nraneffs)
