@@ -1562,8 +1562,8 @@ def get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
       # Get the indices for the kth factor jth level
       Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
 
-      Z_kjtZ = ZtZ[:,Ikj,:]
-      Z_kjtX = ZtX[:,Ikj,:]
+      Z_kjtZ = ZtZ[Ikj,:]
+      Z_kjtX = ZtX[Ikj,:]
 
       Z_kjtinvVX = Z_kjtX - Z_kjtZ @ DinvIplusZtZD @ ZtX
 
