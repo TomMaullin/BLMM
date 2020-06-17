@@ -120,6 +120,12 @@ def main(*args):
     # Number of random effects factors.
     r = len(inputs['Z'])
 
+    # Number of random effects for each factor, q
+    nraneffs = []
+
+    # Number of levels for each factor, l
+    nlevels = []
+    
     # Read in each factor
     for i in range(0,r):
 
@@ -157,6 +163,13 @@ def main(*args):
         else:
 
             Z = np.hstack((Z,Zi))
+
+        nraneffs = nraneffs + [Zi_design.shape[1]]
+        nlevels = nlevels + [len(np.unique(Zi_factor))]
+
+    # Get number of random effects
+    nraneffs = np.array(nraneffs)
+    nlevels = np.array(nlevels)
 
     # Mask volumes (if they are given)
     if 'data_mask_files' in inputs:
