@@ -87,7 +87,7 @@ from lib.npMatrix2d import *
 #  - `nit`: The number of iterations taken to converge.
 #
 # ============================================================================
-def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, init_paramVector=None):
+def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=False, init_paramVector=None):
     
     # ------------------------------------------------------------------------------
     # Useful scalars
@@ -263,7 +263,11 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         #---------------------------------------------------------------------------
         # Update sigma2
         #---------------------------------------------------------------------------
-        sigma2 = 1/n*(ete - Zte.transpose() @ DinvIplusZtZD @ Zte)
+        if reml==False:
+            sigma2 = 1/n*(ete - Zte.transpose() @ DinvIplusZtZD @ Zte)
+        else:
+            sigma2 = 1/(n-p)*(ete - Zte.transpose() @ DinvIplusZtZD @ Zte)
+
         sigma2 = np.maximum(sigma2,1e-10) # Prevent hitting boundary
         
         #---------------------------------------------------------------------------
@@ -278,9 +282,9 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             #-----------------------------------------------------------------------
             # Work out derivative
             if ZtZmatdict[k] is None:
-                dldD,ZtZmatdict[k] = get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None)
+                dldD,ZtZmatdict[k] = get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, None, reml, ZtX, XtX)
             else:
-                dldD,_ = get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k])
+                dldD,_ = get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmatdict[k], reml, ZtX, XtX)
 
             #-----------------------------------------------------------------------
             # Calculate covariance of derivative with respect to D_k
@@ -295,7 +299,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             # Transform to derivative with respect to chol_k
             #-----------------------------------------------------------------------
             # We need to modify by multiplying by this matrix to obtain the cholesky derivative.
-            chol_mod = elimMatdict[k] @ (scipy.sparse.identity(nraneffs[k]**2) + comMatdict[k]) @ scipy.sparse.kron(cholDict[k],np.eye(nraneffs[k])) @ dupMatTdict[k].transpose()
+            chol_mod = elimMatdict[k] @ scipy.sparse.kron(cholDict[k],np.eye(nraneffs[k])).transpose() @ (scipy.sparse.identity(nraneffs[k]**2) + comMatdict[k]) @ dupMatTdict[k].transpose()
             
             # Transform to cholesky
             dldcholk = chol_mod.transpose() @ dupMatTdict[k] @ mat2vec2D(dldD)
@@ -343,7 +347,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         #---------------------------------------------------------------------------
         # Update the step size and log likelihood
         #---------------------------------------------------------------------------
-        llhcurr = llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D)[0,0]
+        llhcurr = llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,reml,XtX,XtZ,ZtX)[0,0]
         if llhprev>llhcurr:
             lam = lam/2
 
@@ -411,7 +415,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
 #  - `nit`: The number of iterations taken to converge.
 #
 # ============================================================================
-def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, sparseMode=False, init_paramVector=None):
+def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=False, init_paramVector=None):
     
     # ------------------------------------------------------------------------------
     # Useful scalars
@@ -562,16 +566,16 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n,
         dldB = get_dldB2D(sigma2, Xte, XtZ, DinvIplusZtZD, Zte)
 
         # Derivative wrt sigma^2
-        dldsigma2 = get_dldsigma22D(n, ete, Zte, sigma2, DinvIplusZtZD)
+        dldsigma2 = get_dldsigma22D(n, ete, Zte, sigma2, DinvIplusZtZD, reml, p)
         
         # For each factor, factor k, work out dl/dD_k
         dldDdict = dict()
         for k in np.arange(len(nraneffs)):
             # Store it in the dictionary# Store it in the dictionary
             if ZtZmatdict[k] is None:
-                dldDdict[k],ZtZmatdict[k] = get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None)
+                dldDdict[k],ZtZmatdict[k] = get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,None, reml, ZtX, XtX)
             else:
-                dldDdict[k],_ = get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k])
+                dldDdict[k],_ = get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmatdict[k], reml, ZtX, XtX)
 
         # --------------------------------------------------------------------------
         # Covariance of dl/dsigma2
@@ -676,7 +680,7 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n,
         # ----------------------------------------------------------------------
         # Update the step size and log likelihood
         # ----------------------------------------------------------------------
-        llhcurr = llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D)[0,0]
+        llhcurr = llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,reml,XtX,XtZ,ZtX)[0,0]
         if llhprev>llhcurr:
             lam = lam/2
     
@@ -743,7 +747,7 @@ def FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n,
 #  - `nit`: The number of iterations taken to converge.
 #
 # ============================================================================
-def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, init_paramVector=None):
+def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=False, init_paramVector=None):
     
     # ------------------------------------------------------------------------------
     # Useful scalars
@@ -891,7 +895,7 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
         dldB = get_dldB2D(sigma2, Xte, XtZ, DinvIplusZtZD, Zte)
 
         # Derivative wrt sigma^2
-        dldsigma2 = get_dldsigma22D(n, ete, Zte, sigma2, DinvIplusZtZD)
+        dldsigma2 = get_dldsigma22D(n, ete, Zte, sigma2, DinvIplusZtZD, reml, p)
         
         # For each factor, factor k, work out dl/dD_k
         dldDdict = dict()
@@ -899,9 +903,9 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
 
             # Store it in the dictionary
             if ZtZmatdict[k] is None:
-                dldDdict[k],ZtZmatdict[k] = get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None)
+                dldDdict[k],ZtZmatdict[k] = get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,None, reml, ZtX, XtX)
             else:
-                dldDdict[k],_ = get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k])
+                dldDdict[k],_ = get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmatdict[k], reml, ZtX, XtX)
 
         # ------------------------------------------------------------------------
         # Covariance of dl/dsigma2
@@ -1005,7 +1009,7 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
         # --------------------------------------------------------------------------
         # Update the step size and log likelihood
         # --------------------------------------------------------------------------
-        llhcurr = llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D)[0,0]
+        llhcurr = llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,reml,XtX,XtZ,ZtX)[0,0]
         if llhprev>llhcurr:
             lam = lam/2
     
@@ -1100,7 +1104,7 @@ def pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
 #  - `nit`: The number of iterations taken to converge.
 #
 # ============================================================================
-def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, init_paramVector=None):
+def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=False, init_paramVector=None):
     
     # ------------------------------------------------------------------------------
     # Useful scalars
@@ -1260,7 +1264,11 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         #---------------------------------------------------------------------------
         # Update sigma^2
         #---------------------------------------------------------------------------
-        sigma2 = 1/n*(ete - Zte.transpose() @ DinvIplusZtZD @ Zte)
+        if reml==False:
+            sigma2 = 1/n*(ete - Zte.transpose() @ DinvIplusZtZD @ Zte)
+        else:
+            sigma2 = 1/(n-p)*(ete - Zte.transpose() @ DinvIplusZtZD @ Zte)
+        
         sigma2 = np.maximum(sigma2,1e-10) # Prevent hitting boundary
         
         #---------------------------------------------------------------------------
@@ -1273,9 +1281,9 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             # Work out derivative of D_k
             #-----------------------------------------------------------------------
             if ZtZmatdict[k] is None:
-                dldD,ZtZmatdict[k] = get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None)
+                dldD,ZtZmatdict[k] = get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, None, reml, ZtX, XtX)
             else:
-                dldD,_ = get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k])
+                dldD,_ = get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmatdict[k], reml, ZtX, XtX)
 
             #-----------------------------------------------------------------------
             # Work out covariance of derivative of D_k
@@ -1324,7 +1332,7 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # Update step size and likelihood
         # --------------------------------------------------------------------------
         # Update the step size
-        llhcurr = llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D)[0,0]
+        llhcurr = llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,reml,XtX,XtZ,ZtX)[0,0]
         if llhprev>llhcurr:
             lam = lam/2
 
@@ -1403,7 +1411,7 @@ def pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
 #  - `nit`: The number of iterations taken to converge.
 #
 # ============================================================================
-def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, init_paramVector=None):
+def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=False, init_paramVector=None):
     
     # ------------------------------------------------------------------------------
     # Useful scalars
@@ -1565,7 +1573,11 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
         #---------------------------------------------------------------------------
         # Update sigma^2
         #---------------------------------------------------------------------------
-        sigma2 = 1/n*(ete - Zte.transpose() @ DinvIplusZtZD @ Zte)
+        if reml==False:
+            sigma2 = 1/n*(ete - Zte.transpose() @ DinvIplusZtZD @ Zte)
+        else:
+            sigma2 = 1/(n-p)*(ete - Zte.transpose() @ DinvIplusZtZD @ Zte)
+
         sigma2 = np.maximum(sigma2,1e-10) # Prevent hitting boundary
         
         #---------------------------------------------------------------------------
@@ -1578,9 +1590,9 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
             # Work out derivative of dl/dD_k
             #-----------------------------------------------------------------------
             if ZtZmatdict[k] is None:
-                dldD,ZtZmatdict[k] = get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None)
+                dldD,ZtZmatdict[k] = get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, None, reml, ZtX, XtX)
             else:
-                dldD,_ = get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k])
+                dldD,_ = get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmatdict[k], reml, ZtX, XtX)
 
             #-----------------------------------------------------------------------
             # Work out covariance derivative of dl/dD_k
@@ -1627,7 +1639,7 @@ def SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n
         # --------------------------------------------------------------------------
         # Update step size and likelihood
         # --------------------------------------------------------------------------
-        llhcurr = llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D)[0,0]
+        llhcurr = llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,reml,XtX,XtZ,ZtX)[0,0]
         if llhprev>llhcurr:
             lam = lam/2
 

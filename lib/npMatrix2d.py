@@ -1361,11 +1361,15 @@ def makeDpd2D(D):
 #          the above notation).
 #
 # ============================================================================
-def llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D):
+def llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,reml=False, XtX=0, XtZ=0, ZtX=0):
 
   # Work out the log likelihood
   llh = -0.5*(n*np.log(sigma2) + np.prod(np.linalg.slogdet(np.eye(ZtZ.shape[0]) + ZtZ @ D)) + (1/sigma2)*(ete - forceSym2D(Zte.transpose() @ DinvIplusZtZD @ Zte)))
   
+  if reml:
+    logdet = np.linalg.slogdet(XtX - XtZ @ DinvIplusZtZD @ ZtX)
+    llh = llh - 0.5*logdet[0]*logdet[1]
+
   # Return result
   return(llh)
 
@@ -1440,11 +1444,14 @@ def get_dldB2D(sigma2, Xte, XtZ, DinvIplusZtZD, Zte):
 # - `dldsigma2`: The derivative of l with respect to \sigma^2.
 #
 # ============================================================================
-def get_dldsigma22D(n, ete, Zte, sigma2, DinvIplusZtZD):
+def get_dldsigma22D(n, ete, Zte, sigma2, DinvIplusZtZD, reml=False, p=0):
   
   # Return the bottom expression in the above derivation
-  return(-n/(2*sigma2) + 1/(2*(sigma2**2))*(ete - forceSym2D(Zte.transpose() @ DinvIplusZtZD @ Zte)))
-
+  if not reml:
+    return(-n/(2*sigma2) + 1/(2*(sigma2**2))*(ete - forceSym2D(Zte.transpose() @ DinvIplusZtZD @ Zte)))
+  else:
+    return(-(n-p)/(2*sigma2) + 1/(2*(sigma2**2))*(ete - forceSym2D(Zte.transpose() @ DinvIplusZtZD @ Zte)))
+  
 
 # ============================================================================
 # The below function calculates the derivative of the log likelihood with
@@ -1501,7 +1508,7 @@ def get_dldsigma22D(n, ete, Zte, sigma2, DinvIplusZtZD):
 #             iteration.
 #
 # ============================================================================
-def get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=None):
+def get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=None, reml=False, ZtX=None, XtX=None):
 
   # We only need calculate this once across all iterations
   if ZtZmat is None:
@@ -1544,6 +1551,23 @@ def get_dldDk2D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
   # Work out dldDk
   dldDk = 0.5*(forceSym2D(TuuTSum - RkSum))
+
+  if reml==True:
+
+    invXtinvVX = np.linalg.pinv(XtX - ZtX.transpose((0,2,1)) @ DinvIplusZtZD @ ZtX)
+
+    # For each level j we need to add a term
+    for j in np.arange(nlevels[k]):
+
+      # Get the indices for the kth factor jth level
+      Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
+
+      Z_kjtZ = ZtZ[:,Ikj,:]
+      Z_kjtX = ZtX[:,Ikj,:]
+
+      Z_kjtinvVX = Z_kjtX - Z_kjtZ @ DinvIplusZtZD @ ZtX
+
+      dldDk = dldDk + 0.5*Z_kjtinvVX @ invXtinvVX @ Z_kjtinvVX.transpose((0,2,1))
 
   # Store it in the dictionary
   return(dldDk,ZtZmat)

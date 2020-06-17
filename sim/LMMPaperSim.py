@@ -45,7 +45,7 @@ def sim2D(desInd, OutDir):
         #===============================================================================
 
         if desInd==1:
-            nlevels = np.array([30])
+            nlevels = np.array([20])
             nraneffs = np.array([2])
         if desInd==2:
             nlevels = np.array([50,25])
@@ -160,7 +160,7 @@ def sim2D(desInd, OutDir):
         DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
 
         # True log likelihood
-        llh = llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D)[0,0]-n/2*np.log(np.pi)
+        llh = llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,True,XtX,XtZ,ZtX)[0,0]-n/2*np.log(np.pi)
 
         results.at['llh','Truth']=llh
 
@@ -188,7 +188,7 @@ def sim2D(desInd, OutDir):
 
         # Run Pseudo Simplified Fisher Scoring
         t1 = time.time()
-        paramVector_pSFS,_,nit,llh = pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, init_paramVector=None)
+        paramVector_pSFS,_,nit,llh = pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=True, init_paramVector=None)
         t2 = time.time()
 
         # Record Time and number of iterations
@@ -217,7 +217,7 @@ def sim2D(desInd, OutDir):
 
         # Run Cholesky Simplified Fisher Scoring
         t1 = time.time()
-        paramVector_cSFS,_,nit,llh = cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, init_paramVector=None)
+        paramVector_cSFS,_,nit,llh = cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=True, init_paramVector=None)
         t2 = time.time()
 
         # Record time and number of iterations
@@ -245,7 +245,7 @@ def sim2D(desInd, OutDir):
 
         # Run Fisher Scoring
         t1 = time.time()
-        paramVector_FS,_,nit,llh = FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, init_paramVector=None)
+        paramVector_FS,_,nit,llh = FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=True, init_paramVector=None)
         t2 = time.time()
 
         # Record time and number of iterations
@@ -273,7 +273,7 @@ def sim2D(desInd, OutDir):
 
         # Run Simplified Fisher Scoring
         t1 = time.time()
-        paramVector_SFS,_,nit,llh = SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, init_paramVector=None)
+        paramVector_SFS,_,nit,llh = SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=True, init_paramVector=None)
         t2 = time.time()
 
         # Record time and number of iterations
@@ -301,7 +301,7 @@ def sim2D(desInd, OutDir):
 
         # Run Pseudo Fisher Scoring
         t1 = time.time()
-        paramVector_pFS,_,nit,llh = pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, init_paramVector=None)
+        paramVector_pFS,_,nit,llh = pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=True, init_paramVector=None)
         t2 = time.time()
 
         # Record time and number of iterations
