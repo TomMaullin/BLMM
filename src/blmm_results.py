@@ -312,9 +312,10 @@ def main(ipath, vb):
             # In the one random effect one random factor setting we have only
             # the diagonal elements of Z'Z.
             if r == 1 and nraneffs[0]==1:
-                ZtZ_i = readAndSumUniqueAtB('ZtZ', OutDir, I_inds, n_b, True).reshape([1, q])
+                ZtZ_i = readAndSumUniqueAtB('ZtZ', OutDir, I_inds, n_b, False).reshape([1, q])
+                print('ZtZ shape: ', ZtZ_i.shape)
             else:
-                ZtZ_i = readAndSumUniqueAtB('ZtZ', OutDir, I_inds, n_b, True).reshape([1, q, q])
+                ZtZ_i = readAndSumUniqueAtB('ZtZ', OutDir, I_inds, n_b, False).reshape([1, q, q])
 
             # Inner Z'X, X'X
             ZtX_i = readAndSumUniqueAtB('ZtX', OutDir, I_inds, n_b, False).reshape([1, q, p])
