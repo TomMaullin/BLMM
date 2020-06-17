@@ -254,7 +254,12 @@ def main(ipath, vb):
 
             print('reading and sum unique')
             t1 = time.time()
-            ZtZ_r = readAndSumUniqueAtB('ZtZ', OutDir, R_inds, n_b, True).reshape([v_r, q, q])
+            # In the one random effect one random factor setting we have only
+            # the diagonal elements of Z'Z.
+            if r == 1 and nraneffs[0]==1:
+                ZtZ_r = readAndSumUniqueAtB('ZtZ', OutDir, R_inds, n_b, True).reshape([v_r, q])
+            else:
+                ZtZ_r = readAndSumUniqueAtB('ZtZ', OutDir, R_inds, n_b, True).reshape([v_r, q, q])
             ZtX_r = readAndSumUniqueAtB('ZtX', OutDir, R_inds, n_b, True).reshape([v_r, q, p])
             XtX_r = readAndSumUniqueAtB('XtX', OutDir, R_inds, n_b, True).reshape([v_r, p, p])
             t2 = time.time()
@@ -288,28 +293,30 @@ def main(ipath, vb):
                 XtY_r = XtY_r[fullrank_inds,:,:]
                 ZtX_r = ZtX_r[fullrank_inds,:,:]
                 ZtY_r = ZtY_r[fullrank_inds,:,:]
-                ZtZ_r = ZtZ_r[fullrank_inds,:,:]
+                
+                # In the one random effect one random factor setting we have only
+                # the diagonal elements of Z'Z.
+                if r == 1 and nraneffs[0]==1:
+                    ZtZ_r = ZtZ_r[fullrank_inds,:]
+                else:
+                    ZtZ_r = ZtZ_r[fullrank_inds,:,:]
             
                 # Recalculate number of voxels left in ring
                 v_r = R_inds.shape[0]
-                
-            # MARKER
-            if r == 1 and nraneffs[0]==1:
-                ZtZ_r = np.einsum('ijj->ij', ZtZ_r)
         
         if v_i:
                 
             print('reading and sum unique2')
             t1 = time.time()
-            # Inner Z'Z. Z'X, X'X
-            ZtZ_i = readAndSumUniqueAtB('ZtZ', OutDir, I_inds, n_b, False).reshape([1, q, q])
 
-            # MARKER
+            # In the one random effect one random factor setting we have only
+            # the diagonal elements of Z'Z.
             if r == 1 and nraneffs[0]==1:
-                ZtZ_i = np.einsum('ijj->ij', ZtZ_i)
-    
+                ZtZ_i = readAndSumUniqueAtB('ZtZ', OutDir, I_inds, n_b, True).reshape([1, q])
+            else:
+                ZtZ_i = readAndSumUniqueAtB('ZtZ', OutDir, I_inds, n_b, True).reshape([1, q, q])
 
-
+            # Inner Z'X, X'X
             ZtX_i = readAndSumUniqueAtB('ZtX', OutDir, I_inds, n_b, False).reshape([1, q, p])
             XtX_i = readAndSumUniqueAtB('XtX', OutDir, I_inds, n_b, False).reshape([1, p, p])
             t2 = time.time()

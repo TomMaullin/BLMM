@@ -247,10 +247,24 @@ def main(*args):
     ZtX = MZ.transpose(0,2,1) @ MX
     ZtX = ZtX.reshape([ZtX.shape[0], ZtX.shape[1]*ZtX.shape[2]])
     
-    # In a spatially varying design ZtZ has dimensions n by q by q. We 
-    # reshape to n by q^2 so that we can save as a csv.
+    # In a spatially varying design ZtZ has dimensions n by q by q. 
     ZtZ = MZ.transpose(0,2,1) @ MZ
-    ZtZ = ZtZ.reshape([ZtZ.shape[0], ZtZ.shape[1]*ZtZ.shape[2]])
+
+    # If we are looking at the one random factor one random effect model
+    # we only need record the diagonal of ZtZ
+    if r == 1 and nraneffs[0]==1:
+
+        # Cut Z'Z down to diagonal elements only.
+        ZtZ = np.einsum('ijj->ij',ZtZ)
+
+        # We reshape to n by q^2 so that we can save as a csv.
+        ZtZ = ZtZ.reshape([ZtZ.shape[0], nraneffs[0]])
+
+    else:
+
+        # We reshape to n by q^2 so that we can save as a csv.
+        ZtZ = ZtZ.reshape([ZtZ.shape[0], ZtZ.shape[1]*ZtZ.shape[2]])
+
 
     # Record product matrices X'X, Y'Y, Z'X and Z'Z.
     np.save(os.path.join(OutDir,"tmp","XtX" + str(batchNo)), 
