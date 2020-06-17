@@ -165,7 +165,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         D = scipy.sparse.lil_matrix((q,q))
         counter = 0
         for k in np.arange(len(nraneffs)):
-            for j in np.arange(nlevels[i]):
+            for j in np.arange(nlevels[k]):
 
                 D[Dinds[counter]:Dinds[counter+1], Dinds[counter]:Dinds[counter+1]] = Ddict[k]
                 counter = counter + 1
