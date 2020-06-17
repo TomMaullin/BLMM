@@ -262,7 +262,7 @@ def sim2D(desInd, OutDir):
             results.at[indexVec[i+qu],'FS']=paramVector_FS[p,0]*paramVector_FS[i-3,0]
 
         # Get T statistic, p value and Satterthwaite degrees of freedom
-        T,Pval,df = simT(paramVector_FS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n, Hessian=True)
+        T,Pval,df = simT(paramVector_FS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n, Hessian=False)
         results.at[indexVec[p+4+2*qu],'FS']=T[0,0]
         results.at[indexVec[p+5+2*qu],'FS']=Pval[0,0]
         results.at[indexVec[p+6+2*qu],'FS']=df[0,0]
