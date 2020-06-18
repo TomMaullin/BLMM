@@ -466,9 +466,72 @@ def test_initSigma23D():
 # =============================================================================
 def test_initDk3D():
 
+    # -------------------------------------------------------------------------
+    # Test case 1: 1 random factor, 1 random effect
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([1])
+    nlevels = np.array([800])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate test data
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = X.shape[1]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Work out the transpose duplication matrices we need.
+    dupMatTdict = dict()
+    for i in np.arange(len(nraneffs)):
+      
+      dupMatTdict[i] = dupMat2D(nraneffs[i]).toarray().transpose()
+
+    # Work out Z'e
+    Zte = ZtY - ZtX @ beta
+    Zte_sv = ZtY_sv - ZtX_sv @ beta
+
+    # Decide on a random factor
+    k = np.random.randint(0,nraneffs.shape[0])
+
+    # Get diagonal ZtZ and ZtZ_sv
+    ZtZ_diag = np.einsum('ijj->ij', ZtZ)
+    ZtZ_diag_sv = np.einsum('ijj->ij', ZtZ_sv)
+
+    # First test spatially varying
+    initDk_sv_test = initDk3D(k, ZtZ_diag_sv, Zte_sv, sigma2, nlevels, nraneffs, dupMatTdict)[testv,:,:]
+    initDk_sv_expected = initDk2D(k, ZtZ_sv[testv,:,:], Zte_sv[testv,:,:], sigma2[testv], nlevels, nraneffs, dupMatTdict)
+    
+    # Check if results are all close.
+    sv_testVal = np.allclose(initDk_sv_test,initDk_sv_expected)
+
+    # Now test non spatially varying
+    initDk_nsv_test = initDk3D(k, ZtZ_diag, Zte, sigma2, nlevels, nraneffs, dupMatTdict)[testv,:,:]
+    initDk_nsv_expected = initDk2D(k, ZtZ[0,:,:], Zte[testv,:,:], sigma2[testv], nlevels, nraneffs, dupMatTdict)
+    
+    # Check if results are all close.
+    nsv_testVal = np.allclose(initDk_nsv_test,initDk_nsv_expected)
+
+    # Check against 2D version.
+    testVal_tc1 = nsv_testVal and sv_testVal
+
+    # -------------------------------------------------------------------------
+    # Test case 2: 1 random factor, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([2])
+    nlevels = np.array([300])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
     # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D()
-    v = Y.shape[0]
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
     n = Y.shape[1]
 
     # Generate product matrices
@@ -505,7 +568,59 @@ def test_initDk3D():
     nsv_testVal = np.allclose(initDk_nsv_test,initDk_nsv_expected)
 
     # Check against 2D version.
-    testVal = nsv_testVal and sv_testVal
+    testVal_tc2 = nsv_testVal and sv_testVal
+
+    # -------------------------------------------------------------------------
+    # Test case 3: multiple random factors, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v)
+    n = Y.shape[1]
+    q = np.sum(nlevels*nraneffs)
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = Y.shape[1]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Work out the transpose duplication matrices we need.
+    dupMatTdict = dict()
+    for i in np.arange(len(nraneffs)):
+      
+      dupMatTdict[i] = dupMat2D(nraneffs[i]).toarray().transpose()
+
+    # Work out Z'e
+    Zte = ZtY - ZtX @ beta
+    Zte_sv = ZtY_sv - ZtX_sv @ beta
+
+    # Decide on a random factor
+    k = np.random.randint(0,nraneffs.shape[0])
+
+    # First test spatially varying
+    initDk_sv_test = initDk3D(k, ZtZ_sv, Zte_sv, sigma2, nlevels, nraneffs, dupMatTdict)[testv,:,:]
+    initDk_sv_expected = initDk2D(k, ZtZ_sv[testv,:,:], Zte_sv[testv,:,:], sigma2[testv], nlevels, nraneffs, dupMatTdict)
+    
+    # Check if results are all close.
+    sv_testVal = np.allclose(initDk_sv_test,initDk_sv_expected)
+
+    # Now test non spatially varying
+    initDk_nsv_test = initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict)[testv,:,:]
+    initDk_nsv_expected = initDk2D(k, ZtZ[0,:,:], Zte[testv,:,:], sigma2[testv], nlevels, nraneffs, dupMatTdict)
+    
+    # Check if results are all close.
+    nsv_testVal = np.allclose(initDk_nsv_test,initDk_nsv_expected)
+
+    # Check against 2D version.
+    testVal_tc3 = nsv_testVal and sv_testVal
+
+    # Combine test results
+    testVal = testVal_tc3 and testVal_tc2 and testVal_tc1
 
     # Result
     if testVal:
@@ -530,15 +645,76 @@ def test_initDk3D():
 # =============================================================================
 def test_get_DinvIplusZtZD3D():
     
+    # -------------------------------------------------------------------------
+    # Test case 1: 1 random factor, 1 random effect
+    # -------------------------------------------------------------------------
+
     # Setup variables
     nraneffs = np.array([1])
     nlevels = np.array([800])
     q = np.sum(nlevels*nraneffs)
+    v = 10
 
     # Generate test data
-    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=10, nlevels=nlevels, nraneffs=nraneffs)
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
 
-    # Generate product matrices
+    # Generate product matrices (full versions)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Get diagonal ZtZ and ZtZ_sv
+    ZtZ_diag = np.einsum('ijj->ij', ZtZ)
+    ZtZ_sv_diag = np.einsum('ijj->ij', ZtZ_sv)
+
+    # Work out the indices in D where a new block Dk appears
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+
+    # New empty D dict
+    Ddict = dict()
+
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+        
+    # Expected result (nsv)
+    DinvIplusZtZD_nsv_expected = forceSym3D(np.linalg.solve(np.eye(q) + D @ ZtZ, D))
+
+    # Test result (nsv)
+    DinvIplusZtZD_diag_nsv_test = get_DinvIplusZtZD3D(Ddict, None, ZtZ_diag, nlevels, nraneffs) 
+
+    # Expected result (sv)
+    DinvIplusZtZD_sv_expected = forceSym3D(np.linalg.solve(np.eye(q) + D @ ZtZ_sv, D))
+
+    # Test result (sv)
+    DinvIplusZtZD_diag_sv_test = get_DinvIplusZtZD3D(Ddict, None, ZtZ_sv_diag, nlevels, nraneffs) 
+
+    # Convert Test results to non-diagonal form
+    DinvIplusZtZD_sv_test = np.zeros((v,q,q))
+    DinvIplusZtZD_nsv_test = np.zeros((v,q,q))
+    np.einsum('ijj->ij', DinvIplusZtZD_sv_test)[...] = DinvIplusZtZD_diag_sv_test
+    np.einsum('ijj->ij', DinvIplusZtZD_nsv_test)[...] = DinvIplusZtZD_diag_nsv_test
+
+    # Check if results are all close.
+    testVal_nsv = np.allclose(DinvIplusZtZD_nsv_test,DinvIplusZtZD_nsv_expected)
+    testVal_sv = np.allclose(DinvIplusZtZD_sv_test,DinvIplusZtZD_sv_expected)
+    testVal_tc1 = testVal_nsv and testVal_sv
+
+    # -------------------------------------------------------------------------
+    # Test case 2: 1 random factor, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([3])
+    nlevels = np.array([200])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate test data
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+
+    # Generate product matrices (full versions)
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
 
     # Work out the indices in D where a new block Dk appears
@@ -569,7 +745,54 @@ def test_get_DinvIplusZtZD3D():
     # Check if results are all close.
     testVal_nsv = np.allclose(DinvIplusZtZD_nsv_test,DinvIplusZtZD_nsv_expected)
     testVal_sv = np.allclose(DinvIplusZtZD_sv_test,DinvIplusZtZD_sv_expected)
-    testVal = testVal_nsv and testVal_sv
+    testVal_tc2 = testVal_nsv and testVal_sv
+
+    # -------------------------------------------------------------------------
+    # Test case 3: multiple random factors, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    v = 10
+
+    # Generate test data
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v)
+    q = np.sum(nlevels*nraneffs)
+
+    # Generate product matrices (full versions)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Work out the indices in D where a new block Dk appears
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+
+    # New empty D dict
+    Ddict = dict()
+
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+        
+    # Expected result (nsv)
+    DinvIplusZtZD_nsv_expected = forceSym3D(np.linalg.solve(np.eye(q) + D @ ZtZ, D))
+
+    # Test result (nsv)
+    DinvIplusZtZD_nsv_test = get_DinvIplusZtZD3D(Ddict, D, ZtZ, nlevels, nraneffs) 
+
+    # Expected result (sv)
+    DinvIplusZtZD_sv_expected = forceSym3D(np.linalg.solve(np.eye(q) + D @ ZtZ_sv, D))
+
+    # Test result (sv)
+    DinvIplusZtZD_sv_test = get_DinvIplusZtZD3D(Ddict, D, ZtZ_sv, nlevels, nraneffs) 
+
+    # Check if results are all close.
+    testVal_nsv = np.allclose(DinvIplusZtZD_nsv_test,DinvIplusZtZD_nsv_expected)
+    testVal_sv = np.allclose(DinvIplusZtZD_sv_test,DinvIplusZtZD_sv_expected)
+    testVal_tc3 = testVal_nsv and testVal_sv
+
+    # Combine test values from all cases
+    testVal = testVal_tc1 and testVal_tc2 and testVal_tc3
 
     # Result
     if testVal:
@@ -631,11 +854,18 @@ def test_makeDnnd3D():
 # =============================================================================
 def test_llh3D():
 
+    # -------------------------------------------------------------------------
+    # Test case 1: 1 random factor, 1 random effect
+    # -------------------------------------------------------------------------
+    # Setup variables
+    nraneffs = np.array([1])
+    nlevels = np.array([800])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
     # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D()
-    v = Y.shape[0]
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
     n = Y.shape[1]
-    q = Z.shape[1]
 
     # Generate product matrices
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
@@ -664,6 +894,71 @@ def test_llh3D():
         # Add Dk to the dict
         Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
 
+    # Get diagonal ZtZ and ZtZ_sv
+    ZtZ_diag = np.einsum('ijj->ij', ZtZ)
+    ZtZ_diag_sv = np.einsum('ijj->ij', ZtZ_sv)
+
+    # Obtain D(I+Z'ZD)^(-1) diag
+    DinvIplusZtZD_diag = get_DinvIplusZtZD3D(Ddict, None, ZtZ_diag, nlevels, nraneffs) 
+    DinvIplusZtZD_diag_sv = get_DinvIplusZtZD3D(Ddict, None, ZtZ_diag_sv, nlevels, nraneffs) 
+
+    # First test spatially varying
+    llh_sv_test = llh3D(n, ZtZ_diag_sv, Zte_sv, ete_sv, sigma2, DinvIplusZtZD_diag_sv,D, Ddict, nlevels, nraneffs)[testv]
+    llh_sv_expected = llh2D(n, ZtZ_sv[testv,:,:], Zte_sv[testv,:,:], ete_sv[testv,:,:], sigma2[testv], DinvIplusZtZD_sv[testv,:,:],D[testv,:,:])[0,0]
+    
+    # Check if results are all close.
+    sv_testVal = np.allclose(llh_sv_test,llh_sv_expected)
+
+    # Now test non spatially varying
+    llh_nsv_test = llh3D(n, ZtZ_diag, Zte, ete, sigma2, DinvIplusZtZD_diag,D, Ddict, nlevels, nraneffs)[testv]
+    llh_nsv_expected = llh2D(n, ZtZ[0,:,:], Zte[testv,:,:], ete[testv,:,:], sigma2[testv], DinvIplusZtZD[testv,:,:],D[testv,:,:])[0,0]
+    # Check if results are all close.
+    nsv_testVal = np.allclose(llh_nsv_test,llh_nsv_expected)
+
+    # Check against 2D version.
+    testVal_tc1 = nsv_testVal and sv_testVal
+
+    # -------------------------------------------------------------------------
+    # Test case 2: 1 random factor, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([2])
+    nlevels = np.array([300])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = Y.shape[1]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Work out Z'e
+    Zte = ZtY - ZtX @ beta
+    Zte_sv = ZtY_sv - ZtX_sv @ beta
+
+    # Work out ete
+    ete = ssr3D(YtX, YtY, XtX, beta)
+    ete_sv = ssr3D(YtX_sv, YtY, XtX_sv, beta) 
+
+    # Get D dict
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+    Ddict = dict()
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+
+    # Obtain D(I+Z'ZD)^(-1) diag
+    DinvIplusZtZD = get_DinvIplusZtZD3D(Ddict, D, ZtZ, nlevels, nraneffs) 
+    DinvIplusZtZD_sv = get_DinvIplusZtZD3D(Ddict, D, ZtZ_sv, nlevels, nraneffs) 
+
     # First test spatially varying
     llh_sv_test = llh3D(n, ZtZ_sv, Zte_sv, ete_sv, sigma2, DinvIplusZtZD_sv,D, Ddict, nlevels, nraneffs)[testv]
     llh_sv_expected = llh2D(n, ZtZ_sv[testv,:,:], Zte_sv[testv,:,:], ete_sv[testv,:,:], sigma2[testv], DinvIplusZtZD_sv[testv,:,:],D[testv,:,:])[0,0]
@@ -678,7 +973,62 @@ def test_llh3D():
     nsv_testVal = np.allclose(llh_nsv_test,llh_nsv_expected)
 
     # Check against 2D version.
-    testVal = nsv_testVal and sv_testVal
+    testVal_tc2 = nsv_testVal and sv_testVal
+
+    # -------------------------------------------------------------------------
+    # Test case 3: multiple random factors, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v)
+    n = Y.shape[1]
+    q = np.sum(nlevels*nraneffs)
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Work out Z'e
+    Zte = ZtY - ZtX @ beta
+    Zte_sv = ZtY_sv - ZtX_sv @ beta
+
+    # Work out ete
+    ete = ssr3D(YtX, YtY, XtX, beta)
+    ete_sv = ssr3D(YtX_sv, YtY, XtX_sv, beta) 
+
+    # Get D dict
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+    Ddict = dict()
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+
+    # Obtain D(I+Z'ZD)^(-1) diag
+    DinvIplusZtZD = get_DinvIplusZtZD3D(Ddict, D, ZtZ, nlevels, nraneffs) 
+    DinvIplusZtZD_sv = get_DinvIplusZtZD3D(Ddict, D, ZtZ_sv, nlevels, nraneffs) 
+
+    # First test spatially varying
+    llh_sv_test = llh3D(n, ZtZ_sv, Zte_sv, ete_sv, sigma2, DinvIplusZtZD_sv,D, Ddict, nlevels, nraneffs)[testv]
+    llh_sv_expected = llh2D(n, ZtZ_sv[testv,:,:], Zte_sv[testv,:,:], ete_sv[testv,:,:], sigma2[testv], DinvIplusZtZD_sv[testv,:,:],D[testv,:,:])[0,0]
+    
+    # Check if results are all close.
+    sv_testVal = np.allclose(llh_sv_test,llh_sv_expected)
+
+    # Now test non spatially varying
+    llh_nsv_test = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D, Ddict, nlevels, nraneffs)[testv]
+    llh_nsv_expected = llh2D(n, ZtZ[0,:,:], Zte[testv,:,:], ete[testv,:,:], sigma2[testv], DinvIplusZtZD[testv,:,:],D[testv,:,:])[0,0]
+    # Check if results are all close.
+    nsv_testVal = np.allclose(llh_nsv_test,llh_nsv_expected)
+
+    # Check against 2D version.
+    testVal_tc3 = nsv_testVal and sv_testVal
+
+    # Combine results
+    testVal = testVal_tc1 and testVal_tc2 and testVal_tc3
 
     # Result
     if testVal:
@@ -831,11 +1181,92 @@ def test_get_dldsigma23D():
 # =============================================================================
 def test_get_dldDk3D():
 
-    # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D()
-    v = Y.shape[0]
+    # -------------------------------------------------------------------------
+    # Test case 1: 1 random factor, 1 random effect
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([1])
+    nlevels = np.array([800])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate test data
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
     n = Y.shape[1]
-    q = Z.shape[1]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Work out Z'e
+    Zte = ZtY - ZtX @ beta
+    Zte_sv = ZtY_sv - ZtX_sv @ beta
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+    DinvIplusZtZD_sv = D @ np.linalg.inv(np.eye(q) + ZtZ_sv @ D)
+
+    # Get diagonal ZtZ and ZtZ_sv
+    ZtZ_diag = np.einsum('ijj->ij', ZtZ)
+    ZtZ_diag_sv = np.einsum('ijj->ij', ZtZ_sv)
+
+    # Work out the indices in D where a new block Dk appears
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+
+    # New empty D dict
+    Ddict = dict()
+
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+
+    # Obtain D(I+Z'ZD)^(-1) diag
+    DinvIplusZtZD_diag = get_DinvIplusZtZD3D(Ddict, None, ZtZ_diag, nlevels, nraneffs) 
+    DinvIplusZtZD_diag_sv = get_DinvIplusZtZD3D(Ddict, None, ZtZ_diag_sv, nlevels, nraneffs) 
+
+    # Decide on a random factor
+    k = np.random.randint(0,nraneffs.shape[0])
+
+    # First test spatially varying
+    dldDk_sv_test,ZtZmat = get_dldDk3D(k, nlevels, nraneffs, ZtZ_diag_sv, Zte_sv, sigma2, DinvIplusZtZD_diag_sv)
+    dldDk_sv_test,_ = get_dldDk3D(k, nlevels, nraneffs, ZtZ_diag_sv, Zte_sv, sigma2, DinvIplusZtZD_diag_sv, ZtZmat=ZtZmat)
+    dldDk_sv_test = dldDk_sv_test[testv,:,:] 
+    dldDk_sv_expected = get_dldDk2D(k, nlevels, nraneffs, ZtZ_sv[testv,:,:], Zte_sv[testv,:,:], sigma2[testv], DinvIplusZtZD_sv[testv,:,:])[0]
+
+    # Check if results are all close.
+    sv_testVal = np.allclose(dldDk_sv_test,dldDk_sv_expected)
+
+    # Now test non spatially varying
+    dldDk_nsv_test,ZtZmat = get_dldDk3D(k, nlevels, nraneffs, ZtZ_diag, Zte, sigma2, DinvIplusZtZD_diag)
+    dldDk_nsv_test,_ = get_dldDk3D(k, nlevels, nraneffs, ZtZ_diag, Zte, sigma2, DinvIplusZtZD_diag)
+    dldDk_nsv_test = dldDk_nsv_test[testv,:,:] 
+    dldDk_nsv_expected = get_dldDk2D(k, nlevels, nraneffs, ZtZ[0,:,:], Zte[testv,:,:], sigma2[testv], DinvIplusZtZD[testv,:,:])[0]
+    
+    # Check if results are all close.
+    nsv_testVal = np.allclose(dldDk_nsv_test,dldDk_nsv_expected)
+
+    # Check against 2D version.
+    testVal_tc1 = nsv_testVal and sv_testVal
+
+    # -------------------------------------------------------------------------
+    # Test case 2: 1 random factor, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([2])
+    nlevels = np.array([300])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = Y.shape[1]
 
     # Generate product matrices
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
@@ -873,7 +1304,57 @@ def test_get_dldDk3D():
     nsv_testVal = np.allclose(dldDk_nsv_test,dldDk_nsv_expected)
 
     # Check against 2D version.
-    testVal = nsv_testVal and sv_testVal
+    testVal_tc2 = nsv_testVal and sv_testVal
+
+    # -------------------------------------------------------------------------
+    # Test case 3: multiple random factors, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v)
+    n = Y.shape[1]
+    q = np.sum(nlevels*nraneffs)
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Work out Z'e
+    Zte = ZtY - ZtX @ beta
+    Zte_sv = ZtY_sv - ZtX_sv @ beta
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+    DinvIplusZtZD_sv = D @ np.linalg.inv(np.eye(q) + ZtZ_sv @ D)
+
+    # Decide on a random factor
+    k = np.random.randint(0,nraneffs.shape[0])
+
+    # First test spatially varying
+    dldDk_sv_test,ZtZmat = get_dldDk3D(k, nlevels, nraneffs, ZtZ_sv, Zte_sv, sigma2, DinvIplusZtZD_sv)
+    dldDk_sv_test,_ = get_dldDk3D(k, nlevels, nraneffs, ZtZ_sv, Zte_sv, sigma2, DinvIplusZtZD_sv, ZtZmat=ZtZmat)
+    dldDk_sv_test = dldDk_sv_test[testv,:,:] 
+    dldDk_sv_expected = get_dldDk2D(k, nlevels, nraneffs, ZtZ_sv[testv,:,:], Zte_sv[testv,:,:], sigma2[testv], DinvIplusZtZD_sv[testv,:,:])[0]
+
+    # Check if results are all close.
+    sv_testVal = np.allclose(dldDk_sv_test,dldDk_sv_expected)
+
+    # Now test non spatially varying
+    dldDk_nsv_test,ZtZmat = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD)
+    dldDk_nsv_test,_ = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD)
+    dldDk_nsv_test = dldDk_nsv_test[testv,:,:] 
+    dldDk_nsv_expected = get_dldDk2D(k, nlevels, nraneffs, ZtZ[0,:,:], Zte[testv,:,:], sigma2[testv], DinvIplusZtZD[testv,:,:])[0]
+    
+    # Check if results are all close.
+    nsv_testVal = np.allclose(dldDk_nsv_test,dldDk_nsv_expected)
+
+    # Check against 2D version.
+    testVal_tc3 = nsv_testVal and sv_testVal
+
+    # Combine the test values
+    testVal = testVal_tc3 and testVal_tc2 and testVal_tc1
 
     # Result
     if testVal:
@@ -953,10 +1434,94 @@ def test_get_covdldbeta3D():
 # =============================================================================
 def test_get_covdldDkdsigma23D():
 
+    # -------------------------------------------------------------------------
+    # Test case 1: 1 random factor, 1 random effect
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([1])
+    nlevels = np.array([800])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate test data
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = Y.shape[1]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+    DinvIplusZtZD_sv = D @ np.linalg.inv(np.eye(q) + ZtZ_sv @ D)
+
+    # Work out the indices in D where a new block Dk appears
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+
+    # New empty D dict
+    Ddict = dict()
+
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+
+    # Get diagonal ZtZ and ZtZ_sv
+    ZtZ_diag = np.einsum('ijj->ij', ZtZ)
+    ZtZ_diag_sv = np.einsum('ijj->ij', ZtZ_sv)
+
+    # Obtain D(I+Z'ZD)^(-1) diag
+    DinvIplusZtZD_diag = get_DinvIplusZtZD3D(Ddict, None, ZtZ_diag, nlevels, nraneffs) 
+    DinvIplusZtZD_diag_sv = get_DinvIplusZtZD3D(Ddict, None, ZtZ_diag_sv, nlevels, nraneffs) 
+
+    # Decide on a random factor
+    k = np.random.randint(0,nraneffs.shape[0])
+
+    # Work out the transpose duplication matrices we need.
+    dupMatTdict = dict()
+    for i in np.arange(len(nraneffs)):
+      
+      dupMatTdict[i] = dupMat2D(nraneffs[i]).toarray().transpose()
+
+    # First test spatially varying
+    covdldDsigma2_sv_test,ZtZmat = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ_diag_sv, DinvIplusZtZD_diag_sv, dupMatTdict)
+    covdldDsigma2_sv_test,_ = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ_diag_sv, DinvIplusZtZD_diag_sv, dupMatTdict, ZtZmat=ZtZmat)
+    covdldDsigma2_sv_test = covdldDsigma2_sv_test[testv,:,:]
+    covdldDsigma2_sv_expected,_ = get_covdldDkdsigma22D(k, sigma2[testv], nlevels, nraneffs, ZtZ_sv[testv,:,:], DinvIplusZtZD_sv[testv,:,:], dupMatTdict)
+
+    # Check if results are all close.
+    sv_testVal = np.allclose(covdldDsigma2_sv_test,covdldDsigma2_sv_expected)
+
+    # Now test non spatially varying
+    covdldDsigma2_nsv_test,ZtZmat = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ_diag, DinvIplusZtZD_diag, dupMatTdict)
+    covdldDsigma2_nsv_test,_ = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ_diag, DinvIplusZtZD_diag, dupMatTdict, ZtZmat=ZtZmat)
+    covdldDsigma2_nsv_test = covdldDsigma2_nsv_test[testv,:,:]
+    covdldDsigma2_nsv_expected,_ = get_covdldDkdsigma22D(k, sigma2[testv], nlevels, nraneffs, ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], dupMatTdict)
+
+    # Check if results are all close.
+    nsv_testVal = np.allclose(covdldDsigma2_nsv_test,covdldDsigma2_nsv_expected)
+
+    # Check against 2D version.
+    testVal_tc1 = nsv_testVal and sv_testVal
+
+    # -------------------------------------------------------------------------
+    # Test case 2: 1 random factor, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([2])
+    nlevels = np.array([300])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
     # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D()
-    v = Y.shape[0]
-    q = Z.shape[1]
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = Y.shape[1]
 
     # Generate product matrices
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
@@ -996,7 +1561,59 @@ def test_get_covdldDkdsigma23D():
     nsv_testVal = np.allclose(covdldDsigma2_nsv_test,covdldDsigma2_nsv_expected)
 
     # Check against 2D version.
-    testVal = nsv_testVal and sv_testVal
+    testVal_tc2 = nsv_testVal and sv_testVal
+
+    # -------------------------------------------------------------------------
+    # Test case 3: multiple random factors, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v)
+    n = Y.shape[1]
+    q = np.sum(nlevels*nraneffs)
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+    DinvIplusZtZD_sv = D @ np.linalg.inv(np.eye(q) + ZtZ_sv @ D)
+
+    # Decide on a random factor
+    k = np.random.randint(0,nraneffs.shape[0])
+
+    # Work out the transpose duplication matrices we need.
+    dupMatTdict = dict()
+    for i in np.arange(len(nraneffs)):
+      
+      dupMatTdict[i] = dupMat2D(nraneffs[i]).toarray().transpose()
+
+    # First test spatially varying
+    covdldDsigma2_sv_test,ZtZmat = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ_sv, DinvIplusZtZD_sv, dupMatTdict)
+    covdldDsigma2_sv_test,_ = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ_sv, DinvIplusZtZD_sv, dupMatTdict, ZtZmat=ZtZmat)
+    covdldDsigma2_sv_test = covdldDsigma2_sv_test[testv,:,:]
+    covdldDsigma2_sv_expected,_ = get_covdldDkdsigma22D(k, sigma2[testv], nlevels, nraneffs, ZtZ_sv[testv,:,:], DinvIplusZtZD_sv[testv,:,:], dupMatTdict)
+
+    # Check if results are all close.
+    sv_testVal = np.allclose(covdldDsigma2_sv_test,covdldDsigma2_sv_expected)
+
+    # Now test non spatially varying
+    covdldDsigma2_nsv_test,ZtZmat = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict)
+    covdldDsigma2_nsv_test,_ = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, ZtZmat=ZtZmat)
+    covdldDsigma2_nsv_test = covdldDsigma2_nsv_test[testv,:,:]
+    covdldDsigma2_nsv_expected,_ = get_covdldDkdsigma22D(k, sigma2[testv], nlevels, nraneffs, ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], dupMatTdict)
+
+    # Check if results are all close.
+    nsv_testVal = np.allclose(covdldDsigma2_nsv_test,covdldDsigma2_nsv_expected)
+
+    # Check against 2D version.
+    testVal_tc3 = nsv_testVal and sv_testVal
+
+    # Combine the test values
+    testVal = testVal_tc3 and testVal_tc2 and testVal_tc1
 
     # Result
     if testVal:
@@ -1021,10 +1638,95 @@ def test_get_covdldDkdsigma23D():
 # =============================================================================
 def test_get_covdldDk1Dk23D():
 
+    # -------------------------------------------------------------------------
+    # Test case 1: 1 random factor, 1 random effect
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([1])
+    nlevels = np.array([800])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate test data
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = Y.shape[1]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+    DinvIplusZtZD_sv = D @ np.linalg.inv(np.eye(q) + ZtZ_sv @ D)
+
+    # Work out the indices in D where a new block Dk appears
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+
+    # New empty D dict
+    Ddict = dict()
+
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+
+    # Get diagonal ZtZ and ZtZ_sv
+    ZtZ_diag = np.einsum('ijj->ij', ZtZ)
+    ZtZ_diag_sv = np.einsum('ijj->ij', ZtZ_sv)
+
+    # Obtain D(I+Z'ZD)^(-1) diag
+    DinvIplusZtZD_diag = get_DinvIplusZtZD3D(Ddict, None, ZtZ_diag, nlevels, nraneffs) 
+    DinvIplusZtZD_diag_sv = get_DinvIplusZtZD3D(Ddict, None, ZtZ_diag_sv, nlevels, nraneffs) 
+
+    # Decide on 2 random factors
+    k1 = np.random.randint(0,nraneffs.shape[0])
+    k2 = np.random.randint(0,nraneffs.shape[0])
+
+    # Work out the transpose duplication matrices we need.
+    dupMatTdict = dict()
+    for i in np.arange(len(nraneffs)):
+      
+      dupMatTdict[i] = dupMat2D(nraneffs[i]).toarray().transpose()
+
+    # First test spatially varying
+    covdldD_sv_test,perm = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ_diag_sv, DinvIplusZtZD_diag_sv, dupMatTdict)
+    covdldD_sv_test,_ = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ_diag_sv, DinvIplusZtZD_diag_sv, dupMatTdict,perm=perm)
+    covdldD_sv_test = covdldD_sv_test[testv,:,:]
+    covdldD_sv_expected = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ_sv[testv,:,:], DinvIplusZtZD_sv[testv,:,:], dupMatTdict)[0]
+  
+    # Check if results are all close.
+    sv_testVal = np.allclose(covdldD_sv_test,covdldD_sv_expected)
+
+    # Now test non spatially varying
+    covdldD_nsv_test,perm = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ_diag, DinvIplusZtZD_diag, dupMatTdict)
+    covdldD_nsv_test,_ = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ_diag, DinvIplusZtZD_diag, dupMatTdict)
+    covdldD_nsv_test = covdldD_nsv_test[testv,:,:]
+    covdldD_nsv_expected = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], dupMatTdict)[0]
+    
+    # Check if results are all close.
+    nsv_testVal = np.allclose(covdldD_nsv_test,covdldD_nsv_expected)
+
+    # Check against 2D version.
+    testVal_tc1 = nsv_testVal and sv_testVal
+
+    # -------------------------------------------------------------------------
+    # Test case 2: 1 random factor, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([2])
+    nlevels = np.array([300])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
     # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D()
-    v = Y.shape[0]
-    q = Z.shape[1]
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = Y.shape[1]
 
     # Generate product matrices
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
@@ -1065,7 +1767,60 @@ def test_get_covdldDk1Dk23D():
     nsv_testVal = np.allclose(covdldD_nsv_test,covdldD_nsv_expected)
 
     # Check against 2D version.
-    testVal = nsv_testVal and sv_testVal
+    testVal_tc2 = nsv_testVal and sv_testVal
+
+    # -------------------------------------------------------------------------
+    # Test case 3: multiple random factors, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v)
+    n = Y.shape[1]
+    q = np.sum(nlevels*nraneffs)
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+    DinvIplusZtZD_sv = D @ np.linalg.inv(np.eye(q) + ZtZ_sv @ D)
+
+    # Decide on 2 random factors
+    k1 = np.random.randint(0,nraneffs.shape[0])
+    k2 = np.random.randint(0,nraneffs.shape[0])
+
+    # Work out the transpose duplication matrices we need.
+    dupMatTdict = dict()
+    for i in np.arange(len(nraneffs)):
+      
+      dupMatTdict[i] = dupMat2D(nraneffs[i]).toarray().transpose()
+
+    # First test spatially varying
+    covdldD_sv_test,perm = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ_sv, DinvIplusZtZD_sv, dupMatTdict)
+    covdldD_sv_test,_ = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ_sv, DinvIplusZtZD_sv, dupMatTdict,perm=perm)
+    covdldD_sv_test = covdldD_sv_test[testv,:,:]
+    covdldD_sv_expected = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ_sv[testv,:,:], DinvIplusZtZD_sv[testv,:,:], dupMatTdict)[0]
+  
+    # Check if results are all close.
+    sv_testVal = np.allclose(covdldD_sv_test,covdldD_sv_expected)
+
+    # Now test non spatially varying
+    covdldD_nsv_test,perm = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict)
+    covdldD_nsv_test,_ = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict)
+    covdldD_nsv_test = covdldD_nsv_test[testv,:,:]
+    covdldD_nsv_expected = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], dupMatTdict)[0]
+    
+    # Check if results are all close.
+    nsv_testVal = np.allclose(covdldD_nsv_test,covdldD_nsv_expected)
+
+    # Check against 2D version.
+    testVal_tc3 = nsv_testVal and sv_testVal
+
+    # Combine the test values
+    testVal = testVal_tc3 and testVal_tc2 and testVal_tc1
 
     # Result
     if testVal:
@@ -1379,6 +2134,102 @@ def test_get_resms3D():
     
     return(result)
     
+# =============================================================================
+#
+# The below function tests the function `sumTTt_1fac1ran3D`. It does this by
+# simulating random test data and testing against niave calculation.
+#
+# =============================================================================
+def test_sumTTt_1fac1ran3D():
+
+    # Setup variables
+    nraneffs = np.array([1])
+    nlevels = np.array([800])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate test data
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = Y.shape[1]
+    p = X.shape[1]
+
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+    DinvIplusZtZD_sv = D @ np.linalg.inv(np.eye(q) + ZtZ_sv @ D)
+
+    # Get diagonal ZtZ and ZtZ_sv
+    ZtZ_diag = np.einsum('ijj->ij', ZtZ)
+    ZtZ_diag_sv = np.einsum('ijj->ij', ZtZ_sv)
+
+    # Work out the indices in D where a new block Dk appears
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+
+    # New empty D dict
+    Ddict = dict()
+
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+
+    # Obtain D(I+Z'ZD)^(-1) diag
+    DinvIplusZtZD_diag = get_DinvIplusZtZD3D(Ddict, None, ZtZ_diag, nlevels, nraneffs) 
+    DinvIplusZtZD_diag_sv = get_DinvIplusZtZD3D(Ddict, None, ZtZ_diag_sv, nlevels, nraneffs) 
+
+    # Work out block size
+    qk = nraneffs[0]
+    p = np.array([qk,1])
+
+    # ------------------------------------------------------------------
+    # Non spatially varying
+    # ------------------------------------------------------------------
+
+    # Get result using niave calculation
+    sumTT_expected = sumAijBijt3D(ZtZ @ DinvIplusZtZD, ZtZ, p, p)
+
+    # Get result using function
+    sumTT_test = sumTTt_1fac1ran3D(ZtZ_diag, DinvIplusZtZD_diag, q, 1)
+
+    # Work out the test value for non-spatially varying
+    testVal_nsv = np.allclose(sumTT_test, sumTT_expected)
+
+    # ------------------------------------------------------------------
+    # Spatially varying
+    # ------------------------------------------------------------------
+
+    # Get result using niave calculation
+    sumTT_expected = sumAijBijt3D(ZtZ_sv @ DinvIplusZtZD_sv, ZtZ_sv, p, p)
+
+    # Get result using function
+    sumTT_test = sumTTt_1fac1ran3D(ZtZ_diag_sv, DinvIplusZtZD_diag_sv, q, 1)
+
+    # Work out the test value for spatially varying
+    testVal_sv = np.allclose(sumTT_test, sumTT_expected)
+
+    # Overall test value
+    testVal = testVal_sv and testVal_nsv
+
+    # Result
+    if testVal:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    print('=============================================================')
+    print('Unit test for: sumTTt_1fac1ran3D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+    
+    return(result)
+
+
+#sumTTt_1fac1ran3D(ZtZ, DinvIplusZtZD, l0, q0)
 
 # =============================================================================
 #
@@ -1386,14 +2237,90 @@ def test_get_resms3D():
 # random test data and testing against niave calculation.
 #
 # =============================================================================
-def test_covB3D():
+def test_get_covB3D():
+
+    # -------------------------------------------------------------------------
+    # Test case 1: 1 random factor, 1 random effect
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([1])
+    nlevels = np.array([800])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate test data
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = Y.shape[1]
+    p = X.shape[1]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Test contrast vector
+    L = np.random.binomial(1,0.5,size=(1,p))
+    L[:,0]=1
+
+    # Expected, niave calculation.
+    # ----------------------------------------------------------------------
+
+    # rank of L
+    rL = np.linalg.matrix_rank(L)
+
+    # L times beta
+    LB = L @ beta[testv,:,:]
+
+    # V^(-1)
+    IplusZDZt = np.eye(n) + Z @ D[testv,:,:] @ Z.transpose()
+    invV = np.linalg.inv(IplusZDZt)
+
+    covB_expected = np.linalg.inv(X.transpose() @ invV @ X/sigma2[testv])
+
+    # Using function
+    # ----------------------------------------------------------------------
+
+    # Get diagonal ZtZ
+    ZtZ_diag = np.einsum('ijj->ij', ZtZ)
+
+    # Work out the indices in D where a new block Dk appears
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+
+    # New empty D dict
+    Ddict = dict()
+
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+
+    # Obtain D(I+Z'ZD)^(-1) diag
+    DinvIplusZtZD_diag = get_DinvIplusZtZD3D(Ddict, None, ZtZ_diag, nlevels, nraneffs) 
+
+    # Run F test
+    covB_test = get_covB3D(XtX, XtZ, DinvIplusZtZD_diag, sigma2, nraneffs)[testv,:]
+
+    # Check if results are all close.
+    testVal_tc1 = np.allclose(covB_test,covB_expected)
+
+    # -------------------------------------------------------------------------
+    # Test case 2: 1 random factor, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([2])
+    nlevels = np.array([300])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
 
     # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=10)
-    v = Y.shape[0]
-    q = np.sum(np.dot(nraneffs,nlevels))
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = Y.shape[1]
     p = X.shape[1]
-    n = X.shape[0]
 
     # Generate product matrices
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
@@ -1427,10 +2354,60 @@ def test_covB3D():
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
 
     # Run F test
-    covB_test = get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2)[testv,:]
+    covB_test = get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs)[testv,:]
 
     # Check if results are all close.
-    testVal = np.allclose(covB_test,covB_expected)
+    testVal_tc2 = np.allclose(covB_test,covB_expected)
+
+    # -------------------------------------------------------------------------
+    # Test case 3: multiple random factors, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v)
+    n = Y.shape[1]
+    q = np.sum(nlevels*nraneffs)
+    p = X.shape[1]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Test contrast vector
+    L = np.random.binomial(1,0.5,size=(1,p))
+    L[:,0]=1
+
+    # Expected, niave calculation.
+    # ----------------------------------------------------------------------
+
+    # rank of L
+    rL = np.linalg.matrix_rank(L)
+
+    # L times beta
+    LB = L @ beta[testv,:,:]
+
+    # V^(-1)
+    IplusZDZt = np.eye(n) + Z @ D[testv,:,:] @ Z.transpose()
+    invV = np.linalg.inv(IplusZDZt)
+
+    covB_expected = np.linalg.inv(X.transpose() @ invV @ X/sigma2[testv])
+
+    # Using function
+    # ----------------------------------------------------------------------
+    
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+
+    # Run F test
+    covB_test = get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs)[testv,:]
+
+    # Check if results are all close.
+    testVal_tc3 = np.allclose(covB_test,covB_expected)
+
+    # Combine the test values
+    testVal = testVal_tc3 and testVal_tc2 and testVal_tc1
 
     # Result
     if testVal:
@@ -1439,7 +2416,7 @@ def test_covB3D():
         result = 'Failed'
 
     print('=============================================================')
-    print('Unit test for: covB3D')
+    print('Unit test for: get_covB3D')
     print('-------------------------------------------------------------')
     print('Result: ', result)
     
@@ -1452,14 +2429,22 @@ def test_covB3D():
 # random test data and testing against niave calculation.
 #
 # =============================================================================
-def test_varLB3D():
+def test_get_varLB3D():
 
-    # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=10)
-    v = Y.shape[0]
-    q = np.sum(np.dot(nraneffs,nlevels))
+    # -------------------------------------------------------------------------
+    # Test case 1: 1 random factor, 1 random effect
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([1])
+    nlevels = np.array([800])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate test data
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = Y.shape[1]
     p = X.shape[1]
-    n = X.shape[0]
 
     # Generate product matrices
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
@@ -1491,15 +2476,139 @@ def test_varLB3D():
 
     # Using function
     # ----------------------------------------------------------------------
+ 
+    # Get diagonal ZtZ
+    ZtZ_diag = np.einsum('ijj->ij', ZtZ)
 
+    # Work out the indices in D where a new block Dk appears
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+
+    # New empty D dict
+    Ddict = dict()
+
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+
+    # Obtain D(I+Z'ZD)^(-1) diag
+    DinvIplusZtZD_diag = get_DinvIplusZtZD3D(Ddict, None, ZtZ_diag, nlevels, nraneffs) 
+
+    # Run F test
+    varLB_test = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD_diag, sigma2, nraneffs)[testv,:]
+
+    # Check if results are all close.
+    testVal_tc1 = np.allclose(varLB_test,varLB_expected)
+
+    # -------------------------------------------------------------------------
+    # Test case 2: 1 random factor, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([2])
+    nlevels = np.array([300])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = Y.shape[1]
+    p = X.shape[1]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Test contrast vector
+    L = np.random.binomial(1,0.5,size=(1,p))
+    L[:,0]=1
+
+    # Expected, niave calculation.
+    # ----------------------------------------------------------------------
+
+    # rank of L
+    rL = np.linalg.matrix_rank(L)
+
+    # L times beta
+    LB = L @ beta[testv,:,:]
+
+    # V^(-1)
+    IplusZDZt = np.eye(n) + Z @ D[testv,:,:] @ Z.transpose()
+    invV = np.linalg.inv(IplusZDZt)
+
+    covB = np.linalg.inv(X.transpose() @ invV @ X/sigma2[testv])
+    
+    # Variance of L times beta
+    varLB_expected = L @ covB @ L.transpose()
+
+    # Using function
+    # ----------------------------------------------------------------------
+ 
     # Obtain D(I+Z'ZD)^(-1)
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
 
     # Run F test
-    varLB_test = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2)[testv,:]
+    varLB_test = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs)[testv,:]
 
     # Check if results are all close.
-    testVal = np.allclose(varLB_test,varLB_expected)
+    testVal_tc2 = np.allclose(varLB_test,varLB_expected)
+
+    # -------------------------------------------------------------------------
+    # Test case 3: multiple random factors, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v)
+    n = Y.shape[1]
+    q = np.sum(nlevels*nraneffs)
+    p = X.shape[1]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Test contrast vector
+    L = np.random.binomial(1,0.5,size=(1,p))
+    L[:,0]=1
+
+    # Expected, niave calculation.
+    # ----------------------------------------------------------------------
+
+    # rank of L
+    rL = np.linalg.matrix_rank(L)
+
+    # L times beta
+    LB = L @ beta[testv,:,:]
+
+    # V^(-1)
+    IplusZDZt = np.eye(n) + Z @ D[testv,:,:] @ Z.transpose()
+    invV = np.linalg.inv(IplusZDZt)
+
+    covB = np.linalg.inv(X.transpose() @ invV @ X/sigma2[testv])
+    
+    # Variance of L times beta
+    varLB_expected = L @ covB @ L.transpose()
+
+    # Using function
+    # ----------------------------------------------------------------------
+ 
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+
+    # Run F test
+    varLB_test = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs)[testv,:]
+
+    # Check if results are all close.
+    testVal_tc3 = np.allclose(varLB_test,varLB_expected)
+
+    # Combine the test values
+    testVal = testVal_tc3 and testVal_tc2 and testVal_tc1
 
     # Result
     if testVal:
@@ -1523,12 +2632,94 @@ def test_varLB3D():
 # =============================================================================
 def test_get_T3D():
 
-    # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=10)
-    v = Y.shape[0]
-    q = np.sum(np.dot(nraneffs,nlevels))
+    # -------------------------------------------------------------------------
+    # Test case 1: 1 random factor, 1 random effect
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([1])
+    nlevels = np.array([800])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate test data
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = Y.shape[1]
     p = X.shape[1]
-    n = X.shape[0]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Test contrast vector
+    L = np.random.binomial(1,0.5,size=(1,p))
+    L[:,0]=1
+
+    # Expected, niave calculation.
+    # ----------------------------------------------------------------------
+
+    # rank of L
+    rL = np.linalg.matrix_rank(L)
+
+    # L times beta
+    LB = L @ beta[testv,:,:]
+
+    # V^(-1)
+    IplusZDZt = np.eye(n) + Z @ D[testv,:,:] @ Z.transpose()
+    invV = np.linalg.inv(IplusZDZt)
+
+    covB = np.linalg.inv(X.transpose() @ invV @ X/sigma2[testv])
+    
+    # Variance of L times beta
+    varLB = L @ covB @ L.transpose()
+
+    # Work out T
+    T_expected = LB/np.sqrt(varLB) 
+
+    # Using function
+    # ----------------------------------------------------------------------
+
+    # Get diagonal ZtZ
+    ZtZ_diag = np.einsum('ijj->ij', ZtZ)
+
+    # Work out the indices in D where a new block Dk appears
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+
+    # New empty D dict
+    Ddict = dict()
+
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+
+    # Obtain D(I+Z'ZD)^(-1) diag
+    DinvIplusZtZD_diag = get_DinvIplusZtZD3D(Ddict, None, ZtZ_diag, nlevels, nraneffs) 
+
+    # Run F test
+    T_test = get_T3D(L, XtX, XtZ, DinvIplusZtZD_diag, beta, sigma2, nraneffs)[testv,:]
+
+    # Check if results are all close.
+    testVal_tc1 = np.allclose(T_test,T_expected)
+
+    # -------------------------------------------------------------------------
+    # Test case 2: 1 random factor, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([2])
+    nlevels = np.array([300])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = Y.shape[1]
+    p = X.shape[1]
 
     # Generate product matrices
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
@@ -1568,10 +2759,66 @@ def test_get_T3D():
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
 
     # Run F test
-    T_test = get_T3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2)[testv,:]
+    T_test = get_T3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2, nraneffs)[testv,:]
 
     # Check if results are all close.
-    testVal = np.allclose(T_test,T_expected)
+    testVal_tc2 = np.allclose(T_test,T_expected)
+
+    # -------------------------------------------------------------------------
+    # Test case 3: multiple random factors, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v)
+    n = Y.shape[1]
+    q = np.sum(nlevels*nraneffs)
+    p = X.shape[1]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Test contrast vector
+    L = np.random.binomial(1,0.5,size=(1,p))
+    L[:,0]=1
+
+    # Expected, niave calculation.
+    # ----------------------------------------------------------------------
+
+    # rank of L
+    rL = np.linalg.matrix_rank(L)
+
+    # L times beta
+    LB = L @ beta[testv,:,:]
+
+    # V^(-1)
+    IplusZDZt = np.eye(n) + Z @ D[testv,:,:] @ Z.transpose()
+    invV = np.linalg.inv(IplusZDZt)
+
+    covB = np.linalg.inv(X.transpose() @ invV @ X/sigma2[testv])
+    
+    # Variance of L times beta
+    varLB = L @ covB @ L.transpose()
+
+    # Work out T
+    T_expected = LB/np.sqrt(varLB) 
+
+    # Using function
+    # ----------------------------------------------------------------------
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+
+    # Run F test
+    T_test = get_T3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2, nraneffs)[testv,:]
+
+    # Check if results are all close.
+    testVal_tc3 = np.allclose(T_test,T_expected)
+
+    # Combine the test values
+    testVal = testVal_tc3 and testVal_tc2 and testVal_tc1
 
     # Result
     if testVal:
@@ -1595,12 +2842,94 @@ def test_get_T3D():
 # =============================================================================
 def test_get_F3D():
 
-    # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=10)
-    v = Y.shape[0]
-    q = np.sum(np.dot(nraneffs,nlevels))
+    # -------------------------------------------------------------------------
+    # Test case 1: 1 random factor, 1 random effect
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([1])
+    nlevels = np.array([800])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate test data
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = Y.shape[1]
     p = X.shape[1]
-    n = X.shape[0]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Test contrast vector
+    L = np.eye(p)
+    L[:,0]=1
+
+    # Expected, niave calculation.
+    # ----------------------------------------------------------------------
+
+    # rank of L
+    rL = np.linalg.matrix_rank(L)
+
+    # L times beta
+    LB = L @ beta[testv,:,:]
+
+    # V^(-1)
+    IplusZDZt = np.eye(n) + Z @ D[testv,:,:] @ Z.transpose()
+    invV = np.linalg.inv(IplusZDZt)
+
+    covB = np.linalg.inv(X.transpose() @ invV @ X/sigma2[testv])
+    
+    # Variance of L times beta
+    varLB = L @ covB @ L.transpose()
+
+    # Work out F
+    F_expected = LB.transpose() @ np.linalg.inv(varLB) @ LB/rL
+
+    # Using function
+    # ----------------------------------------------------------------------
+
+    # Get diagonal ZtZ
+    ZtZ_diag = np.einsum('ijj->ij', ZtZ)
+
+    # Work out the indices in D where a new block Dk appears
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+
+    # New empty D dict
+    Ddict = dict()
+
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+
+    # Obtain D(I+Z'ZD)^(-1) diag
+    DinvIplusZtZD_diag = get_DinvIplusZtZD3D(Ddict, None, ZtZ_diag, nlevels, nraneffs) 
+
+    # Run F test
+    F_test = get_F3D(L, XtX, XtZ, DinvIplusZtZD_diag, beta, sigma2, nraneffs)[testv,:]
+
+    # Check if results are all close.
+    testVal_tc1 = np.allclose(F_test,F_expected)
+
+    # -------------------------------------------------------------------------
+    # Test case 2: 1 random factor, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([2])
+    nlevels = np.array([300])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = Y.shape[1]
+    p = X.shape[1]
 
     # Generate product matrices
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
@@ -1640,10 +2969,66 @@ def test_get_F3D():
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
 
     # Run F test
-    F_test = get_F3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2)[testv,:]
+    F_test = get_F3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2, nraneffs)[testv,:]
 
     # Check if results are all close.
-    testVal = np.allclose(F_test,F_expected)
+    testVal_tc2 = np.allclose(F_test,F_expected)
+
+    # -------------------------------------------------------------------------
+    # Test case 3: multiple random factors, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v)
+    n = Y.shape[1]
+    q = np.sum(nlevels*nraneffs)
+    p = X.shape[1]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Test contrast vector
+    L = np.eye(p)
+    L[:,0]=1
+
+    # Expected, niave calculation.
+    # ----------------------------------------------------------------------
+
+    # rank of L
+    rL = np.linalg.matrix_rank(L)
+
+    # L times beta
+    LB = L @ beta[testv,:,:]
+
+    # V^(-1)
+    IplusZDZt = np.eye(n) + Z @ D[testv,:,:] @ Z.transpose()
+    invV = np.linalg.inv(IplusZDZt)
+
+    covB = np.linalg.inv(X.transpose() @ invV @ X/sigma2[testv])
+    
+    # Variance of L times beta
+    varLB = L @ covB @ L.transpose()
+
+    # Work out F
+    F_expected = LB.transpose() @ np.linalg.inv(varLB) @ LB/rL
+
+    # Using function
+    # ----------------------------------------------------------------------
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+
+    # Run F test
+    F_test = get_F3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2, nraneffs)[testv,:]
+
+    # Check if results are all close.
+    testVal_tc3 = np.allclose(F_test,F_expected)
+
+    # Combine the test values
+    testVal = testVal_tc3 and testVal_tc2 and testVal_tc1
 
     # Result
     if testVal:
@@ -1824,12 +3209,85 @@ def test_F2P3D():
 # =============================================================================
 def test_get_swdf_T3D():
 
-    # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=10)
-    v = Y.shape[0]
-    q = np.sum(np.dot(nraneffs,nlevels))
+    # -------------------------------------------------------------------------
+    # Test case 1: 1 random factor, 1 random effect
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([1])
+    nlevels = np.array([800])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate test data
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = Y.shape[1]
     p = X.shape[1]
-    n = X.shape[0]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Test contrast vector
+    L = np.random.binomial(1,0.5,size=(1,p))
+    L[0,0]=1
+
+    # Get D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+
+    # Get diagonal ZtZ
+    ZtZ_diag = np.einsum('ijj->ij', ZtZ)
+
+    # Work out the indices in D where a new block Dk appears
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+
+    # New empty D dict
+    Ddict = dict()
+
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+
+    # Obtain D(I+Z'ZD)^(-1) diag
+    DinvIplusZtZD_diag = get_DinvIplusZtZD3D(Ddict, None, ZtZ_diag, nlevels, nraneffs) 
+
+    # Get S^2 (= Var(L\beta))
+    S2 = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD_diag, sigma2, nraneffs)[testv,:,:]
+    
+    # Get derivative of S^2
+    dS2 = get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ_diag, DinvIplusZtZD_diag, sigma2)[testv,:,:]
+
+    # Get Fisher information matrix
+    InfoMat = get_InfoMat3D(DinvIplusZtZD_diag, sigma2, n, nlevels, nraneffs, ZtZ_diag)[testv,:,:]
+
+    # Calculate df estimator
+    swdf_expected = 2*(S2**2)/(dS2.transpose() @ np.linalg.inv(InfoMat) @ dS2)
+
+    # Calculate using function
+    swdf_test = get_swdf_T3D(L, sigma2, XtX, XtZ, ZtX, ZtZ_diag, DinvIplusZtZD_diag, n, nlevels, nraneffs)[testv,:,:]
+
+    # Check if results are all close.
+    testVal_tc1 = np.allclose(swdf_test,swdf_expected)
+
+    # -------------------------------------------------------------------------
+    # Test case 2: 1 random factor, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([2])
+    nlevels = np.array([300])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = Y.shape[1]
+    p = X.shape[1]
 
     # Generate product matrices
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
@@ -1845,7 +3303,7 @@ def test_get_swdf_T3D():
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
 
     # Get S^2 (= Var(L\beta))
-    S2 = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2)[testv,:,:]
+    S2 = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs)[testv,:,:]
     
     # Get derivative of S^2
     dS2 = get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2)[testv,:,:]
@@ -1856,11 +3314,55 @@ def test_get_swdf_T3D():
     # Calculate df estimator
     swdf_expected = 2*(S2**2)/(dS2.transpose() @ np.linalg.inv(InfoMat) @ dS2)
 
-
-    swdf_test = get_swdf_T3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs)[testv,:,:]
+    # Calculate using function
+    swdf_test = get_swdf_T3D(L, sigma2, XtX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nraneffs)[testv,:,:]
 
     # Check if results are all close.
-    testVal = np.allclose(swdf_test,swdf_expected)
+    testVal_tc2 = np.allclose(swdf_test,swdf_expected)
+
+    # -------------------------------------------------------------------------
+    # Test case 3: multiple random factors, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v)
+    n = Y.shape[1]
+    q = np.sum(nlevels*nraneffs)
+    p = X.shape[1]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Test contrast vector
+    L = np.random.binomial(1,0.5,size=(1,p))
+    L[0,0]=1
+
+    # Get D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+
+    # Get S^2 (= Var(L\beta))
+    S2 = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs)[testv,:,:]
+    
+    # Get derivative of S^2
+    dS2 = get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2)[testv,:,:]
+
+    # Get Fisher information matrix
+    InfoMat = get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nraneffs, ZtZ)[testv,:,:]
+
+    # Calculate df estimator
+    swdf_expected = 2*(S2**2)/(dS2.transpose() @ np.linalg.inv(InfoMat) @ dS2)
+
+    # Calculate using function
+    swdf_test = get_swdf_T3D(L, sigma2, XtX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nraneffs)[testv,:,:]
+
+    # Check if results are all close.
+    testVal_tc3 = np.allclose(swdf_test,swdf_expected)
+
+    # Combine the test values
+    testVal = testVal_tc3 and testVal_tc2 and testVal_tc1
 
     # Result
     if testVal:
@@ -1886,18 +3388,106 @@ def test_get_swdf_T3D():
 # =============================================================================
 def test_get_swdf_F3D():
 
-    # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=10)
-    v = Y.shape[0]
-    q = np.sum(np.dot(nraneffs,nlevels))
+    # -------------------------------------------------------------------------
+    # Test case 1: 1 random factor, 1 random effect
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([1])
+    nlevels = np.array([800])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate test data
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = Y.shape[1]
     p = X.shape[1]
-    n = X.shape[0]
 
     # Generate product matrices
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
 
     # Choose random voxel to check worked correctly
     testv = np.random.randint(0,v)
+
+    # Work out the indices in D where a new block Dk appears
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+
+    # New empty D dict
+    Ddict = dict()
+
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+
+    # Get diagonal ZtZ 
+    ZtZ_diag = np.einsum('ijj->ij', ZtZ)
+
+    # Obtain D(I+Z'ZD)^(-1) diag
+    DinvIplusZtZD_diag = get_DinvIplusZtZD3D(Ddict, None, ZtZ_diag, nlevels, nraneffs) 
+
+    # Test contrast vector
+    L = np.random.binomial(1,0.5,size=(1,p))
+    L[0,0]=1
+
+    # Get diagonal ZtZ 
+    ZtZ_diag = np.einsum('ijj->ij', ZtZ)
+
+    # L is rL in rank
+    rL = np.linalg.matrix_rank(L)
+
+    # Initialize empty sum.
+    sum_swdf_adj = 0
+
+    # Loop through first rL rows of L
+    for i in np.arange(rL):
+
+        # Work out the swdf for each row of L
+        swdf_row = get_swdf_T3D(L[i:(i+1),:], sigma2, XtX, XtZ, ZtX, ZtZ_diag, DinvIplusZtZD_diag, n, nlevels, nraneffs)[testv,:,:]
+
+        # Work out adjusted df = df/(df-2)
+        swdf_adj = swdf_row/(swdf_row-2)
+
+        # Add to running sum
+        sum_swdf_adj = sum_swdf_adj + swdf_adj[0]
+
+    # Work out final df
+    swdf_expected = 2*sum_swdf_adj/(sum_swdf_adj-rL)
+
+    # Function version 
+    swdf_test = get_swdf_F3D(L, sigma2, XtX, XtZ, ZtX, ZtZ_diag, DinvIplusZtZD_diag, n, nlevels, nraneffs)[testv]
+
+    # Check if results are all close.
+    testVal_tc1 = np.allclose(swdf_test,swdf_expected)
+
+    # -------------------------------------------------------------------------
+    # Test case 2: 1 random factor, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([2])
+    nlevels = np.array([300])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = Y.shape[1]
+    p = X.shape[1]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
 
     # Test contrast vector
     L = np.random.binomial(1,0.5,size=(1,p))
@@ -1913,7 +3503,7 @@ def test_get_swdf_F3D():
     for i in np.arange(rL):
 
         # Work out the swdf for each row of L
-        swdf_row = get_swdf_T3D(L[i:(i+1),:], D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs)[testv,:,:]
+        swdf_row = get_swdf_T3D(L[i:(i+1),:], sigma2, XtX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nraneffs)[testv,:,:]
 
         # Work out adjusted df = df/(df-2)
         swdf_adj = swdf_row/(swdf_row-2)
@@ -1925,10 +3515,63 @@ def test_get_swdf_F3D():
     swdf_expected = 2*sum_swdf_adj/(sum_swdf_adj-rL)
 
     # Function version 
-    swdf_test = get_swdf_F3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs)[testv]
+    swdf_test = get_swdf_F3D(L, sigma2, XtX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nraneffs)[testv]
 
     # Check if results are all close.
-    testVal = np.allclose(swdf_test,swdf_expected)
+    testVal_tc2 = np.allclose(swdf_test,swdf_expected)
+
+    # -------------------------------------------------------------------------
+    # Test case 3: multiple random factors, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v)
+    n = Y.shape[1]
+    q = np.sum(nlevels*nraneffs)
+    p = X.shape[1]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+
+    # Test contrast vector
+    L = np.random.binomial(1,0.5,size=(1,p))
+    L[0,0]=1
+
+    # L is rL in rank
+    rL = np.linalg.matrix_rank(L)
+
+    # Initialize empty sum.
+    sum_swdf_adj = 0
+
+    # Loop through first rL rows of L
+    for i in np.arange(rL):
+
+        # Work out the swdf for each row of L
+        swdf_row = get_swdf_T3D(L[i:(i+1),:], sigma2, XtX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nraneffs)[testv,:,:]
+
+        # Work out adjusted df = df/(df-2)
+        swdf_adj = swdf_row/(swdf_row-2)
+
+        # Add to running sum
+        sum_swdf_adj = sum_swdf_adj + swdf_adj[0]
+
+    # Work out final df
+    swdf_expected = 2*sum_swdf_adj/(sum_swdf_adj-rL)
+
+    # Function version 
+    swdf_test = get_swdf_F3D(L, sigma2, XtX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nraneffs)[testv]
+
+    # Check if results are all close.
+    testVal_tc3 = np.allclose(swdf_test,swdf_expected)
+
+    # Combine the test values
+    testVal = testVal_tc3 and testVal_tc2 and testVal_tc1
 
     # Result
     if testVal:
@@ -1943,7 +3586,6 @@ def test_get_swdf_F3D():
     
     return(result)
 
-
 # =============================================================================
 #
 # The below function tests the function `get_dS23D`. It does this by
@@ -1952,12 +3594,20 @@ def test_get_swdf_F3D():
 # =============================================================================
 def test_get_dS23D():
 
-    # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=10)
-    v = Y.shape[0]
-    q = np.sum(np.dot(nraneffs,nlevels))
+    # -------------------------------------------------------------------------
+    # Test case 1: 1 random factor, 1 random effect
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([1])
+    nlevels = np.array([800])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate test data
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = Y.shape[1]
     p = X.shape[1]
-    n = X.shape[0]
 
     # Generate product matrices
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
@@ -2021,6 +3671,107 @@ def test_get_dS23D():
         # Add to dS2
         dS2_expected[DerivInds[k]:DerivInds[k+1]] = dS2dvechDk.reshape(dS2_expected[DerivInds[k]:DerivInds[k+1]].shape)
 
+    # Work out the indices in D where a new block Dk appears
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+
+    # New empty D dict
+    Ddict = dict()
+
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+
+    # Get diagonal ZtZ
+    ZtZ_diag = np.einsum('ijj->ij', ZtZ)
+
+    # Obtain D(I+Z'ZD)^(-1) diag
+    DinvIplusZtZD_diag = get_DinvIplusZtZD3D(Ddict, None, ZtZ_diag, nlevels, nraneffs) 
+
+    # Obtain result from function
+    dS2_test = get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ_diag, DinvIplusZtZD_diag, sigma2)[testv,:,:]
+
+    # Check if results are all close.
+    testVal_tc1 = np.allclose(dS2_test,dS2_expected)
+
+    # -------------------------------------------------------------------------
+    # Test case 2: 1 random factor, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([2])
+    nlevels = np.array([300])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = Y.shape[1]
+    p = X.shape[1]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Test contrast vector
+    L = np.random.binomial(1,0.5,size=(1,p))
+    L[0,0]=1
+
+    # Niave calculation for one voxel.
+    # ----------------------------------------------------------------------------------
+    IplusZDZt = np.eye(n) + Z @ D[testv,:,:] @ Z.transpose()
+    invV = np.linalg.inv(IplusZDZt)
+
+    # Calculate X'V^{-1}X
+    XtiVX = X.transpose() @ invV @ X 
+
+    # New empty array for differentiating S^2 wrt (sigma2, vech(D1),...vech(Dr)).
+    dS2_expected = np.zeros((1+np.int32(np.sum(nraneffs*(nraneffs+1)/2)),1))
+
+    # Work out indices for each start of each component of vector 
+    # i.e. [dS2/dsigm2, dS2/vechD1,...dS2/vechDr]
+    DerivInds = np.int32(np.cumsum(nraneffs*(nraneffs+1)/2) + 1)
+    DerivInds = np.insert(DerivInds,0,1)
+
+    # Work of derivative wrt to sigma^2
+    dS2dsigma2 = L @ np.linalg.inv(XtiVX) @ L.transpose()
+
+    # Add to dS2
+    dS2_expected[0:1] = dS2dsigma2.reshape(dS2_expected[0:1].shape)
+
+    # Now we need to work out ds2dVech(Dk)
+    for k in np.arange(len(nraneffs)):
+
+        # Initialize an empty zeros matrix
+        dS2dvechDk = np.zeros((np.int32(nraneffs[k]*(nraneffs[k]+1)/2),1))
+
+        for j in np.arange(nlevels[k]):
+
+            # Get the indices for this level and factor.
+            Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
+                    
+            # Work out Z_(k,j)'
+            Zkjt = Z[:,Ikj].transpose()
+
+            # Work out Z_(k,j)'V^{-1}X
+            ZkjtiVX = Zkjt @ invV @ X
+
+            # Work out the term to put into the kronecker product
+            # K = Z_(k,j)'V^{-1}X(X'V^{-1})^{-1}L'
+            K = ZkjtiVX @ np.linalg.inv(XtiVX) @ L.transpose()
+            
+            # Sum terms
+            dS2dvechDk = dS2dvechDk + dupMat2D(nraneffs[k]).toarray().transpose() @ mat2vec2D(np.kron(K,K.transpose()))
+
+        # Multiply by sigma^2
+        dS2dvechDk = sigma2[testv]*dS2dvechDk
+
+        # Add to dS2
+        dS2_expected[DerivInds[k]:DerivInds[k+1]] = dS2dvechDk.reshape(dS2_expected[DerivInds[k]:DerivInds[k+1]].shape)
 
     # Obtain D(I+Z'ZD)^(-1)
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
@@ -2029,7 +3780,91 @@ def test_get_dS23D():
     dS2_test = get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2)[testv,:,:]
 
     # Check if results are all close.
-    testVal = np.allclose(dS2_test,dS2_expected)
+    testVal_tc2 = np.allclose(dS2_test,dS2_expected)
+
+    # -------------------------------------------------------------------------
+    # Test case 3: multiple random factors, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v)
+    n = Y.shape[1]
+    q = np.sum(nlevels*nraneffs)
+    p = X.shape[1]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Test contrast vector
+    L = np.random.binomial(1,0.5,size=(1,p))
+    L[0,0]=1
+
+    # Niave calculation for one voxel.
+    # ----------------------------------------------------------------------------------
+    IplusZDZt = np.eye(n) + Z @ D[testv,:,:] @ Z.transpose()
+    invV = np.linalg.inv(IplusZDZt)
+
+    # Calculate X'V^{-1}X
+    XtiVX = X.transpose() @ invV @ X 
+
+    # New empty array for differentiating S^2 wrt (sigma2, vech(D1),...vech(Dr)).
+    dS2_expected = np.zeros((1+np.int32(np.sum(nraneffs*(nraneffs+1)/2)),1))
+
+    # Work out indices for each start of each component of vector 
+    # i.e. [dS2/dsigm2, dS2/vechD1,...dS2/vechDr]
+    DerivInds = np.int32(np.cumsum(nraneffs*(nraneffs+1)/2) + 1)
+    DerivInds = np.insert(DerivInds,0,1)
+
+    # Work of derivative wrt to sigma^2
+    dS2dsigma2 = L @ np.linalg.inv(XtiVX) @ L.transpose()
+
+    # Add to dS2
+    dS2_expected[0:1] = dS2dsigma2.reshape(dS2_expected[0:1].shape)
+
+    # Now we need to work out ds2dVech(Dk)
+    for k in np.arange(len(nraneffs)):
+
+        # Initialize an empty zeros matrix
+        dS2dvechDk = np.zeros((np.int32(nraneffs[k]*(nraneffs[k]+1)/2),1))
+
+        for j in np.arange(nlevels[k]):
+
+            # Get the indices for this level and factor.
+            Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
+                    
+            # Work out Z_(k,j)'
+            Zkjt = Z[:,Ikj].transpose()
+
+            # Work out Z_(k,j)'V^{-1}X
+            ZkjtiVX = Zkjt @ invV @ X
+
+            # Work out the term to put into the kronecker product
+            # K = Z_(k,j)'V^{-1}X(X'V^{-1})^{-1}L'
+            K = ZkjtiVX @ np.linalg.inv(XtiVX) @ L.transpose()
+            
+            # Sum terms
+            dS2dvechDk = dS2dvechDk + dupMat2D(nraneffs[k]).toarray().transpose() @ mat2vec2D(np.kron(K,K.transpose()))
+
+        # Multiply by sigma^2
+        dS2dvechDk = sigma2[testv]*dS2dvechDk
+
+        # Add to dS2
+        dS2_expected[DerivInds[k]:DerivInds[k+1]] = dS2dvechDk.reshape(dS2_expected[DerivInds[k]:DerivInds[k+1]].shape)
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+
+    # Obtain result from function
+    dS2_test = get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2)[testv,:,:]
+
+    # Check if results are all close.
+    testVal_tc3 = np.allclose(dS2_test,dS2_expected)
+
+    # Combine the test values
+    testVal = testVal_tc3 and testVal_tc2 and testVal_tc1
 
     # Result
     if testVal:
@@ -2053,10 +3888,119 @@ def test_get_dS23D():
 # =============================================================================
 def test_get_InfoMat3D():
 
+    # -------------------------------------------------------------------------
+    # Test case 1: 1 random factor, 1 random effect
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([1])
+    nlevels = np.array([800])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate test data
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = Y.shape[1]
+    p = X.shape[1]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+    n = X.shape[0]
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+
+    # Duplication matrices
+    # ------------------------------------------------------------------------------
+    dupMatTdict = dict()
+    for i in np.arange(len(nraneffs)):
+
+        dupMatTdict[i] = np.asarray(dupMat2D(nraneffs[i]).todense()).transpose()
+
+    # Index variables
+    # ------------------------------------------------------------------------------
+    # Work out the total number of paramateres
+    tnp = np.int32(1 + np.sum(nraneffs*(nraneffs+1)/2))
+
+    # Indices for submatrics corresponding to Dks
+    FishIndsDk = np.int32(np.cumsum(nraneffs*(nraneffs+1)/2) + 1)
+    FishIndsDk = np.insert(FishIndsDk,0,1)
+
+    # Initialize FIsher Information matrix
+    FI_expected = np.zeros((tnp,tnp))
+    
+    # Covariance of dl/dsigma2
+    covdldsigma2 = n/(2*(sigma2[testv]**2))
+    
+    # Add dl/dsigma2 covariance
+    FI_expected[0,0] = covdldsigma2
+
+    # Add dl/dsigma2 dl/dD covariance
+    for k in np.arange(len(nraneffs)):
+
+        # Get covariance of dldsigma and dldD      
+        covdldsigmadD = get_covdldDkdsigma22D(k, sigma2[testv], nlevels, nraneffs, ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], dupMatTdict)[0].reshape(FishIndsDk[k+1]-FishIndsDk[k])
+
+        # Assign to the relevant block
+        FI_expected[0, FishIndsDk[k]:FishIndsDk[k+1]] = covdldsigmadD
+        FI_expected[FishIndsDk[k]:FishIndsDk[k+1],0:1] = FI_expected[0:1, FishIndsDk[k]:FishIndsDk[k+1]].transpose()
+      
+    # Add dl/dD covariance
+    for k1 in np.arange(len(nraneffs)):
+
+        for k2 in np.arange(k1+1):
+
+            IndsDk1 = np.arange(FishIndsDk[k1],FishIndsDk[k1+1])
+            IndsDk2 = np.arange(FishIndsDk[k2],FishIndsDk[k2+1])
+
+            # Get covariance between D_k1 and D_k2 
+            covdldDk1dDk2 = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], dupMatTdict)[0]
+
+            # Add to FImat
+            FI_expected[np.ix_(IndsDk1, IndsDk2)] = covdldDk1dDk2
+            FI_expected[np.ix_(IndsDk2, IndsDk1)] = FI_expected[np.ix_(IndsDk1, IndsDk2)].transpose()
+
+    # Get diagonal ZtZ
+    ZtZ_diag = np.einsum('ijj->ij', ZtZ)
+
+    # Work out the indices in D where a new block Dk appears
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+
+    # New empty D dict
+    Ddict = dict()
+
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+
+    # Obtain D(I+Z'ZD)^(-1) diag
+    DinvIplusZtZD_diag = get_DinvIplusZtZD3D(Ddict, None, ZtZ_diag, nlevels, nraneffs) 
+
+    FI_test = get_InfoMat3D(DinvIplusZtZD_diag, sigma2, n, nlevels, nraneffs, ZtZ_diag)[testv,:,:]
+
+    # Check if results are all close.
+    testVal_tc1 = np.allclose(FI_test,FI_expected)
+
+    # -------------------------------------------------------------------------
+    # Test case 2: 1 random factor, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([2])
+    nlevels = np.array([300])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
     # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=10)
-    v = Y.shape[0]
-    q = np.sum(np.dot(nraneffs,nlevels))
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = Y.shape[1]
+    p = X.shape[1]
 
     # Generate product matrices
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
@@ -2121,7 +4065,85 @@ def test_get_InfoMat3D():
     FI_test = get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nraneffs, ZtZ)[testv,:,:]
 
     # Check if results are all close.
-    testVal = np.allclose(FI_test,FI_expected)
+    testVal_tc2 = np.allclose(FI_test,FI_expected)
+
+    # -------------------------------------------------------------------------
+    # Test case 3: multiple random factors, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v)
+    n = Y.shape[1]
+    q = np.sum(nlevels*nraneffs)
+    p = X.shape[1]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+    n = X.shape[0]
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+
+    # Duplication matrices
+    # ------------------------------------------------------------------------------
+    dupMatTdict = dict()
+    for i in np.arange(len(nraneffs)):
+
+        dupMatTdict[i] = np.asarray(dupMat2D(nraneffs[i]).todense()).transpose()
+
+    # Index variables
+    # ------------------------------------------------------------------------------
+    # Work out the total number of paramateres
+    tnp = np.int32(1 + np.sum(nraneffs*(nraneffs+1)/2))
+
+    # Indices for submatrics corresponding to Dks
+    FishIndsDk = np.int32(np.cumsum(nraneffs*(nraneffs+1)/2) + 1)
+    FishIndsDk = np.insert(FishIndsDk,0,1)
+
+    # Initialize FIsher Information matrix
+    FI_expected = np.zeros((tnp,tnp))
+    
+    # Covariance of dl/dsigma2
+    covdldsigma2 = n/(2*(sigma2[testv]**2))
+    
+    # Add dl/dsigma2 covariance
+    FI_expected[0,0] = covdldsigma2
+
+    # Add dl/dsigma2 dl/dD covariance
+    for k in np.arange(len(nraneffs)):
+
+        # Get covariance of dldsigma and dldD      
+        covdldsigmadD = get_covdldDkdsigma22D(k, sigma2[testv], nlevels, nraneffs, ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], dupMatTdict)[0].reshape(FishIndsDk[k+1]-FishIndsDk[k])
+
+        # Assign to the relevant block
+        FI_expected[0, FishIndsDk[k]:FishIndsDk[k+1]] = covdldsigmadD
+        FI_expected[FishIndsDk[k]:FishIndsDk[k+1],0:1] = FI_expected[0:1, FishIndsDk[k]:FishIndsDk[k+1]].transpose()
+      
+    # Add dl/dD covariance
+    for k1 in np.arange(len(nraneffs)):
+
+        for k2 in np.arange(k1+1):
+
+            IndsDk1 = np.arange(FishIndsDk[k1],FishIndsDk[k1+1])
+            IndsDk2 = np.arange(FishIndsDk[k2],FishIndsDk[k2+1])
+
+            # Get covariance between D_k1 and D_k2 
+            covdldDk1dDk2 = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], dupMatTdict)[0]
+
+            # Add to FImat
+            FI_expected[np.ix_(IndsDk1, IndsDk2)] = covdldDk1dDk2
+            FI_expected[np.ix_(IndsDk2, IndsDk1)] = FI_expected[np.ix_(IndsDk1, IndsDk2)].transpose()
+
+    FI_test = get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nraneffs, ZtZ)[testv,:,:]
+
+    # Check if results are all close.
+    testVal_tc3 = np.allclose(FI_test,FI_expected)
+
+    # Combine the test values
+    testVal = testVal_tc3 and testVal_tc2 and testVal_tc1
 
     # Result
     if testVal:
@@ -2404,9 +4426,9 @@ def run_all3D():
         failedTests = np.append(failedTests, name)
 
         
-    # Test covB3D
-    name = 'covB3D'
-    result = test_covB3D()
+    # Test get_covB3D
+    name = 'get_covB3D'
+    result = test_get_covB3D()
     # Add result to arrays.
     if result=='Passed':
         passedTests = np.append(passedTests, name)
@@ -2414,9 +4436,9 @@ def run_all3D():
         failedTests = np.append(failedTests, name)
 
 
-    # Test varLB3D
-    name = 'varLB3D'
-    result = test_varLB3D()
+    # Test get_varLB3D
+    name = 'get_varLB3D'
+    result = test_get_varLB3D()
     # Add result to arrays.
     if result=='Passed':
         passedTests = np.append(passedTests, name)
