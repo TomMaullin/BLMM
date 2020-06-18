@@ -151,7 +151,7 @@ def genTestData2D(n=None, p=None, nlevels=None, nraneffs=None, save=False, simIn
 
         if i==0:
 
-            if not factorVectors:
+            if 'i' not in factorVectors:
 
                 #The first factor should be block diagonal, so the factor indices are grouped
                 factorVec = np.repeat(np.arange(nlevels[i]), repeats=np.floor(n/max(nlevels[i],1)))
@@ -180,7 +180,7 @@ def genTestData2D(n=None, p=None, nlevels=None, nraneffs=None, save=False, simIn
 
         else:
 
-            if not factorVectors:
+            if 'i' not in factorVectors: 
     
                 # The factor is randomly arranged 
                 factorVec = np.random.randint(0,nlevels[i],size=n) 
@@ -193,7 +193,7 @@ def genTestData2D(n=None, p=None, nlevels=None, nraneffs=None, save=False, simIn
                 factorVec = factorVectors[i]
 
         # Save the factor vectors if we don't have it already
-        if not factorVectors:
+        if 'i' not in factorVectors:
 
             factorVectors[i]=factorVec
 
