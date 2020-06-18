@@ -619,7 +619,7 @@ def TstatisticPPplots(desInd, OutDir):
     row = ['sim'+str(i) for i in range(1,101)]
 
     # Make column indices
-    col = ['Truth','FS','FS (hess)','lmer']
+    col = ['Truth','FS','FS..hess.','lmer']
 
     #-----------------------------------------------------------------------------
     # Work out timing stats
@@ -644,9 +644,9 @@ def TstatisticPPplots(desInd, OutDir):
         results_table = pd.read_csv(results_file, index_col=0)
 
         # Get the T, P and df values
-        simT = results_table.loc['T',['Truth','FS','FS (hess)','lmer']]
-        simp = results_table.loc['p',['Truth','FS','FS (hess)','lmer']]
-        simdf = results_table.loc['swdf',['Truth','FS','FS (hess)','lmer']]
+        simT = results_table.loc['T',['Truth','FS','FS..hess.','lmer']]
+        simp = results_table.loc['p',['Truth','FS','FS..hess.','lmer']]
+        simdf = results_table.loc['swdf',['Truth','FS','FS..hess.','lmer']]
 
         # Add them to the tables
         tTable.loc['sim'+str(simInd),:]=simT
