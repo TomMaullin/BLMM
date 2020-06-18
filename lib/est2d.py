@@ -302,12 +302,12 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             chol_mod = elimMatdict[k] @ scipy.sparse.kron(cholDict[k],np.eye(nraneffs[k])).transpose() @ (scipy.sparse.identity(nraneffs[k]**2) + comMatdict[k]) @ dupMatTdict[k].transpose()
             
             # Transform to cholesky
-            dldcholk = chol_mod.transpose() @ dupMatTdict[k] @ mat2vec2D(dldD)
+            dldcholk = chol_mod @ dupMatTdict[k] @ mat2vec2D(dldD)
 
             #-----------------------------------------------------------------------
             # Transform to covariance of derivative with respect to chol_k
             #-----------------------------------------------------------------------
-            covdldcholk = chol_mod.transpose() @ covdldDk @ chol_mod
+            covdldcholk = chol_mod @ covdldDk @ chol_mod.transpose()
 
             #-----------------------------------------------------------------------
             # Perform update
