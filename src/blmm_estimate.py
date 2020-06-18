@@ -46,7 +46,9 @@ from lib.est3d import *
 #           varying).
 #  - `ZtY`: Z transpose multiplied by Y (spatially varying).
 #  - `ZtZ`: Z transpose multiplied by Z (can be spatially varying or non-spatially 
-#           varying).
+#           varying). If we are looking at a one random factor one random effect 
+#           design the variable ZtZ only holds the diagonal elements of the matrix
+#           Z'Z.
 #  - `n`: The number of observations (can be spatially varying or non-spatially 
 #         varying). 
 #  - `nlevels`: A vector containing the number of levels for each factor, e.g. 

@@ -7,7 +7,6 @@ import os
 np.set_printoptions(threshold=np.nan)
 from lib.npMatrix3d import *
 from lib.fileio import *
-import time
 
 
 # ====================================================================================
@@ -39,7 +38,7 @@ import time
 #            estimation for.
 #  - `beta`: The fixed effects parameter estimates for each voxel.
 #  - `sigma2`: The fixed effects variance estimate for each voxel.
-#  - `D`: The random effects covariance matrix estimate for each voxel.
+#  - `D`: The random effects covariance matrix estimate for each voxel. 
 #  - `XtX`: X transpose multiplied by X (can be spatially varying or non-spatially 
 #           varying). 
 #  - `XtY`: X transpose multiplied by Y (spatially varying.
@@ -50,9 +49,11 @@ import time
 #  - `YtZ`: Y transpose multiplied by Z (spatially varying.
 #  - `ZtX`: Z transpose multiplied by X (can be spatially varying or non-spatially 
 #           varying).
-#  - `ZtY`: Z transpose multiplied by Y (spatially varying.
+#  - `ZtY`: Z transpose multiplied by Y (spatially varying.#  
 #  - `ZtZ`: Z transpose multiplied by Z (can be spatially varying or non-spatially 
-#           varying).
+#           varying). If we are looking at a one random factor one random effect 
+#           design the variable ZtZ only holds the diagonal elements of the matrix
+#           Z'Z.
 #  - `n`: The number of observations (can be spatially varying or non-spatially 
 #         varying). 
 #
@@ -206,40 +207,25 @@ def main(inputs, nraneffs, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX
             # Work out the dimension of the T-stat-related volumes
             dimT = (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],nt)
 
-            t1 = time.time()
             # Work out L\beta
             Lbeta = L @ beta
             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_con.nii'), Lbeta, inds,volInd=current_nt,dim=dimT,aff=nifti.affine,hdr=nifti.header)
-            t2 = time.time()
-            print('LB time: ', t2-t1)
 
-            t1 = time.time()
             # Work out s.e.(L\beta)
             seLB = np.sqrt(get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs).reshape(v))
             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conSE.nii'), seLB, inds,volInd=current_nt,dim=dimT,aff=nifti.affine,hdr=nifti.header)
-            t2 = time.time()
-            print('seLB time: ', t2-t1)
 
-            t1 = time.time()
             # Calculate sattherwaite estimate of the degrees of freedom of this statistic
-            swdfc = get_swdf_T3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nraneffs).reshape(v)
+            swdfc = get_swdf_T3D(L, sigma2, XtX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nraneffs).reshape(v)
             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT_swedf.nii'), swdfc, inds,volInd=current_nt,dim=dimT,aff=nifti.affine,hdr=nifti.header)
-            t2 = time.time()
-            print('sw time: ', t2-t1)
 
-            t1 = time.time()
             # Obtain and output T statistic
             Tc = get_T3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2, nraneffs).reshape(v)
             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT.nii'), Tc, inds,volInd=current_nt,dim=dimT,aff=nifti.affine,hdr=nifti.header)
-            t2 = time.time()
-            print('T time: ', t2-t1)
 
-            t1 = time.time()
             # Obatin and output p-values
             pc = T2P3D(Tc,swdfc,minlog)
             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conTlp.nii'), pc, inds,volInd=current_nt,dim=dimT,aff=nifti.affine,hdr=nifti.header)
-            t2 = time.time()
-            print('p time: ', t2-t1)
 
             # Record that we have seen another T contrast
             current_nt = current_nt + 1
@@ -253,7 +239,7 @@ def main(inputs, nraneffs, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX
             dimF = (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],nf)
 
             # Calculate sattherthwaite degrees of freedom for the inner.
-            swdfc = get_swdf_F3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nraneffs).reshape(v)
+            swdfc = get_swdf_F3D(L, sigma2, XtX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nraneffs).reshape(v)
             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conF_swedf.nii'), swdfc, inds,volInd=current_nf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
 
             # Calculate F statistic.

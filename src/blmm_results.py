@@ -177,14 +177,15 @@ def main(ipath, vb):
 
     # Work out the number of voxels we can actually compute at a time.
     # (This is really just a rule of thumb guess but works reasonably in
-    # practice). We allow slightly more for the random intercept model since
-    # we do not construct any additional q by q matrices.
+    # practice). We allow slightly more for the one random factor one
+    # random effect model since we do not construct any additional q by q
+    # matrices.
     if nraneffs[0]==1 and r==1:
         nvb = MAXMEM/(10*4*(q**2))
     else:
         nvb = MAXMEM/(10*8*(q**2))
     
-    # Work out number of groups we have to split iindices into.
+    # Work out number of groups we have to split indices into.
     nvg = int(len(bamInds)//nvb+1)
 
     # Split voxels we want to look at into groups we can compute
@@ -235,8 +236,6 @@ def main(ipath, vb):
         # Load X'X, X'Y, Y'Y, X'Z, Y'Z, Z'Z
         # --------------------------------------------------------------------------------
 
-        print('reading in files')
-        t1 = time.time()
         # Ring X'Y, Y'Y, Z'Y
         XtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp",'XtY.npy'), R_inds_am).reshape([v_r, p, 1])
         YtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp",'YtY.npy'), R_inds_am).reshape([v_r, 1, 1])
@@ -246,14 +245,10 @@ def main(ipath, vb):
         XtY_i = readLinesFromNPY(os.path.join(OutDir,"tmp",'XtY.npy'), I_inds_am).reshape([v_i, p, 1])
         YtY_i = readLinesFromNPY(os.path.join(OutDir,"tmp",'YtY.npy'), I_inds_am).reshape([v_i, 1, 1])
         ZtY_i = readLinesFromNPY(os.path.join(OutDir,"tmp",'ZtY.npy'), I_inds_am).reshape([v_i, q, 1])
-        t2 = time.time()
-        print(t2-t1)
 
         # Ring Z'Z. Z'X, X'X
         if v_r:
 
-            print('reading and sum unique')
-            t1 = time.time()
             # In the one random effect one random factor setting we have only
             # the diagonal elements of Z'Z.
             if r == 1 and nraneffs[0]==1:
@@ -262,8 +257,6 @@ def main(ipath, vb):
                 ZtZ_r = readAndSumUniqueAtB('ZtZ', OutDir, R_inds, n_b, True).reshape([v_r, q, q])
             ZtX_r = readAndSumUniqueAtB('ZtX', OutDir, R_inds, n_b, True).reshape([v_r, q, p])
             XtX_r = readAndSumUniqueAtB('XtX', OutDir, R_inds, n_b, True).reshape([v_r, p, p])
-            t2 = time.time()
-            print(t2-t1)
 
             # ----------------------------------------------------------------------------
             # Remove low rank designs
@@ -305,23 +298,17 @@ def main(ipath, vb):
                 v_r = R_inds.shape[0]
         
         if v_i:
-                
-            print('reading and sum unique2')
-            t1 = time.time()
 
             # In the one random effect one random factor setting we have only
             # the diagonal elements of Z'Z.
             if r == 1 and nraneffs[0]==1:
                 ZtZ_i = readAndSumUniqueAtB('ZtZ', OutDir, I_inds, n_b, False).reshape([1, q])
-                print('ZtZ shape: ', ZtZ_i.shape)
             else:
                 ZtZ_i = readAndSumUniqueAtB('ZtZ', OutDir, I_inds, n_b, False).reshape([1, q, q])
 
             # Inner Z'X, X'X
             ZtX_i = readAndSumUniqueAtB('ZtX', OutDir, I_inds, n_b, False).reshape([1, q, p])
             XtX_i = readAndSumUniqueAtB('XtX', OutDir, I_inds, n_b, False).reshape([1, p, p])
-            t2 = time.time()
-            print(t2-t1)
 
             # Check the design is full rank
             if np.linalg.matrix_rank(XtX_i)<p:
@@ -347,18 +334,11 @@ def main(ipath, vb):
             YtZ_r = ZtY_r.transpose(0,2,1) 
             XtZ_r = ZtX_r.transpose(0,2,1)
 
-            print('Parameter estimation')
-            t1 = time.time()
             # Run parameter estimation
             beta_r, sigma2_r, D_r = blmm_estimate.main(inputs, R_inds, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r, n_sv_r, nlevels, nraneffs)
-            t2 = time.time()
-            print(t2-t1)
 
-            t1 = time.time()
             # Run inference
-            blmm_inference.main(inputs, nraneffs, nlevels, R_inds, beta_r, D_r, sigma2_r, n_sv_r, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r)       
-            t2 = time.time()
-            print('Parameter estimation1: ', t2-t1)
+            blmm_inference.main(inputs, nraneffs, nlevels, R_inds, beta_r, D_r, sigma2_r, n_sv_r, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r)
 
         if v_i:
 
@@ -367,18 +347,11 @@ def main(ipath, vb):
             YtZ_i = ZtY_i.transpose(0,2,1) 
             XtZ_i = ZtX_i.transpose(0,2,1)
 
-            print('Parameter estimation2')
-            t1 = time.time()
             # Run parameter estimation
             beta_i, sigma2_i, D_i = blmm_estimate.main(inputs, I_inds,  XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i, n, nlevels, nraneffs)
-            t2 = time.time()
-            print(t2-t1)
 
-            t1 = time.time()
             # Run inference
             blmm_inference.main(inputs, nraneffs, nlevels, I_inds, beta_i, D_i, sigma2_i, n, XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i)
-            t2 = time.time()
-            print('Parameter estimation2: ', t2-t1)
 
     w.resetwarnings()
 

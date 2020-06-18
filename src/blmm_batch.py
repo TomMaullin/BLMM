@@ -168,10 +168,9 @@ def main(*args):
 
             Z = np.hstack((Z,Zi))
 
-    # Get number of random effects
+    # Get number of random effects and number of levels
     nraneffs = np.array(nraneffs)
     nlevels = np.array(nlevels)
-    print('nlevels: ', nlevels)
 
     # Mask volumes (if they are given)
     if 'data_mask_files' in inputs:
@@ -217,9 +216,15 @@ def main(*args):
 
     # Mask volumes (if they are given)
     if 'analysis_mask' in inputs:
+
+        # Load the file and check it's shape is 3d (as oppose to 4d with a 4th dimension
+        # of 1)
         M_a = loadFile(inputs['analysis_mask']).get_data()
         M_a = M_a.reshape((M_a.shape[0],M_a.shape[1],M_a.shape[2]))
+
     else:
+
+        # Else set to None
         M_a = None
 
     # Reduce Y_files to only Y files for this block
@@ -585,9 +590,6 @@ def memorySafeAtB(A,B,MAXMEM,filename):
 
         # Create a memory-mapped .npy file with the dimensions and dtype we want
         M = open_memmap(filename, mode='w+', dtype='float64', shape=(v,pORq))
-            
-        print(filename)
-        print(M.shape)
 
         # Work out the number of voxels we can save at a time.
         # (8 bytes per numpy float exponent multiplied by 10
@@ -597,14 +599,8 @@ def memorySafeAtB(A,B,MAXMEM,filename):
         # Work out the indices for each group of voxels
         voxelGroups = np.array_split(np.arange(v, dtype='int32'), v//vPerBlock+1)
         
-        print(len(voxelGroups))
-        print(v//vPerBlock+1)
-
         # Loop through each group of voxels saving A'B for those voxels
         for vb in range(int(v//vPerBlock+1)):
-            print(len(voxelGroups[vb]))
-            print((A.transpose(0,2,1) @ B[voxelGroups[vb],:,:]).shape)
-            print(pORq)
             M[voxelGroups[vb],:]=(A.transpose(0,2,1) @ B[voxelGroups[vb],:,:]).reshape(len(voxelGroups[vb]),pORq)
     
     # Otherwise we add to the memory map that does exist
@@ -612,16 +608,12 @@ def memorySafeAtB(A,B,MAXMEM,filename):
 
         # Load in the file but in memory map mode
         M = np.load(filename,mmap_mode='r+')
-
-        print(filename)
-        print(M.shape)
-
         M = M.reshape((v,pORq))
 
         # Work out the number of voxels we can save at a time.
         # (8 bytes per numpy float exponent multiplied by 10
         # for a safe overhead)
-        vPerBlock = MAXMEM/(15*8*pORq)
+        vPerBlock = MAXMEM/(10*8*pORq)
 
         # Work out the indices for each group of voxels
         voxelGroups = np.array_split(np.arange(v, dtype='int32'), v//vPerBlock+1)

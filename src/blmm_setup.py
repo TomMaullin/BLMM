@@ -19,7 +19,7 @@ from lib.fileio import loadFile, str2vec, pracNumVoxelBlocks, get_amInds, addBlo
 #
 # ------------------------------------------------------------------------------------
 #
-# Author: Tom Maullin (Last edited: 04/04/2020)
+# Author: Tom Maullin (Last edited: 18/06/2020)
 #
 # ------------------------------------------------------------------------------------
 #
@@ -30,6 +30,21 @@ from lib.fileio import loadFile, str2vec, pracNumVoxelBlocks, get_amInds, addBlo
 #                           formatting guidelines as `blmm_config.yml`. If not 
 #                           specified, the default file `blmm_config.yml` will be 
 #                           assumed to contain the inputs.
+#
+# ------------------------------------------------------------------------------------
+#
+# Developer Note: As of 18/06/2020, this code contains a backdoor option `diskMem` 
+#                 which can be added into the `inputs.yml` file and has not been made
+#                 available to users. The purpose of this option is that for large 
+#                 designs the `ZtY` file produced may be too big to save as a file. 
+#                 To overcome this, the diskMem (or 'disk memory') option splits the
+#                 brain mask up voxelwise into `blmm_memmask` files. The analysis can
+#                 now be run one "chunk" of the brain at a time by repeat calls to 
+#                 `blmm_cluster.sh` in serial. Whilst this hasn't been made available
+#                 to users (as we are yet to see a design that really needs it), it is
+#                 very useful when developing code to be able to run small chunks of 
+#                 the brain instead of the whole thing. For this reason it has been 
+#                 left in here.
 #
 # ====================================================================================
 def main(*args):
@@ -122,7 +137,6 @@ def main(*args):
 
     # We don't do it if we are in diskMem mode though, as in this mode we run several
     # smaller analyses instead of one large one in order to preserve disk memory.
-
     if 'diskMem' not in inputs:
 
         files = ['blmm_vox_n.nii', 'blmm_vox_mask.nii', 'blmm_vox_edf.nii', 'blmm_vox_beta.nii',

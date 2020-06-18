@@ -209,6 +209,8 @@ The following subscripts are also common throughout the code:
  - `2D`: A function or file with this suffix will contain code designed to work analysis only on one voxel. As `X`,`Y` and `Z` are all 2 dimensional, all arrays considered for one voxel are 2D, hence the suffix.
  - `3D`: A function or file with this suffix will contain code designed to work analysis on multiple voxels. As `X`,`Y` and `Z` are all 3 dimensional (an extra dimension has been added for "voxel number"), all arrays considered are 3D, hence the suffix.
 
+When the user has specified 1 random factor and 1 random effect only, the matrices `DinvIplusZtZD` and `ZtZ` become diagonal. As a result of this, in this setting, instead of saving these variable as matrices of dimension `(v,q,q)` (one `(q,q)` matrix for every voxel), we only record the diagonal elements of these matrices. As a result, in this setting `DinvIplusZtZD` and `ZtZ` have dimension `(v,q)` throughout the code. This results in significant performance gains.
+
 ### Structure of the repository
 
 The repository contains 4 main folders, plus 3 files at the head of the repository. These are:

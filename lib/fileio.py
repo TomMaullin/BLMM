@@ -439,7 +439,7 @@ def numVoxelBlocks(inputs):
   # allowed size at any one time), divided by q^2 (the number of 
   # random effects squared/the largest matrix size we would
   # look at).
-  vPerBlock = MAXMEM/(10*8*(q**2.3))
+  vPerBlock = MAXMEM/(10*8*(q**2))
 
   # Read in analysis mask (if present)
   if 'analysis_mask' in inputs:
