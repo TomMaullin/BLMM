@@ -619,7 +619,7 @@ def TstatisticPPplots(desInd, OutDir):
     row = ['sim'+str(i) for i in range(1,101)]
 
     # Make column indices
-    col = ['Truth','FS','pFS','lmer']
+    col = ['Truth','FS','FS (hess)','lmer']
 
     #-----------------------------------------------------------------------------
     # Work out timing stats
