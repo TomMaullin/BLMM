@@ -1053,11 +1053,92 @@ def test_llh3D():
 # =============================================================================
 def test_get_dldB3D():
 
-    # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D()
-    v = Y.shape[0]
+    # -------------------------------------------------------------------------
+    # Test case 1: 1 random factor, 1 random effect
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([1])
+    nlevels = np.array([800])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate test data
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
     n = Y.shape[1]
-    q = Z.shape[1]
+    p = X.shape[1]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Work out Z'e
+    Zte = ZtY - ZtX @ beta
+    Zte_sv = ZtY_sv - ZtX_sv @ beta
+
+    # Work out Z'e
+    Xte = XtY - XtX @ beta
+    Xte_sv = XtY_sv - XtX_sv @ beta 
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+    DinvIplusZtZD_sv = D @ np.linalg.inv(np.eye(q) + ZtZ_sv @ D)
+
+    # Get diagonal ZtZ and ZtZ_sv
+    ZtZ_diag = np.einsum('ijj->ij', ZtZ)
+    ZtZ_diag_sv = np.einsum('ijj->ij', ZtZ_sv)
+
+    # Work out the indices in D where a new block Dk appears
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+
+    # New empty D dict
+    Ddict = dict()
+
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+
+    # Obtain D(I+Z'ZD)^(-1) diag
+    DinvIplusZtZD_diag = get_DinvIplusZtZD3D(Ddict, None, ZtZ_diag, nlevels, nraneffs) 
+    DinvIplusZtZD_diag_sv = get_DinvIplusZtZD3D(Ddict, None, ZtZ_diag_sv, nlevels, nraneffs) 
+
+    # First test spatially varying
+    dldB_sv_test = get_dldB3D(sigma2, Xte_sv, XtZ_sv, DinvIplusZtZD_diag_sv, Zte_sv, nraneffs)[testv,:,:]
+    dldB_sv_expected = get_dldB2D(sigma2[testv], Xte_sv[testv,:,:], XtZ_sv[testv,:,:], DinvIplusZtZD_sv[testv,:,:], Zte_sv[testv,:,:])
+
+    # Check if results are all close.
+    sv_testVal = np.allclose(dldB_sv_test,dldB_sv_expected)
+
+    # Now test non spatially varying
+    dldB_nsv_test = get_dldB3D(sigma2, Xte, XtZ, DinvIplusZtZD_diag, Zte, nraneffs)[testv,:,:]
+    dldB_nsv_expected = get_dldB2D(sigma2[testv], Xte[testv,:,:], XtZ[0,:,:], DinvIplusZtZD[testv,:,:], Zte[testv,:,:])
+
+    # Check if results are all close.
+    nsv_testVal = np.allclose(dldB_nsv_test,dldB_nsv_expected)
+
+    # Check against 2D version.
+    testVal_tc1 = nsv_testVal and sv_testVal
+
+
+    # -------------------------------------------------------------------------
+    # Test case 2: 1 random factor, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([2])
+    nlevels = np.array([300])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = Y.shape[1]
+    p = X.shape[1]
 
     # Generate product matrices
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
@@ -1078,21 +1159,69 @@ def test_get_dldB3D():
     DinvIplusZtZD_sv = D @ np.linalg.inv(np.eye(q) + ZtZ_sv @ D)
 
     # First test spatially varying
-    dldB_sv_test = get_dldB3D(sigma2, Xte_sv, XtZ_sv, DinvIplusZtZD_sv, Zte_sv)[testv,:,:]
+    dldB_sv_test = get_dldB3D(sigma2, Xte_sv, XtZ_sv, DinvIplusZtZD_sv, Zte_sv, nraneffs)[testv,:,:]
     dldB_sv_expected = get_dldB2D(sigma2[testv], Xte_sv[testv,:,:], XtZ_sv[testv,:,:], DinvIplusZtZD_sv[testv,:,:], Zte_sv[testv,:,:])
 
     # Check if results are all close.
     sv_testVal = np.allclose(dldB_sv_test,dldB_sv_expected)
 
     # Now test non spatially varying
-    dldB_nsv_test = get_dldB3D(sigma2, Xte, XtZ, DinvIplusZtZD, Zte)[testv,:,:]
+    dldB_nsv_test = get_dldB3D(sigma2, Xte, XtZ, DinvIplusZtZD, Zte, nraneffs)[testv,:,:]
     dldB_nsv_expected = get_dldB2D(sigma2[testv], Xte[testv,:,:], XtZ[0,:,:], DinvIplusZtZD[testv,:,:], Zte[testv,:,:])
 
     # Check if results are all close.
     nsv_testVal = np.allclose(dldB_nsv_test,dldB_nsv_expected)
 
     # Check against 2D version.
-    testVal = nsv_testVal and sv_testVal
+    testVal_tc2 = nsv_testVal and sv_testVal
+
+    # -------------------------------------------------------------------------
+    # Test case 3: multiple random factors, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v)
+    n = Y.shape[1]
+    q = np.sum(nlevels*nraneffs)
+    p = X.shape[1]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Work out Z'e
+    Zte = ZtY - ZtX @ beta
+    Zte_sv = ZtY_sv - ZtX_sv @ beta
+
+    # Work out Z'e
+    Xte = XtY - XtX @ beta
+    Xte_sv = XtY_sv - XtX_sv @ beta 
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+    DinvIplusZtZD_sv = D @ np.linalg.inv(np.eye(q) + ZtZ_sv @ D)
+
+    # First test spatially varying
+    dldB_sv_test = get_dldB3D(sigma2, Xte_sv, XtZ_sv, DinvIplusZtZD_sv, Zte_sv, nraneffs)[testv,:,:]
+    dldB_sv_expected = get_dldB2D(sigma2[testv], Xte_sv[testv,:,:], XtZ_sv[testv,:,:], DinvIplusZtZD_sv[testv,:,:], Zte_sv[testv,:,:])
+
+    # Check if results are all close.
+    sv_testVal = np.allclose(dldB_sv_test,dldB_sv_expected)
+
+    # Now test non spatially varying
+    dldB_nsv_test = get_dldB3D(sigma2, Xte, XtZ, DinvIplusZtZD, Zte, nraneffs)[testv,:,:]
+    dldB_nsv_expected = get_dldB2D(sigma2[testv], Xte[testv,:,:], XtZ[0,:,:], DinvIplusZtZD[testv,:,:], Zte[testv,:,:])
+
+    # Check if results are all close.
+    nsv_testVal = np.allclose(dldB_nsv_test,dldB_nsv_expected)
+
+    # Check against 2D version.
+    testVal_tc3 = nsv_testVal and sv_testVal
+
+    # Combine the test values
+    testVal = testVal_tc3 and testVal_tc2 and testVal_tc1
 
     # Result
     if testVal:
@@ -1117,11 +1246,91 @@ def test_get_dldB3D():
 # =============================================================================
 def test_get_dldsigma23D():
 
-    # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D()
-    v = Y.shape[0]
+    # -------------------------------------------------------------------------
+    # Test case 1: 1 random factor, 1 random effect
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([1])
+    nlevels = np.array([800])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate test data
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
     n = Y.shape[1]
-    q = Z.shape[1]
+    p = X.shape[1]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Work out Z'e
+    Zte = ZtY - ZtX @ beta
+    Zte_sv = ZtY_sv - ZtX_sv @ beta
+
+    # Work out ete
+    ete = ssr3D(YtX, YtY, XtX, beta)
+    ete_sv = ssr3D(YtX_sv, YtY, XtX_sv, beta) 
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+    DinvIplusZtZD_sv = D @ np.linalg.inv(np.eye(q) + ZtZ_sv @ D)
+
+    # Get diagonal ZtZ and ZtZ_sv
+    ZtZ_diag = np.einsum('ijj->ij', ZtZ)
+    ZtZ_diag_sv = np.einsum('ijj->ij', ZtZ_sv)
+
+    # Work out the indices in D where a new block Dk appears
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+
+    # New empty D dict
+    Ddict = dict()
+
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+
+    # Obtain D(I+Z'ZD)^(-1) diag
+    DinvIplusZtZD_diag = get_DinvIplusZtZD3D(Ddict, None, ZtZ_diag, nlevels, nraneffs) 
+    DinvIplusZtZD_diag_sv = get_DinvIplusZtZD3D(Ddict, None, ZtZ_diag_sv, nlevels, nraneffs) 
+
+    # First test spatially varying
+    dldsigma2_sv_test = get_dldsigma23D(n_sv, ete_sv, Zte_sv, sigma2, DinvIplusZtZD_diag_sv, nraneffs)[testv]
+    dldsigma2_sv_expected = get_dldsigma22D(n_sv[testv,:], ete_sv[testv,:,:], Zte_sv[testv,:,:], sigma2[testv], DinvIplusZtZD_sv[testv,:,:])
+
+    # Check if results are all close.
+    sv_testVal = np.allclose(dldsigma2_sv_test,dldsigma2_sv_expected)
+
+    # Now test non spatially varying
+    dldsigma2_nsv_test = get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD_diag, nraneffs)[testv]
+    dldsigma2_nsv_expected = get_dldsigma22D(n, ete[testv,:,:], Zte[testv,:,:], sigma2[testv], DinvIplusZtZD[testv,:,:])
+
+    # Check if results are all close.
+    nsv_testVal = np.allclose(dldsigma2_nsv_test,dldsigma2_nsv_expected)
+
+    # Check against 2D version.
+    testVal_tc1 = nsv_testVal and sv_testVal
+
+    # -------------------------------------------------------------------------
+    # Test case 2: 1 random factor, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([2])
+    nlevels = np.array([300])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = Y.shape[1]
+    p = X.shape[1]
 
     # Generate product matrices
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
@@ -1142,21 +1351,69 @@ def test_get_dldsigma23D():
     DinvIplusZtZD_sv = D @ np.linalg.inv(np.eye(q) + ZtZ_sv @ D)
 
     # First test spatially varying
-    dldsigma2_sv_test = get_dldsigma23D(n_sv, ete_sv, Zte_sv, sigma2, DinvIplusZtZD_sv)[testv]
+    dldsigma2_sv_test = get_dldsigma23D(n_sv, ete_sv, Zte_sv, sigma2, DinvIplusZtZD_sv, nraneffs)[testv]
     dldsigma2_sv_expected = get_dldsigma22D(n_sv[testv,:], ete_sv[testv,:,:], Zte_sv[testv,:,:], sigma2[testv], DinvIplusZtZD_sv[testv,:,:])
 
     # Check if results are all close.
     sv_testVal = np.allclose(dldsigma2_sv_test,dldsigma2_sv_expected)
 
     # Now test non spatially varying
-    dldsigma2_nsv_test = get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD)[testv]
+    dldsigma2_nsv_test = get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD, nraneffs)[testv]
     dldsigma2_nsv_expected = get_dldsigma22D(n, ete[testv,:,:], Zte[testv,:,:], sigma2[testv], DinvIplusZtZD[testv,:,:])
 
     # Check if results are all close.
     nsv_testVal = np.allclose(dldsigma2_nsv_test,dldsigma2_nsv_expected)
 
     # Check against 2D version.
-    testVal = nsv_testVal and sv_testVal
+    testVal_tc2 = nsv_testVal and sv_testVal
+
+    # -------------------------------------------------------------------------
+    # Test case 3: multiple random factors, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v)
+    n = Y.shape[1]
+    q = np.sum(nlevels*nraneffs)
+    p = X.shape[1]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Work out Z'e
+    Zte = ZtY - ZtX @ beta
+    Zte_sv = ZtY_sv - ZtX_sv @ beta
+
+    # Work out ete
+    ete = ssr3D(YtX, YtY, XtX, beta)
+    ete_sv = ssr3D(YtX_sv, YtY, XtX_sv, beta) 
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+    DinvIplusZtZD_sv = D @ np.linalg.inv(np.eye(q) + ZtZ_sv @ D)
+
+    # First test spatially varying
+    dldsigma2_sv_test = get_dldsigma23D(n_sv, ete_sv, Zte_sv, sigma2, DinvIplusZtZD_sv, nraneffs)[testv]
+    dldsigma2_sv_expected = get_dldsigma22D(n_sv[testv,:], ete_sv[testv,:,:], Zte_sv[testv,:,:], sigma2[testv], DinvIplusZtZD_sv[testv,:,:])
+
+    # Check if results are all close.
+    sv_testVal = np.allclose(dldsigma2_sv_test,dldsigma2_sv_expected)
+
+    # Now test non spatially varying
+    dldsigma2_nsv_test = get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD, nraneffs)[testv]
+    dldsigma2_nsv_expected = get_dldsigma22D(n, ete[testv,:,:], Zte[testv,:,:], sigma2[testv], DinvIplusZtZD[testv,:,:])
+
+    # Check if results are all close.
+    nsv_testVal = np.allclose(dldsigma2_nsv_test,dldsigma2_nsv_expected)
+
+    # Check against 2D version.
+    testVal_tc3 = nsv_testVal and sv_testVal
+
+    # Combine the test values
+    testVal = testVal_tc3 and testVal_tc2 and testVal_tc1
 
     # Result
     if testVal:
@@ -1379,10 +1636,83 @@ def test_get_dldDk3D():
 # =============================================================================
 def test_get_covdldbeta3D():
 
+    # -------------------------------------------------------------------------
+    # Test case 1: 1 random factor, 1 random effect
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([1])
+    nlevels = np.array([800])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate test data
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = Y.shape[1]
+    p = X.shape[1]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+    DinvIplusZtZD_sv = D @ np.linalg.inv(np.eye(q) + ZtZ_sv @ D)
+
+    # Get diagonal ZtZ and ZtZ_sv
+    ZtZ_diag = np.einsum('ijj->ij', ZtZ)
+    ZtZ_diag_sv = np.einsum('ijj->ij', ZtZ_sv)
+
+    # Work out the indices in D where a new block Dk appears
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+
+    # New empty D dict
+    Ddict = dict()
+
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+
+    # Obtain D(I+Z'ZD)^(-1) diag
+    DinvIplusZtZD_diag = get_DinvIplusZtZD3D(Ddict, None, ZtZ_diag, nlevels, nraneffs) 
+    DinvIplusZtZD_diag_sv = get_DinvIplusZtZD3D(Ddict, None, ZtZ_diag_sv, nlevels, nraneffs) 
+
+    # First test spatially varying
+    covdldB_sv_test = get_covdldbeta3D(XtZ_sv, XtX_sv, ZtZ_diag_sv, DinvIplusZtZD_diag_sv, sigma2, nraneffs)[testv,:,:]
+    covdldB_sv_expected = get_covdldbeta2D(XtZ_sv[testv,:,:], XtX_sv[testv,:,:], ZtZ_sv[testv,:,:], DinvIplusZtZD_sv[testv,:,:], sigma2[testv])
+
+    # Check if results are all close.
+    sv_testVal = np.allclose(covdldB_sv_test,covdldB_sv_expected)
+
+    # Now test non spatially varying
+    covdldB_nsv_test = get_covdldbeta3D(XtZ, XtX, ZtZ_diag, DinvIplusZtZD_diag, sigma2, nraneffs)[testv,:,:]
+    covdldB_nsv_expected = get_covdldbeta2D(XtZ[0,:,:], XtX[0,:,:], ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], sigma2[testv])
+
+    # Check if results are all close.
+    nsv_testVal = np.allclose(covdldB_nsv_test,covdldB_nsv_expected)
+
+    # Check against 2D version.
+    testVal_tc1 = nsv_testVal and sv_testVal
+
+    # -------------------------------------------------------------------------
+    # Test case 2: 1 random factor, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([2])
+    nlevels = np.array([300])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
     # Generate a random mass univariate linear mixed model.
-    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D()
-    v = Y.shape[0]
-    q = Z.shape[1]
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = Y.shape[1]
+    p = X.shape[1]
 
     # Generate product matrices
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
@@ -1395,21 +1725,61 @@ def test_get_covdldbeta3D():
     DinvIplusZtZD_sv = D @ np.linalg.inv(np.eye(q) + ZtZ_sv @ D)
 
     # First test spatially varying
-    covdldB_sv_test = get_covdldbeta3D(XtZ_sv, XtX_sv, ZtZ_sv, DinvIplusZtZD_sv, sigma2)[testv,:,:]
+    covdldB_sv_test = get_covdldbeta3D(XtZ_sv, XtX_sv, ZtZ_sv, DinvIplusZtZD_sv, sigma2, nraneffs)[testv,:,:]
     covdldB_sv_expected = get_covdldbeta2D(XtZ_sv[testv,:,:], XtX_sv[testv,:,:], ZtZ_sv[testv,:,:], DinvIplusZtZD_sv[testv,:,:], sigma2[testv])
 
     # Check if results are all close.
     sv_testVal = np.allclose(covdldB_sv_test,covdldB_sv_expected)
 
     # Now test non spatially varying
-    covdldB_nsv_test = get_covdldbeta3D(XtZ, XtX, ZtZ, DinvIplusZtZD, sigma2)[testv,:,:]
+    covdldB_nsv_test = get_covdldbeta3D(XtZ, XtX, ZtZ, DinvIplusZtZD, sigma2, nraneffs)[testv,:,:]
     covdldB_nsv_expected = get_covdldbeta2D(XtZ[0,:,:], XtX[0,:,:], ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], sigma2[testv])
 
     # Check if results are all close.
     nsv_testVal = np.allclose(covdldB_nsv_test,covdldB_nsv_expected)
 
     # Check against 2D version.
-    testVal = nsv_testVal and sv_testVal
+    testVal_tc2 = nsv_testVal and sv_testVal
+
+    # -------------------------------------------------------------------------
+    # Test case 3: multiple random factors, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v)
+    n = Y.shape[1]
+    q = np.sum(nlevels*nraneffs)
+    p = X.shape[1]
+
+    # Generate product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Obtain D(I+Z'ZD)^(-1)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+    DinvIplusZtZD_sv = D @ np.linalg.inv(np.eye(q) + ZtZ_sv @ D)
+
+    # First test spatially varying
+    covdldB_sv_test = get_covdldbeta3D(XtZ_sv, XtX_sv, ZtZ_sv, DinvIplusZtZD_sv, sigma2, nraneffs)[testv,:,:]
+    covdldB_sv_expected = get_covdldbeta2D(XtZ_sv[testv,:,:], XtX_sv[testv,:,:], ZtZ_sv[testv,:,:], DinvIplusZtZD_sv[testv,:,:], sigma2[testv])
+
+    # Check if results are all close.
+    sv_testVal = np.allclose(covdldB_sv_test,covdldB_sv_expected)
+
+    # Now test non spatially varying
+    covdldB_nsv_test = get_covdldbeta3D(XtZ, XtX, ZtZ, DinvIplusZtZD, sigma2, nraneffs)[testv,:,:]
+    covdldB_nsv_expected = get_covdldbeta2D(XtZ[0,:,:], XtX[0,:,:], ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], sigma2[testv])
+
+    # Check if results are all close.
+    nsv_testVal = np.allclose(covdldB_nsv_test,covdldB_nsv_expected)
+
+    # Check against 2D version.
+    testVal_tc3 = nsv_testVal and sv_testVal
+
+    # Combine the test values
+    testVal = testVal_tc3 and testVal_tc2 and testVal_tc1
 
     # Result
     if testVal:
@@ -1838,11 +2208,11 @@ def test_get_covdldDk1Dk23D():
 
 # =============================================================================
 #
-# The below function tests the function `getCovergedIndices`. It does this by
+# The below function tests the function `getConvergedIndices`. It does this by
 # testing against a predefined example.
 #
 # =============================================================================
-def test_getCovergedIndices():
+def test_getConvergedIndices():
 
     # Suppose we were looking at 20 voxels.
     convergedBeforeIt = np.zeros(20)
@@ -1892,7 +2262,7 @@ def test_getCovergedIndices():
         result = 'Failed'
 
     print('=============================================================')
-    print('Unit test for: getCovergedIndices')
+    print('Unit test for: getConvergedIndices')
     print('-------------------------------------------------------------')
     print('Result: ', result)
     
@@ -1909,11 +2279,11 @@ def test_getCovergedIndices():
 def test_block2stacked3D():
 
     # Generate random matrix dimensions
-    v = np.random.randint(40,140)
+    v = np.random.randint(40,60)
     n1 = np.random.randint(10,20)
     n2 = np.random.randint(10,20)
-    l1 = np.random.randint(50,100)
-    l2 = np.random.randint(50,100)
+    l1 = np.random.randint(50,60)
+    l2 = np.random.randint(50,60)
 
     # Work out m1 and m2
     m1 = n1*l1
@@ -1954,11 +2324,11 @@ def test_block2stacked3D():
 def test_mat2vecb3D():
 
     # Generate random matrix dimensions
-    v = np.random.randint(40,140)
+    v = np.random.randint(10,30)
     n1 = np.random.randint(10,20)
     n2 = np.random.randint(10,20)
-    l1 = np.random.randint(50,100)
-    l2 = np.random.randint(50,100)
+    l1 = np.random.randint(10,50)
+    l2 = np.random.randint(10,50)
 
     # Work out m1 and m2
     m1 = n1*l1
@@ -4366,9 +4736,9 @@ def run_all3D():
         failedTests = np.append(failedTests, name)
 
 
-    # Test getCovergedIndices
-    name = 'getCovergedIndices'
-    result = test_getCovergedIndices()
+    # Test getConvergedIndices
+    name = 'getConvergedIndices'
+    result = test_getConvergedIndices()
     # Add result to arrays.
     if result=='Passed':
         passedTests = np.append(passedTests, name)
@@ -4409,6 +4779,16 @@ def run_all3D():
     # Test sumAijKronBij3D
     name = 'sumAijKronBij3D'
     result = test_sumAijKronBij3D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+
+    # Test sumTTt_1fac1ran3D
+    name = 'sumTTt_1fac1ran3D'
+    result = test_sumTTt_1fac1ran3D()
     # Add result to arrays.
     if result=='Passed':
         passedTests = np.append(passedTests, name)

@@ -707,6 +707,9 @@ def get_DinvIplusZtZD3D(Ddict, D, ZtZ, nlevels, nraneffs):
 #                    single random factor single random effect model 
 #                    DinvIplusZtZD will only hold the diagonal elements of
 #                    D(I+Z'ZD)^(-1)
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 #
 # ----------------------------------------------------------------------------
 #
@@ -717,11 +720,20 @@ def get_DinvIplusZtZD3D(Ddict, D, ZtZ, nlevels, nraneffs):
 # - `dldb`: The derivative of l with respect to \beta.
 #
 # ============================================================================
-def get_dldB3D(sigma2, Xte, XtZ, DinvIplusZtZD, Zte):
+def get_dldB3D(sigma2, Xte, XtZ, DinvIplusZtZD, Zte, nraneffs):
 
-  # Work out the derivative (Note: we leave everything as 3D for ease of future computation)
-  deriv = np.einsum('i,ijk->ijk',1/sigma2, (Xte - (XtZ @ DinvIplusZtZD @ Zte)))
-                    
+  # Number of random factors
+  r = len(nraneffs)
+
+  # In the one random factor one random effect setting this computation can be 
+  # streamlined
+  if r == 1 and nraneffs[0]==1:
+    # Work out the derivative (Note: we leave everything as 3D for ease of future computation)
+    deriv = np.einsum('i,ijk->ijk',1/sigma2, (Xte - (XtZ @ np.einsum('ij,ijk->ijk', DinvIplusZtZD, Zte))))
+  else: 
+    # Work out the derivative (Note: we leave everything as 3D for ease of future computation)
+    deriv = np.einsum('i,ijk->ijk',1/sigma2, (Xte - (XtZ @ DinvIplusZtZD @ Zte)))
+
   # Return the derivative
   return(deriv)
 
@@ -751,6 +763,9 @@ def get_dldB3D(sigma2, Xte, XtZ, DinvIplusZtZD, Zte):
 #                    single random factor single random effect model 
 #                    DinvIplusZtZD will only hold the diagonal elements of
 #                    D(I+Z'ZD)^(-1)
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 #
 # ----------------------------------------------------------------------------
 #
@@ -761,7 +776,7 @@ def get_dldB3D(sigma2, Xte, XtZ, DinvIplusZtZD, Zte):
 # - `dldsigma2`: The derivative of l with respect to \sigma^2.
 #
 # ============================================================================
-def get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD):
+def get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD, nraneffs):
   
   # Make sure n is correct shape
   if hasattr(n, "ndim"):
@@ -770,8 +785,20 @@ def get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD):
 
       n = n.reshape(sigma2.shape)
 
-  # Get e'(I+ZDZ')^(-1)e=e'e-e'ZD(I+Z'ZD)^(-1)Z'e
-  etinvIplusZtDZe = ete - forceSym3D(Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte)
+  # Number of random factors
+  r = len(nraneffs)
+
+  # In the one random factor one random effect setting this computation can be 
+  # streamlined
+  if r == 1 and nraneffs[0]==1:
+
+    # Get e'(I+ZDZ')^(-1)e=e'e-e'ZD(I+Z'ZD)^(-1)Z'e
+    etinvIplusZtDZe = ete - forceSym3D(Zte.transpose((0,2,1)) @ np.einsum('ij,ijk->ijk', DinvIplusZtZD, Zte))
+
+  else:
+
+    # Get e'(I+ZDZ')^(-1)e=e'e-e'ZD(I+Z'ZD)^(-1)Z'e
+    etinvIplusZtDZe = ete - forceSym3D(Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte)
   
   # Get the derivative
   deriv = -n/(2*sigma2) + np.einsum('i,ijk->ijk',1/(2*(sigma2**2)), etinvIplusZtDZe).reshape(sigma2.shape[0])
@@ -1033,6 +1060,9 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 #                    DinvIplusZtZD will only hold the diagonal elements of
 #                    D(I+Z'ZD)^(-1)
 # - `sigma2`: The fixed effects variance (\sigma^2 in the above notation).
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 #
 # ----------------------------------------------------------------------------
 #
@@ -1044,10 +1074,19 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 #                 respect to \beta.
 #
 # ============================================================================
-def get_covdldbeta3D(XtZ, XtX, ZtZ, DinvIplusZtZD, sigma2):
-  
-  # Get the covariance of the derivative
-  covderiv = np.einsum('i,ijk->ijk',1/sigma2,(XtX - forceSym3D(XtZ @ DinvIplusZtZD @ XtZ.transpose((0,2,1)))))
+def get_covdldbeta3D(XtZ, XtX, ZtZ, DinvIplusZtZD, sigma2, nraneffs):
+
+  # Number of random factors
+  r = len(nraneffs)
+
+  # In the one random factor one random effect setting this computation can be 
+  # streamlined
+  if r == 1 and nraneffs[0]==1:
+    # Get the covariance of the derivative
+    covderiv = np.einsum('i,ijk->ijk',1/sigma2,(XtX - forceSym3D(XtZ @ np.einsum('ij,ijk->ijk', DinvIplusZtZD, XtZ.transpose((0,2,1))))))
+  else:
+    # Get the covariance of the derivative
+    covderiv = np.einsum('i,ijk->ijk',1/sigma2,(XtX - forceSym3D(XtZ @ DinvIplusZtZD @ XtZ.transpose((0,2,1)))))
   
   # Return the covariance of the derivative
   return(covderiv)
@@ -1115,8 +1154,8 @@ def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupM
   # We only need calculate this once across all iterations
   if ZtZmat is None:
 
-    # In the one factor setting this computation boils down
-    # to a sum of square elements
+  # In the one random factor one random effect setting this computation can be 
+  # streamlined
     if r == 1 and nraneffs[0]==1:
       
       # We assume ZtZ is already diagonal

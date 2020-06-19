@@ -31,13 +31,95 @@ from genTestDat import genTestData3D, prodMats3D
 # =============================================================================
 def test_FS3D():
 
-    # Generate some test data
-    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=4,n=5000)
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+    # -------------------------------------------------------------------------
+    # Test case 1: 1 random factor, 1 random effect
+    # -------------------------------------------------------------------------
 
-    # Work out q and n
+    # Setup variables
+    nraneffs = np.array([1])
+    nlevels = np.array([800])
     q = np.sum(nlevels*nraneffs)
-    n = X.shape[0]
+    v = 10
+
+    # Generate test data
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+    n = Y.shape[1]
+    p = X.shape[1]
+    n_sv = n_sv.reshape(n_sv.shape[0])
+
+    # Choose random voxel to check worked correctly
+    v = Y.shape[0]
+    testv = np.random.randint(0,v)
+
+    # Get diagonal ZtZ and ZtZ_sv
+    ZtZ_diag = np.einsum('ijj->ij', ZtZ)
+    ZtZ_diag_sv = np.einsum('ijj->ij', ZtZ_sv)
+
+    # ------------------------------------------------------------------------------------
+    # Truth
+    # ------------------------------------------------------------------------------------
+    paramVec_true = beta[testv,:]
+    paramVec_true = np.concatenate((paramVec_true,sigma2[testv].reshape(1,1)),axis=0)
+
+    facInds = np.cumsum(nraneffs*nlevels)
+    facInds = np.insert(facInds,0,0)
+
+    # Convert D to vector
+    for k in np.arange(len(nlevels)):
+
+        vechD = mat2vech2D(D[testv,facInds[k]:(facInds[k]+nraneffs[k]),facInds[k]:(facInds[k]+nraneffs[k])])/sigma2[testv]
+        paramVec_true = np.concatenate((paramVec_true,vechD),axis=0)
+
+    # ------------------------------------------------------------------------------------
+    # Estimates
+    # ------------------------------------------------------------------------------------
+    # Spatially varying 3D
+    paramVec3D_sv = FS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_diag_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-6,n_sv)[testv,:,:]
+
+    # Spatially varying 2D
+    paramVec2D_sv = FS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n_sv[testv])[0]
+
+
+    print('==============================================================')
+    print('Unit test for: FS')
+    print('--------------------------------------------------------------')
+    print('   Test case: 1 random effect, 1 random factor')
+    print('--------------------------------------------------------------')
+    print('      Results (Spatially Varying): ')
+    print('         ')
+    print('         Truth: ', paramVec_true.transpose())
+    print('         3D:    ', paramVec3D_sv.transpose())
+    print('         2D:    ', paramVec2D_sv.transpose())
+
+    # Non-spatially varying 3D
+    paramVec3D_nsv = FS3D(XtX, XtY, ZtX, ZtY, ZtZ_diag, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6,n)[testv,:,:]
+
+    # Non-spatially varying 2D
+    paramVec2D_nsv = FS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n)[0]
+
+    print('--------------------------------------------------------------')
+    print('      Results (Non Spatially Varying): ')
+    print('         ')
+    print('         3D:    ', paramVec3D_nsv.transpose())
+    print('         2D:    ', paramVec2D_nsv.transpose())
+
+    # -------------------------------------------------------------------------
+    # Test case 2: 1 random factor, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([2])
+    nlevels = np.array([300])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = Y.shape[1]
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+    n = Y.shape[1]
+    p = X.shape[1]
     n_sv = n_sv.reshape(n_sv.shape[0])
 
     # Choose random voxel to check worked correctly
@@ -64,53 +146,50 @@ def test_FS3D():
     # ------------------------------------------------------------------------------------
     # Spatially varying 3D
     paramVec3D_sv = FS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-6,n_sv)[testv,:,:]
-    
+
     # Spatially varying 2D
     paramVec2D_sv = FS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n_sv[testv])[0]
 
-    print('=============================================================')
-    print('Unit test for: FS')
-    print('-------------------------------------------------------------')
-    print('Results (Spatially Varying): ')
-    print('   ')
-    print('   Truth: ', paramVec_true.transpose())
-    print('   3D:    ', paramVec3D_sv.transpose())
-    print('   2D:    ', paramVec2D_sv.transpose())
 
-    
+    print('==============================================================')
+    print('Unit test for: FS')
+    print('--------------------------------------------------------------')
+    print('   Test case: Multiple random effects, 1 random factor')
+    print('--------------------------------------------------------------')
+    print('      Results (Spatially Varying): ')
+    print('         ')
+    print('         Truth: ', paramVec_true.transpose())
+    print('         3D:    ', paramVec3D_sv.transpose())
+    print('         2D:    ', paramVec2D_sv.transpose())
+
     # Non-spatially varying 3D
     paramVec3D_nsv = FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6,n)[testv,:,:]
 
     # Non-spatially varying 2D
     paramVec2D_nsv = FS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n)[0]
 
-    print('-------------------------------------------------------------')
-    print('Results (Non Spatially Varying): ')
-    print('   ')
-    print('   3D:    ', paramVec3D_nsv.transpose())
-    print('   2D:    ', paramVec2D_nsv.transpose())
+    print('--------------------------------------------------------------')
+    print('      Results (Non Spatially Varying): ')
+    print('         ')
+    print('         3D:    ', paramVec3D_nsv.transpose())
+    print('         2D:    ', paramVec2D_nsv.transpose())
 
-# =============================================================================
-#
-# The below function tests the function `pFS3D`. It does this by simulating
-# random test data and testing against it's 2D counterpart from est2d.py.
-#
-# =============================================================================
-def test_pFS3D():
+    # -------------------------------------------------------------------------
+    # Test case 3: multiple random factors, multiple random effects
+    # -------------------------------------------------------------------------
 
-    # Generate some test data
-    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=4,n=5000)
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v)
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
-
-    # Work out q and n
     q = np.sum(nlevels*nraneffs)
-    n = X.shape[0]
+    n = Y.shape[1]
+    p = X.shape[1]
     n_sv = n_sv.reshape(n_sv.shape[0])
 
     # Choose random voxel to check worked correctly
     v = Y.shape[0]
     testv = np.random.randint(0,v)
-    
+
     # ------------------------------------------------------------------------------------
     # Truth
     # ------------------------------------------------------------------------------------
@@ -125,7 +204,158 @@ def test_pFS3D():
 
         vechD = mat2vech2D(D[testv,facInds[k]:(facInds[k]+nraneffs[k]),facInds[k]:(facInds[k]+nraneffs[k])])/sigma2[testv]
         paramVec_true = np.concatenate((paramVec_true,vechD),axis=0)
-        
+
+    # ------------------------------------------------------------------------------------
+    # Estimates
+    # ------------------------------------------------------------------------------------
+    # Spatially varying 3D
+    paramVec3D_sv = FS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-6,n_sv)[testv,:,:]
+
+    # Spatially varying 2D
+    paramVec2D_sv = FS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n_sv[testv])[0]
+
+
+    print('==============================================================')
+    print('Unit test for: FS')
+    print('--------------------------------------------------------------')
+    print('   Test case: Multiple random effects, Multiple random factors')
+    print('--------------------------------------------------------------')
+    print('      Results (Spatially Varying): ')
+    print('         ')
+    print('         Truth: ', paramVec_true.transpose())
+    print('         3D:    ', paramVec3D_sv.transpose())
+    print('         2D:    ', paramVec2D_sv.transpose())
+
+    # Non-spatially varying 3D
+    paramVec3D_nsv = FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6,n)[testv,:,:]
+
+    # Non-spatially varying 2D
+    paramVec2D_nsv = FS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n)[0]
+
+    print('--------------------------------------------------------------')
+    print('      Results (Non Spatially Varying): ')
+    print('         ')
+    print('         3D:    ', paramVec3D_nsv.transpose())
+    print('         2D:    ', paramVec2D_nsv.transpose())
+
+# =============================================================================
+#
+# The below function tests the function `pFS3D`. It does this by simulating
+# random test data and testing against it's 2D counterpart from est2d.py.
+#
+# =============================================================================
+def test_pFS3D():
+
+    # -------------------------------------------------------------------------
+    # Test case 1: 1 random factor, 1 random effect
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([1])
+    nlevels = np.array([800])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate test data
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+    n = Y.shape[1]
+    p = X.shape[1]
+    n_sv = n_sv.reshape(n_sv.shape[0])
+
+    # Choose random voxel to check worked correctly
+    v = Y.shape[0]
+    testv = np.random.randint(0,v)
+
+    # Get diagonal ZtZ and ZtZ_sv
+    ZtZ_diag = np.einsum('ijj->ij', ZtZ)
+    ZtZ_diag_sv = np.einsum('ijj->ij', ZtZ_sv)
+
+    # ------------------------------------------------------------------------------------
+    # Truth
+    # ------------------------------------------------------------------------------------
+    paramVec_true = beta[testv,:]
+    paramVec_true = np.concatenate((paramVec_true,sigma2[testv].reshape(1,1)),axis=0)
+
+    facInds = np.cumsum(nraneffs*nlevels)
+    facInds = np.insert(facInds,0,0)
+
+    # Convert D to vector
+    for k in np.arange(len(nlevels)):
+
+        vechD = mat2vech2D(D[testv,facInds[k]:(facInds[k]+nraneffs[k]),facInds[k]:(facInds[k]+nraneffs[k])])/sigma2[testv]
+        paramVec_true = np.concatenate((paramVec_true,vechD),axis=0)
+
+    # ------------------------------------------------------------------------------------
+    # Estimates
+    # ------------------------------------------------------------------------------------
+    # Spatially varying 3D
+    paramVec3D_sv = pFS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_diag_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-6,n_sv)[testv,:,:]
+
+    # Spatially varying 2D
+    paramVec2D_sv = pFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n_sv[testv])[0]
+
+
+    print('==============================================================')
+    print('Unit test for: pFS')
+    print('--------------------------------------------------------------')
+    print('   Test case: 1 random effect, 1 random factor')
+    print('--------------------------------------------------------------')
+    print('      Results (Spatially Varying): ')
+    print('         ')
+    print('         Truth: ', paramVec_true.transpose())
+    print('         3D:    ', paramVec3D_sv.transpose())
+    print('         2D:    ', paramVec2D_sv.transpose())
+
+    # Non-spatially varying 3D
+    paramVec3D_nsv = pFS3D(XtX, XtY, ZtX, ZtY, ZtZ_diag, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6,n)[testv,:,:]
+
+    # Non-spatially varying 2D
+    paramVec2D_nsv = pFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n)[0]
+
+    print('--------------------------------------------------------------')
+    print('      Results (Non Spatially Varying): ')
+    print('         ')
+    print('         3D:    ', paramVec3D_nsv.transpose())
+    print('         2D:    ', paramVec2D_nsv.transpose())
+
+    # -------------------------------------------------------------------------
+    # Test case 2: 1 random factor, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([2])
+    nlevels = np.array([300])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = Y.shape[1]
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+    n = Y.shape[1]
+    p = X.shape[1]
+    n_sv = n_sv.reshape(n_sv.shape[0])
+
+    # Choose random voxel to check worked correctly
+    v = Y.shape[0]
+    testv = np.random.randint(0,v)
+
+    # ------------------------------------------------------------------------------------
+    # Truth
+    # ------------------------------------------------------------------------------------
+    paramVec_true = beta[testv,:]
+    paramVec_true = np.concatenate((paramVec_true,sigma2[testv].reshape(1,1)),axis=0)
+
+    facInds = np.cumsum(nraneffs*nlevels)
+    facInds = np.insert(facInds,0,0)
+
+    # Convert D to vector
+    for k in np.arange(len(nlevels)):
+
+        vechD = mat2vech2D(D[testv,facInds[k]:(facInds[k]+nraneffs[k]),facInds[k]:(facInds[k]+nraneffs[k])])/sigma2[testv]
+        paramVec_true = np.concatenate((paramVec_true,vechD),axis=0)
+
     # ------------------------------------------------------------------------------------
     # Estimates
     # ------------------------------------------------------------------------------------
@@ -135,26 +365,93 @@ def test_pFS3D():
     # Spatially varying 2D
     paramVec2D_sv = pFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n_sv[testv])[0]
 
-    print('=============================================================')
+
+    print('==============================================================')
     print('Unit test for: pFS')
-    print('-------------------------------------------------------------')
-    print('Results (Spatially Varying): ')
-    print('   ')
-    print('   Truth: ', paramVec_true.transpose())
-    print('   3D:    ', paramVec3D_sv.transpose())
-    print('   2D:    ', paramVec2D_sv.transpose())
-    
+    print('--------------------------------------------------------------')
+    print('   Test case: Multiple random effects, 1 random factor')
+    print('--------------------------------------------------------------')
+    print('      Results (Spatially Varying): ')
+    print('         ')
+    print('         Truth: ', paramVec_true.transpose())
+    print('         3D:    ', paramVec3D_sv.transpose())
+    print('         2D:    ', paramVec2D_sv.transpose())
+
     # Non-spatially varying 3D
     paramVec3D_nsv = pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6,n)[testv,:,:]
 
     # Non-spatially varying 2D
     paramVec2D_nsv = pFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n)[0]
 
-    print('-------------------------------------------------------------')
-    print('Results (Non Spatially Varying): ')
-    print('   ')
-    print('   3D:    ', paramVec3D_nsv.transpose())
-    print('   2D:    ', paramVec2D_nsv.transpose())
+    print('--------------------------------------------------------------')
+    print('      Results (Non Spatially Varying): ')
+    print('         ')
+    print('         3D:    ', paramVec3D_nsv.transpose())
+    print('         2D:    ', paramVec2D_nsv.transpose())
+
+    # -------------------------------------------------------------------------
+    # Test case 3: multiple random factors, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+    q = np.sum(nlevels*nraneffs)
+    n = Y.shape[1]
+    p = X.shape[1]
+    n_sv = n_sv.reshape(n_sv.shape[0])
+
+    # Choose random voxel to check worked correctly
+    v = Y.shape[0]
+    testv = np.random.randint(0,v)
+
+    # ------------------------------------------------------------------------------------
+    # Truth
+    # ------------------------------------------------------------------------------------
+    paramVec_true = beta[testv,:]
+    paramVec_true = np.concatenate((paramVec_true,sigma2[testv].reshape(1,1)),axis=0)
+
+    facInds = np.cumsum(nraneffs*nlevels)
+    facInds = np.insert(facInds,0,0)
+
+    # Convert D to vector
+    for k in np.arange(len(nlevels)):
+
+        vechD = mat2vech2D(D[testv,facInds[k]:(facInds[k]+nraneffs[k]),facInds[k]:(facInds[k]+nraneffs[k])])/sigma2[testv]
+        paramVec_true = np.concatenate((paramVec_true,vechD),axis=0)
+
+    # ------------------------------------------------------------------------------------
+    # Estimates
+    # ------------------------------------------------------------------------------------
+    # Spatially varying 3D
+    paramVec3D_sv = pFS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-6,n_sv)[testv,:,:]
+
+    # Spatially varying 2D
+    paramVec2D_sv = pFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n_sv[testv])[0]
+
+
+    print('==============================================================')
+    print('Unit test for: pFS')
+    print('--------------------------------------------------------------')
+    print('   Test case: Multiple random effects, Multiple random factors')
+    print('--------------------------------------------------------------')
+    print('      Results (Spatially Varying): ')
+    print('         ')
+    print('         Truth: ', paramVec_true.transpose())
+    print('         3D:    ', paramVec3D_sv.transpose())
+    print('         2D:    ', paramVec2D_sv.transpose())
+
+    # Non-spatially varying 3D
+    paramVec3D_nsv = pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6,n)[testv,:,:]
+
+    # Non-spatially varying 2D
+    paramVec2D_nsv = pFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n)[0]
+
+    print('--------------------------------------------------------------')
+    print('      Results (Non Spatially Varying): ')
+    print('         ')
+    print('         3D:    ', paramVec3D_nsv.transpose())
+    print('         2D:    ', paramVec2D_nsv.transpose())
 
 # =============================================================================
 #
@@ -164,13 +461,95 @@ def test_pFS3D():
 # =============================================================================
 def test_SFS3D():
 
-    # Generate some test data
-    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=4,n=5000)
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+    # -------------------------------------------------------------------------
+    # Test case 1: 1 random factor, 1 random effect
+    # -------------------------------------------------------------------------
 
-    # Work out q and n
+    # Setup variables
+    nraneffs = np.array([1])
+    nlevels = np.array([800])
     q = np.sum(nlevels*nraneffs)
-    n = X.shape[0]
+    v = 10
+
+    # Generate test data
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+    n = Y.shape[1]
+    p = X.shape[1]
+    n_sv = n_sv.reshape(n_sv.shape[0])
+
+    # Choose random voxel to check worked correctly
+    v = Y.shape[0]
+    testv = np.random.randint(0,v)
+
+    # Get diagonal ZtZ and ZtZ_sv
+    ZtZ_diag = np.einsum('ijj->ij', ZtZ)
+    ZtZ_diag_sv = np.einsum('ijj->ij', ZtZ_sv)
+
+    # ------------------------------------------------------------------------------------
+    # Truth
+    # ------------------------------------------------------------------------------------
+    paramVec_true = beta[testv,:]
+    paramVec_true = np.concatenate((paramVec_true,sigma2[testv].reshape(1,1)),axis=0)
+
+    facInds = np.cumsum(nraneffs*nlevels)
+    facInds = np.insert(facInds,0,0)
+
+    # Convert D to vector
+    for k in np.arange(len(nlevels)):
+
+        vechD = mat2vech2D(D[testv,facInds[k]:(facInds[k]+nraneffs[k]),facInds[k]:(facInds[k]+nraneffs[k])])/sigma2[testv]
+        paramVec_true = np.concatenate((paramVec_true,vechD),axis=0)
+
+    # ------------------------------------------------------------------------------------
+    # Estimates
+    # ------------------------------------------------------------------------------------
+    # Spatially varying 3D
+    paramVec3D_sv = SFS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_diag_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-6,n_sv)[testv,:,:]
+
+    # Spatially varying 2D
+    paramVec2D_sv = SFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n_sv[testv])[0]
+
+
+    print('==============================================================')
+    print('Unit test for: SFS')
+    print('--------------------------------------------------------------')
+    print('   Test case: 1 random effect, 1 random factor')
+    print('--------------------------------------------------------------')
+    print('      Results (Spatially Varying): ')
+    print('         ')
+    print('         Truth: ', paramVec_true.transpose())
+    print('         3D:    ', paramVec3D_sv.transpose())
+    print('         2D:    ', paramVec2D_sv.transpose())
+
+    # Non-spatially varying 3D
+    paramVec3D_nsv = SFS3D(XtX, XtY, ZtX, ZtY, ZtZ_diag, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6,n)[testv,:,:]
+
+    # Non-spatially varying 2D
+    paramVec2D_nsv = SFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n)[0]
+
+    print('--------------------------------------------------------------')
+    print('      Results (Non Spatially Varying): ')
+    print('         ')
+    print('         3D:    ', paramVec3D_nsv.transpose())
+    print('         2D:    ', paramVec2D_nsv.transpose())
+
+    # -------------------------------------------------------------------------
+    # Test case 2: 1 random factor, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([2])
+    nlevels = np.array([300])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = Y.shape[1]
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+    n = Y.shape[1]
+    p = X.shape[1]
     n_sv = n_sv.reshape(n_sv.shape[0])
 
     # Choose random voxel to check worked correctly
@@ -201,14 +580,17 @@ def test_SFS3D():
     # Spatially varying 2D
     paramVec2D_sv = SFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n_sv[testv])[0]
 
-    print('=============================================================')
+
+    print('==============================================================')
     print('Unit test for: SFS')
-    print('-------------------------------------------------------------')
-    print('Results (Spatially Varying): ')
-    print('   ')
-    print('   Truth: ', paramVec_true.transpose())
-    print('   3D:    ', paramVec3D_sv.transpose())
-    print('   2D:    ', paramVec2D_sv.transpose())
+    print('--------------------------------------------------------------')
+    print('   Test case: Multiple random effects, 1 random factor')
+    print('--------------------------------------------------------------')
+    print('      Results (Spatially Varying): ')
+    print('         ')
+    print('         Truth: ', paramVec_true.transpose())
+    print('         3D:    ', paramVec3D_sv.transpose())
+    print('         2D:    ', paramVec2D_sv.transpose())
 
     # Non-spatially varying 3D
     paramVec3D_nsv = SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6,n)[testv,:,:]
@@ -216,12 +598,75 @@ def test_SFS3D():
     # Non-spatially varying 2D
     paramVec2D_nsv = SFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n)[0]
 
-    print('-------------------------------------------------------------')
-    print('Results (Non Spatially Varying): ')
-    print('   ')
-    print('   3D:    ', paramVec3D_nsv.transpose())
-    print('   2D:    ', paramVec2D_nsv.transpose())
+    print('--------------------------------------------------------------')
+    print('      Results (Non Spatially Varying): ')
+    print('         ')
+    print('         3D:    ', paramVec3D_nsv.transpose())
+    print('         2D:    ', paramVec2D_nsv.transpose())
 
+    # -------------------------------------------------------------------------
+    # Test case 3: multiple random factors, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+    q = np.sum(nlevels*nraneffs)
+    n = Y.shape[1]
+    p = X.shape[1]
+    n_sv = n_sv.reshape(n_sv.shape[0])
+
+    # Choose random voxel to check worked correctly
+    v = Y.shape[0]
+    testv = np.random.randint(0,v)
+
+    # ------------------------------------------------------------------------------------
+    # Truth
+    # ------------------------------------------------------------------------------------
+    paramVec_true = beta[testv,:]
+    paramVec_true = np.concatenate((paramVec_true,sigma2[testv].reshape(1,1)),axis=0)
+
+    facInds = np.cumsum(nraneffs*nlevels)
+    facInds = np.insert(facInds,0,0)
+
+    # Convert D to vector
+    for k in np.arange(len(nlevels)):
+
+        vechD = mat2vech2D(D[testv,facInds[k]:(facInds[k]+nraneffs[k]),facInds[k]:(facInds[k]+nraneffs[k])])/sigma2[testv]
+        paramVec_true = np.concatenate((paramVec_true,vechD),axis=0)
+
+    # ------------------------------------------------------------------------------------
+    # Estimates
+    # ------------------------------------------------------------------------------------
+    # Spatially varying 3D
+    paramVec3D_sv = SFS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-6,n_sv)[testv,:,:]
+
+    # Spatially varying 2D
+    paramVec2D_sv = SFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n_sv[testv])[0]
+
+
+    print('==============================================================')
+    print('Unit test for: SFS')
+    print('--------------------------------------------------------------')
+    print('   Test case: Multiple random effects, Multiple random factors')
+    print('--------------------------------------------------------------')
+    print('      Results (Spatially Varying): ')
+    print('         ')
+    print('         Truth: ', paramVec_true.transpose())
+    print('         3D:    ', paramVec3D_sv.transpose())
+    print('         2D:    ', paramVec2D_sv.transpose())
+
+    # Non-spatially varying 3D
+    paramVec3D_nsv = SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6,n)[testv,:,:]
+
+    # Non-spatially varying 2D
+    paramVec2D_nsv = SFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n)[0]
+
+    print('--------------------------------------------------------------')
+    print('      Results (Non Spatially Varying): ')
+    print('         ')
+    print('         3D:    ', paramVec3D_nsv.transpose())
+    print('         2D:    ', paramVec2D_nsv.transpose())
 
 # =============================================================================
 #
@@ -231,13 +676,95 @@ def test_SFS3D():
 # =============================================================================
 def test_pSFS3D():
 
-    # Generate some test data
-    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=4,nlevels=np.array([100]),nraneffs=np.array([1]),n=5000)
-    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+    # -------------------------------------------------------------------------
+    # Test case 1: 1 random factor, 1 random effect
+    # -------------------------------------------------------------------------
 
-    # Work out q and n
+    # Setup variables
+    nraneffs = np.array([1])
+    nlevels = np.array([800])
     q = np.sum(nlevels*nraneffs)
-    n = X.shape[0]
+    v = 10
+
+    # Generate test data
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+    n = Y.shape[1]
+    p = X.shape[1]
+    n_sv = n_sv.reshape(n_sv.shape[0])
+
+    # Choose random voxel to check worked correctly
+    v = Y.shape[0]
+    testv = np.random.randint(0,v)
+
+    # Get diagonal ZtZ and ZtZ_sv
+    ZtZ_diag = np.einsum('ijj->ij', ZtZ)
+    ZtZ_diag_sv = np.einsum('ijj->ij', ZtZ_sv)
+
+    # ------------------------------------------------------------------------------------
+    # Truth
+    # ------------------------------------------------------------------------------------
+    paramVec_true = beta[testv,:]
+    paramVec_true = np.concatenate((paramVec_true,sigma2[testv].reshape(1,1)),axis=0)
+
+    facInds = np.cumsum(nraneffs*nlevels)
+    facInds = np.insert(facInds,0,0)
+
+    # Convert D to vector
+    for k in np.arange(len(nlevels)):
+
+        vechD = mat2vech2D(D[testv,facInds[k]:(facInds[k]+nraneffs[k]),facInds[k]:(facInds[k]+nraneffs[k])])/sigma2[testv]
+        paramVec_true = np.concatenate((paramVec_true,vechD),axis=0)
+
+    # ------------------------------------------------------------------------------------
+    # Estimates
+    # ------------------------------------------------------------------------------------
+    # Spatially varying 3D
+    paramVec3D_sv = pSFS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_diag_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-6,n_sv)[testv,:,:]
+
+    # Spatially varying 2D
+    paramVec2D_sv = pSFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n_sv[testv])[0]
+
+
+    print('==============================================================')
+    print('Unit test for: pSFS')
+    print('--------------------------------------------------------------')
+    print('   Test case: 1 random effect, 1 random factor')
+    print('--------------------------------------------------------------')
+    print('      Results (Spatially Varying): ')
+    print('         ')
+    print('         Truth: ', paramVec_true.transpose())
+    print('         3D:    ', paramVec3D_sv.transpose())
+    print('         2D:    ', paramVec2D_sv.transpose())
+
+    # Non-spatially varying 3D
+    paramVec3D_nsv = pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ_diag, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6,n)[testv,:,:]
+
+    # Non-spatially varying 2D
+    paramVec2D_nsv = pSFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n)[0]
+
+    print('--------------------------------------------------------------')
+    print('      Results (Non Spatially Varying): ')
+    print('         ')
+    print('         3D:    ', paramVec3D_nsv.transpose())
+    print('         2D:    ', paramVec2D_nsv.transpose())
+
+    # -------------------------------------------------------------------------
+    # Test case 2: 1 random factor, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Setup variables
+    nraneffs = np.array([2])
+    nlevels = np.array([300])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
+    n = Y.shape[1]
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+    n = Y.shape[1]
+    p = X.shape[1]
     n_sv = n_sv.reshape(n_sv.shape[0])
 
     # Choose random voxel to check worked correctly
@@ -269,14 +796,16 @@ def test_pSFS3D():
     paramVec2D_sv = pSFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n_sv[testv])[0]
 
 
-    print('=============================================================')
+    print('==============================================================')
     print('Unit test for: pSFS')
-    print('-------------------------------------------------------------')
-    print('Results (Spatially Varying): ')
-    print('   ')
-    print('   Truth: ', paramVec_true.transpose())
-    print('   3D:    ', paramVec3D_sv.transpose())
-    print('   2D:    ', paramVec2D_sv.transpose())
+    print('--------------------------------------------------------------')
+    print('   Test case: Multiple random effects, 1 random factor')
+    print('--------------------------------------------------------------')
+    print('      Results (Spatially Varying): ')
+    print('         ')
+    print('         Truth: ', paramVec_true.transpose())
+    print('         3D:    ', paramVec3D_sv.transpose())
+    print('         2D:    ', paramVec2D_sv.transpose())
 
     # Non-spatially varying 3D
     paramVec3D_nsv = pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6,n)[testv,:,:]
@@ -284,11 +813,75 @@ def test_pSFS3D():
     # Non-spatially varying 2D
     paramVec2D_nsv = pSFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n)[0]
 
-    print('-------------------------------------------------------------')
-    print('Results (Non Spatially Varying): ')
-    print('   ')
-    print('   3D:    ', paramVec3D_nsv.transpose())
-    print('   2D:    ', paramVec2D_nsv.transpose())
+    print('--------------------------------------------------------------')
+    print('      Results (Non Spatially Varying): ')
+    print('         ')
+    print('         3D:    ', paramVec3D_nsv.transpose())
+    print('         2D:    ', paramVec2D_nsv.transpose())
+
+    # -------------------------------------------------------------------------
+    # Test case 3: multiple random factors, multiple random effects
+    # -------------------------------------------------------------------------
+
+    # Generate a random mass univariate linear mixed model.
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v)
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
+    q = np.sum(nlevels*nraneffs)
+    n = Y.shape[1]
+    p = X.shape[1]
+    n_sv = n_sv.reshape(n_sv.shape[0])
+
+    # Choose random voxel to check worked correctly
+    v = Y.shape[0]
+    testv = np.random.randint(0,v)
+
+    # ------------------------------------------------------------------------------------
+    # Truth
+    # ------------------------------------------------------------------------------------
+    paramVec_true = beta[testv,:]
+    paramVec_true = np.concatenate((paramVec_true,sigma2[testv].reshape(1,1)),axis=0)
+
+    facInds = np.cumsum(nraneffs*nlevels)
+    facInds = np.insert(facInds,0,0)
+
+    # Convert D to vector
+    for k in np.arange(len(nlevels)):
+
+        vechD = mat2vech2D(D[testv,facInds[k]:(facInds[k]+nraneffs[k]),facInds[k]:(facInds[k]+nraneffs[k])])/sigma2[testv]
+        paramVec_true = np.concatenate((paramVec_true,vechD),axis=0)
+
+    # ------------------------------------------------------------------------------------
+    # Estimates
+    # ------------------------------------------------------------------------------------
+    # Spatially varying 3D
+    paramVec3D_sv = pSFS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-6,n_sv)[testv,:,:]
+
+    # Spatially varying 2D
+    paramVec2D_sv = pSFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n_sv[testv])[0]
+
+
+    print('==============================================================')
+    print('Unit test for: pSFS')
+    print('--------------------------------------------------------------')
+    print('   Test case: Multiple random effects, Multiple random factors')
+    print('--------------------------------------------------------------')
+    print('      Results (Spatially Varying): ')
+    print('         ')
+    print('         Truth: ', paramVec_true.transpose())
+    print('         3D:    ', paramVec3D_sv.transpose())
+    print('         2D:    ', paramVec2D_sv.transpose())
+
+    # Non-spatially varying 3D
+    paramVec3D_nsv = pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6,n)[testv,:,:]
+
+    # Non-spatially varying 2D
+    paramVec2D_nsv = pSFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n)[0]
+
+    print('--------------------------------------------------------------')
+    print('      Results (Non Spatially Varying): ')
+    print('         ')
+    print('         3D:    ', paramVec3D_nsv.transpose())
+    print('         2D:    ', paramVec2D_nsv.transpose())
 
 
 # =============================================================================
