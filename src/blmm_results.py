@@ -176,9 +176,16 @@ def main(ipath, vb):
     # ------------------------------------------------------------------------
 
     # Work out the number of voxels we can actually compute at a time.
-    nvb = MAXMEM/(10*8*(q**2))
-
-    # Work out number of groups we have to split iindices into.
+    # (This is really just a rule of thumb guess but works reasonably in
+    # practice). We allow slightly more for the one random factor one
+    # random effect model since we do not construct any additional q by q
+    # matrices.
+    if nraneffs[0]==1 and r==1:
+        nvb = MAXMEM/(10*4*(q**2))
+    else:
+        nvb = MAXMEM/(10*8*(q**2))
+    
+    # Work out number of groups we have to split indices into.
     nvg = int(len(bamInds)//nvb+1)
 
     # Split voxels we want to look at into groups we can compute
@@ -242,7 +249,12 @@ def main(ipath, vb):
         # Ring Z'Z. Z'X, X'X
         if v_r:
 
-            ZtZ_r = readAndSumUniqueAtB('ZtZ', OutDir, R_inds, n_b, True).reshape([v_r, q, q])
+            # In the one random effect one random factor setting we have only
+            # the diagonal elements of Z'Z.
+            if r == 1 and nraneffs[0]==1:
+                ZtZ_r = readAndSumUniqueAtB('ZtZ', OutDir, R_inds, n_b, True).reshape([v_r, q])
+            else:
+                ZtZ_r = readAndSumUniqueAtB('ZtZ', OutDir, R_inds, n_b, True).reshape([v_r, q, q])
             ZtX_r = readAndSumUniqueAtB('ZtX', OutDir, R_inds, n_b, True).reshape([v_r, q, p])
             XtX_r = readAndSumUniqueAtB('XtX', OutDir, R_inds, n_b, True).reshape([v_r, p, p])
 
@@ -274,15 +286,27 @@ def main(ipath, vb):
                 XtY_r = XtY_r[fullrank_inds,:,:]
                 ZtX_r = ZtX_r[fullrank_inds,:,:]
                 ZtY_r = ZtY_r[fullrank_inds,:,:]
-                ZtZ_r = ZtZ_r[fullrank_inds,:,:]
+                
+                # In the one random effect one random factor setting we have only
+                # the diagonal elements of Z'Z.
+                if r == 1 and nraneffs[0]==1:
+                    ZtZ_r = ZtZ_r[fullrank_inds,:]
+                else:
+                    ZtZ_r = ZtZ_r[fullrank_inds,:,:]
             
                 # Recalculate number of voxels left in ring
                 v_r = R_inds.shape[0]
         
         if v_i:
-                
-            # Inner Z'Z. Z'X, X'X
-            ZtZ_i = readAndSumUniqueAtB('ZtZ', OutDir, I_inds, n_b, False).reshape([1, q, q])
+
+            # In the one random effect one random factor setting we have only
+            # the diagonal elements of Z'Z.
+            if r == 1 and nraneffs[0]==1:
+                ZtZ_i = readAndSumUniqueAtB('ZtZ', OutDir, I_inds, n_b, False).reshape([1, q])
+            else:
+                ZtZ_i = readAndSumUniqueAtB('ZtZ', OutDir, I_inds, n_b, False).reshape([1, q, q])
+
+            # Inner Z'X, X'X
             ZtX_i = readAndSumUniqueAtB('ZtX', OutDir, I_inds, n_b, False).reshape([1, q, p])
             XtX_i = readAndSumUniqueAtB('XtX', OutDir, I_inds, n_b, False).reshape([1, p, p])
 
@@ -314,8 +338,8 @@ def main(ipath, vb):
             beta_r, sigma2_r, D_r = blmm_estimate.main(inputs, R_inds, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r, n_sv_r, nlevels, nraneffs)
 
             # Run inference
-            blmm_inference.main(inputs, nraneffs, nlevels, R_inds, beta_r, D_r, sigma2_r, n_sv_r, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r)       
-            
+            blmm_inference.main(inputs, nraneffs, nlevels, R_inds, beta_r, D_r, sigma2_r, n_sv_r, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r)
+
         if v_i:
 
             # Transposed matrices

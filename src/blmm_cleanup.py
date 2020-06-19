@@ -51,6 +51,20 @@ def main(ipath):
 	    os.remove(os.path.join(OutDir, 'nvb.txt'))
     shutil.rmtree(os.path.join(OutDir, 'tmp'))
 
+
+    # Check if we are protecting disk quota.
+    if 'diskMem' in inputs:
+
+        if inputs['diskMem']==1:
+
+            # If we are then this means we have only run one part of the nifti
+            # during this run. Check which part it was and delete that so it
+            # isn't run next time.
+            memmaskFiles = glob.glob(os.path.join(OutDir, 'blmm_vox_memmask*.nii'))
+            os.remove(memmaskFiles[0])
+
+
+
     print('Analysis complete!')
     print('')
     print('---------------------------------------------------------------------------')

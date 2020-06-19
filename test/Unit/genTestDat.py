@@ -374,6 +374,10 @@ def prodMats2D(Y,Z,X):
 # Where b_v~N(0,D_v) and \epsilon_v ~ N(0,\sigma_v^2 I) and the subscript 
 # v reprsents that we have one such model for every voxel.
 #
+# Note: By default this function will always generate multi-factored examples.
+#       This is to stress test the code. If you wish to generate one factor
+#       data you have to specify it manually using the below options.
+#
 # -----------------------------------------------------------------------------
 #
 # It takes the following inputs:

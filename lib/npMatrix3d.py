@@ -322,8 +322,10 @@ def initSigma23D(ete, n):
 #        notation)
 # - `lk`: The number of levels belonging to grouping factor k ($l_k$ in the
 #         above notation).
-# - `ZtZ`: The Z matrix transposed and then multiplied by itself (Z'Z in the
-#          above notation).
+# - `ZtZ`: Z transpose multiplied by Z (can be spatially varying or non
+#          -spatially varying). If we are looking at a one random factor one
+#          random effect design the variable ZtZ only holds the diagonal 
+#          elements of the matrix Z'Z.
 # - `Zte`: The Z matrix transposed and then multiplied by the OLS residuals
 #          (Z'e=Z'(Y-X\beta) in the above notation).
 # - `sigma2`: The OLS estimate of \sigma^2 (\sigma^2$ in the above notation).
@@ -341,62 +343,91 @@ def initSigma23D(ete, n):
 # ============================================================================
 def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict):
   
+  # Number of voxels v
+  v = Zte.shape[0]
+
+  # Number of random factors
+  r = len(nraneffs)
+
   # Small check on sigma2
   if len(sigma2.shape) > 1:
 
     sigma2 = sigma2.reshape(sigma2.shape[0])
 
-  # Initalize D to zeros
-  invSig2ZteetZminusZtZ = np.zeros((Zte.shape[0],nraneffs[k],nraneffs[k]))
+  # If we have only one factor and one random effect computation can be
+  # sped up a lot
+  if r==1 and nraneffs[0]==1:
 
-  # First we work out the derivative we require.
-  for j in np.arange(nlevels[k]):
+    # Work out block size (should be 1)
+    qk = nraneffs[k]
+    p = np.array([qk,1])
+
+    # Work out Z'ee'Z/sigma^2 - Z'Z
+    invSig2ZteetZminusZtZ = np.einsum('i,ijk->ijk',1/sigma2,sumAijBijt3D(Zte, Zte, p, p)) - np.sum(ZtZ,axis=1).reshape(ZtZ.shape[0],1,1)
     
-    Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
+  else:
 
-    # Work out Z_(k, j)'Z_(k, j)
-    ZkjtZkj = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ikj,Ikj)]
+    # Initalize D to zeros
+    invSig2ZteetZminusZtZ = np.zeros((Zte.shape[0],nraneffs[k],nraneffs[k]))
 
-    # Work out Z_(k,j)'e
-    Zkjte = Zte[:, Ikj,:]
-
-    if j==0:
+    # First we work out the derivative we require.
+    for j in np.arange(nlevels[k]):
       
-      # Add first \sigma^{-2}Z'ee'Z - Z_(k,j)'Z_(k,j)
-      invSig2ZteetZminusZtZ = np.einsum('i,ijk->ijk',1/sigma2,(Zkjte @ Zkjte.transpose(0,2,1))) - ZkjtZkj
-      
-    else:
-      
-      # Add next \sigma^{-2}Z'ee'Z - Z_(k,j)'Z_(k,j)
-      invSig2ZteetZminusZtZ = invSig2ZteetZminusZtZ + np.einsum('i,ijk->ijk',1/sigma2,(Zkjte @ Zkjte.transpose(0,2,1))) - ZkjtZkj
-
-  # Second we need to work out the double sum of Z_(k,j)'Z_(k,j)
-  for j in np.arange(nlevels[k]):
-
-    for i in np.arange(nlevels[k]):
-      
-      Iki = faclev_indices2D(k, i, nlevels, nraneffs)
+      # Indices for factor k level j
       Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
 
       # Work out Z_(k, j)'Z_(k, j)
-      ZkitZkj = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Iki,Ikj)]
-      
-      if j==0 and i==0:
+      ZkjtZkj = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ikj,Ikj)]
+
+      # Work out Z_(k,j)'e
+      Zkjte = Zte[:, Ikj,:]
+
+      if j==0:
         
-        # Add first Z_(k,j)'Z_(k,j) kron Z_(k,j)'Z_(k,j)
-        ZtZkronZtZ = kron3D(ZkitZkj,ZkitZkj.transpose(0,2,1))
-     
+        # Add first \sigma^{-2}Z'ee'Z - Z_(k,j)'Z_(k,j)
+        invSig2ZteetZminusZtZ = np.einsum('i,ijk->ijk',1/sigma2,(Zkjte @ Zkjte.transpose(0,2,1))) - ZkjtZkj
+        
       else:
         
-        # Add next Z_(k,j)'Z_(k,j) kron Z_(k,j)'Z_(k,j)
-        ZtZkronZtZ = ZtZkronZtZ + kron3D(ZkitZkj,ZkitZkj.transpose(0,2,1))
+        # Add next \sigma^{-2}Z'ee'Z - Z_(k,j)'Z_(k,j)
+        invSig2ZteetZminusZtZ = invSig2ZteetZminusZtZ + np.einsum('i,ijk->ijk',1/sigma2,(Zkjte @ Zkjte.transpose(0,2,1))) - ZkjtZkj
 
-  # Work out information matrix
-  infoMat = dupMatTdict[k] @ ZtZkronZtZ @ dupMatTdict[k].transpose()
+  # Again, if we have only one factor and one random effect computation can 
+  # be sped up a lot
+  if r==1 and nraneffs[0]==1:
+
+    # Information matrix for initial estimate
+    infoMat = np.sum(ZtZ**2,axis=1).reshape((ZtZ.shape[0],1,1))
+
+  else:
+
+    # Double sum of Z_(k,i)'Z_(k,j) kron Z_(k,i)'Z_(k,j)
+    for j in np.arange(nlevels[k]):
+
+      for i in np.arange(nlevels[k]):
+        
+        Iki = faclev_indices2D(k, i, nlevels, nraneffs)
+        Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
+
+        # Work out Z_(k, j)'Z_(k, j)
+        ZkitZkj = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Iki,Ikj)]
+        
+        if j==0 and i==0:
+          
+          # Add first Z_(k,j)'Z_(k,j) kron Z_(k,j)'Z_(k,j)
+          ZtZkronZtZ = kron3D(ZkitZkj,ZkitZkj.transpose(0,2,1))
+       
+        else:
+          
+          # Add next Z_(k,j)'Z_(k,j) kron Z_(k,j)'Z_(k,j)
+          ZtZkronZtZ = ZtZkronZtZ + kron3D(ZkitZkj,ZkitZkj.transpose(0,2,1))
+
+    # Work out information matrix as:
+    # Dup_k @ (sum_i sum_j Z_(k,i)'Z_(k,j) kron Z_(k,i)'Z_(k,j)) @ Dup_k'
+    infoMat = dupMatTdict[k] @ ZtZkronZtZ @ dupMatTdict[k].transpose()
 
   # Work out the final term.
   Dkest = vech2mat3D(np.linalg.solve(infoMat, dupMatTdict[k] @ mat2vec3D(invSig2ZteetZminusZtZ)))
-  
   
   return(Dkest)
 
@@ -424,7 +455,9 @@ def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict):
 #
 # ----------------------------------------------------------------------------
 #
-# - `D`: A square symmetric matrix.
+# - `D`: A square symmetric matrix. (Note: This only takes in D as a square
+#        matrix. Unlike other functions, if D is just a vector of the diagonal
+#        elements of a square matrix, this code will not know what to do).
 #
 # ----------------------------------------------------------------------------
 #
@@ -474,16 +507,31 @@ def makeDnnd3D(D):
 # ----------------------------------------------------------------------------
 #
 # - `n`: The total number of observations (potentially spatially varying).
-# - `ZtZ`: The Z matrix transposed and then multiplied by Z (Z'Z in the above
-#          notation).
+# - `ZtZ`: Z transpose multiplied by Z (can be spatially varying or non
+#          -spatially varying). If we are looking at a one random factor one
+#          random effect design the variable ZtZ only holds the diagonal 
+#          elements of the matrix Z'Z.
 # - `Zte`: The Z matrix transposed and then multiplied by the OLS residuals
 #          (Z'e=Z'(Y-X\beta) in the above notation).
 # - `ete`: The OLS residuals transposed and then multiplied by themselves
 #          (e'e=(Y-X\beta)'(Y-X\beta) in the above notation).
 # - `sigma2`: The fixed effects variance (\sigma^2 in the above notation).
-# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1).
+# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1). If we are looking at a 
+#                    single random factor single random effect model 
+#                    DinvIplusZtZD will only hold the diagonal elements of
+#                    D(I+Z'ZD)^(-1)
 # - `D`: The random effects variance-covariance matrix (D in the above
-#        notation)
+#        notation). Note in the one random factor, one random effect use
+#        case D can be set to none as the Ddict representation is used 
+#        instead.
+# - `Ddict`: Dictionary version of the random effects variance-covariance
+#            matrix.
+# - `nlevels`: A vector containing the number of levels for each factor, e.g.
+#              `nlevels=[3,4]` would mean the first factor has 3 levels and
+#              the second factor has 4 levels.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 #
 # ----------------------------------------------------------------------------
 #
@@ -495,17 +543,42 @@ def makeDnnd3D(D):
 #          the above notation).
 #
 # ============================================================================
-def llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,reml=False, XtX=0, XtZ=0, ZtX=0):
-  
+def llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D, Ddict, nlevels, nraneffs, reml=False, XtX=0, XtZ=0, ZtX=0):
+
+  # Number of random effects and number of voxels
+  r = len(nlevels)
+  v = ete.shape[0]
+
+  # Reshape n if neccesary
   if hasattr(n, "ndim"):
 
     if np.prod(n.shape) > 1:
 
       n = n.reshape(sigma2.shape)
-  
-  # Work out log|I+ZtZD|
-  logdet = np.linalg.slogdet(np.eye(ZtZ.shape[1]) + D @ ZtZ)
-  logdet = (logdet[0]*logdet[1]).reshape(ete.shape[0])
+
+  # If we have only one factor and one random effect computation can be
+  # sped up a lot
+  if r==1 and nraneffs[0]==1:
+    
+    # Work out the diagonal entries of I+Z'ZD (we assume ZtZ is already just the
+    # diagonal elements in this use case)
+    DiagIplusZtZD = 1 + ZtZ*Ddict[0].reshape(v,1)
+
+    # Get the log of them
+    logDiagIplusZtZD = np.log(DiagIplusZtZD)
+
+    # The result should be the log of their sum.
+    logdet = np.sum(logDiagIplusZtZD,axis=1).reshape(ete.shape[0])
+
+  # TODO: Future development should see the one factor and multi random effects use
+  # case handled here.
+
+  # Else we have to use niave computation
+  else:
+
+    # Work out log|I+ZtZD|
+    logdet = np.linalg.slogdet(np.eye(ZtZ.shape[1]) + D @ ZtZ)
+    logdet = (logdet[0]*logdet[1]).reshape(ete.shape[0])
 
   # Work out -1/2(nln(sigma^2) + ln|I+DZ'Z|)
   if reml==False:
@@ -515,19 +588,100 @@ def llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,reml=False, XtX=0, XtZ=0, Zt
     firstterm = -0.5*((n-p)*np.log(sigma2)).reshape(ete.shape[0]) -0.5*logdet
 
 
-  # Work out sigma^(-2)*(e'e - e'ZD(I+Z'ZD)^(-1)Z'e)
-  secondterm = -0.5*np.einsum('i,ijk->ijk',(1/sigma2).reshape(ete.shape[0]),(ete - forceSym3D(Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte))).reshape(ete.shape[0])
-  
+  # If we have only one factor and one random effect computation can be
+  # sped up a lot
+  if r==1 and nraneffs[0]==1:
+    secondterm = -0.5*np.einsum('i,ijk->ijk',(1/sigma2).reshape(ete.shape[0]),(ete - forceSym3D(Zte.transpose((0,2,1)) @ np.einsum('ij,ijk->ijk',DinvIplusZtZD, Zte)))).reshape(ete.shape[0])
+  else:
+    # Work out sigma^(-2)*(e'e - e'ZD(I+Z'ZD)^(-1)Z'e)
+    secondterm = -0.5*np.einsum('i,ijk->ijk',(1/sigma2).reshape(ete.shape[0]),(ete - forceSym3D(Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte))).reshape(ete.shape[0])
+
   # Work out the log likelihood
   llh = (firstterm + secondterm).reshape(ete.shape[0])
 
   if reml:
     logdet = np.linalg.slogdet(XtX - XtZ @ DinvIplusZtZD @ ZtX)
     llh = llh - 0.5*logdet[0]*logdet[1]
-  
+
   # Return result
   return(llh)
 
+
+
+# ============================================================================
+#
+# The below function calculates the matrix D(I+Z'ZD)^(-1). Whilst in general,
+# this computation can't be streamlined, many common usecases are easier to
+# calculate. This function takes those into account.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `Ddict`: a dictionary in which entry `k` is a 3D array of the kth diagonal 
+#            block of D for every voxel.
+# - `D`: The matrix equivalent of Ddict. Note in the one random factor, one 
+#        random effect use case D can be set to none as the Ddict
+#        representation is used instead.
+# - `ZtZ`: Z transpose multiplied by Z (can be spatially varying or non
+#          -spatially varying). If we are looking at a one random factor one
+#          random effect design the variable ZtZ only holds the diagonal 
+#          elements of the matrix Z'Z.
+# - `nlevels`: A vector containing the number of levels for each factor, e.g.
+#              `nlevels=[3,4]` would mean the first factor has 3 levels and
+#              the second factor has 4 levels.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
+#
+# ----------------------------------------------------------------------------
+#
+# It returns as outputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1). If we are looking at a 
+#                    single random factor single random effect model 
+#                    DinvIplusZtZD will only hold the diagonal elements of
+#                    D(I+Z'ZD)^(-1)
+#
+# ============================================================================
+def get_DinvIplusZtZD3D(Ddict, D, ZtZ, nlevels, nraneffs):
+
+  # Work out how many factors we're looking at
+  r = len(nlevels)
+  q = ZtZ.shape[1]
+  v = Ddict[0].shape[0]
+
+  # If one factor and one random effect, Z'Z is diagonal
+  if r==1 and nraneffs[0]==1:
+
+    # In this case Z'Z and D are diagonal so we can
+    # do 1/(I+Z'ZD)_ii to get the inverses.
+
+    # Work out Diag(Z'ZD) (We assume ZtZ is already diagonal here)
+    DiagZtZD = ZtZ*Ddict[0].reshape(v,1)
+
+    # Work out Diag(D(I+Z'ZD)^(-1)) (In the 1 factor 1 raneff mode we only
+    # need the diagonal elements)
+    DinvIplusZtZD = Ddict[0].reshape(v,1)/(1+DiagZtZD)
+
+    # # Map back to DinvIpluZtZD
+    # DinvIplusZtZD = np.zeros((v,q,q))
+    # np.einsum('ijj->ij', DinvIplusZtZD)[...] = DiaginvIplusZtZD
+
+  # TODO: Future development should handle these use cases as well:
+  # ELIF: r=1, still block diagonal so can be spedup
+
+  # ELIF: q>1400: best to use the recursive inverse functions
+
+  else:
+
+    DinvIplusZtZD = forceSym3D(np.linalg.solve(np.eye(q) + D @ ZtZ, D))
+
+  return(DinvIplusZtZD)
 
 # ============================================================================
 # The below function calculates the derivative of the log likelihood with
@@ -549,7 +703,13 @@ def llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,reml=False, XtX=0, XtZ=0, Zt
 # - `Zte`: The Z matrix transposed and then multiplied by the OLS residuals
 #          (Z'e=Z'(Y-X\beta) in the above notation).
 # - `sigma2`: The fixed effects variance (\sigma^2 in the above notation).
-# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1).
+# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1). If we are looking at a 
+#                    single random factor single random effect model 
+#                    DinvIplusZtZD will only hold the diagonal elements of
+#                    D(I+Z'ZD)^(-1)
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 #
 # ----------------------------------------------------------------------------
 #
@@ -560,11 +720,20 @@ def llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,reml=False, XtX=0, XtZ=0, Zt
 # - `dldb`: The derivative of l with respect to \beta.
 #
 # ============================================================================
-def get_dldB3D(sigma2, Xte, XtZ, DinvIplusZtZD, Zte):
+def get_dldB3D(sigma2, Xte, XtZ, DinvIplusZtZD, Zte, nraneffs):
 
-  # Work out the derivative (Note: we leave everything as 3D for ease of future computation)
-  deriv = np.einsum('i,ijk->ijk',1/sigma2, (Xte - (XtZ @ DinvIplusZtZD @ Zte)))
-                    
+  # Number of random factors
+  r = len(nraneffs)
+
+  # In the one random factor one random effect setting this computation can be 
+  # streamlined
+  if r == 1 and nraneffs[0]==1:
+    # Work out the derivative (Note: we leave everything as 3D for ease of future computation)
+    deriv = np.einsum('i,ijk->ijk',1/sigma2, (Xte - (XtZ @ np.einsum('ij,ijk->ijk', DinvIplusZtZD, Zte))))
+  else: 
+    # Work out the derivative (Note: we leave everything as 3D for ease of future computation)
+    deriv = np.einsum('i,ijk->ijk',1/sigma2, (Xte - (XtZ @ DinvIplusZtZD @ Zte)))
+
   # Return the derivative
   return(deriv)
 
@@ -590,7 +759,13 @@ def get_dldB3D(sigma2, Xte, XtZ, DinvIplusZtZD, Zte):
 # - `Zte`: The Z matrix transposed and then multiplied by the OLS residuals
 #          (Z'e=Z'(Y-X\beta) in the above notation).
 # - `sigma2`: The fixed effects variance (\sigma^2 in the above notation).
-# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1).
+# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1). If we are looking at a 
+#                    single random factor single random effect model 
+#                    DinvIplusZtZD will only hold the diagonal elements of
+#                    D(I+Z'ZD)^(-1)
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 #
 # ----------------------------------------------------------------------------
 #
@@ -601,7 +776,7 @@ def get_dldB3D(sigma2, Xte, XtZ, DinvIplusZtZD, Zte):
 # - `dldsigma2`: The derivative of l with respect to \sigma^2.
 #
 # ============================================================================
-def get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD):
+def get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD, nraneffs):
   
   # Make sure n is correct shape
   if hasattr(n, "ndim"):
@@ -610,8 +785,20 @@ def get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD):
 
       n = n.reshape(sigma2.shape)
 
-  # Get e'(I+ZDZ')^(-1)e=e'e-e'ZD(I+Z'ZD)^(-1)Z'e
-  etinvIplusZtDZe = ete - forceSym3D(Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte)
+  # Number of random factors
+  r = len(nraneffs)
+
+  # In the one random factor one random effect setting this computation can be 
+  # streamlined
+  if r == 1 and nraneffs[0]==1:
+
+    # Get e'(I+ZDZ')^(-1)e=e'e-e'ZD(I+Z'ZD)^(-1)Z'e
+    etinvIplusZtDZe = ete - forceSym3D(Zte.transpose((0,2,1)) @ np.einsum('ij,ijk->ijk', DinvIplusZtZD, Zte))
+
+  else:
+
+    # Get e'(I+ZDZ')^(-1)e=e'e-e'ZD(I+Z'ZD)^(-1)Z'e
+    etinvIplusZtDZe = ete - forceSym3D(Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte)
   
   # Get the derivative
   deriv = -n/(2*sigma2) + np.einsum('i,ijk->ijk',1/(2*(sigma2**2)), etinvIplusZtDZe).reshape(sigma2.shape[0])
@@ -652,12 +839,17 @@ def get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD):
 # - `nraneffs`: A vector containing the number of random effects for each
 #               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
 #               random effects and the second factor has 1 random effect.
-# - `ZtZ`: The Z matrix transposed and then multiplied by itself (Z'Z in the
-#          above notation).
+# - `ZtZ`: Z transpose multiplied by Z (can be spatially varying or non
+#          -spatially varying). If we are looking at a one random factor one
+#          random effect design the variable ZtZ only holds the diagonal 
+#          elements of the matrix Z'Z.
 # - `Zte`: The Z matrix transposed and then multiplied by the OLS residuals
 #          (Z'e=Z'(Y-X\beta) in the above notation).
 # - `sigma2`: The fixed effects variance (\sigma^2 in the above notation).
-# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1).
+# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1). If we are looking at a 
+#                    single random factor single random effect model 
+#                    DinvIplusZtZD will only hold the diagonal elements of
+#                    D(I+Z'ZD)^(-1)
 # - `ZtZmat`: The sum over j of Z_{(k,j)}'Z_{(k,j)}. This only need be 
 #             calculated once so can be stored and re-entered for each
 #             iteration.
@@ -685,22 +877,38 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
   # Number of voxels
   v = Zte.shape[0]
 
-  # We only need calculate this once across all iterations
+  # Number of random effects
+  q = ZtZ.shape[1]
+
+  # Number of random factors
+  r = len(nraneffs)
+
+  # We only need calculate this once across all iterations.
   if ZtZmat is None:
 
-    # Instantiate to zeros
-    ZtZmat = np.zeros((ZtZ.shape[0],nraneffs[k],nraneffs[k]))
+    # In the one factor setting this computation boils down
+    # to a sum of square elements
+    if r == 1 and nraneffs[0]==1:
+      
+      # We assume ZtZ is already diagonal
+      ZtZmat = np.sum(ZtZ,axis=1).reshape((ZtZ.shape[0],1,1))
 
-    for j in np.arange(nlevels[k]):
+    # In the general setting it is a sum of matrix products
+    else:
 
-      # Get the indices for the kth factor jth level
-      Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
+      # Instantiate to zeros
+      ZtZmat = np.zeros((ZtZ.shape[0],nraneffs[k],nraneffs[k]))
 
-      # Work out Z_(k,j)'Z_(k,j)
-      ZtZterm = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ikj,Ikj)]
+      for j in np.arange(nlevels[k]):
 
-      # Add together
-      ZtZmat = ZtZmat + ZtZterm
+        # Get the indices for the kth factor jth level
+        Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
+
+        # Work out Z_(k,j)'Z_(k,j)
+        ZtZterm = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ikj,Ikj)]
+
+        # Add together
+        ZtZmat = ZtZmat + ZtZterm
 
   # Get the indices for the factors 
   Ik = fac_indices2D(k, nlevels, nraneffs)
@@ -712,21 +920,30 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
   qk = nraneffs[k]
   p = np.array([qk,1])
 
-  # Work out the second term in TT'
-  secondTerm = sumAijBijt3D(ZtZ[:,Ik,:] @ DinvIplusZtZD, ZtZ[:,Ik,:], p, p)
+  # We now work out the sum of Z_(k,j)'V^(-1)Z_(k,j). In the one random factor, one
+  # random effect setting, this can be sped up massively using the sumTTt_1fac1ran3D
+  # function.
+  if r == 1 and nraneffs[0]==1:
+    secondTerm = sumTTt_1fac1ran3D(ZtZ, DinvIplusZtZD, nlevels[k], nraneffs[k])
+  else:
+    # Work out the second term in TT'
+    secondTerm = sumAijBijt3D(ZtZ[:,Ik,:] @ DinvIplusZtZD, ZtZ[:,Ik,:], p, p)
 
   # Obtain RkSum=sum (TkjTkj')
   RkSum = ZtZmat - secondTerm
 
   # Work out T_ku*sigma
-  TuSig = Zte[:,Ik,:] - (ZtZ[:,Ik,:] @ DinvIplusZtZD @ Zte)
+  if r == 1 and nraneffs[0]==1:
+    TuSig = Zte - np.einsum('ij,ij,ijk->ijk', ZtZ, DinvIplusZtZD, Zte)
+  else:
+    TuSig = Zte[:,Ik,:] - (ZtZ[:,Ik,:] @ (DinvIplusZtZD @ Zte))
 
   # Obtain Sum Tu(Tu)'
   TuuTSum = np.einsum('i,ijk->ijk',1/sigma2,sumAijBijt3D(TuSig, TuSig, p, p))
 
   # Work out dldDk
   dldDk = 0.5*(forceSym3D(TuuTSum - RkSum))
-    
+
   if reml==True:
 
     invXtinvVX = np.linalg.pinv(XtX - ZtX.transpose((0,2,1)) @ DinvIplusZtZD @ ZtX)
@@ -830,11 +1047,22 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 #
 # ----------------------------------------------------------------------------
 #
-# - `XtZ`: X transpose multiplied by Z.
-# - `XtX`: X transpose multiplied by X.
-# - `ZtZ`: Z transpose multiplied by Z.
-# - `DinvIplusZtZD`: D(I+Z'ZD)^(-1) in the above notation.
+# - `XtZ`: X transpose multiplied by Z (can be spatially varying or non
+#          -spatially varying). 
+# - `XtX`: X transpose multiplied by X (can be spatially varying or non
+#          -spatially varying). 
+# - `ZtZ`: Z transpose multiplied by Z (can be spatially varying or non
+#          -spatially varying). If we are looking at a one random factor one
+#          random effect design the variable ZtZ only holds the diagonal 
+#          elements of the matrix Z'Z.
+# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1). If we are looking at a 
+#                    single random factor single random effect model 
+#                    DinvIplusZtZD will only hold the diagonal elements of
+#                    D(I+Z'ZD)^(-1)
 # - `sigma2`: The fixed effects variance (\sigma^2 in the above notation).
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 #
 # ----------------------------------------------------------------------------
 #
@@ -846,10 +1074,19 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 #                 respect to \beta.
 #
 # ============================================================================
-def get_covdldbeta3D(XtZ, XtX, ZtZ, DinvIplusZtZD, sigma2):
-  
-  # Get the covariance of the derivative
-  covderiv = np.einsum('i,ijk->ijk',1/sigma2,(XtX - forceSym3D(XtZ @ DinvIplusZtZD @ XtZ.transpose((0,2,1)))))
+def get_covdldbeta3D(XtZ, XtX, ZtZ, DinvIplusZtZD, sigma2, nraneffs):
+
+  # Number of random factors
+  r = len(nraneffs)
+
+  # In the one random factor one random effect setting this computation can be 
+  # streamlined
+  if r == 1 and nraneffs[0]==1:
+    # Get the covariance of the derivative
+    covderiv = np.einsum('i,ijk->ijk',1/sigma2,(XtX - forceSym3D(XtZ @ np.einsum('ij,ijk->ijk', DinvIplusZtZD, XtZ.transpose((0,2,1))))))
+  else:
+    # Get the covariance of the derivative
+    covderiv = np.einsum('i,ijk->ijk',1/sigma2,(XtX - forceSym3D(XtZ @ DinvIplusZtZD @ XtZ.transpose((0,2,1)))))
   
   # Return the covariance of the derivative
   return(covderiv)
@@ -875,8 +1112,14 @@ def get_covdldbeta3D(XtZ, XtX, ZtZ, DinvIplusZtZD, sigma2):
 # - `nraneffs`: A vector containing the number of random effects for each
 #               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
 #               random effects and the second factor has 1 random effect.
-# - `ZtZ`: Z transpose multiplied by Z.
-# - `DinvIplusZtZD`: D(I+Z'ZD)^(-1) in the above notation.
+# - `ZtZ`: Z transpose multiplied by Z (can be spatially varying or non
+#          -spatially varying). If we are looking at a one random factor one
+#          random effect design the variable ZtZ only holds the diagonal 
+#          elements of the matrix Z'Z.
+# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1). If we are looking at a 
+#                    single random factor single random effect model 
+#                    DinvIplusZtZD will only hold the diagonal elements of
+#                    D(I+Z'ZD)^(-1)
 # - `dupMatTdict`: A dictionary of transpose duplication matrices such that 
 #                   `dupMatTdict[k]` = DupMat_k'.
 # - `vec`: This is a boolean value which by default is false. If True it gives
@@ -901,26 +1144,39 @@ def get_covdldbeta3D(XtZ, XtX, ZtZ, DinvIplusZtZD, sigma2):
 #
 # ============================================================================
 def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, vec=False, ZtZmat=None):
-  
+
   # Number of voxels
   v = DinvIplusZtZD.shape[0]
+
+  # Number of random factors r
+  r = len(nraneffs)
 
   # We only need calculate this once across all iterations
   if ZtZmat is None:
 
-    # Instantiate to zeros
-    ZtZmat = np.zeros((ZtZ.shape[0],nraneffs[k],nraneffs[k]))
+  # In the one random factor one random effect setting this computation can be 
+  # streamlined
+    if r == 1 and nraneffs[0]==1:
+      
+      # We assume ZtZ is already diagonal
+      ZtZmat = np.sum(ZtZ,axis=1).reshape((ZtZ.shape[0],1,1))
 
-    for j in np.arange(nlevels[k]):
+    # In the general setting it is a sum of matrix products
+    else:
 
-      # Get the indices for the kth factor jth level
-      Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
+      # Instantiate to zeros
+      ZtZmat = np.zeros((ZtZ.shape[0],nraneffs[k],nraneffs[k]))
 
-      # Work out Z_(k,j)'Z_(k,j)
-      ZtZterm = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ikj,Ikj)]
+      for j in np.arange(nlevels[k]):
 
-      # Add together
-      ZtZmat = ZtZmat + ZtZterm
+        # Get the indices for the kth factor jth level
+        Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
+
+        # Work out Z_(k,j)'Z_(k,j)
+        ZtZterm = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ikj,Ikj)]
+
+        # Add together
+        ZtZmat = ZtZmat + ZtZterm
 
   # Get the indices for the factors 
   Ik = fac_indices2D(k, nlevels, nraneffs)
@@ -933,18 +1189,24 @@ def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupM
   qk = nraneffs[k]
   p = np.array([qk,q])
 
-  # Work out the second term
-  secondTerm = sumAijBijt3D(ZtZ[:,Ik,:] @ DinvIplusZtZD, ZtZ[:,Ik,:], p, p)
+  # We now work out the sum of Z_(k,j)'V^(-1)Z_(k,j). In the one random factor, one
+  # random effect setting, this can be sped up massively using the sumTTt_1fac1ran3D
+  # function.
+  if r == 1 and nraneffs[0]==1:
+    secondTerm = sumTTt_1fac1ran3D(ZtZ, DinvIplusZtZD, nlevels[k], nraneffs[k])
+  else:
+    # Work out the second term
+    secondTerm = sumAijBijt3D(ZtZ[:,Ik,:] @ DinvIplusZtZD, ZtZ[:,Ik,:], p, p)
 
   # Obtain ZtZmat
   RkSum = ZtZmat - secondTerm
 
-  # Multiply by duplication matrices and 
+  # Multiply by duplication matrices and half-vectorize/vectorize
   if not vec:
     covdldDdldsigma2 = np.einsum('i,ijk->ijk', 1/(2*sigma2), dupMatTdict[k] @ mat2vec3D(RkSum))
   else:
     covdldDdldsigma2 = np.einsum('i,ijk->ijk', 1/(2*sigma2), mat2vec3D(RkSum))
-  
+
   return(covdldDdldsigma2, ZtZmat)
 
 
@@ -1010,8 +1272,14 @@ def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupM
 # - `nraneffs`: A vector containing the number of random effects for each
 #               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
 #               random effects and the second factor has 1 random effect.
-# - `ZtZ`: Z transpose multiplied by Z.
-# - `DinvIplusZtZD`: D(I+Z'ZD)^(-1) in the above notation.
+# - `ZtZ`: Z transpose multiplied by Z (can be spatially varying or non
+#          -spatially varying). If we are looking at a one random factor one
+#          random effect design the variable ZtZ only holds the diagonal 
+#          elements of the matrix Z'Z.
+# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1). If we are looking at a 
+#                    single random factor single random effect model 
+#                    DinvIplusZtZD will only hold the diagonal elements of
+#                    D(I+Z'ZD)^(-1).
 # - `dupMatTdict`: A dictionary of transpose duplication matrices such that 
 #                    `dupMatTdict[k]` = DupMat_k'
 # - `vec`: This is a boolean value which by default is false. If True it gives
@@ -1040,20 +1308,46 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
   Ik1 = fac_indices2D(k1, nlevels, nraneffs)
   Ik2 = fac_indices2D(k2, nlevels, nraneffs)
 
-  # Work out R_(k1,k2)
-  Rk1k2 = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ik1,Ik2)] - (ZtZ[:,Ik1,:] @ DinvIplusZtZD @ ZtZ[:,:,Ik2])
+  # Work out number of random factors
+  r = len(nlevels)
 
-  # Work out block sizes
-  p = np.array([nraneffs[k1],nraneffs[k2]])
+  # Work out number of voxels
+  v = DinvIplusZtZD.shape[0]
 
-  # Obtain permutation
-  RkRSum,perm=sumAijKronBij3D(Rk1k2, Rk1k2, p, perm)
+  # Work out R_(k1,k2) (in the one factor, one random effect setting we can speed this up a lot)
+  if r == 1 and nraneffs[0] == 1:
 
-  # Multiply by duplication matrices and save
-  if not vec:
-    covdldDk1dldk2 = 1/2 * dupMatTdict[k1] @ RkRSum @ dupMatTdict[k2].transpose()
+    # Rk1k2 diag (we assume in this setting that ZtZ and DinvIplusZtZD only contain the diagonal
+    # elements here)
+    Rk1k2diag = ZtZ - DinvIplusZtZD*ZtZ**2
+
+    # lk and qk for the first factor (zero indexed)
+    l0 = nlevels[0]
+    q0 = nraneffs[0]
+
+    # Get diagonal values of R and sum the squares. This is equivalent
+    # to the kron operation in the one factor case
+    RkRSum = np.sum(Rk1k2diag**2,axis=1).reshape(v, q0**2, q0**2)
+
+    # This is the covariance
+    covdldDk1dldk2 = 1/2*RkRSum
+
   else:
-    covdldDk1dldk2 = 1/2 * RkRSum
+
+    # Get R_(k1,k2)=Z'V^(-1)Z_(k1,k2)
+    Rk1k2 = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ik1,Ik2)] - (ZtZ[:,Ik1,:] @ DinvIplusZtZD @ ZtZ[:,:,Ik2])
+    
+    # Work out block sizes
+    p = np.array([nraneffs[k1],nraneffs[k2]])
+
+    # Obtain permutation
+    RkRSum,perm=sumAijKronBij3D(Rk1k2, Rk1k2, p, perm)
+
+    # Multiply by duplication matrices and save
+    if not vec:
+      covdldDk1dldk2 = 1/2 * dupMatTdict[k1] @ RkRSum @ dupMatTdict[k2].transpose()
+    else:
+      covdldDk1dldk2 = 1/2 * RkRSum
 
   # Return the result
   return(covdldDk1dldk2, perm)
@@ -1366,6 +1660,55 @@ def sumAijBijt3D(A, B, pA, pB):
 
 # ============================================================================
 #
+# The below function computes the sum of T_(k,j)'T_(k,j) across all levels j 
+# where T_(k,j)=Z_(k,j)'V^(-1/2), for the one random effect, one random factor
+# setting.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1). As we are looking at a 
+#                    single random factor single random effect model,  
+#                    DinvIplusZtZD must only hold the diagonal elements of
+#                    D(I+Z'ZD)^(-1).
+# - `ZtZ`: Z transpose multiplied by Z (Z'Z in the previous notation). As
+#          we are looking at a one random factor, one random effect design 
+#          the variable ZtZ must only hold the diagonal elements of the matrix
+#          Z'Z.
+# - `l0`: The number of levels for the one random factor.
+# - `q0`: The number of random effects (should be 1).
+#
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+#  - `sumTTt`: The sum of Z_(k,j)'V^(-1)Z_(k,j) across all levels j. 
+#
+# ============================================================================
+def sumTTt_1fac1ran3D(ZtZ, DinvIplusZtZD, l0, q0):
+
+  # Number of voxels, v
+  v = DinvIplusZtZD.shape[0]
+
+  # Work out the diagonal values of the matrix product Z'ZD(I+Z'ZD)^(-1)Z'Z
+  DiagVals = DinvIplusZtZD*ZtZ**2
+
+  # Reshape diag vals and sum apropriately
+  DiagVals = np.sum(DiagVals.reshape(v,q0,l0),axis=2)
+
+  # Put values back into a matrix
+  sumTTt = np.zeros((v,q0,q0))
+  np.einsum('ijj->ij', sumTTt)[...] = DiagVals
+
+  return(sumTTt)
+
+# ============================================================================
+#
 # The below function computes, given two 3D matrices A and B, and denoting Av
 # and Bv as A[v,:,:] and B[v,:,:], the below sum, for all v:
 #
@@ -1488,8 +1831,14 @@ def get_resms3D(YtX, YtY, XtX, beta, n, p):
 #
 # - `XtX`: X transpose multiplied by X (X'X in the previous notation).
 # - `XtZ`: X transpose multiplied by Z (X'Z in the previous notation).
-# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1).
+# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1). If we are looking at a 
+#                    single random factor single random effect model 
+#                    DinvIplusZtZD will only hold the diagonal elements of
+#                    D(I+Z'ZD)^(-1)
 # - `sigma2`: The fixed effects variance (\sigma^2 in the previous notation).
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 #
 # ----------------------------------------------------------------------------
 #
@@ -1500,7 +1849,10 @@ def get_resms3D(YtX, YtY, XtX, beta, n, p):
 # - `covB`: The covariance of the beta estimates.
 #
 # ============================================================================
-def get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2):
+def get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs):
+
+    # Number of random factors r
+    r = len(nraneffs)
 
     # Reshape n if necessary
     if isinstance(sigma2,np.ndarray):
@@ -1510,8 +1862,13 @@ def get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2):
           
             sigma2 = sigma2.reshape(sigma2.shape[0])
 
-    # Work out X'V^{-1}X = X'X - X'ZD(I+Z'ZD)^{-1}Z'X
-    XtinvVX = XtX - XtZ @ DinvIplusZtZD @ XtZ.transpose((0,2,1))
+    # Work out X'V^{-1}X = X'X - X'ZD(I+Z'ZD)^{-1}Z'X. In the one factor one
+    # random effect setting this computation is quicker as DinvIplusZtZD is
+    # diagonal.
+    if r == 1 and nraneffs[0]==1:
+        XtinvVX = XtX - XtZ @ np.einsum('ij,ikj->ijk', DinvIplusZtZD, XtZ)
+    else:
+        XtinvVX = XtX - XtZ @ DinvIplusZtZD @ XtZ.transpose((0,2,1))
 
     # Work out var(LB) = L'(X'V^{-1}X)^{-1}L
     covB = np.linalg.pinv(XtinvVX)
@@ -1538,8 +1895,14 @@ def get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2):
 #        case in practice when using this function).
 # - `XtX`: X transpose multiplied by X (X'X in the previous notation).
 # - `XtZ`: X transpose multiplied by Z (X'Z in the previous notation).
-# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1).
+# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1). If we are looking at a 
+#                    single random factor single random effect model 
+#                    DinvIplusZtZD will only hold the diagonal elements of
+#                    D(I+Z'ZD)^(-1)
 # - `sigma2`: The fixed effects variance (\sigma^2 in the previous notation).
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 #
 # ----------------------------------------------------------------------------
 #
@@ -1550,7 +1913,7 @@ def get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2):
 # - `varLB`: The (usually scalar) variance of L\beta.
 #
 # ============================================================================
-def get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2):
+def get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs):
 
     # Reshape n if necessary
     if isinstance(sigma2,np.ndarray):
@@ -1561,7 +1924,7 @@ def get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2):
             sigma2 = sigma2.reshape(sigma2.shape[0])
 
     # Work out var(LB) = L'(X'V^{-1}X)^{-1}L
-    varLB = L @ get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2) @ L.transpose()
+    varLB = L @ get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs) @ L.transpose()
 
     # Return result
     return(varLB)
@@ -1628,9 +1991,15 @@ def get_R23D(L, F, df):
 # - `L`: A contrast vector.
 # - `XtX`: X transpose multiplied by X (X'X in the previous notation).
 # - `XtZ`: X transpose multiplied by Z (X'Z in the previous notation).
-# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1).
+# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1). If we are looking at a 
+#                    single random factor single random effect model 
+#                    DinvIplusZtZD will only hold the diagonal elements of
+#                    D(I+Z'ZD)^(-1)
 # - `beta`: The estimate of the fixed effects parameters.
 # - `sigma2`: The fixed effects variance (\sigma^2 in the previous notation).
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 #
 # ----------------------------------------------------------------------------
 #
@@ -1641,7 +2010,7 @@ def get_R23D(L, F, df):
 # - `T`: A matrix of T statistics.
 #
 # ============================================================================
-def get_T3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2):
+def get_T3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2, nraneffs):
 
     # Work out the rank of L
     rL = np.linalg.matrix_rank(L)
@@ -1650,14 +2019,13 @@ def get_T3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2):
     LB = L @ beta
 
     # Work out se(T)
-    varLB = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
+    varLB = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs)
 
     # Work out T
     T = LB/np.sqrt(varLB)
 
     # Return T
     return(T)
-
 
 
 # ============================================================================
@@ -1675,9 +2043,15 @@ def get_T3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2):
 # - `L`: A contrast matrix.
 # - `XtX`: X transpose multiplied by X (X'X in the previous notation).
 # - `XtZ`: X transpose multiplied by Z (X'Z in the previous notation).
-# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1).
+# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1). If we are looking at a 
+#                    single random factor single random effect model 
+#                    DinvIplusZtZD will only hold the diagonal elements of
+#                    D(I+Z'ZD)^(-1)
 # - `beta`: The estimate of the fixed effects parameters.
 # - `sigma2`: The fixed effects variance (\sigma^2 in the previous notation).
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
 #
 # ----------------------------------------------------------------------------
 #
@@ -1688,7 +2062,7 @@ def get_T3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2):
 # - `F`: A matrix of F statistics.
 #
 # ============================================================================
-def get_F3D(L, XtX, XtZ, DinvIplusZtZD, betahat, sigma2):
+def get_F3D(L, XtX, XtZ, DinvIplusZtZD, betahat, sigma2, nraneffs):
 
     # Work out the rank of L
     rL = np.linalg.matrix_rank(L)
@@ -1697,7 +2071,7 @@ def get_F3D(L, XtX, XtZ, DinvIplusZtZD, betahat, sigma2):
     LB = L @ betahat
 
     # Work out se(F)
-    varLB = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
+    varLB = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs)
 
     # Work out F
     F = LB.transpose(0,2,1) @ np.linalg.pinv(varLB) @ LB/rL
@@ -1804,12 +2178,14 @@ def F2P3D(F, L, df_denom, minlog):
 # ----------------------------------------------------------------------------
 #
 # - `L`: A contrast matrix.
-# - `D`: The random effects variance-covariance matrix estimate.
 # - `sigma2`: The fixed effects variance estimate.
 # - `XtX`: X transpose multiplied by X (X'X in the previous notation).
 # - `XtZ`: X transpose multiplied by Z (X'Z in the previous notation).
 # - `ZtX`: Z transpose multiplied by X (Z'X in the previous notation).
-# - `ZtZ`: Z transpose multiplied by Z (Z'Z in the previous notation).
+# - `ZtZ`: Z transpose multiplied by Z (Z'Z in the previous notation). If 
+#          we are looking at a one random factor one random effect design 
+#          the variable ZtZ only holds the diagonal elements of the matrix 
+#          Z'Z.
 # - `n`: The number of observations/input niftis (potentially spatially
 #        varying)
 # - `nlevels`: A vector containing the number of levels for each factor, e.g.
@@ -1818,6 +2194,10 @@ def F2P3D(F, L, df_denom, minlog):
 # - `nraneffs`: A vector containing the number of random effects for each
 #               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
 #               random effects and the second factor has 1 random effect.
+# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1). If we are looking at a 
+#                    single random factor single random effect model 
+#                    DinvIplusZtZD will only hold the diagonal elements of
+#                    D(I+Z'ZD)^(-1)
 #
 # ----------------------------------------------------------------------------
 #
@@ -1828,7 +2208,7 @@ def F2P3D(F, L, df_denom, minlog):
 # - `df`: The spatially varying Sattherthwaithe degrees of freedom estimate.
 #
 # ============================================================================
-def get_swdf_F3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs): 
+def get_swdf_F3D(L, sigma2, XtX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nraneffs): 
 
     # Reshape sigma2 if necessary
     sigma2 = sigma2.reshape(sigma2.shape[0])
@@ -1851,7 +2231,7 @@ def get_swdf_F3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs):
     for i in np.arange(rL):
 
         # Work out the swdf for each row of L
-        swdf_row = get_swdf_T3D(L[i:(i+1),:], D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs)
+        swdf_row = get_swdf_T3D(L[i:(i+1),:], sigma2, XtX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nraneffs)
 
         # Work out adjusted df = df/(df-2)
         swdf_adj = swdf_row/(swdf_row-2)
@@ -1885,12 +2265,14 @@ def get_swdf_F3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs):
 # ----------------------------------------------------------------------------
 #
 # - `L`: A contrast vector.
-# - `D`: The random effects variance-covariance matrix estimate.
 # - `sigma2`: The fixed effects variance estimate.
 # - `XtX`: X transpose multiplied by X (X'X in the previous notation).
 # - `XtZ`: X transpose multiplied by Z (X'Z in the previous notation).
 # - `ZtX`: Z transpose multiplied by X (Z'X in the previous notation).
-# - `ZtZ`: Z transpose multiplied by Z (Z'Z in the previous notation).
+# - `ZtZ`: Z transpose multiplied by Z (Z'Z in the previous notation). If 
+#          we are looking at a one random factor one random effect design 
+#          the variable ZtZ only holds the diagonal elements of the matrix 
+#          Z'Z.
 # - `n`: The number of observations/input niftis (potentially spatially
 #        varying)
 # - `nlevels`: A vector containing the number of levels for each factor, e.g.
@@ -1899,6 +2281,10 @@ def get_swdf_F3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs):
 # - `nraneffs`: A vector containing the number of random effects for each
 #               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
 #               random effects and the second factor has 1 random effect.
+# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1). If we are looking at a 
+#                    single random factor single random effect model 
+#                    DinvIplusZtZD will only hold the diagonal elements of
+#                    D(I+Z'ZD)^(-1)
 #
 # ----------------------------------------------------------------------------
 #
@@ -1909,7 +2295,7 @@ def get_swdf_F3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs):
 # - `df`: The spatially varying Sattherthwaithe degrees of freedom estimate.
 #
 # ============================================================================
-def get_swdf_T3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs): 
+def get_swdf_T3D(L, sigma2, XtX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nraneffs): 
 
     # Reshape sigma2 if necessary
     sigma2 = sigma2.reshape(sigma2.shape[0])
@@ -1922,11 +2308,8 @@ def get_swdf_T3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs):
     
             n = n.reshape(sigma2.shape)
 
-    # Get D(I+Z'ZD)^(-1)
-    DinvIplusZtZD = np.linalg.solve(np.eye(ZtZ.shape[1]) + D @ ZtZ, D)
-
     # Get S^2 (= Var(L\beta))
-    S2 = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
+    S2 = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs)
     
     # Get derivative of S^2
     dS2 = get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2)
@@ -1961,8 +2344,14 @@ def get_swdf_T3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs):
 # - `L`: A contrast vector.
 # - `XtX`: X transpose multiplied by X (X'X in the previous notation).
 # - `XtZ`: X transpose multiplied by Z (X'Z in the previous notation).
-# - `ZtZ`: Z transpose multiplied by Z (Z'Z in the previous notation).
-# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1).
+# - `ZtZ`: Z transpose multiplied by Z (Z'Z in the previous notation). If 
+#          we are looking at a one random factor one random effect design 
+#          the variable ZtZ only holds the diagonal elements of the matrix 
+#          Z'Z.
+# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1). If we are looking at a 
+#                    single random factor single random effect model 
+#                    DinvIplusZtZD will only hold the diagonal elements of
+#                    D(I+Z'ZD)^(-1)
 # - `sigma2`: The fixed effects variance estimate.
 #
 # ----------------------------------------------------------------------------
@@ -1976,63 +2365,98 @@ def get_swdf_T3D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs):
 # ============================================================================
 def get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
 
-    # ZtX
-    ZtX = XtZ.transpose(0,2,1)
+  # Number of random effects, r
+  r = len(nraneffs)
 
-    # Number of voxels
-    v = DinvIplusZtZD.shape[0]
+  # ZtX
+  ZtX = XtZ.transpose(0,2,1)
 
-    # Calculate X'V^{-1}X=X'(I+ZDZ')^{-1}X=X'X-X'Z(I+DZ'Z)^{-1}DZ'X
+  # Number of voxels
+  v = DinvIplusZtZD.shape[0]
+
+  # Calculate X'V^{-1}X=X'(I+ZDZ')^{-1}X=X'X-X'Z(I+DZ'Z)^{-1}DZ'X. In the
+  # one random factor one random effect setting this computation is much quicker
+  # as we already have DinvIplusZtZD in diagonal form
+  if r == 1 and nraneffs[0]==1:
+    XtiVX = XtX - XtZ @ np.einsum('ij,ijk->ijk', DinvIplusZtZD, ZtX)
+  else:
     XtiVX = XtX - XtZ @  DinvIplusZtZD @ ZtX
 
-    # New empty array for differentiating S^2 wrt (sigma2, vech(D1),...vech(Dr)).
-    dS2 = np.zeros((v, 1+np.int32(np.sum(nraneffs*(nraneffs+1)/2)),1))
+  # New empty array for differentiating S^2 wrt (sigma2, vech(D1),...vech(Dr)).
+  dS2 = np.zeros((v, 1+np.int32(np.sum(nraneffs*(nraneffs+1)/2)),1))
 
-    # Work out indices for each start of each component of vector 
-    # i.e. [dS2/dsigm2, dS2/vechD1,...dS2/vechDr]
-    DerivInds = np.int32(np.cumsum(nraneffs*(nraneffs+1)/2) + 1)
-    DerivInds = np.insert(DerivInds,0,1)
+  # Work out indices for each start of each component of vector 
+  # i.e. [dS2/dsigm2, dS2/vechD1,...dS2/vechDr]
+  DerivInds = np.int32(np.cumsum(nraneffs*(nraneffs+1)/2) + 1)
+  DerivInds = np.insert(DerivInds,0,1)
 
-    # Work of derivative wrt to sigma^2
-    dS2dsigma2 = L @ np.linalg.pinv(XtiVX) @ L.transpose()
+  # Work of derivative wrt to sigma^2
+  dS2dsigma2 = L @ np.linalg.pinv(XtiVX) @ L.transpose()
+
+  # Add to dS2
+  dS2[:,0:1] = dS2dsigma2.reshape(dS2[:,0:1].shape)
+
+  # Work out T_ku*sigma. In the one random factor one random effect setting 
+  # this computation is much quicker as we already have DinvIplusZtZD and ZtZ
+  # in diagonal form
+  if r == 1 and nraneffs[0]==1:
+
+    # Obtain ZtX(XtiVX)^(-1)L'
+    ZtXinvXtiVXLt = ZtX @ (np.linalg.pinv(XtiVX) @ L.transpose())
+
+    # Obtain diag(Z'ZD(I+Z'ZD)^(-1)) (DinvIplusZtZD and ZtZ are already just the
+    # diagonal elements)
+    DiagVals = DinvIplusZtZD*ZtZ
+
+    # Obtain diag(Z'ZD(I+Z'ZD)^(-1))*ZtX(X'V^(-1)X)^(-1)L'
+    DiagDot = DiagVals.reshape(ZtXinvXtiVXLt.shape)*ZtXinvXtiVXLt
+
+    # Get the squared elements of Z'X(X'V^(-1)X)^(-1)L'. These are the terms in the
+    # sum of the kronecker product.
+    kronTerms = (ZtXinvXtiVXLt - DiagDot)**2
+
+    # Get the derivative by summing the kronecker product terms
+    dS2dvechDk = np.einsum('i,ij->ij',sigma2, np.sum(kronTerms, axis=1)).reshape((v,1,1)) 
 
     # Add to dS2
-    dS2[:,0:1] = dS2dsigma2.reshape(dS2[:,0:1].shape)
+    dS2[:,DerivInds[0]:DerivInds[1]] = dS2dvechDk.reshape(dS2[:,DerivInds[0]:DerivInds[1]].shape)
+
+  else:
 
     # Now we need to work out ds2dVech(Dk)
     for k in np.arange(len(nraneffs)):
 
-        # Initialize an empty zeros matrix
-        dS2dvechDk = np.zeros((np.int32(nraneffs[k]*(nraneffs[k]+1)/2),1))#...
+      # Initialize an empty zeros matrix
+      dS2dvechDk = np.zeros((np.int32(nraneffs[k]*(nraneffs[k]+1)/2),1))#...
 
-        for j in np.arange(nlevels[k]):
+      for j in np.arange(nlevels[k]):
 
-            # Get the indices for this level and factor.
-            Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
-                    
-            # Work out Z_(k,j)'Z
-            ZkjtZ = ZtZ[:,Ikj,:]
+        # Get the indices for this level and factor.
+        Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
+                
+        # Work out Z_(k,j)'Z
+        ZkjtZ = ZtZ[:,Ikj,:]
 
-            # Work out Z_(k,j)'X
-            ZkjtX = ZtX[:,Ikj,:]
+        # Work out Z_(k,j)'X
+        ZkjtX = ZtX[:,Ikj,:]
 
-            # Work out Z_(k,j)'V^{-1}X
-            ZkjtiVX = ZkjtX - ZkjtZ @ DinvIplusZtZD @ ZtX
+        # Work out Z_(k,j)'V^{-1}X
+        ZkjtiVX = ZkjtX - ZkjtZ @ DinvIplusZtZD @ ZtX
 
-            # Work out the term to put into the kronecker product
-            # K = Z_(k,j)'V^{-1}X(X'V^{-1})^{-1}L'
-            K = ZkjtiVX @ np.linalg.pinv(XtiVX) @ L.transpose()
-            
-            # Sum terms
-            dS2dvechDk = dS2dvechDk + dupMat2D(nraneffs[k]).toarray().transpose() @ mat2vec3D(kron3D(K,K.transpose(0,2,1)))
+        # Work out the term to put into the kronecker product
+        # K = Z_(k,j)'V^{-1}X(X'V^{-1})^{-1}L'
+        K = ZkjtiVX @ np.linalg.pinv(XtiVX) @ L.transpose()
+        
+        # Sum terms
+        dS2dvechDk = dS2dvechDk + dupMat2D(nraneffs[k]).toarray().transpose() @ mat2vec3D(kron3D(K,K.transpose(0,2,1)))
 
-        # Multiply by sigma^2
-        dS2dvechDk = np.einsum('i,ijk->ijk',sigma2,dS2dvechDk)
+      # Multiply by sigma^2
+      dS2dvechDk = np.einsum('i,ijk->ijk',sigma2,dS2dvechDk)
 
-        # Add to dS2
-        dS2[:,DerivInds[k]:DerivInds[k+1]] = dS2dvechDk.reshape(dS2[:,DerivInds[k]:DerivInds[k+1]].shape)
+      # Add to dS2
+      dS2[:,DerivInds[k]:DerivInds[k+1]] = dS2dvechDk.reshape(dS2[:,DerivInds[k]:DerivInds[k+1]].shape)
 
-    return(dS2)
+  return(dS2)
 
 
 # ============================================================================
@@ -2046,7 +2470,10 @@ def get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
 #
 # ----------------------------------------------------------------------------
 #
-# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1).
+# - `DinvIplusZtZD`: The product D(I+Z'ZD)^(-1). If we are looking at a 
+#                    single random factor single random effect model 
+#                    DinvIplusZtZD will only hold the diagonal elements of
+#                    D(I+Z'ZD)^(-1)
 # - `sigma2`: The fixed effects variance estimate.
 # - `n`: The total number of observations (potentially spatially varying).
 # - `nlevels`: A vector containing the number of levels for each factor, e.g.
@@ -2055,7 +2482,10 @@ def get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
 # - `nraneffs`: A vector containing the number of random effects for each
 #               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
 #               random effects and the second factor has 1 random effect.
-# - `ZtZ`: Z transpose multiplied by Z (Z'Z in the previous notation).
+# - `ZtZ`: Z transpose multiplied by Z (Z'Z in the previous notation). If 
+#          we are looking at a one random factor one random effect design 
+#          the variable ZtZ only holds the diagonal elements of the matrix 
+#          Z'Z.
 #
 # ----------------------------------------------------------------------------
 #
