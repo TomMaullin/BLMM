@@ -776,7 +776,7 @@ def get_dldB3D(sigma2, Xte, XtZ, DinvIplusZtZD, Zte, nraneffs):
 # - `dldsigma2`: The derivative of l with respect to \sigma^2.
 #
 # ============================================================================
-def get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD, nraneffs):
+def get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD, nraneffs, reml=False, p=0):
   
   # Make sure n is correct shape
   if hasattr(n, "ndim"):
@@ -801,8 +801,11 @@ def get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD, nraneffs):
     etinvIplusZtDZe = ete - forceSym3D(Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte)
   
   # Get the derivative
-  deriv = -n/(2*sigma2) + np.einsum('i,ijk->ijk',1/(2*(sigma2**2)), etinvIplusZtDZe).reshape(sigma2.shape[0])
-  
+  if not reml:
+    deriv = -n/(2*sigma2) + np.einsum('i,ijk->ijk',1/(2*(sigma2**2)), etinvIplusZtDZe).reshape(sigma2.shape[0])
+  else:
+    deriv = -(n-p)/(2*sigma2) + np.einsum('i,ijk->ijk',1/(2*(sigma2**2)), etinvIplusZtDZe).reshape(sigma2.shape[0])
+    
   return(deriv)
 
 

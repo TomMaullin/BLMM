@@ -573,7 +573,7 @@ def get_VarhatLB2D(X, Z, beta, sigma2, D, L, nlevels, nraneffs, tol):
     ZtZ = Z.transpose(0,2,1) @ Z
 
     # Get parameter vector
-    paramVec = FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n)
+    paramVec = FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n,reml=True)
 
     # Get the indices in the paramvector corresponding to D matrices
     IndsDk = np.int32(np.cumsum(nraneffs*(nraneffs+1)//2) + p + 1)

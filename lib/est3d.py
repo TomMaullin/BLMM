@@ -217,7 +217,7 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n, 
         dldB = get_dldB3D(sigma2, Xte, XtZ, DinvIplusZtZD, Zte, nraneffs)  
         
         # Derivative wrt sigma^2
-        dldsigma2 = get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD, nraneffs)
+        dldsigma2 = get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD, nraneffs, reml, p)
         
         # For each factor, factor k, work out dl/dD_k
         dldDdict = dict()
@@ -228,9 +228,9 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n, 
             #-----------------------------------------------------------------------
             # Work out derivative
             if ZtZmatdict[k] is None:
-                dldDdict[k],ZtZmatdict[k] = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None)
+                dldDdict[k],ZtZmatdict[k] = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None,reml, ZtX, XtX)
             else:
-                dldDdict[k],_ = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k])
+                dldDdict[k],_ = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k],reml, ZtX, XtX)
         
         # --------------------------------------------------------------------------
         # Covariances
@@ -636,7 +636,7 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n,
         dldB = get_dldB3D(sigma2, Xte, XtZ, DinvIplusZtZD, Zte, nraneffs)  
         
         # Derivative wrt sigma^2
-        dldsigma2 = get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD, nraneffs)
+        dldsigma2 = get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD, nraneffs, reml, p)
         
         # For each factor, factor k, work out dl/dD_k
         dldDdict = dict()
@@ -647,9 +647,9 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n,
             #-----------------------------------------------------------------------
             # Work out derivative
             if ZtZmatdict[k] is None:
-                dldDdict[k],ZtZmatdict[k] = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None)
+                dldDdict[k],ZtZmatdict[k] = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None,reml, ZtX, XtX)
             else:
-                dldDdict[k],_ = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k])
+                dldDdict[k],_ = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k],reml, ZtX, XtX)
         
         # --------------------------------------------------------------------------
         # Covariances
@@ -1123,9 +1123,9 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n,
             #-----------------------------------------------------------------------
             # Work out derivative
             if ZtZmatdict[k] is None:
-                dldDk,ZtZmatdict[k] = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None)
+                dldDk,ZtZmatdict[k] = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None,reml, ZtX, XtX)
             else:
-                dldDk,_ = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k])
+                dldDk,_ = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k],reml, ZtX, XtX)
     
             #-----------------------------------------------------------------------
             # Calculate covariance of derivative with respect to D_k
@@ -1553,9 +1553,9 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             #-----------------------------------------------------------------------
             # Work out derivative
             if ZtZmatdict[k] is None:
-                dldDk,ZtZmatdict[k] = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None)
+                dldDk,ZtZmatdict[k] = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None,reml, ZtX, XtX)
             else:
-                dldDk,_ = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k])
+                dldDk,_ = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k],reml, ZtX, XtX)
         
             #-----------------------------------------------------------------------
             # Calculate covariance of derivative with respect to D_k
