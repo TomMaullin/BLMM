@@ -601,7 +601,7 @@ def get_VarhatLB2D(X, Z, beta, sigma2, D, L, nlevels, nraneffs, tol):
     DinvIplusZtZD =  forceSym3D(np.linalg.solve(np.eye(q) + D @ ZtZ, D))
 
     # Get variance of Lbeta estimates
-    varLB = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2)
+    varLB = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs)
 
     print('est varLB')
     print(varLB.shape)
