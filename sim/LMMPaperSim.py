@@ -42,6 +42,9 @@ def sim2D(desInd, OutDir):
         runSim(simInd, desInd, OutDir)
 
 def runSim(simInd, desInd, OutDir):
+
+    # Make sure simInd is an int
+    simInd = int(simInd)
         
     #===============================================================================
     # Setup
