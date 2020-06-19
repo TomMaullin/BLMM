@@ -78,7 +78,7 @@ def runSim(simInd, desInd, OutDir):
         # Loop through factors and save factor vectors
         for i in range(len(nlevels)):
 
-            fvs[i] = pd.io.parsers.read_csv(os.remove(os.path.join(OutDir, 'fv_' + str(desInd) + '_' + str(i) + '.csv')), header=None).values
+            fvs[i] = pd.io.parsers.read_csv(os.path.join(OutDir, 'fv_' + str(desInd) + '_' + str(i) + '.csv'), header=None).values
 
     # Generate test data
     Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D, fvs = genTestData2D(n=1000, p=5, nlevels=nlevels, nraneffs=nraneffs, save=True, simInd=simInd, desInd=desInd, OutDir=OutDir, factorVectors=fvs)
