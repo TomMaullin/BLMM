@@ -37,301 +37,335 @@ from lib.npMatrix3d import *
 # ==================================================================================
 def sim2D(desInd, OutDir):
 
-
-    fvs = None
     for simInd in range(1,101):
+
+        runSim(simInd, desInd, OutDir)
+
+def runSim(simInd, desInd, OutDir):
         
-        #===============================================================================
-        # Setup
-        #===============================================================================
-
-        if desInd==1:
-            nlevels = np.array([50])
-            nraneffs = np.array([2])
-        if desInd==2:
-            nlevels = np.array([50,25])
-            nraneffs = np.array([3,2])
-        if desInd==3:
-            nlevels = np.array([100,30,10])
-            nraneffs = np.array([4,3,2])
-
-        # Generate test data
-        Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D, fvs = genTestData2D(n=1000, p=5, nlevels=nlevels, nraneffs=nraneffs, save=True, simInd=simInd, desInd=desInd, OutDir=OutDir, factorVectors=fvs)
-
-        # Work out number of observations, parameters, random effects, etc
-        n = X.shape[0]
-        p = X.shape[1]
-        q = np.sum(nraneffs*nlevels)
-        qu = np.sum(nraneffs*(nraneffs+1)//2)
-        r = nlevels.shape[0]
-
-        # Tolerance
-        tol = 1e-6
+    #===============================================================================
+    # Setup
+    #===============================================================================
 
-        # Work out factor indices.
-        facInds = np.cumsum(nraneffs*nlevels)
-        facInds = np.insert(facInds,0,0)
+    if desInd==1:
+        nlevels = np.array([50])
+        nraneffs = np.array([2])
+    if desInd==2:
+        nlevels = np.array([50,25])
+        nraneffs = np.array([3,2])
+    if desInd==3:
+        nlevels = np.array([100,30,10])
+        nraneffs = np.array([4,3,2])
 
-        # Convert D to dict
-        Ddict=dict()
-        for k in np.arange(len(nlevels)):
+    # Create the factor vectors if this is the first run.
+    if simInd == 1:
 
-            Ddict[k] = D[facInds[k]:(facInds[k]+nraneffs[k]),facInds[k]:(facInds[k]+nraneffs[k])]
+        # Delete any factor vectors from a previous run.
+        for i in range(len(nlevels)):
 
-        # Get the product matrices
-        XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats2D(Y,Z,X)
+            if os.path.isfile(os.path.join(OutDir, 'fv_' + str(desInd) + '_' + str(i) + '.csv')):
 
-        # -----------------------------------------------------------------------------
-        # # Display parameters:
-        # # -----------------------------------------------------------------------------
+                os.remove(os.path.join(OutDir, 'fv_' + str(desInd) + '_' + str(i) + '.csv'))
 
-        # print('--------------------------------------------------------------------------')
-        # print('Test Settings:')
-        # print('--------------------------------------------------------------------------')
-        # print('nlevels: ', nlevels)
-        # print('nraneffs: ', nraneffs)
-        # print('n: ', n, ', p: ', p, ', r: ', r, ', q: ', q, ', tol: ', tol)
-        # print('--------------------------------------------------------------------------')
+        fvs = None
 
-        # -----------------------------------------------------------------------------
-        # Create empty data frame for results:
-        # -----------------------------------------------------------------------------
+    # Otheriwse read the factor vectors in from file.
+    else:
 
-        # Row indices
-        indexVec = np.array(['Time', 'nit', 'llh'])
-        for i in np.arange(p):
+        # Initialize empty factor vectors dict
+        fvs = dict()
 
-            indexVec = np.append(indexVec, 'beta'+str(i+1))
+        # Loop through factors and save factor vectors
+        for i in range(len(nlevels)):
 
-        # Sigma2
-        indexVec = np.append(indexVec, 'sigma2')
+            fvs[i] = pd.io.parsers.read_csv(os.remove(os.path.join(OutDir, 'fv_' + str(desInd) + '_' + str(i) + '.csv')), header=None).values
 
-        # Dk
-        for k in np.arange(r):
-            for j in np.arange(nraneffs[k]*(nraneffs[k]+1)//2):
-                indexVec = np.append(indexVec, 'D'+str(k+1)+','+str(j+1))
-
-        # Sigma2*Dk
-        for k in np.arange(r):
-            for j in np.arange(nraneffs[k]*(nraneffs[k]+1)//2):
-                indexVec = np.append(indexVec, 'sigma2*D'+str(k+1)+','+str(j+1))
-
-        # T value p value and Satterthwaite degrees of freedom estimate.
-        indexVec = np.append(indexVec,'T')
-        indexVec = np.append(indexVec,'p')
-        indexVec = np.append(indexVec,'swdf')
-
-        # Construct dataframe
-        results = pd.DataFrame(index=indexVec, columns=['Truth', 'FS', 'pFS', 'SFS', 'pSFS', 'cSFS', 'FS (hess)'])
-
-        # ------------------------------------------------------------------------------------
-        # Truth
-        # ------------------------------------------------------------------------------------
-
-        # Default time and number of iterations
-        results.at['Time','Truth']=0
-        results.at['nit','Truth']=0
-
-        # Construct parameter vector
-        paramVec_true = beta[:]
-        paramVec_true = np.concatenate((paramVec_true,np.array(sigma2).reshape(1,1)),axis=0)
-
-        # Add D to parameter vector
-        facInds = np.cumsum(nraneffs*nlevels)
-        facInds = np.insert(facInds,0,0)
-
-        # Convert D to vector
-        for k in np.arange(len(nlevels)):
-
-            vechD = mat2vech2D(D[facInds[k]:(facInds[k]+nraneffs[k]),facInds[k]:(facInds[k]+nraneffs[k])])/sigma2
-            paramVec_true = np.concatenate((paramVec_true,vechD),axis=0)
+    # Generate test data
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D, fvs = genTestData2D(n=1000, p=5, nlevels=nlevels, nraneffs=nraneffs, save=True, simInd=simInd, desInd=desInd, OutDir=OutDir, factorVectors=fvs)
 
-        # Add results to parameter vector
-        for i in np.arange(3,p+qu+4):
-
-            results.at[indexVec[i],'Truth']=paramVec_true[i-3,0]
-
-        # Record D*sigma2
-        for i in np.arange(4+p,p+qu+4):
-            results.at[indexVec[i+qu],'Truth']=paramVec_true[p,0]*paramVec_true[i-3,0]
-
-        # Matrices needed for
-        Zte = ZtY - ZtX @ beta
-        ete = ssr2D(YtX, YtY, XtX, beta)
-        DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
-
-        # True log likelihood
-        llh = llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,True,XtX,XtZ,ZtX)[0,0]-n/2*np.log(np.pi)
-
-        results.at['llh','Truth']=llh
-
-
-        # MARKER 
-
-        # Contrast vector (1 in last place 0 elsewhere)
-        L = np.zeros(p)
-        L[-1] = 1
-        L = L.reshape(1,p)
-
-        v = groundTruth_TDF(X, Z, beta, sigma2, D, L, nlevels, nraneffs, tol)
-        results.at[indexVec[p+6+2*qu],'Truth']=v[0,0]
-
-
-        #===============================================================================
-        # pSFS
-        #===============================================================================
-
-        # Get the indices for the individual random factor covariance parameters.
-        DkInds = np.zeros(len(nlevels)+1)
-        DkInds[0]=np.int(p+1)
-        for k in np.arange(len(nlevels)):
-            DkInds[k+1] = np.int(DkInds[k] + nraneffs[k]*(nraneffs[k]+1)//2)
-
-        # Run Pseudo Simplified Fisher Scoring
-        t1 = time.time()
-        paramVector_pSFS,_,nit,llh = pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=True, init_paramVector=None)
-        t2 = time.time()
-
-        # Record Time and number of iterations
-        results.at['Time','pSFS']=t2-t1
-        results.at['nit','pSFS']=nit
-        results.at['llh','pSFS']=llh-n/2*np.log(np.pi)
-
-        # Record parameters
-        for i in np.arange(3,p+qu+4):
-
-            results.at[indexVec[i],'pSFS']=paramVector_pSFS[i-3,0]
-
-        # Record D*sigma2
-        for i in np.arange(4+p,p+qu+4):
-            results.at[indexVec[i+qu],'pSFS']=paramVector_pSFS[p,0]*paramVector_pSFS[i-3,0]
-                
-        # Get T statistic, p value and Satterthwaite degrees of freedom
-        T,Pval,df = simT(paramVector_pSFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
-        results.at[indexVec[p+4+2*qu],'pSFS']=T[0,0]
-        results.at[indexVec[p+5+2*qu],'pSFS']=Pval[0,0]
-        results.at[indexVec[p+6+2*qu],'pSFS']=df[0,0]
-
-        #===============================================================================
-        # cSFS
-        #===============================================================================
-
-        # Run Cholesky Simplified Fisher Scoring
-        t1 = time.time()
-        paramVector_cSFS,_,nit,llh = cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=True, init_paramVector=None)
-        t2 = time.time()
-
-        # Record time and number of iterations
-        results.at['Time','cSFS']=t2-t1
-        results.at['nit','cSFS']=nit
-        results.at['llh','cSFS']=llh-n/2*np.log(np.pi)
-        
-        # Save parameters
-        for i in np.arange(3,p+qu+4):
-            results.at[indexVec[i],'cSFS']=paramVector_cSFS[i-3,0]
-
-        # Record D*sigma2
-        for i in np.arange(4+p,p+qu+4):
-            results.at[indexVec[i+qu],'cSFS']=paramVector_cSFS[p,0]*paramVector_cSFS[i-3,0]
-
-        # Get T statistic, p value and Satterthwaite degrees of freedom
-        T,Pval,df = simT(paramVector_cSFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
-        results.at[indexVec[p+4+2*qu],'cSFS']=T[0,0]
-        results.at[indexVec[p+5+2*qu],'cSFS']=Pval[0,0]
-        results.at[indexVec[p+6+2*qu],'cSFS']=df[0,0]
-
-        #===============================================================================
-        # FS
-        #===============================================================================
-
-        # Run Fisher Scoring
-        t1 = time.time()
-        paramVector_FS,_,nit,llh = FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=True, init_paramVector=None)
-        t2 = time.time()
-
-        # Record time and number of iterations
-        results.at['Time','FS']=t2-t1
-        results.at['nit','FS']=nit
-        results.at['llh','FS']=llh-n/2*np.log(np.pi)
-        
-        # Save parameters
-        for i in np.arange(3,p+qu+4):
-            results.at[indexVec[i],'FS']=paramVector_FS[i-3,0]
-
-        # Record D*sigma2
-        for i in np.arange(4+p,p+qu+4):
-            results.at[indexVec[i+qu],'FS']=paramVector_FS[p,0]*paramVector_FS[i-3,0]
-
-        # Get T statistic, p value and Satterthwaite degrees of freedom
-        T,Pval,df = simT(paramVector_FS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n, Hessian=False)
-        results.at[indexVec[p+4+2*qu],'FS']=T[0,0]
-        results.at[indexVec[p+5+2*qu],'FS']=Pval[0,0]
-        results.at[indexVec[p+6+2*qu],'FS']=df[0,0]
-
-        T,Pval,df = simT(paramVector_FS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n, Hessian=True)
-        results.at[indexVec[p+4+2*qu],'FS (hess)']=T[0,0]
-        results.at[indexVec[p+5+2*qu],'FS (hess)']=Pval[0,0]
-        results.at[indexVec[p+6+2*qu],'FS (hess)']=df[0,0]
-
-        #===============================================================================
-        # SFS
-        #===============================================================================
-
-        # Run Simplified Fisher Scoring
-        t1 = time.time()
-        paramVector_SFS,_,nit,llh = SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=True, init_paramVector=None)
-        t2 = time.time()
-
-        # Record time and number of iterations
-        results.at['Time','SFS']=t2-t1
-        results.at['nit','SFS']=nit
-        results.at['llh','SFS']=llh-n/2*np.log(np.pi)
-
-        # Save parameters
-        for i in np.arange(3,p+qu+4):
-            results.at[indexVec[i],'SFS']=paramVector_SFS[i-3,0]
-
-        # Record D*sigma2
-        for i in np.arange(4+p,p+qu+4):
-            results.at[indexVec[i+qu],'SFS']=paramVector_SFS[p,0]*paramVector_SFS[i-3,0]
-
-        # Get T statistic, p value and Satterthwaite degrees of freedom
-        T,Pval,df = simT(paramVector_SFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
-        results.at[indexVec[p+4+2*qu],'SFS']=T[0,0]
-        results.at[indexVec[p+5+2*qu],'SFS']=Pval[0,0]
-        results.at[indexVec[p+6+2*qu],'SFS']=df[0,0]
-
-        #===============================================================================
-        # pFS
-        #===============================================================================
-
-        # Run Pseudo Fisher Scoring
-        t1 = time.time()
-        paramVector_pFS,_,nit,llh = pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=True, init_paramVector=None)
-        t2 = time.time()
-
-        # Record time and number of iterations
-        results.at['Time','pFS']=t2-t1
-        results.at['nit','pFS']=nit
-        results.at['llh','pFS']=llh-n/2*np.log(np.pi)
-
-        # Save parameters
-        for i in np.arange(3,p+qu+4):
-            results.at[indexVec[i],'pFS']=paramVector_pFS[i-3,0]
-
-        # Record D*sigma2
-        for i in np.arange(4+p,p+qu+4):
-            results.at[indexVec[i+qu],'pFS']=paramVector_pFS[p,0]*paramVector_pFS[i-3,0]
-
-        # Get T statistic, p value and Satterthwaite degrees of freedom
-        T,Pval,df = simT(paramVector_pFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
-        results.at[indexVec[p+4+2*qu],'pFS']=T[0,0]
-        results.at[indexVec[p+5+2*qu],'pFS']=Pval[0,0]
-        results.at[indexVec[p+6+2*qu],'pFS']=df[0,0]
-
-        # Save results
-        results.to_csv(os.path.join(OutDir,'Sim'+str(simInd)+'_Design'+str(desInd)+'_results.csv'))
+    # Save the new factor vectors if this is the first run.
+    if simInd == 1:
+
+        # Loop through the factors saving them
+        for i in range(len(nlevels)):
+
+            pd.DataFrame(fvs[i]).to_csv(os.path.join(OutDir, 'fv_' + str(desInd) + '_' + str(i) + '.csv'), index=False, header=None)
+
+    # Work out number of observations, parameters, random effects, etc
+    n = X.shape[0]
+    p = X.shape[1]
+    q = np.sum(nraneffs*nlevels)
+    qu = np.sum(nraneffs*(nraneffs+1)//2)
+    r = nlevels.shape[0]
+
+    # Tolerance
+    tol = 1e-6
+
+    # Work out factor indices.
+    facInds = np.cumsum(nraneffs*nlevels)
+    facInds = np.insert(facInds,0,0)
+
+    # Convert D to dict
+    Ddict=dict()
+    for k in np.arange(len(nlevels)):
+
+        Ddict[k] = D[facInds[k]:(facInds[k]+nraneffs[k]),facInds[k]:(facInds[k]+nraneffs[k])]
+
+    # Get the product matrices
+    XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ = prodMats2D(Y,Z,X)
+
+    # -----------------------------------------------------------------------------
+    # # Display parameters:
+    # # -----------------------------------------------------------------------------
+
+    # print('--------------------------------------------------------------------------')
+    # print('Test Settings:')
+    # print('--------------------------------------------------------------------------')
+    # print('nlevels: ', nlevels)
+    # print('nraneffs: ', nraneffs)
+    # print('n: ', n, ', p: ', p, ', r: ', r, ', q: ', q, ', tol: ', tol)
+    # print('--------------------------------------------------------------------------')
+
+    # -----------------------------------------------------------------------------
+    # Create empty data frame for results:
+    # -----------------------------------------------------------------------------
+
+    # Row indices
+    indexVec = np.array(['Time', 'nit', 'llh'])
+    for i in np.arange(p):
+
+        indexVec = np.append(indexVec, 'beta'+str(i+1))
+
+    # Sigma2
+    indexVec = np.append(indexVec, 'sigma2')
+
+    # Dk
+    for k in np.arange(r):
+        for j in np.arange(nraneffs[k]*(nraneffs[k]+1)//2):
+            indexVec = np.append(indexVec, 'D'+str(k+1)+','+str(j+1))
+
+    # Sigma2*Dk
+    for k in np.arange(r):
+        for j in np.arange(nraneffs[k]*(nraneffs[k]+1)//2):
+            indexVec = np.append(indexVec, 'sigma2*D'+str(k+1)+','+str(j+1))
+
+    # T value p value and Satterthwaite degrees of freedom estimate.
+    indexVec = np.append(indexVec,'T')
+    indexVec = np.append(indexVec,'p')
+    indexVec = np.append(indexVec,'swdf')
+
+    # Construct dataframe
+    results = pd.DataFrame(index=indexVec, columns=['Truth', 'FS', 'pFS', 'SFS', 'pSFS', 'cSFS', 'FS (hess)'])
+
+    # ------------------------------------------------------------------------------------
+    # Truth
+    # ------------------------------------------------------------------------------------
+
+    # Default time and number of iterations
+    results.at['Time','Truth']=0
+    results.at['nit','Truth']=0
+
+    # Construct parameter vector
+    paramVec_true = beta[:]
+    paramVec_true = np.concatenate((paramVec_true,np.array(sigma2).reshape(1,1)),axis=0)
+
+    # Add D to parameter vector
+    facInds = np.cumsum(nraneffs*nlevels)
+    facInds = np.insert(facInds,0,0)
+
+    # Convert D to vector
+    for k in np.arange(len(nlevels)):
+
+        vechD = mat2vech2D(D[facInds[k]:(facInds[k]+nraneffs[k]),facInds[k]:(facInds[k]+nraneffs[k])])/sigma2
+        paramVec_true = np.concatenate((paramVec_true,vechD),axis=0)
+
+    # Add results to parameter vector
+    for i in np.arange(3,p+qu+4):
+
+        results.at[indexVec[i],'Truth']=paramVec_true[i-3,0]
+
+    # Record D*sigma2
+    for i in np.arange(4+p,p+qu+4):
+        results.at[indexVec[i+qu],'Truth']=paramVec_true[p,0]*paramVec_true[i-3,0]
+
+    # Matrices needed for
+    Zte = ZtY - ZtX @ beta
+    ete = ssr2D(YtX, YtY, XtX, beta)
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+
+    # True log likelihood
+    llh = llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,True,XtX,XtZ,ZtX)[0,0]-n/2*np.log(np.pi)
+
+    results.at['llh','Truth']=llh
+
+
+    # MARKER 
+
+    # Contrast vector (1 in last place 0 elsewhere)
+    L = np.zeros(p)
+    L[-1] = 1
+    L = L.reshape(1,p)
+
+    v = groundTruth_TDF(X, Z, beta, sigma2, D, L, nlevels, nraneffs, tol)
+    results.at[indexVec[p+6+2*qu],'Truth']=v[0,0]
+
+
+    #===============================================================================
+    # pSFS
+    #===============================================================================
+
+    # Get the indices for the individual random factor covariance parameters.
+    DkInds = np.zeros(len(nlevels)+1)
+    DkInds[0]=np.int(p+1)
+    for k in np.arange(len(nlevels)):
+        DkInds[k+1] = np.int(DkInds[k] + nraneffs[k]*(nraneffs[k]+1)//2)
+
+    # Run Pseudo Simplified Fisher Scoring
+    t1 = time.time()
+    paramVector_pSFS,_,nit,llh = pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=True, init_paramVector=None)
+    t2 = time.time()
+
+    # Record Time and number of iterations
+    results.at['Time','pSFS']=t2-t1
+    results.at['nit','pSFS']=nit
+    results.at['llh','pSFS']=llh-n/2*np.log(np.pi)
+
+    # Record parameters
+    for i in np.arange(3,p+qu+4):
+
+        results.at[indexVec[i],'pSFS']=paramVector_pSFS[i-3,0]
+
+    # Record D*sigma2
+    for i in np.arange(4+p,p+qu+4):
+        results.at[indexVec[i+qu],'pSFS']=paramVector_pSFS[p,0]*paramVector_pSFS[i-3,0]
+            
+    # Get T statistic, p value and Satterthwaite degrees of freedom
+    T,Pval,df = simT(paramVector_pSFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
+    results.at[indexVec[p+4+2*qu],'pSFS']=T[0,0]
+    results.at[indexVec[p+5+2*qu],'pSFS']=Pval[0,0]
+    results.at[indexVec[p+6+2*qu],'pSFS']=df[0,0]
+
+    #===============================================================================
+    # cSFS
+    #===============================================================================
+
+    # Run Cholesky Simplified Fisher Scoring
+    t1 = time.time()
+    paramVector_cSFS,_,nit,llh = cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=True, init_paramVector=None)
+    t2 = time.time()
+
+    # Record time and number of iterations
+    results.at['Time','cSFS']=t2-t1
+    results.at['nit','cSFS']=nit
+    results.at['llh','cSFS']=llh-n/2*np.log(np.pi)
     
+    # Save parameters
+    for i in np.arange(3,p+qu+4):
+        results.at[indexVec[i],'cSFS']=paramVector_cSFS[i-3,0]
+
+    # Record D*sigma2
+    for i in np.arange(4+p,p+qu+4):
+        results.at[indexVec[i+qu],'cSFS']=paramVector_cSFS[p,0]*paramVector_cSFS[i-3,0]
+
+    # Get T statistic, p value and Satterthwaite degrees of freedom
+    T,Pval,df = simT(paramVector_cSFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
+    results.at[indexVec[p+4+2*qu],'cSFS']=T[0,0]
+    results.at[indexVec[p+5+2*qu],'cSFS']=Pval[0,0]
+    results.at[indexVec[p+6+2*qu],'cSFS']=df[0,0]
+
+    #===============================================================================
+    # FS
+    #===============================================================================
+
+    # Run Fisher Scoring
+    t1 = time.time()
+    paramVector_FS,_,nit,llh = FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=True, init_paramVector=None)
+    t2 = time.time()
+
+    # Record time and number of iterations
+    results.at['Time','FS']=t2-t1
+    results.at['nit','FS']=nit
+    results.at['llh','FS']=llh-n/2*np.log(np.pi)
+    
+    # Save parameters
+    for i in np.arange(3,p+qu+4):
+        results.at[indexVec[i],'FS']=paramVector_FS[i-3,0]
+
+    # Record D*sigma2
+    for i in np.arange(4+p,p+qu+4):
+        results.at[indexVec[i+qu],'FS']=paramVector_FS[p,0]*paramVector_FS[i-3,0]
+
+    # Get T statistic, p value and Satterthwaite degrees of freedom
+    T,Pval,df = simT(paramVector_FS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n, Hessian=False)
+    results.at[indexVec[p+4+2*qu],'FS']=T[0,0]
+    results.at[indexVec[p+5+2*qu],'FS']=Pval[0,0]
+    results.at[indexVec[p+6+2*qu],'FS']=df[0,0]
+
+    T,Pval,df = simT(paramVector_FS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n, Hessian=True)
+    results.at[indexVec[p+4+2*qu],'FS (hess)']=T[0,0]
+    results.at[indexVec[p+5+2*qu],'FS (hess)']=Pval[0,0]
+    results.at[indexVec[p+6+2*qu],'FS (hess)']=df[0,0]
+
+    #===============================================================================
+    # SFS
+    #===============================================================================
+
+    # Run Simplified Fisher Scoring
+    t1 = time.time()
+    paramVector_SFS,_,nit,llh = SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=True, init_paramVector=None)
+    t2 = time.time()
+
+    # Record time and number of iterations
+    results.at['Time','SFS']=t2-t1
+    results.at['nit','SFS']=nit
+    results.at['llh','SFS']=llh-n/2*np.log(np.pi)
+
+    # Save parameters
+    for i in np.arange(3,p+qu+4):
+        results.at[indexVec[i],'SFS']=paramVector_SFS[i-3,0]
+
+    # Record D*sigma2
+    for i in np.arange(4+p,p+qu+4):
+        results.at[indexVec[i+qu],'SFS']=paramVector_SFS[p,0]*paramVector_SFS[i-3,0]
+
+    # Get T statistic, p value and Satterthwaite degrees of freedom
+    T,Pval,df = simT(paramVector_SFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
+    results.at[indexVec[p+4+2*qu],'SFS']=T[0,0]
+    results.at[indexVec[p+5+2*qu],'SFS']=Pval[0,0]
+    results.at[indexVec[p+6+2*qu],'SFS']=df[0,0]
+
+    #===============================================================================
+    # pFS
+    #===============================================================================
+
+    # Run Pseudo Fisher Scoring
+    t1 = time.time()
+    paramVector_pFS,_,nit,llh = pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=True, init_paramVector=None)
+    t2 = time.time()
+
+    # Record time and number of iterations
+    results.at['Time','pFS']=t2-t1
+    results.at['nit','pFS']=nit
+    results.at['llh','pFS']=llh-n/2*np.log(np.pi)
+
+    # Save parameters
+    for i in np.arange(3,p+qu+4):
+        results.at[indexVec[i],'pFS']=paramVector_pFS[i-3,0]
+
+    # Record D*sigma2
+    for i in np.arange(4+p,p+qu+4):
+        results.at[indexVec[i+qu],'pFS']=paramVector_pFS[p,0]*paramVector_pFS[i-3,0]
+
+    # Get T statistic, p value and Satterthwaite degrees of freedom
+    T,Pval,df = simT(paramVector_pFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
+    results.at[indexVec[p+4+2*qu],'pFS']=T[0,0]
+    results.at[indexVec[p+5+2*qu],'pFS']=Pval[0,0]
+    results.at[indexVec[p+6+2*qu],'pFS']=df[0,0]
+
+    # Save results
+    results.to_csv(os.path.join(OutDir,'Sim'+str(simInd)+'_Design'+str(desInd)+'_results.csv'))
+
+
 
 def timings(desInd, OutDir):
 
