@@ -118,10 +118,16 @@ def main(*args):
     
 
     # Number of random effects factors.
-    n_f = len(inputs['Z'])
+    r = len(inputs['Z'])
+
+    # Number of random effects for each factor, q
+    nraneffs = []
+
+    # Number of levels for each factor, l
+    nlevels = []
 
     # Read in each factor
-    for i in range(0,n_f):
+    for i in range(0,r):
 
         # Read in the "factor vector" representing which level each observation
         # belongs to
@@ -129,6 +135,10 @@ def main(*args):
 
         # Read the random effects design in
         Zi_design = loadFile(inputs['Z'][i]['f' + str(i+1)]['design'])
+
+        # Number of random effects and number of levels
+        nraneffs = nraneffs + [Zi_design.shape[1]]
+        nlevels = nlevels + [len(np.unique(Zi_factor))]
 
         # Number of levels for factor i
         l_i = np.amax(Zi_factor)
@@ -157,6 +167,10 @@ def main(*args):
         else:
 
             Z = np.hstack((Z,Zi))
+
+    # Get number of random effects and number of levels
+    nraneffs = np.array(nraneffs)
+    nlevels = np.array(nlevels)
 
     # Mask volumes (if they are given)
     if 'data_mask_files' in inputs:
@@ -202,8 +216,15 @@ def main(*args):
 
     # Mask volumes (if they are given)
     if 'analysis_mask' in inputs:
+
+        # Load the file and check it's shape is 3d (as oppose to 4d with a 4th dimension
+        # of 1)
         M_a = loadFile(inputs['analysis_mask']).get_data()
+        M_a = M_a.reshape((M_a.shape[0],M_a.shape[1],M_a.shape[2]))
+
     else:
+
+        # Else set to None
         M_a = None
 
     # Reduce Y_files to only Y files for this block
@@ -246,10 +267,24 @@ def main(*args):
     ZtX = MZ.transpose(0,2,1) @ MX
     ZtX = ZtX.reshape([ZtX.shape[0], ZtX.shape[1]*ZtX.shape[2]])
     
-    # In a spatially varying design ZtZ has dimensions n by q by q. We 
-    # reshape to n by q^2 so that we can save as a csv.
+    # In a spatially varying design ZtZ has dimensions n by q by q. 
     ZtZ = MZ.transpose(0,2,1) @ MZ
-    ZtZ = ZtZ.reshape([ZtZ.shape[0], ZtZ.shape[1]*ZtZ.shape[2]])
+
+    # If we are looking at the one random factor one random effect model
+    # we only need record the diagonal of ZtZ
+    if r == 1 and nraneffs[0]==1:
+
+        # Cut Z'Z down to diagonal elements only.
+        ZtZ = np.einsum('ijj->ij',ZtZ)
+
+        # We reshape to n by q^2 so that we can save as a csv.
+        ZtZ = ZtZ.reshape([ZtZ.shape[0], nlevels[0]])
+
+    else:
+
+        # We reshape to n by q^2 so that we can save as a csv.
+        ZtZ = ZtZ.reshape([ZtZ.shape[0], ZtZ.shape[1]*ZtZ.shape[2]])
+
 
     # Record product matrices X'X, Y'Y, Z'X and Z'Z.
     np.save(os.path.join(OutDir,"tmp","XtX" + str(batchNo)), 
@@ -555,7 +590,7 @@ def memorySafeAtB(A,B,MAXMEM,filename):
 
         # Create a memory-mapped .npy file with the dimensions and dtype we want
         M = open_memmap(filename, mode='w+', dtype='float64', shape=(v,pORq))
-        
+
         # Work out the number of voxels we can save at a time.
         # (8 bytes per numpy float exponent multiplied by 10
         # for a safe overhead)

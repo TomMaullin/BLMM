@@ -46,7 +46,9 @@ from lib.est3d import *
 #           varying).
 #  - `ZtY`: Z transpose multiplied by Y (spatially varying).
 #  - `ZtZ`: Z transpose multiplied by Z (can be spatially varying or non-spatially 
-#           varying).
+#           varying). If we are looking at a one random factor one random effect 
+#           design the variable ZtZ only holds the diagonal elements of the matrix
+#           Z'Z.
 #  - `n`: The number of observations (can be spatially varying or non-spatially 
 #         varying). 
 #  - `nlevels`: A vector containing the number of levels for each factor, e.g. 
@@ -89,7 +91,7 @@ def main(inputs, inds, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, n, nlevels, 
 
     # Convergence tolerance
     if "tol" in inputs:
-        tol=inputs['tol']
+        tol=eval(inputs['tol'])
     else:
         tol=1e-6
 
@@ -118,16 +120,16 @@ def main(inputs, inds, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, n, nlevels, 
     # ----------------------------------------------------------------------  
 
     if method=='pSFS': # Recommended, default method
-        paramVec = pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6, n, reml=REML)
+        paramVec = pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=REML)
     
     if method=='FS': 
-        paramVec = FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6, n)
+        paramVec = FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n)
 
     if method=='SFS': 
-        paramVec = SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6, n)
+        paramVec = SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n)
 
     if method=='pFS': 
-        paramVec = pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6, n)
+        paramVec = pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n)
 
     # ----------------------------------------------------------------------
     # Parameter outputting

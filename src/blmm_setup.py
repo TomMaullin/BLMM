@@ -5,9 +5,10 @@ w.simplefilter(action = 'ignore', category = FutureWarning)
 import numpy as np
 import sys
 import os
+import glob
 import shutil
 import yaml
-from lib.fileio import loadFile, str2vec, pracNumVoxelBlocks
+from lib.fileio import loadFile, str2vec, pracNumVoxelBlocks, get_amInds, addBlockToNifti
 
 # ====================================================================================
 #
@@ -18,7 +19,7 @@ from lib.fileio import loadFile, str2vec, pracNumVoxelBlocks
 #
 # ------------------------------------------------------------------------------------
 #
-# Author: Tom Maullin (Last edited: 04/04/2020)
+# Author: Tom Maullin (Last edited: 18/06/2020)
 #
 # ------------------------------------------------------------------------------------
 #
@@ -29,6 +30,21 @@ from lib.fileio import loadFile, str2vec, pracNumVoxelBlocks
 #                           formatting guidelines as `blmm_config.yml`. If not 
 #                           specified, the default file `blmm_config.yml` will be 
 #                           assumed to contain the inputs.
+#
+# ------------------------------------------------------------------------------------
+#
+# Developer Note: As of 18/06/2020, this code contains a backdoor option `diskMem` 
+#                 which can be added into the `inputs.yml` file and has not been made
+#                 available to users. The purpose of this option is that for large 
+#                 designs the `ZtY` file produced may be too big to save as a file. 
+#                 To overcome this, the diskMem (or 'disk memory') option splits the
+#                 brain mask up voxelwise into `blmm_memmask` files. The analysis can
+#                 now be run one "chunk" of the brain at a time by repeat calls to 
+#                 `blmm_cluster.sh` in serial. Whilst this hasn't been made available
+#                 to users (as we are yet to see a design that really needs it), it is
+#                 very useful when developing code to be able to run small chunks of 
+#                 the brain instead of the whole thing. For this reason it has been 
+#                 left in here.
 #
 # ====================================================================================
 def main(*args):
@@ -119,11 +135,31 @@ def main(*args):
     # sure none of the previous results are lingering around anywhere.
     # --------------------------------------------------------------------------------
 
-    files = ['blmm_vox_n.nii', 'blmm_vox_mask.nii', 'blmm_vox_edf.nii', 'blmm_vox_beta.nii',
-             'blmm_vox_llh.nii', 'blmm_vox_sigma2.nii', 'blmm_vox_D.nii', 'blmm_vox_resms.nii',
-             'blmm_vox_cov.nii', 'blmm_vox_conT_swedf.nii', 'blmm_vox_conT.nii', 'blmm_vox_conTlp.nii',
-             'blmm_vox_conSE.nii', 'blmm_vox_con.nii', 'blmm_vox_conF.nii', 'blmm_vox_conF_swedf.nii',
-             'blmm_vox_conFlp.nii', 'blmm_vox_conR2.nii']
+    # We don't do it if we are in diskMem mode though, as in this mode we run several
+    # smaller analyses instead of one large one in order to preserve disk memory.
+    if 'diskMem' not in inputs:
+
+        files = ['blmm_vox_n.nii', 'blmm_vox_mask.nii', 'blmm_vox_edf.nii', 'blmm_vox_beta.nii',
+                 'blmm_vox_llh.nii', 'blmm_vox_sigma2.nii', 'blmm_vox_D.nii', 'blmm_vox_resms.nii',
+                 'blmm_vox_cov.nii', 'blmm_vox_conT_swedf.nii', 'blmm_vox_conT.nii', 'blmm_vox_conTlp.nii',
+                 'blmm_vox_conSE.nii', 'blmm_vox_con.nii', 'blmm_vox_conF.nii', 'blmm_vox_conF_swedf.nii',
+                 'blmm_vox_conFlp.nii', 'blmm_vox_conR2.nii']
+
+    else:
+
+        # Check if this is the first run of the disk memory code
+        if inputs['diskMem']==1 and not glob.glob(os.path.join(OutDir, 'blmm_vox_memmask*.nii')):
+
+            files = ['blmm_vox_n.nii', 'blmm_vox_mask.nii', 'blmm_vox_edf.nii', 'blmm_vox_beta.nii',
+                     'blmm_vox_llh.nii', 'blmm_vox_sigma2.nii', 'blmm_vox_D.nii', 'blmm_vox_resms.nii',
+                     'blmm_vox_cov.nii', 'blmm_vox_conT_swedf.nii', 'blmm_vox_conT.nii', 'blmm_vox_conTlp.nii',
+                     'blmm_vox_conSE.nii', 'blmm_vox_con.nii', 'blmm_vox_conF.nii', 'blmm_vox_conF_swedf.nii',
+                     'blmm_vox_conFlp.nii', 'blmm_vox_conR2.nii']
+
+        else:
+
+            files = []
+
 
     for file in files:
         if os.path.exists(os.path.join(OutDir, file)):
@@ -189,6 +225,99 @@ def main(*args):
     # Output number of batches to a text file
     with open(os.path.join(OutDir, "nb.txt"), 'w') as f:
         print(int(np.ceil(len(Y_files)/int(blksize))), file=f)
+    
+    # Check if we are protecting disk quota as well.
+    if 'diskMem' in inputs:
+
+        if inputs['diskMem']==1:
+
+            # Check if this is the first run of the disk memory code
+            if not glob.glob(os.path.join(OutDir, 'blmm_vox_memmask*.nii')):
+
+
+                # --------------------------------------------------------------------------------
+                # Get q and v
+                # --------------------------------------------------------------------------------
+                # Random factor variables.
+                rfxmats = inputs['Z']
+
+                # Number of random effects
+                r = len(rfxmats)
+
+                # Number of random effects for each factor, q
+                nraneffs = []
+
+                # Number of levels for each factor, l
+                nlevels = []
+
+                for k in range(r):
+
+                    rfxdes = loadFile(rfxmats[k]['f' + str(k+1)]['design'])
+                    rfxfac = loadFile(rfxmats[k]['f' + str(k+1)]['factor'])
+
+                    nraneffs = nraneffs + [rfxdes.shape[1]]
+                    nlevels = nlevels + [len(np.unique(rfxfac))]
+
+                # Get number of random effects
+                nraneffs = np.array(nraneffs)
+                nlevels = np.array(nlevels)
+                q = np.sum(nraneffs*nlevels)
+
+                # Get v
+                NIFTIsize = Y0.shape
+                v = int(np.prod(NIFTIsize))
+
+                # --------------------------------------------------------------------------------
+                # Read Mask 
+                # --------------------------------------------------------------------------------
+                if 'analysis_mask' in inputs:
+
+                    amask_path = inputs["analysis_mask"]
+                    
+                    # Read in the mask nifti.
+                    amask = loadFile(amask_path).get_data().reshape([v,1])
+
+                else:
+
+                    # By default make amask ones
+                    amask = np.ones([v,1])
+
+                # Get indices for whole analysis mask. 
+                amInds = get_amInds(amask)
+
+                # ------------------------------------------------------------------------
+                # Split the voxels into computable groups
+                # ------------------------------------------------------------------------
+
+                # Work out the number of voxels we can actually save at a time (rough
+                # guess).
+                nvs = MAXMEM/(150*q)
+
+                # Work out number of groups we have to split indices into.
+                nvg = int(len(amInds)//nvs+1)
+
+                # Split voxels we want to look at into groups we can compute
+                voxelGroups = np.array_split(amInds, nvg)
+
+                # Loop through list of voxel indices, saving each group of voxels, in
+                # turn.
+                for cv in range(nvg):
+
+                    # Save the masks for each block
+                    addBlockToNifti(os.path.join(OutDir, 'blmm_vox_memmask'+str(cv+1)+'.nii'), np.ones(len(voxelGroups[cv])), voxelGroups[cv],volInd=0,dim=NIFTIsize,aff=Y0.affine,hdr=Y0.header)
+
+            # --------------------------------------------------------------------------------
+            # Set the analysis mask to the first one that comes up with ls, run that and then
+            # delete it during cleanup ready for the next run.
+            # --------------------------------------------------------------------------------
+
+            # Get the analysis masks
+            memmaskFiles = glob.glob(os.path.join(OutDir, 'blmm_vox_memmask*.nii'))
+
+            # Set the analysis mask for this analysis 
+            inputs['analysis_mask'] = memmaskFiles[0]
+            with open(ipath, 'w') as outfile:
+                yaml.dump(inputs, outfile, default_flow_style=False)
 
     # If in voxel batching mode, save the number of voxel batches we need
     if 'voxelBatching' in inputs:
