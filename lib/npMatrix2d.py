@@ -2343,7 +2343,7 @@ def get_swdf_F2D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs):
 # - `df`: The Sattherthwaithe degrees of freedom estimate.
 #
 # ============================================================================
-def get_swdf_T2D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs, Hessian=False): 
+def get_swdf_T2D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs, Hessian=False, chol=True): 
 
   # Get D(I+Z'ZD)^(-1)
   DinvIplusZtZD = np.linalg.solve(np.eye(ZtZ.shape[1]) + D @ ZtZ, D)
@@ -2436,6 +2436,10 @@ def get_swdf_T2D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs, Hessian
     print(InfoMat)
     print('Infomat inv')
     print(np.linalg.pinv(InfoMat))
+
+    if chol==True:
+
+      Hess = J @ Hess @ J.transpose()
 
     SecondOrder = np.trace(Hess @ np.linalg.pinv(InfoMat))**2
 
