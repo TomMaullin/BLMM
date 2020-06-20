@@ -59,6 +59,14 @@ def runSim(simInd, desInd, OutDir):
     if desInd==3:
         nlevels = np.array([100,30,10])
         nraneffs = np.array([4,3,2])
+    if desInd==4:
+        nlevels = np.array([10])
+        nraneffs = np.array([2])
+
+    if desInd < 4:
+        n = 1000
+    else:
+        n = 40
 
     # Create the factor vectors if this is the first run.
     if simInd == 1:
@@ -84,7 +92,7 @@ def runSim(simInd, desInd, OutDir):
             fvs[i] = pd.io.parsers.read_csv(os.path.join(OutDir, 'fv_' + str(desInd) + '_' + str(i) + '.csv'), header=None).values
 
     # Generate test data
-    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D, fvs = genTestData2D(n=1000, p=5, nlevels=nlevels, nraneffs=nraneffs, save=True, simInd=simInd, desInd=desInd, OutDir=OutDir, factorVectors=fvs)
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D, fvs = genTestData2D(n=n, p=5, nlevels=nlevels, nraneffs=nraneffs, save=True, simInd=simInd, desInd=desInd, OutDir=OutDir, factorVectors=fvs)
 
     # Save the new factor vectors if this is the first run.
     if simInd == 1:

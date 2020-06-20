@@ -203,14 +203,14 @@ for (simInd in 1:1000){
     
     write.csv(results,paste(dataDir,'/Sim',toString(simInd),'_Design2_results.csv',sep=''), row.names = FALSE)
     
-  } else if (desInd==1){
+  } else if ((desInd==1) || (desInd==4)){
     
-    results <- read.csv(file = paste(dataDir,'/Sim',toString(simInd),'_Design1_results.csv',sep=''))
+    results <- read.csv(file = paste(dataDir,'/Sim',toString(simInd),'_Design',toString(desInd),'_results.csv',sep=''))
     
-    X <- read.csv(file = paste(dataDir,'/Sim',toString(simInd),'_Design1_X.csv',sep=''),sep=' ', header=FALSE)
-    Y <- read.csv(file = paste(dataDir,'/Sim',toString(simInd),'_Design1_Y.csv',sep=''),sep=' ', header=FALSE)
-    Zfactor0 <- factor(read.csv(file = paste(dataDir,'/Sim',toString(simInd),'_Design1_Zfactor0.csv',sep=''), sep=' ', header=FALSE)[,1])
-    Zdata0 <- read.csv(file = paste(dataDir,'/Sim',toString(simInd),'_Design1_Zdata0.csv',sep=''),sep=' ', header=FALSE)
+    X <- read.csv(file = paste(dataDir,'/Sim',toString(simInd),'_Design',toString(desInd),'_X.csv',sep=''),sep=' ', header=FALSE)
+    Y <- read.csv(file = paste(dataDir,'/Sim',toString(simInd),'_Design',toString(desInd),'_Y.csv',sep=''),sep=' ', header=FALSE)
+    Zfactor0 <- factor(read.csv(file = paste(dataDir,'/Sim',toString(simInd),'_Design',toString(desInd),'_Zfactor0.csv',sep=''), sep=' ', header=FALSE)[,1])
+    Zdata0 <- read.csv(file = paste(dataDir,'/Sim',toString(simInd),'_Design',toString(desInd),'_Zdata0.csv',sep=''),sep=' ', header=FALSE)
     
     y <- as.matrix(Y[,1])
     
@@ -278,7 +278,7 @@ for (simInd in 1:1000){
       results[18,'lmer']<-df
     }
     
-    write.csv(results,paste(dataDir,'/Sim',toString(simInd),'_Design1_results.csv',sep=''), row.names = FALSE)
+    write.csv(results,paste(dataDir,'/Sim',toString(simInd),'_Design',toString(desInd),'_results.csv',sep=''), row.names = FALSE)
     
   }
 }
