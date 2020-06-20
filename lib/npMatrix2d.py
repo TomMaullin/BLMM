@@ -2409,6 +2409,8 @@ def get_swdf_T2D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs, Hessian
     for k in np.arange(len(nraneffs)):
       # Add block
       chol_mod = elimMatdict[k] @ scipy.sparse.kron(cholDict[k],np.eye(nraneffs[k])).transpose() @ (scipy.sparse.identity(nraneffs[k]**2) + comMatdict[k]) @ dupMatTdict[k].transpose()
+      print(chol_mod)
+      print(type(chol_mod))
       J = scipy.linalg.block_diag(J, chol_mod)
 
 
