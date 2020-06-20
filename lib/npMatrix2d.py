@@ -2404,15 +2404,14 @@ def get_swdf_T2D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs, Hessian
     # ------------------------------------------------------------------
     # Work out Jacobian/constraint matrix
     # ------------------------------------------------------------------
-    # Add a 1 for sigma2
-    J = np.array([[1]])
+    # Jacobian for transforming sigma2 to sigma
+    J = np.array([[2]])*sigma2
     for k in np.arange(len(nraneffs)):
       # Add block
       chol_mod = elimMatdict[k] @ np.kron(cholDict[k],np.eye(nraneffs[k])).transpose() @ (np.eye(nraneffs[k]**2) + comMatdict[k]) @ dupMatTdict[k].transpose()
       print(chol_mod)
       print(type(chol_mod))
       J = scipy.linalg.block_diag(J, chol_mod)
-
 
     # ------------------------------------------------------------------
     # Calculate df estimator
@@ -2547,7 +2546,7 @@ def get_dS22D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
 
   return(dS2)
 
-#MARKER
+#MARKERtTable
 def get_HessS22D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
 
   # ZtX
