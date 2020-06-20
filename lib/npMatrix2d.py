@@ -2360,6 +2360,71 @@ def get_swdf_T2D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs, Hessian
   # Calculate df estimator
   df = 2*(S2**2)/(dS2.transpose() @ np.linalg.solve(InfoMat, dS2))
 
+  if chol==True:
+
+    # ------------------------------------------------------------------
+    # Get the commutation, duplication and elimination matrices we need.
+    # ------------------------------------------------------------------
+    dupMatTdict = dict()
+    elimMatdict = dict()
+    comMatdict = dict()
+    for i in np.arange(len(nraneffs)):
+
+      dupMatTdict[i] = dupMat2D(nraneffs[i]).transpose()
+      comMatdict[i] = comMat2D(nraneffs[i],nraneffs[i])
+      elimMatdict[i] = elimMat2D(nraneffs[i])
+
+    # ------------------------------------------------------------------
+    # Get D in dictionary form
+    # ------------------------------------------------------------------
+
+    # Work out the indices in D where a new block Dk appears
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+
+    # New empty D dict
+    Ddict = dict()
+
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+
+      # Add Dk to the dict
+      Ddict[k] = D[Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+
+    # ------------------------------------------------------------------
+    # Get Cholesky factor in dictionary form
+    # ------------------------------------------------------------------
+
+    # Initial cholesky decomposition and D.
+    cholDict = dict()
+    for k in np.arange(len(nraneffs)):
+
+      cholDict[k] = np.linalg.cholesky(Ddict[k])
+
+    # ------------------------------------------------------------------
+    # Work out Jacobian/constraint matrix
+    # ------------------------------------------------------------------
+    # Add a 1 for sigma2
+    J = np.array([[1]])
+    for k in np.arange(len(nraneffs)):
+      # Add block
+      chol_mod = elimMatdict[k] @ scipy.sparse.kron(cholDict[k],np.eye(nraneffs[k])).transpose() @ (scipy.sparse.identity(nraneffs[k]**2) + comMatdict[k]) @ dupMatTdict[k].transpose()
+      J = scipy.linalg.block_diag(J, chol_mod)
+
+
+    # ------------------------------------------------------------------
+    # Calculate df estimator
+    # ------------------------------------------------------------------
+    # Transform derivative
+    dS2 = J @ dS2
+
+    # Transform Information matrix
+    InfoMat = J @ InfoMat @ J.transpose()
+
+    # Calculate df
+    df = 2*(S2**2)/(dS2.transpose() @ np.linalg.solve(InfoMat, dS2))
+    
+
   if Hessian==True:
     # 2nd order approximation
     print('Trying out Hessian computation')
