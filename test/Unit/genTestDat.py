@@ -78,7 +78,7 @@ from lib.npMatrix2d import vech2mat2D
 #   - b: The random effects vector used to simulate the response vector.
 #
 # -----------------------------------------------------------------------------
-def genTestData2D(n=None, p=None, nlevels=None, nraneffs=None, save=False, simInd=None, desInd=0, OutDir=None, factorVectors=None):
+def genTestData2D(n=None, p=None, nlevels=None, nraneffs=None, save=False, simInd=None, desInd=0, OutDir=None, factorVectors=None, X=None, beta=None, Z=None):
 
     # Check if we have n
     if n is None:
@@ -130,106 +130,111 @@ def genTestData2D(n=None, p=None, nlevels=None, nraneffs=None, save=False, simIn
         if not desInd:
             desInd = ''
 
-    # Generate random X.
-    X = np.random.randn(n,p)
-    
-    # Make the first column an intercept
-    X[:,0]=1
+    # If a design matrix has not been specified make one.
+    if not X:
 
-    # Generate beta (used integers to make test results clear).
-    beta = np.random.randint(-10,10,p)
+        # Generate random X.
+        X = np.random.randn(n,p)
+        
+        # Make the first column an intercept
+        X[:,0]=1
 
     # Dictionary of factor vectors
     if factorVectors is None:
         factorVectors = dict()
 
-    # Create Z
-    # We need to create a block of Z for each level of each factor
-    for i in np.arange(r):
+    if not Z:
 
-        Zdata_factor = np.random.randn(n,nraneffs[i])
+        # Create Z
+        # We need to create a block of Z for each level of each factor
+        for i in np.arange(r):
 
-        if i==0:
+            Zdata_factor = np.random.randn(n,nraneffs[i])
 
+            if i==0:
+
+                if 'i' not in factorVectors:
+
+                    #The first factor should be block diagonal, so the factor indices are grouped
+                    factorVec = np.repeat(np.arange(nlevels[i]), repeats=np.floor(n/max(nlevels[i],1)))
+
+                    if len(factorVec) < n:
+
+                        # Quick fix incase rounding leaves empty columns
+                        factorVecTmp = np.zeros(n)
+                        factorVecTmp[0:len(factorVec)] = factorVec
+                        factorVecTmp[len(factorVec):n] = nlevels[i]-1
+                        factorVec = np.int64(factorVecTmp)
+
+                        # Crop the factor vector - otherwise have a few too many
+                        factorVec = factorVec[0:n]
+
+                    # Give the data an intercept
+                    Zdata_factor[:,0]=1
+
+                else:
+
+                    # If we specified a factor vec to use, use it
+                    factorVec = factorVectors[i]
+
+                    # Give the data an intercept
+                    Zdata_factor[:,0]=1
+
+            else:
+
+                if 'i' not in factorVectors: 
+        
+                    # The factor is randomly arranged 
+                    factorVec = np.random.randint(0,nlevels[i],size=n) 
+                    while len(np.unique(factorVec))<nlevels[i]:
+                        factorVec = np.random.randint(0,nlevels[i],size=n)
+
+                else:
+
+                    # The factor is randomly arranged 
+                    factorVec = factorVectors[i]
+
+            # Save the factor vectors if we don't have it already
             if 'i' not in factorVectors:
 
-                #The first factor should be block diagonal, so the factor indices are grouped
-                factorVec = np.repeat(np.arange(nlevels[i]), repeats=np.floor(n/max(nlevels[i],1)))
+                factorVectors[i]=factorVec
 
-                if len(factorVec) < n:
+            # If outputting, save the factor vector
+            if save:
+                np.savetxt(os.path.join(OutDir, 'Sim' + str(simInd) + '_Design' + str(desInd) + '_Zfactor' + str(i) + '.csv'), factorVec)
+                np.savetxt(os.path.join(OutDir, 'Sim' + str(simInd) + '_Design' + str(desInd) + '_Zdata' + str(i) + '.csv'), Zdata_factor)
 
-                    # Quick fix incase rounding leaves empty columns
-                    factorVecTmp = np.zeros(n)
-                    factorVecTmp[0:len(factorVec)] = factorVec
-                    factorVecTmp[len(factorVec):n] = nlevels[i]-1
-                    factorVec = np.int64(factorVecTmp)
 
-                    # Crop the factor vector - otherwise have a few too many
-                    factorVec = factorVec[0:n]
+            # Build a matrix showing where the elements of Z should be
+            indicatorMatrix_factor = np.zeros((n,nlevels[i]))
+            indicatorMatrix_factor[np.arange(n),factorVec] = 1
 
-                # Give the data an intercept
-                Zdata_factor[:,0]=1
+            # Need to repeat for each random effect the factor has 
+            indicatorMatrix_factor = np.repeat(indicatorMatrix_factor, nraneffs[i], axis=1)
 
+            # Enter the Z values
+            indicatorMatrix_factor[indicatorMatrix_factor==1]=Zdata_factor.reshape(Zdata_factor.shape[0]*Zdata_factor.shape[1])
+
+            # Make sparse
+            Zfactor = scipy.sparse.csr_matrix(indicatorMatrix_factor)
+
+            # Put all the factors together
+            if i == 0:
+                Z = Zfactor
             else:
+                Z = scipy.sparse.hstack((Z, Zfactor))
 
-                # If we specified a factor vec to use, use it
-                factorVec = factorVectors[i]
+        # Convert Z to dense
+        Z = Z.toarray()
 
-                # Give the data an intercept
-                Zdata_factor[:,0]=1
+    # If we don't have a beta make one
+    if not beta:
 
+        # Make random beta
+        if desInd==0:
+            beta = np.random.randint(-5,5,p).reshape(p,1)
         else:
-
-            if 'i' not in factorVectors: 
-    
-                # The factor is randomly arranged 
-                factorVec = np.random.randint(0,nlevels[i],size=n) 
-                while len(np.unique(factorVec))<nlevels[i]:
-                    factorVec = np.random.randint(0,nlevels[i],size=n)
-
-            else:
-
-                # The factor is randomly arranged 
-                factorVec = factorVectors[i]
-
-        # Save the factor vectors if we don't have it already
-        if 'i' not in factorVectors:
-
-            factorVectors[i]=factorVec
-
-        # If outputting, save the factor vector
-        if save:
-            np.savetxt(os.path.join(OutDir, 'Sim' + str(simInd) + '_Design' + str(desInd) + '_Zfactor' + str(i) + '.csv'), factorVec)
-            np.savetxt(os.path.join(OutDir, 'Sim' + str(simInd) + '_Design' + str(desInd) + '_Zdata' + str(i) + '.csv'), Zdata_factor)
-
-
-        # Build a matrix showing where the elements of Z should be
-        indicatorMatrix_factor = np.zeros((n,nlevels[i]))
-        indicatorMatrix_factor[np.arange(n),factorVec] = 1
-
-        # Need to repeat for each random effect the factor has 
-        indicatorMatrix_factor = np.repeat(indicatorMatrix_factor, nraneffs[i], axis=1)
-
-        # Enter the Z values
-        indicatorMatrix_factor[indicatorMatrix_factor==1]=Zdata_factor.reshape(Zdata_factor.shape[0]*Zdata_factor.shape[1])
-
-        # Make sparse
-        Zfactor = scipy.sparse.csr_matrix(indicatorMatrix_factor)
-
-        # Put all the factors together
-        if i == 0:
-            Z = Zfactor
-        else:
-            Z = scipy.sparse.hstack((Z, Zfactor))
-
-    # Convert Z to dense
-    Z = Z.toarray()
-
-    # Make random beta
-    if desInd==0:
-        beta = np.random.randint(-5,5,p).reshape(p,1)
-    else:
-        beta = p-np.arange(1,p+1).reshape(p,1)
+            beta = p-np.arange(1,p+1).reshape(p,1)
 
 
     if desInd==0:
@@ -257,7 +262,7 @@ def genTestData2D(n=None, p=None, nlevels=None, nraneffs=None, save=False, simIn
             # Work out D = D^{1/2} @ D^{1/2}'
             Ddict[k] = randMat @ randMat.transpose()
 
-    elif desInd==1:
+    elif desInd==1 or desInd==4:
 
         Ddict[0]=np.eye(2)
 
