@@ -373,7 +373,7 @@ def runSim(simInd, desInd, OutDir):
 def timings(desInd, OutDir):
 
     # Make row indices
-    row = ['sim'+str(i) for i in range(1,101)]
+    row = ['sim'+str(i) for i in range(1,1001)]
 
     # Make column indices
     col = ['FS','pFS','SFS','pSFS','cSFS','lmer']
@@ -388,7 +388,7 @@ def timings(desInd, OutDir):
     # Make sure pandas knows the table is numeric
     timesTable = timesTable.apply(pd.to_numeric)
 
-    for simInd in range(1,101):
+    for simInd in range(1,1001):
         
         # Name of results file
         results_file = os.path.join(OutDir,'Sim'+str(simInd)+'_Design'+str(desInd)+'_results.csv')
@@ -437,7 +437,7 @@ def timings(desInd, OutDir):
 def differenceMetrics(desInd, OutDir):
 
     # Make row indices
-    row = ['sim'+str(i) for i in range(1,101)]
+    row = ['sim'+str(i) for i in range(1,1001)]
 
     # Make column indices
     col = ['FS','pFS','SFS','pSFS','cSFS','lmer']
@@ -454,7 +454,7 @@ def differenceMetrics(desInd, OutDir):
     diffTableBetas = diffTableBetas.apply(pd.to_numeric)
     diffTableVar = diffTableVar.apply(pd.to_numeric)
 
-    for simInd in range(1,101):
+    for simInd in range(1,1001):
         
         # Name of results file
         results_file = os.path.join(OutDir,'Sim'+str(simInd)+'_Design'+str(desInd)+'_results.csv')
@@ -505,7 +505,7 @@ def differenceMetrics(desInd, OutDir):
     diffTableBetas = diffTableBetas.apply(pd.to_numeric)
     diffTableVar = diffTableVar.apply(pd.to_numeric)
 
-    for simInd in range(1,101):
+    for simInd in range(1,1001):
         
         # Name of results file
         results_file = os.path.join(OutDir,'Sim'+str(simInd)+'_Design'+str(desInd)+'_results.csv')
@@ -653,7 +653,7 @@ def get_VarhatLB2D(X, Z, beta, sigma2, D, L, nlevels, nraneffs, tol):
 def TstatisticPPplots(desInd, OutDir):
 
     # Make row indices
-    row = ['sim'+str(i) for i in range(1,101)]
+    row = ['sim'+str(i) for i in range(1,1001)]
 
     # Make column indices
     col = ['Truth','FS','FS..hess.','lmer']
@@ -672,7 +672,7 @@ def TstatisticPPplots(desInd, OutDir):
     pTable = pTable.apply(pd.to_numeric)
     dfTable = dfTable.apply(pd.to_numeric)
 
-    for simInd in range(1,101):
+    for simInd in range(1,1001):
         
         # Name of results file
         results_file = os.path.join(OutDir,'Sim'+str(simInd)+'_Design'+str(desInd)+'_results.csv')
