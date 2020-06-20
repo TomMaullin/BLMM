@@ -2399,7 +2399,7 @@ def get_swdf_T2D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs, Hessian
     cholDict = dict()
     for k in np.arange(len(nraneffs)):
 
-      cholDict[k] = np.linalg.cholesky(Ddict[k])
+      cholDict[k] = np.linalg.cholesky(makeDpd2D(Ddict[k]))
 
     # ------------------------------------------------------------------
     # Work out Jacobian/constraint matrix
