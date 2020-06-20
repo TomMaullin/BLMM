@@ -2370,9 +2370,9 @@ def get_swdf_T2D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs, Hessian
     comMatdict = dict()
     for i in np.arange(len(nraneffs)):
 
-      dupMatTdict[i] = dupMat2D(nraneffs[i]).transpose()
-      comMatdict[i] = comMat2D(nraneffs[i],nraneffs[i])
-      elimMatdict[i] = elimMat2D(nraneffs[i])
+      dupMatTdict[i] = dupMat2D(nraneffs[i]).transpose().toarray()
+      comMatdict[i] = comMat2D(nraneffs[i],nraneffs[i]).toarray()
+      elimMatdict[i] = elimMat2D(nraneffs[i]).toarray()
 
     # ------------------------------------------------------------------
     # Get D in dictionary form
@@ -2408,7 +2408,7 @@ def get_swdf_T2D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs, Hessian
     J = np.array([[1]])
     for k in np.arange(len(nraneffs)):
       # Add block
-      chol_mod = elimMatdict[k] @ scipy.sparse.kron(cholDict[k],np.eye(nraneffs[k])).transpose() @ (scipy.sparse.identity(nraneffs[k]**2) + comMatdict[k]) @ dupMatTdict[k].transpose()
+      chol_mod = elimMatdict[k] @ np.kron(cholDict[k],np.eye(nraneffs[k])).transpose() @ (np.eye(nraneffs[k]**2) + comMatdict[k]) @ dupMatTdict[k].transpose()
       print(chol_mod)
       print(type(chol_mod))
       J = scipy.linalg.block_diag(J, chol_mod)
