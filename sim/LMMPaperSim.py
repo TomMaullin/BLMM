@@ -68,7 +68,7 @@ def runSim(simInd, desInd, OutDir):
     else:
         n = 40
 
-    # Create the factor vectors if this is the first run.
+    # Create the factor vectors, X and Z if this is the first run.
     if simInd == 1:
 
         # Delete any factor vectors from a previous run.
@@ -79,8 +79,10 @@ def runSim(simInd, desInd, OutDir):
                 os.remove(os.path.join(OutDir, 'fv_' + str(desInd) + '_' + str(i) + '.csv'))
 
         fvs = None
+        X = None
+        Z = None
 
-    # Otheriwse read the factor vectors in from file.
+    # Otheriwse read the factor vectors, X and Z in from file.
     else:
 
         # Initialize empty factor vectors dict
@@ -91,8 +93,11 @@ def runSim(simInd, desInd, OutDir):
 
             fvs[i] = pd.io.parsers.read_csv(os.path.join(OutDir, 'fv_' + str(desInd) + '_' + str(i) + '.csv'), header=None).values
 
+        X = pd.io.parsers.read_csv(os.path.join(OutDir, 'X_' + str(desInd)  + '.csv'), header=None).values
+        Z = pd.io.parsers.read_csv(os.path.join(OutDir, 'Z_' + str(desInd)  + '.csv'), header=None).values
+
     # Generate test data
-    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D, fvs = genTestData2D(n=n, p=5, nlevels=nlevels, nraneffs=nraneffs, save=True, simInd=simInd, desInd=desInd, OutDir=OutDir, factorVectors=fvs)
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D, fvs = genTestData2D(n=n, p=5, nlevels=nlevels, nraneffs=nraneffs, save=True, simInd=simInd, desInd=desInd, OutDir=OutDir, factorVectors=fvs, X=X, Z=Z)
 
     # Save the new factor vectors if this is the first run.
     if simInd == 1:
@@ -101,6 +106,9 @@ def runSim(simInd, desInd, OutDir):
         for i in range(len(nlevels)):
 
             pd.DataFrame(fvs[i]).to_csv(os.path.join(OutDir, 'fv_' + str(desInd) + '_' + str(i) + '.csv'), index=False, header=None)
+
+        pd.DataFrame(X).to_csv(os.path.join(OutDir, 'X_' + str(desInd) + '.csv'), index=False, header=None)
+        pd.DataFrame(Z).to_csv(os.path.join(OutDir, 'Z_' + str(desInd) + '.csv'), index=False, header=None)
 
     # Work out number of observations, parameters, random effects, etc
     n = X.shape[0]

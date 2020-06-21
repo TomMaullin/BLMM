@@ -2405,7 +2405,7 @@ def get_swdf_T2D(L, D, sigma2, XtX, XtZ, ZtX, ZtZ, n, nlevels, nraneffs, Hessian
     # Work out Jacobian/constraint matrix
     # ------------------------------------------------------------------
     # Jacobian for transforming sigma2 to sigma
-    J = np.array([[2]])*sigma2
+    J = np.array([[2]])*np.sqrt(sigma2)
     for k in np.arange(len(nraneffs)):
       # Add block
       chol_mod = elimMatdict[k] @ np.kron(cholDict[k],np.eye(nraneffs[k])).transpose() @ (np.eye(nraneffs[k]**2) + comMatdict[k]) @ dupMatTdict[k].transpose()

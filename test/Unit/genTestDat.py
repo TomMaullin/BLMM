@@ -78,7 +78,7 @@ from lib.npMatrix2d import vech2mat2D
 #   - b: The random effects vector used to simulate the response vector.
 #
 # -----------------------------------------------------------------------------
-def genTestData2D(n=None, p=None, nlevels=None, nraneffs=None, save=False, simInd=None, desInd=0, OutDir=None, factorVectors=None, X=None, beta=None, Z=None):
+def genTestData2D(n=None, p=None, nlevels=None, nraneffs=None, save=False, simInd=None, desInd=0, OutDir=None, factorVectors=None, X=None, Z=None):
 
     # Check if we have n
     if n is None:
@@ -227,14 +227,12 @@ def genTestData2D(n=None, p=None, nlevels=None, nraneffs=None, save=False, simIn
         # Convert Z to dense
         Z = Z.toarray()
 
-    # If we don't have a beta make one
-    if not beta:
 
-        # Make random beta
-        if desInd==0:
-            beta = np.random.randint(-5,5,p).reshape(p,1)
-        else:
-            beta = p-np.arange(1,p+1).reshape(p,1)
+    # Make random beta
+    if desInd==0:
+        beta = np.random.randint(-5,5,p).reshape(p,1)
+    else:
+        beta = p-np.arange(1,p+1).reshape(p,1)
 
 
     if desInd==0:
