@@ -227,6 +227,13 @@ def genTestData2D(n=None, p=None, nlevels=None, nraneffs=None, save=False, simIn
         # Convert Z to dense
         Z = Z.toarray()
 
+    else:
+
+        # If outputting, save the factor vector
+        if save:
+            for i in range(len(nraneffs)):
+                shutil.copyfile(os.path.join(OutDir, 'Sim1_Design' + str(desInd) + '_Zfactor' + str(i) + '.csv'),os.path.join(OutDir, 'Sim' + str(simInd) + '_Design' + str(desInd) + '_Zfactor' + str(i) + '.csv'))
+                shutil.copyfile(os.path.join(OutDir, 'Sim1_Design' + str(desInd) + '_Zdata' + str(i) + '.csv'),os.path.join(OutDir, 'Sim' + str(simInd) + '_Design' + str(desInd) + '_Zdata' + str(i) + '.csv'))
 
     # Make random beta
     if desInd==0:
