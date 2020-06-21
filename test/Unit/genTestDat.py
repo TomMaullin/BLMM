@@ -131,7 +131,7 @@ def genTestData2D(n=None, p=None, nlevels=None, nraneffs=None, save=False, simIn
             desInd = ''
 
     # If a design matrix has not been specified make one.
-    if not X:
+    if X is None:
 
         # Generate random X.
         X = np.random.randn(n,p)
@@ -143,7 +143,7 @@ def genTestData2D(n=None, p=None, nlevels=None, nraneffs=None, save=False, simIn
     if factorVectors is None:
         factorVectors = dict()
 
-    if not Z:
+    if Z is None:
 
         # Create Z
         # We need to create a block of Z for each level of each factor
