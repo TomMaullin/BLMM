@@ -73,7 +73,7 @@ from lib.fileio import *
 #  - `nit`: The number of iterations taken to converge.
 #
 # ============================================================================
-def pFS_ADE2D(X, Y, nlevels, nraneffs, tol, n, KinshipA, KinshipD, Structmat1stDict, Structmat2nd):
+def pFS_ADE2D(X, Y, nlevels, nraneffs, tol, n, KinshipA, KinshipD, Structmat1stDict, Structmat2nd, reml=False):
     
     # ------------------------------------------------------------------------------
     # Product matrices of use
@@ -160,6 +160,8 @@ def pFS_ADE2D(X, Y, nlevels, nraneffs, tol, n, KinshipA, KinshipD, Structmat1stD
     dDdAD = 2*Structmat2nd
     vecAE = np.linalg.pinv(dDdAD @ FDk @ dDdAD.transpose()) @ dDdAD @ SkdldDk
 
+    #vecAE[1,0]=0
+
     # Inital D (dict version)
     Ddict = dict()
     for k in np.arange(len(nraneffs)):
@@ -185,6 +187,36 @@ def pFS_ADE2D(X, Y, nlevels, nraneffs, tol, n, KinshipA, KinshipD, Structmat1stD
     llhcurr = -np.inf
 
     # ------------------------------------------------------------------------------
+    # Precalculated Kronecker sums
+    # ------------------------------------------------------------------------------
+
+    XkXdict = dict()
+    XkYdict = dict()
+
+    # Loop through levels and factors
+    for k in np.arange(r):
+
+        # Get qk
+        qk = nraneffs[k]
+
+        # Sum XkX
+        XkXdict[k] = np.zeros((p**2,qk**2))
+
+        # Sum XkY
+        XkYdict[k] = np.zeros((p,qk**2))
+
+        for j in np.arange(nlevels[k]):
+
+            # Indices for level j of factor k
+            Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
+
+            # Add to running sum
+            XkXdict[k] = XkXdict[k] + np.kron(X[Ikj,:].transpose(),X[Ikj,:].transpose())
+
+            # Add to running sum
+            XkYdict[k] = XkYdict[k] + np.kron(Y[Ikj,:].transpose(),X[Ikj,:].transpose())
+
+    # ------------------------------------------------------------------------------
     # Iteration.
     # ------------------------------------------------------------------------------
     # Number of iterations
@@ -197,6 +229,11 @@ def pFS_ADE2D(X, Y, nlevels, nraneffs, tol, n, KinshipA, KinshipD, Structmat1stD
         # Number of iterations
         nit = nit+1
 
+        # Maximum number of iterations
+        # if nit>100:
+        #     print('nit lim')
+        #     break
+
         #---------------------------------------------------------------------------
         # Update beta
         #---------------------------------------------------------------------------
@@ -204,24 +241,42 @@ def pFS_ADE2D(X, Y, nlevels, nraneffs, tol, n, KinshipA, KinshipD, Structmat1stD
         XtinvVX = np.zeros((p,p))
         XtinvVY = np.zeros((p,1))
 
+        # XtinvVX2 = np.zeros((p,p))
+        # XtinvVY2 = np.zeros((p,1))
+
+
         # Loop through levels and factors
         for k in np.arange(r):
-            for j in np.arange(nlevels[k]):
+            # for j in np.arange(nlevels[k]):
 
-                # Get the indices for the factors 
-                Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
+            #     # Get the indices for the factors 
+            #     Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
 
-                # Add to sums
-                XtinvVX = XtinvVX + X[Ikj,:].transpose() @ invIplusDdict[k] @ X[Ikj,:]
-                XtinvVY = XtinvVY + X[Ikj,:].transpose() @ invIplusDdict[k] @ Y[Ikj,:]
+            #     # Add to sums
+            #     XtinvVX = XtinvVX + forceSym2D(X[Ikj,:].transpose() @ invIplusDdict[k] @ X[Ikj,:])
+            #     XtinvVY = XtinvVY + X[Ikj,:].transpose() @ invIplusDdict[k] @ Y[Ikj,:]
 
-        beta = np.linalg.pinv(XtinvVX) @ XtinvVY
+            XtinvVX = XtinvVX + vec2mat2D(XkXdict[k] @ mat2vec2D(invIplusDdict[k]),shape=np.array([p,p]))
+            XtinvVY = XtinvVY + vec2mat2D(XkYdict[k] @ mat2vec2D(invIplusDdict[k]),shape=np.array([p,1]))
+
+        # print(np.allclose(XtinvVY, XtinvVY2))
+        # print(np.allclose(XtinvVX, XtinvVX2))
+
+        beta = np.linalg.solve(forceSym2D(XtinvVX), XtinvVY)
+        # beta2 = np.linalg.pinv(XtinvVX2) @ XtinvVY2
+
+        # print(np.allclose(beta,beta2))
 
         #---------------------------------------------------------------------------
         # Update Residuals, e
         #---------------------------------------------------------------------------
         e = Y - X @ beta
         ete = e.transpose() @ e
+
+        # e2 = Y - X @ beta2
+        # ete2 = e2.transpose() @ e2
+
+        # print('etes: ', np.allclose(ete2,ete))
 
         #---------------------------------------------------------------------------
         # Update sigma^2
@@ -237,20 +292,18 @@ def pFS_ADE2D(X, Y, nlevels, nraneffs, tol, n, KinshipA, KinshipD, Structmat1stD
                 # Add to sums
                 etinvVe = etinvVe + e[Ikj,:].transpose() @ invIplusDdict[k] @ e[Ikj,:]
 
-        sigma2 = 1/n*etinvVe
+        if not reml:
+            sigma2 = 1/n*etinvVe
+        else:
+            sigma2 = 1/(n-p)*etinvVe
         sigma2 = np.maximum(sigma2,1e-20) # Prevent hitting boundary
-        #vecAE = np.maximum(vecAE,1e-10)
-        
-        #---------------------------------------------------------------------------
-        # Update D
-        #---------------------------------------------------------------------------
-        counter = 0
 
-        # Initial zero matrix to hold the matrices Skcov(dl/Dk)Sk'
-        FDk = np.zeros((2*r,2*r))
+        # Initial zero matrix to hold F
+        F = np.zeros((2,2))
 
         # Initial zero vector to hold the vectors Sk*dl/dDk
-        SkdldDk = np.zeros((2*r,1))
+        S = np.zeros((2,1))
+
         for k in np.arange(len(nraneffs)):
 
             #-----------------------------------------------------------------------
@@ -263,8 +316,15 @@ def pFS_ADE2D(X, Y, nlevels, nraneffs, tol, n, KinshipA, KinshipD, Structmat1stD
             # Get Ek
             Ek = e[Ik,:].reshape((nlevels[k],nraneffs[k])).transpose()
             
-            # Calculate S'dl/dDk
-            SkdldDk[2*k:(2*k+2),:] =  Structmat1stDict[k] @ mat2vec2D((invIplusDdict[k] @ Ek @ Ek.transpose() @ invIplusDdict[k]/sigma2[0,0])-nlevels[k]*invIplusDdict[k])
+            # # Calculate S'dl/dDk
+            # SkdldDk2[2*k:(2*k+2),:] =  Structmat1stDict[k] @ mat2vec2D((invIplusDdict[k] @ Ek2 @ Ek2.transpose() @ invIplusDdict[k]/sigma22[0,0])-nlevels[k]*invIplusDdict[k])
+
+            if not reml:
+                S = S + Structmat1stDict[k] @ mat2vec2D(forceSym2D((invIplusDdict[k] @ Ek @ Ek.transpose() @ invIplusDdict[k]/sigma2[0,0])-nlevels[k]*invIplusDdict[k]))
+            else:
+                CurrentS = mat2vec2D(forceSym2D((invIplusDdict[k] @ Ek @ Ek.transpose() @ invIplusDdict[k]/sigma2[0,0])-nlevels[k]*invIplusDdict[k]))
+                CurrentS =  CurrentS + np.kron(invIplusDdict[k],invIplusDdict[k]) @ XkXdict[k].transpose() @ mat2vec2D(np.linalg.pinv(XtinvVX))
+                S = S + Structmat1stDict[k] @ CurrentS
 
             #-----------------------------------------------------------------------
             # Work out covariance of derivative of D_k
@@ -273,15 +333,15 @@ def pFS_ADE2D(X, Y, nlevels, nraneffs, tol, n, KinshipA, KinshipD, Structmat1stD
             # Work out (I+Dk)^(-1) \otimes (I+Dk)^(-1)
             kronTerm = np.kron(invIplusDdict[k],invIplusDdict[k])
 
-            # Get FDk
-            FDk[2*k:(2*k+2),2*k:(2*k+2)]= nlevels[k]*Structmat1stDict[k] @ kronTerm @ Structmat1stDict[k].transpose()
+            # Get F for this term
+            F = F + forceSym2D(nlevels[k]*Structmat1stDict[k] @ kronTerm @ Structmat1stDict[k].transpose())
 
         #-----------------------------------------------------------------------
         # Update step
         #-----------------------------------------------------------------------
-        dDdAD = 2*Structmat2nd*vecAE
-        vecAE = vecAE + lam*np.linalg.pinv(dDdAD @ FDk @ dDdAD.transpose()) @ dDdAD @ SkdldDk
 
+        vecAE = vecAE + forceSym2D(0.5*lam*np.linalg.pinv(forceSym2D(F)*(vecAE @ vecAE.transpose()))) @ (vecAE*S)
+        
         #-----------------------------------------------------------------------
         # Add D_k back into D
         #-----------------------------------------------------------------------
@@ -289,7 +349,7 @@ def pFS_ADE2D(X, Y, nlevels, nraneffs, tol, n, KinshipA, KinshipD, Structmat1stD
         Ddict = dict()
         for k in np.arange(len(nraneffs)):
             # Construct D using sigma^2A and sigma^2D
-            Ddict[k] = vecAE[0,0]**2*KinshipA[k] + vecAE[1,0]**2*KinshipD[k]
+            Ddict[k] = forceSym2D(vecAE[0,0]**2*KinshipA[k] + vecAE[1,0]**2*KinshipD[k])
 
         # ------------------------------------------------------------------------------
         # Obtain (I+D)^{-1}
@@ -297,7 +357,7 @@ def pFS_ADE2D(X, Y, nlevels, nraneffs, tol, n, KinshipA, KinshipD, Structmat1stD
         invIplusDdict = dict()
         for k in np.arange(len(nraneffs)):
             # Construct D using sigma^2A and sigma^2D
-            invIplusDdict[k] = np.linalg.pinv(np.eye(nraneffs[k])+Ddict[k])
+            invIplusDdict[k] = forceSym2D(np.linalg.pinv(np.eye(nraneffs[k])+Ddict[k]))
 
         # --------------------------------------------------------------------------
         # Precautionary
@@ -330,6 +390,10 @@ def pFS_ADE2D(X, Y, nlevels, nraneffs, tol, n, KinshipA, KinshipD, Structmat1stD
         # Work out the log likelihood
         llhcurr = -0.5*(n*np.log(sigma2)+(1/sigma2)*etinvVe + logdetV)
 
+        if reml:
+            logdet = np.linalg.slogdet(XtinvVX)
+            llhcurr = llhcurr - 0.5*logdet[0]*logdet[1] + 0.5*p*np.log(sigma2)
+
         # Update the step size
         if llhprev>llhcurr:
             lam = lam/2
@@ -341,3 +405,250 @@ def pFS_ADE2D(X, Y, nlevels, nraneffs, tol, n, KinshipA, KinshipD, Structmat1stD
     paramVector = np.concatenate((beta, np.sqrt(sigma2), vecAE))
         
     return(paramVector, llhcurr)
+
+
+
+def get_swdf_ADE_T2D(L, paramVec, X, nlevels, nraneffs, KinshipA, KinshipC, Structmat1stDict): 
+
+    # Work out n and p
+    n = X.shape[0]
+    p = X.shape[1]
+
+    # Work out beta, sigma2 and the vector of variance components
+    beta = paramVec[0:p,:]
+    sigma2 = paramVec[p,0]**2
+    vecAE = paramVec[(p+1):,:]**2/sigma2
+
+    # Get D in dictionary form
+    Ddict = dict()
+    for k in np.arange(len(nraneffs)):
+        # Construct D using sigma^2A and sigma^2D
+        Ddict[k] = vecAE[0,0]*KinshipA[k] + vecAE[1,0]*KinshipC[k]
+
+    # Get S^2 (= Var(L\beta))
+    S2 = get_varLB_ADE_2D(L, X, Ddict, sigma2, nlevels, nraneffs)
+
+    # Get derivative of S^2
+    dS2 = get_dS2_ADE_2D(L, X, Ddict, vecAE, sigma2, nlevels, nraneffs, Structmat1stDict)
+
+    # Get Fisher information matrix
+    InfoMat = get_InfoMat_ADE_2D(Ddict, vecAE, sigma2, n, nlevels, nraneffs, Structmat1stDict)
+
+    # Calculate df estimator
+    df = 2*(S2**2)/(dS2.transpose() @ np.linalg.solve(InfoMat, dS2))
+
+    # Return df
+    return(df)
+
+
+def get_varLB_ADE_2D(L, X, Ddict, sigma2, nlevels, nraneffs):
+
+    # Work out var(LB) = L'(X'V^{-1}X)^{-1}L
+    varLB = L @ get_covB_ADE_2D(X, Ddict, sigma2, nlevels, nraneffs) @ L.transpose()
+
+    # Return result
+    return(varLB)
+
+
+def get_covB_ADE_2D(X, Ddict, sigma2, nlevels, nraneffs):
+
+    # Work out p and r
+    p = X.shape[1]
+    r = len(nlevels)
+
+    # Work out sum over j of X_(k,j) kron X_(k,j), for each k
+    XkXdict = dict()
+
+    # Loop through levels and factors
+    for k in np.arange(r):
+
+        # Get qk
+        qk = nraneffs[k]
+
+        # Sum XkX
+        XkXdict[k] = np.zeros((p**2,qk**2))
+
+        for j in np.arange(nlevels[k]):
+
+            # Indices for level j of factor k
+            Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
+
+            # Add to running sum
+            XkXdict[k] = XkXdict[k] + np.kron(X[Ikj,:].transpose(),X[Ikj,:].transpose())
+
+    # Work out X'V^(-1)X as matrix reshape of (sum over k of ((sum_j X_(k,j) kron X_(k,j))vec(D_k)))
+    XtinvVX = np.zeros((p,p))
+
+    # Loop through levels and factors
+    for k in np.arange(r):
+
+        XtinvVX = XtinvVX + vec2mat2D(XkXdict[k] @ mat2vec2D(np.linalg.pinv(np.eye(nraneffs[k])+Ddict[k])),shape=np.array([p,p]))
+
+    # Work out var(LB) = L'(X'V^{-1}X)^{-1}L
+    covB = np.linalg.pinv(XtinvVX)
+
+    # Calculate sigma^2(X'V^{-1}X)^(-1)
+    covB = sigma2*covB
+
+    # Return result
+    return(covB)
+
+def get_dS2_ADE_2D(L, X, Ddict, vecAE, sigma2, nlevels, nraneffs, Structmat1stDict):
+
+    # Work out r
+    r = len(nlevels)
+
+    # Work out p
+    p = X.shape[1]
+
+    # Work out sum over j of X_(k,j) kron X_(k,j), for each k
+    XkXdict = dict()
+
+    # Loop through levels and factors
+    for k in np.arange(r):
+
+        # Get qk
+        qk = nraneffs[k]
+
+        # Sum XkX
+        XkXdict[k] = np.zeros((p**2,qk**2))
+
+        for j in np.arange(nlevels[k]):
+
+            # Indices for level j of factor k
+            Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
+
+            # Add to running sum
+            XkXdict[k] = XkXdict[k] + np.kron(X[Ikj,:].transpose(),X[Ikj,:].transpose())
+
+    # Work out X'V^(-1)X as matrix reshape of (sum over k of ((sum_j X_(k,j) kron X_(k,j))vec(D_k)))
+    XtinvVX = np.zeros((p,p))
+
+    # Loop through levels and factors
+    for k in np.arange(r):
+
+        XtinvVX = XtinvVX + vec2mat2D(XkXdict[k] @ mat2vec2D(np.linalg.pinv(np.eye(nraneffs[k])+Ddict[k])),shape=np.array([p,p]))
+
+    # New empty array for differentiating S^2 wrt (sigma2, vech(D1),...vech(Dr)).
+    dS2 = np.zeros((3,1))
+
+    # Work of derivative wrt to sigma^2
+    dS2dsigma2 = L @ np.linalg.pinv(XtinvVX) @ L.transpose()
+
+    # Add to dS2
+    dS2[0:1,0] = dS2dsigma2.reshape(dS2[0:1,0].shape)
+
+    # Now we need to work out ds2dVech(Dk)
+    for k in np.arange(len(nraneffs)):
+
+        # Initialize an empty zeros matrix
+        dS2dvechDk = np.zeros((nraneffs[k]**2,1))
+
+        for j in np.arange(nlevels[k]):
+
+            # Get the indices for this level and factor.
+            Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
+
+            # Work out Z_(k,j)'V^{-1}X
+            ZkjtiVX = np.linalg.pinv(np.eye(nraneffs[k])+Ddict[k]) @ X[Ikj,:]
+
+            # Work out the term to put into the kronecker product
+            # K = Z_(k,j)'V^{-1}X(X'V^{-1})^{-1}L'
+            K = ZkjtiVX @ np.linalg.pinv(XtinvVX) @ L.transpose()
+
+            # Sum terms
+            dS2dvechDk = dS2dvechDk + mat2vec2D(np.kron(K,K.transpose()))
+
+        # Multiply by sigma^2
+        dS2dvechDk = sigma2*dS2dvechDk
+
+        # Add to dS2
+        dS2[1:,0:1] = dS2[1:,0:1] + Structmat1stDict[k] @ dS2dvechDk.reshape((nraneffs[k]**2,1))
+
+    # Multiply by 2vecAE elementwise
+    dS2[1:,0:1] = vecAE*dS2[1:,0:1]
+
+    print('sigma2: ', sigma2)
+    print('vecAE: ', vecAE)
+    print('stcuct: ', Structmat1stDict)
+    print('dS2: ', dS2)
+
+
+    return(dS2)
+
+
+def get_InfoMat_ADE_2D(Ddict, vecAE, sigma2, n, nlevels, nraneffs, Structmat1stDict):
+
+    # Number of random effects, q
+    q = np.sum(np.dot(nraneffs,nlevels))
+
+    # Index variables
+    # ------------------------------------------------------------------------------
+
+    # Initialize FIsher Information matrix
+    FisherInfoMat = np.zeros((3,3))
+
+    # Covariance of dl/dsigma2
+    C = n/(2*(sigma2**2))
+
+    # Add dl/dsigma2 covariance
+    FisherInfoMat[0,0] = C
+
+    H = np.zeros((2,1))
+
+    # Get H= cov(dl/sigmaE^2, dl/((sigmaA,sigmaD)/sigmaE))
+    for k in np.arange(len(nraneffs)):
+
+        # Get covariance of dldsigma and dldD      
+        H = H + Structmat1stDict[k] @ get_covdldDkdsigma2_ADE_2D(k, sigma2, nlevels, nraneffs, Ddict).reshape((nraneffs[k]**2,1))
+
+    # Assign to the relevant block
+    FisherInfoMat[1:,0:1] = H
+    FisherInfoMat[0:1,1:] = FisherInfoMat[1:,0:1].transpose()
+
+    # Initial zero matrix to hold F
+    F = np.zeros((2,2))
+
+    for k in np.arange(len(nraneffs)):
+
+        #-----------------------------------------------------------------------
+        # Work out covariance of derivative of D_k
+        #-----------------------------------------------------------------------
+
+        # Work out (I+Dk)^(-1) \otimes (I+Dk)^(-1)
+        kronTerm = np.kron(np.linalg.pinv(np.eye(nraneffs[k])+Ddict[k]),np.linalg.pinv(np.eye(nraneffs[k])+Ddict[k]))
+
+        # Get F for this term
+        F = F + forceSym2D(nlevels[k]*Structmat1stDict[k] @ kronTerm @ Structmat1stDict[k].transpose())
+
+    # Multiply by 2vecAE elementwise on both sides
+    F = forceSym2D(F)*(vecAE @ vecAE.transpose())
+
+    # Assign to the relevant block
+    FisherInfoMat[1:, 1:] = F
+
+    print('FImat: ', FisherInfoMat)
+
+    # Return result
+    return(FisherInfoMat)
+
+
+def get_covdldDkdsigma2_ADE_2D(k, sigma2, nlevels, nraneffs, Ddict):
+
+    # Get the indices for the factors 
+    Ik = fac_indices2D(k, nlevels, nraneffs)
+
+    # Work out lk
+    lk = nlevels[k]
+
+    # Work out block size
+    q = np.sum(nlevels*nraneffs)
+    qk = nraneffs[k]
+
+    # Obtain sum of Rk = lk*(I+Dk)^(-1)
+    RkSum = nlevels[k]*np.linalg.pinv(np.eye(qk)+Ddict[k])
+
+    # save and return
+    covdldDdldsigma2 = 1/(2*sigma2) * mat2vec2D(RkSum)  
+
+    return(covdldDdldsigma2)

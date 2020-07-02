@@ -19,7 +19,7 @@ LMM_PATH=$(dirname $(RealPath "${BASH_SOURCE[0]}"))
 fsl_sub -l log/ -N sim1 bash $LMM_PATH/sim/LMMPaperSim.sh 1 > /tmp/$$ && setupID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
 
 # Run all other simulations as seperate jobs only on hold based on the first job
-sims=100
+sims=1000
 i=2
 while [ $i -le $sims ]
 do

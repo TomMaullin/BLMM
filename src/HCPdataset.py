@@ -1,15 +1,28 @@
 import pandas as pd
 import numpy as np
 from lib.npMatrix2d import *
-from src.ADE import pFS_ADE2D
+from src.ADE import *
 from scipy.optimize import minimize
 
-# Read in family type dataset
-#famTypewoDZ = pd.read_csv('/home/tommaullin/Documents/BLMM_creation/hcpFamTypeswithoutDZ.csv')
-famTypewoDZ = pd.read_csv('/home/tommaullin/Documents/BLMM_creation/hcpFamTypeswithoutDZPMAT.csv')
+cov = 'ACE'
+model = 23
+if model in [5,12,13,14,17, 18, 19, 23]:
+    needPMAT=True
+else:
+    needPMAT=False
+
+if needPMAT==True:
+    famTypewoDZ = pd.read_csv('/home/tommaullin/Documents/BLMM_creation/hcpFamTypeswithoutDZ.csv')
+else:
+    # Read in family type dataset
+    famTypewoDZ = pd.read_csv('/home/tommaullin/Documents/BLMM_creation/hcpFamTypeswithoutDZ.csv')
+
+print(famTypewoDZ.shape)
 
 # Remove columns not of interest.
 reducedData = famTypewoDZ[['Subject','familyType','familyID']].sort_values(by=['familyType','familyID'])
+
+print(reducedData.shape)
 
 # Read in restricted data
 restricted = pd.read_csv('/home/tommaullin/Documents/BLMM_creation/RESTRICTED_nicholst_5_8_2018_15_34_43.csv')
@@ -30,28 +43,31 @@ newTab = pd.merge(newTab,parentTable,on=['Mother_ID','Father_ID'])
 unrestricted = pd.read_csv('/home/tommaullin/Documents/BLMM_creation/unrestricted_nicholst_4_21_2020_8_30_43.csv')
 
 # Reduce the unrestricted Table to what we need
-reducedUnrestricted = unrestricted[['Subject','Gender','ReadEng_Unadj','ReadEng_AgeAdj','FS_Total_GM_Vol','FS_IntraCranial_Vol','FS_L_Hippo_Vol','FS_R_Hippo_Vol','PMAT24_A_CR']]
+if needPMAT==True:
+    reducedUnrestricted = unrestricted[['Subject','Gender','ReadEng_Unadj','PSQI_Score']]
+else:
+    reducedUnrestricted = unrestricted[['Subject','Gender','ReadEng_Unadj','FS_Total_GM_Vol','FS_IntraCranial_Vol','FS_L_Hippo_Vol','FS_R_Hippo_Vol','WM_Task_Acc','MMSE_Score']]
 
 # Total Hippo
-reducedUnrestricted['FS_Total_Hippo_Vol'] = reducedUnrestricted['FS_L_Hippo_Vol'] + reducedUnrestricted['FS_R_Hippo_Vol']
+#reducedUnrestricted['FS_Total_Hippo_Vol'] = reducedUnrestricted['FS_L_Hippo_Vol'] + reducedUnrestricted['FS_R_Hippo_Vol']
 
 # Demean and rescale FS_Total_GM_Vol, FS_Intracranial_Vol, FS_L_Hippo_Vol, FS_R_Hippo_Vol
 #reducedUnrestricted.loc[:,'FS_Total_GM_Vol'] = (reducedUnrestricted['FS_Total_GM_Vol'] - reducedUnrestricted['FS_Total_GM_Vol'].mean())/reducedUnrestricted['FS_Total_GM_Vol'].std()
 #reducedUnrestricted.loc[:,'FS_IntraCranial_Vol'] = (reducedUnrestricted['FS_IntraCranial_Vol'] - reducedUnrestricted['FS_IntraCranial_Vol'].mean())/reducedUnrestricted['FS_IntraCranial_Vol'].std()
 
 
-reducedUnrestricted.loc[:,'FS_L_Hippo_Vol'] = reducedUnrestricted.loc[:,'FS_L_Hippo_Vol']**(1/3)
-reducedUnrestricted.loc[:,'FS_IntraCranial_Vol'] = reducedUnrestricted.loc[:,'FS_IntraCranial_Vol']**(1/3)
-#reducedUnrestricted.loc[:,'FS_L_Hippo_Vol'] = (reducedUnrestricted['FS_L_Hippo_Vol'] - reducedUnrestricted['FS_L_Hippo_Vol'].mean())/reducedUnrestricted['FS_L_Hippo_Vol'].std()
-#reducedUnrestricted.loc[:,'FS_R_Hippo_Vol'] = (reducedUnrestricted['FS_R_Hippo_Vol'] - reducedUnrestricted['FS_R_Hippo_Vol'].mean())/reducedUnrestricted['FS_R_Hippo_Vol'].std()
-#reducedUnrestricted.loc[:,'FS_Total_Hippo_Vol'] = (reducedUnrestricted['FS_Total_Hippo_Vol'] - reducedUnrestricted['FS_Total_Hippo_Vol'].mean())/reducedUnrestricted['FS_Total_Hippo_Vol'].std()
+# reducedUnrestricted.loc[:,'FS_Total_GM_Vol'] = reducedUnrestricted.loc[:,'FS_Total_GM_Vol']**(1/3)
+# reducedUnrestricted.loc[:,'FS_IntraCranial_Vol'] = reducedUnrestricted.loc[:,'FS_IntraCranial_Vol']**(1/3)
+# reducedUnrestricted.loc[:,'FS_L_Hippo_Vol'] = reducedUnrestricted.loc[:,'FS_L_Hippo_Vol']**(1/3)
+# reducedUnrestricted.loc[:,'FS_R_Hippo_Vol'] = reducedUnrestricted.loc[:,'FS_R_Hippo_Vol']**(1/3)
+# reducedUnrestricted.loc[:,'FS_Total_Hippo_Vol'] = reducedUnrestricted.loc[:,'FS_Total_Hippo_Vol']**(1/3)
 
 
 # Add unrestricted into table and drop na values
 newTab = pd.merge(newTab,reducedUnrestricted,on=['Subject']).dropna()
 
 #.sort_values(by=['ZygosityGT'],ascending=False)
-newTab['Gender'].replace(['F','M'],[0,1],inplace=True)
+newTab['Gender']=newTab['Gender'].replace(['F','M'],[0,1])
 
 # Add age and sex interaction
 newTab['Age:Sex']=newTab[['Age_in_Yrs']].values*newTab[['Gender']].values
@@ -59,14 +75,120 @@ newTab['Age:Sex']=newTab[['Age_in_Yrs']].values*newTab[['Gender']].values
 # Apply the appropriate sort
 newTab=newTab.sort_values(by=['familyType','familyID','ParentCounts','ZygosityGT','ZygositySR'],ascending=[True,True,False,True,False])
 
+# -----------------------------------------------------------------------------------
+# Check families are coded correctly
+# -----------------------------------------------------------------------------------
+
+# Work out the unique types of family
+UniqueFamilyTypes, idx = np.unique(newTab[['familyType']], return_index=True)
+UniqueFamilyTypes = UniqueFamilyTypes[np.argsort(idx)]
+
+# Number of grouping factors r
+r = len(UniqueFamilyTypes)
+
+print('newt1: ', newTab.shape)
+
+# Loop through each family type (these are our factors)
+for k in np.arange(r):
+
+    # Work out which family type we're looking at
+    uniqueType = UniqueFamilyTypes[k]
+
+    # Get the table of these families
+    familyTypeTable = newTab[newTab['familyType']==uniqueType]
+
+    # Get a list of all family IDs in this category
+    uniqueFamilyIDs = np.unique(familyTypeTable[['familyID']])
+
+    # Loop through each family and work out the number of family members
+    noFamMem = 0
+    for j in np.arange(len(uniqueFamilyIDs)):
+
+        # Get the ID for this family
+        famID = uniqueFamilyIDs[j]
+
+        # Get the table for this ID
+        famTable = familyTypeTable[familyTypeTable['familyID']==famID]
+
+        # Work out the number of subjects in this family
+        noFamMem = np.maximum(noFamMem, famTable.shape[0])
+
+    # Loop through each family and check they have all family members
+    for j in np.arange(len(uniqueFamilyIDs)):
+
+        # Get the ID for this family
+        famID = uniqueFamilyIDs[j]
+
+        # Get the table for this ID
+        famTable = familyTypeTable[familyTypeTable['familyID']==famID]
+
+        # If we don't have all subjects drop this family (we could recalculate
+        # the family indexes... but this is only an illustrative example).
+        if noFamMem > famTable.shape[0]:
+
+            # Drop the familys that are now missing subjects.
+            #newTab = newTab.drop(newTab[newTab.familyID == famID].index)
+
+            newTab['familyType'][newTab.familyID == famID] = np.amax(UniqueFamilyTypes)+1
+            UniqueFamilyTypes = np.append(UniqueFamilyTypes,np.amax(UniqueFamilyTypes)+1)
+
+# Recalculate the unique types of family
+UniqueFamilyTypes, idx = np.unique(newTab[['familyType']], return_index=True)
+UniqueFamilyTypes = UniqueFamilyTypes[np.argsort(idx)]
+print('famTypes: ', UniqueFamilyTypes)
+
+# Recalculate number of grouping factors r
+r = len(UniqueFamilyTypes)
+
+# -----------------------------------------------------------------------------------
 # Construct X
-X = newTab[['Age_in_Yrs','Gender','Age:Sex','FS_IntraCranial_Vol','ReadEng_AgeAdj']].values 
+# -----------------------------------------------------------------------------------
+
+if model in [1, 2, 18, 19, 20, 21]:
+    X = newTab[['Age_in_Yrs','Gender','Age:Sex','FS_IntraCranial_Vol','FS_Total_GM_Vol']].values 
+elif model in [3, 6, 7, 8]:
+    X = newTab[['Age_in_Yrs','Gender','Age:Sex','FS_IntraCranial_Vol','ReadEng_AgeAdj']].values 
+elif model in [4, 9, 10, 11]:
+    X = newTab[['Age_in_Yrs','Gender','Age:Sex','FS_IntraCranial_Vol','ReadEng_Unadj']].values 
+elif model in [5, 12, 13, 14]:
+    X = newTab[['Age_in_Yrs','Gender','Age:Sex','FS_IntraCranial_Vol','PMAT24_A_CR']].values 
+elif model in [15]:
+    X = newTab[['Age_in_Yrs','Gender','Age:Sex','FS_IntraCranial_Vol','FS_L_Hippo_Vol']].values
+elif model in [16]:
+    X = newTab[['Age_in_Yrs','Gender','Age:Sex','FS_IntraCranial_Vol','FS_Total_GM_Vol','FS_L_Hippo_Vol']].values
+elif model in [17, 23]:
+    X = newTab[['Age_in_Yrs','Gender','Age:Sex','PSQI_Score']].values 
+elif model in [22]:
+    X = newTab[['Age_in_Yrs','Gender','Age:Sex','MMSE_Score']].values 
+elif model in [24]:
+    X = newTab[['Age_in_Yrs','Gender','Age:Sex','FS_IntraCranial_Vol','FS_Total_GM_Vol','MMSE_Score']].values 
 
 # Add an intercept to X
 X = np.concatenate((np.ones((X.shape[0],1)),X),axis=1)
 
-# Construct Y # ReadEng_AgeAdj ~ 1 + Age_in_Yrs + Sex + Age:Sex + FS_IntraCranial_Vol + FS_Total_GM_Vol 
-Y = newTab[['FS_L_Hippo_Vol']].values
+# -----------------------------------------------------------------------------------
+# Construct Y
+# -----------------------------------------------------------------------------------
+
+# Construct Y
+if model in [1, 15, 16, 17]:
+    Y = newTab[['ReadEng_AgeAdj']].values
+elif model in [2, 23]:
+    Y = newTab[['ReadEng_Unadj']].values
+elif model in [3, 4, 5]:
+    Y = newTab[['FS_Total_GM_Vol']].values
+elif model in [6, 9, 12]:
+    Y = newTab[['FS_L_Hippo_Vol']].values
+elif model in [7, 10, 13]:
+    Y = newTab[['FS_R_Hippo_Vol']].values
+elif model in [8, 11, 14]:
+    Y = newTab[['FS_Total_Hippo_Vol']].values
+elif model in [18, 19]:
+    Y = newTab[['PMAT24_A_CR']].values
+elif model in [20, 21]:
+    Y = newTab[['MMSE_Score']].values
+elif model in [22]:
+    Y = newTab[['Language_Task_Acc']].values
 
 # Number of fixed effects parameters p
 p = X.shape[1]
@@ -75,60 +197,47 @@ p = X.shape[1]
 pd.DataFrame(X).to_csv('/home/tommaullin/Documents/BLMM_creation/X_HCP.csv')
 pd.DataFrame(Y).to_csv('/home/tommaullin/Documents/BLMM_creation/Y_HCP.csv')
 
-# # Kinship data
-# Kinship = newTab[["Subject", "Mother_ID", "Father_ID", "ZygositySR", "ZygosityGT"]]
 
-# # Recode MZ and DZ
-# MZarray = ((Kinship['ZygositySR']=='MZ') | (Kinship['ZygosityGT']=='MZ')).values
-# DZarray = ((Kinship['ZygositySR']=='DZ') | (Kinship['ZygosityGT']=='DZ')).values
+# -----------------------------------------------------------------------------------
+# Calculate Kinship matrices
+# -----------------------------------------------------------------------------------
 
-# # Indicator column for DZ and MZ (useful for generating kinships in R)
-# twinVals = np.zeros(MZarray.shape)
-# twinVals[MZarray]=1
-# twinVals[DZarray]=2
-
-# # Set twinVals column
-# Kinship = Kinship.assign(twinVals=twinVals)
-
-# # Output to csv
-# Kinship.to_csv('/home/tommaullin/Documents/BLMM_creation/Kin_HCP.csv',index=False)
-
-# Construct Z
-Z = np.eye(X.shape[0])
-
-# Work out nlevels and nraneffs
-UniqueFamilyTypes, idx = np.unique(newTab[['familyType']], return_index=True)
-UniqueFamilyTypes = UniqueFamilyTypes[np.argsort(idx)]
+# Number of levels and random effects for each factor
+nlevels = np.zeros(r)
+nraneffs = np.zeros(r)
 
 # Dictionary to store Kinship matrices
 KinshipA = dict()
 KinshipC = dict()
 KinshipD = dict()
 
-# Number of grouping factors r
-r = len(UniqueFamilyTypes)
-
-# Number of levels and random effects for each factor
-nlevels = np.zeros(r)
-nraneffs = np.zeros(r)
-
 # Loop through each family type (these are our factors)
 for k in np.arange(r):
+
     # Record the family structure, if we haven't already.
     if k not in KinshipA:
+
         # Work out which family type we're looking at
         uniqueType = UniqueFamilyTypes[k]
         familyTypeTable = newTab[newTab['familyType']==uniqueType]
+
+        print(familyTypeTable)
+
         # Read in the first family in this category
         uniqueFamilyIDs = np.unique(familyTypeTable[['familyID']])
         famID = uniqueFamilyIDs[0]
         famTable = familyTypeTable[familyTypeTable['familyID']==famID]
+
         # Work out how many subjects in family
         numSubs = len(famTable)
+
+        print('famtab: ', len(famTable))
+        print('famtypetab: ', len(familyTypeTable))
         # Initialize empty D_A and D_D structure
         KinshipA[k] = np.zeros((numSubs,numSubs))
         KinshipC[k] = np.ones((numSubs,numSubs))
         KinshipD[k] = np.zeros((numSubs,numSubs))
+
         # Loop through each pair of subjects (the families are very 
         # small in the HCP dataset so it doesn't matter if this
         # code is a little inefficient)
@@ -139,26 +248,34 @@ for k in np.arange(r):
                     # In this case cov_A(i,j)=1 and cov_D(i,j)=1
                     KinshipA[k][i,j]=1
                     KinshipD[k][i,j]=1
+
                 # Check if subject i and subject j are the MZ twins
                 elif (famTable['ZygosityGT'].iloc[i]=='MZ' or famTable['ZygositySR'].iloc[i]=='MZ') and (famTable['ZygosityGT'].iloc[j]=='MZ' or famTable['ZygositySR'].iloc[j]=='MZ'):
                     # In this case cov_A(i,j)=1 and cov_D(i,j)=1
                     KinshipA[k][i,j]=1
                     KinshipD[k][i,j]=1
+
                 # Check if subject i and subject j are full siblings (DZ is grouped into this usecase)
                 elif (famTable['Mother_ID'].iloc[i]==famTable['Mother_ID'].iloc[j] and famTable['Father_ID'].iloc[i]==famTable['Father_ID'].iloc[j]):
+
                     # In this case cov_A(i,j)=1/2 and cov_D(i,j)=1/4
                     KinshipA[k][i,j]=1/2
                     KinshipD[k][i,j]=1/4
+
                 # Check if subject i and subject j are half siblings
                 elif (famTable['Mother_ID'].iloc[i]==famTable['Mother_ID'].iloc[j] or famTable['Father_ID'].iloc[i]==famTable['Father_ID'].iloc[j]):
+
                     # In this case cov_A(i,j)=1/2 and cov_D(i,j)=1/4
                     KinshipA[k][i,j]=1/4
                     KinshipD[k][i,j]=1/8
+
                 # Else they aren't related
                 else:
+
                     # In this case cov_A(i,j)=0 and cov_D(i,j)=0
                     KinshipA[k][i,j]=0
                     KinshipD[k][i,j]=0
+
         # Work out nlevels
         nlevels[k]=len(uniqueFamilyIDs)
         # Work out nraneffs
@@ -185,51 +302,9 @@ Dinds[len(Dinds)-1]=Dinds[len(Dinds)-2]+nraneffs[-1]
 # Make sure indices are ints
 Dinds = np.int64(Dinds)
 
-
-# Kinship A (matrix version)
-KinshipAmat= scipy.sparse.lil_matrix((q,q))
-counter = 0
-for k in np.arange(len(nraneffs)):
-    for j in np.arange(nlevels[k]):
-
-        # Add a block for each level of each factor.
-        KinshipAmat[Dinds[counter]:Dinds[counter+1], Dinds[counter]:Dinds[counter+1]] = KinshipA[k]
-        counter = counter + 1
-
-# Save Kinship A
-np.savetxt("/home/tommaullin/Documents/BLMM_creation/KinshipA.csv", KinshipAmat.toarray(), delimiter=",")
-del KinshipAmat
-
-
-# Kinship C (matrix version)
-KinshipCmat= scipy.sparse.lil_matrix((q,q))
-counter = 0
-for k in np.arange(len(nraneffs)):
-    for j in np.arange(nlevels[k]):
-
-        # Add a block for each level of each factor.
-        KinshipCmat[Dinds[counter]:Dinds[counter+1], Dinds[counter]:Dinds[counter+1]] = KinshipC[k]
-        counter = counter + 1
-
-# Save Kinship A
-np.savetxt("/home/tommaullin/Documents/BLMM_creation/KinshipC.csv", KinshipCmat.toarray(), delimiter=",")
-del KinshipCmat
-
-
-# Kinship D (matrix version)
-KinshipDmat= scipy.sparse.lil_matrix((q,q))
-counter = 0
-for k in np.arange(len(nraneffs)):
-    for j in np.arange(nlevels[k]):
-
-        # Add a block for each level of each factor.
-        KinshipDmat[Dinds[counter]:Dinds[counter+1], Dinds[counter]:Dinds[counter+1]] = KinshipD[k]
-        counter = counter + 1
-
-# Save Kinship D
-np.savetxt("/home/tommaullin/Documents/BLMM_creation/KinshipD.csv", KinshipDmat.toarray(), delimiter=",")
-del KinshipDmat
-
+# -----------------------------------------------------------------------------------
+# Calculate Structure matrices of first kind
+# -----------------------------------------------------------------------------------
 
 # Create structure matrices of the first kind for mapping D_k to \sigma2_A and \sigma2_B
 structMat1stDict = dict()
@@ -242,23 +317,39 @@ for k in np.arange(r):
     SkrowC = mat2vec2D(KinshipC[k]).transpose()
     # Row of structure matrix k describing \sigmaD
     SkrowD = mat2vec2D(KinshipD[k]).transpose()
-    # Construct structure matrices
-    structMat1stDict[k]=np.concatenate((SkrowA,SkrowC),axis=0)
+
+    if cov == 'ADE':
+        # Construct structure matrices
+        structMat1stDict[k]=np.concatenate((SkrowA,SkrowD),axis=0)
+    if cov == 'ACE':
+        # Construct structure matrices
+        structMat1stDict[k]=np.concatenate((SkrowA,SkrowC),axis=0)
 
 # Work out structure matrix of the second kind
 structMat2nd = np.concatenate((np.tile([[1,0]],r),np.tile([[0,1]],r)),axis=0)
 
 # Convergence tolerance
-tol = 1e-3
+tol = 1e-6
 
 # Number of observations
 n = X.shape[0]
 
-# Try running pFS_ADE
-t1 = time.time()
-tmp2=pFS_ADE2D(X, Y, nlevels, nraneffs, tol, n, KinshipA, KinshipC, structMat1stDict, structMat2nd)
-t2 = time.time()
-print(t2-t1)
+# -----------------------------------------------------------------------------------
+# Run pFS
+# -----------------------------------------------------------------------------------
+
+reml=True
+
+if cov == 'ADE':
+    t1 = time.time()
+    tmp2=pFS_ADE2D(X, Y, nlevels, nraneffs, tol, n, KinshipA, KinshipD, structMat1stDict, structMat2nd,reml=reml)
+    t2 = time.time()
+    print(t2-t1)
+if cov == 'ACE':
+    t1 = time.time()
+    tmp2=pFS_ADE2D(X, Y, nlevels, nraneffs, tol, n, KinshipA, KinshipC, structMat1stDict, structMat2nd,reml=reml)
+    t2 = time.time()
+    print(t2-t1)
 
 
 
@@ -326,13 +417,13 @@ initParams = np.concatenate((beta, sigma2, vecAE*sigma2))
 
 
 
-def llh_ADE(paramVec, X, Y, n, nlevels, nraneffs, Dinds, KinshipA, KinshipD):
+def llh_ADE(paramVec, X, Y, n, p, nlevels, nraneffs, Dinds, KinshipA, KinshipC):
 
-    paramVec = paramVec.reshape(9,1)
+    paramVec = paramVec.reshape(p+3,1)
 
-    beta = paramVec[0:6,:]
-    sigma2 = paramVec[6,:][0]**2
-    vecAE = paramVec[7:,:]**2
+    beta = paramVec[0:p,:]
+    sigma2 = paramVec[p,:][0]**2
+    vecAE = paramVec[(p+1):,:]**2
 
     e = Y - X @ beta
 
@@ -341,7 +432,7 @@ def llh_ADE(paramVec, X, Y, n, nlevels, nraneffs, Dinds, KinshipA, KinshipD):
     Ddict = dict()
     for k in np.arange(len(nraneffs)):
         # Construct D using sigma^2A and sigma^2D
-        Ddict[k] = vecAE[0,0]*KinshipA[k] + vecAE[1,0]*KinshipD[k]
+        Ddict[k] = forceSym2D(vecAE[0,0]*KinshipA[k] + vecAE[1,0]*KinshipC[k])
 
     # ------------------------------------------------------------------------------
     # Obtain (I+D)^{-1}
@@ -349,7 +440,7 @@ def llh_ADE(paramVec, X, Y, n, nlevels, nraneffs, Dinds, KinshipA, KinshipD):
     invIplusDdict = dict()
     for k in np.arange(len(nraneffs)):
         # Construct D using sigma^2A and sigma^2D
-        invIplusDdict[k] = np.linalg.pinv(np.eye(nraneffs[k])+Ddict[k])
+        invIplusDdict[k] = forceSym2D(np.linalg.pinv(np.eye(nraneffs[k])+Ddict[k]))
 
 
     # (D+I)^{-1} (matrix version)
@@ -375,84 +466,166 @@ def llh_ADE(paramVec, X, Y, n, nlevels, nraneffs, Dinds, KinshipA, KinshipD):
 
     return(llhcurr)
 
+def varBeta_ADE(paramVec, p, KinshipA, KinshipC, nlevels, nraneffs):
+
+    # Work out beta, sigma2 and the vector of variance components
+    beta = paramVec[0:p,:]
+    sigma2 = paramVec[p,0]**2
+    vecAE = paramVec[(p+1):,:]**2/sigma2
+
+    # Get D in dictionary form
+    Ddict = dict()
+    for k in np.arange(len(nraneffs)):
+        # Construct D using sigma^2A and sigma^2D
+        Ddict[k] = vecAE[0,0]*KinshipA[k] + vecAE[1,0]*KinshipC[k]
+
+    # r, total number of random factors
+    r = len(nlevels)
+
+    # Work out sum over j of X_(k,j) kron X_(k,j), for each k
+    XkXdict = dict()
+
+    # Loop through levels and factors
+    for k in np.arange(r):
+
+        # Get qk
+        qk = nraneffs[k]
+
+        # Sum XkX
+        XkXdict[k] = np.zeros((p**2,qk**2))
+
+        for j in np.arange(nlevels[k]):
+
+            # Indices for level j of factor k
+            Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
+
+            # Add to running sum
+            XkXdict[k] = XkXdict[k] + np.kron(X[Ikj,:].transpose(),X[Ikj,:].transpose())
+
+            
+    # Work out X'V^(-1)X as matrix reshape of (sum over k of ((sum_j X_(k,j) kron X_(k,j))vec(D_k)))
+    XtinvVX = np.zeros((p,p))
+
+    # Loop through levels and factors
+    for k in np.arange(r):
+
+        XtinvVX = XtinvVX + vec2mat2D(XkXdict[k] @ mat2vec2D(np.linalg.pinv(np.eye(nraneffs[k])+Ddict[k])),shape=np.array([p,p]))
+
+
+    # Check
+    # Work out indices (there is one block of D per level)
+    inds = np.zeros(np.sum(nlevels)+1)
+    counter = 0
+    for k in np.arange(len(nraneffs)):
+        for j in np.arange(nlevels[k]):
+            inds[counter] = np.concatenate((np.array([0]), np.cumsum(nlevels*nraneffs)))[k] + nraneffs[k]*j
+            counter = counter + 1
+
+
+    # Last index will be missing so add it
+    inds[len(inds)-1]=inds[len(inds)-2]+nraneffs[-1]
+
+    # Make sure indices are ints
+    inds = np.int64(inds)
+
+    # Initial D
+    D = np.zeros((np.sum(nraneffs*nlevels),np.sum(nraneffs*nlevels)))
+
+    counter = 0
+    for k in np.arange(len(nraneffs)):
+        for j in np.arange(nlevels[k]):
+
+            D[inds[counter]:inds[counter+1], inds[counter]:inds[counter+1]] = Ddict[k]
+            counter = counter + 1
+
+    XtinvVX2 = X.transpose() @ np.linalg.inv(np.eye(D.shape[0])+D) @ X
+
+    print('check: ', np.allclose(XtinvVX, XtinvVX2))
+
+
+    # Get variance of beta
+    varb = sigma2*np.linalg.inv(XtinvVX)
+
+    print('s.e.(b): ', np.sqrt(np.diagonal(varb)))
+    return(np.sqrt(np.diagonal(varb)))
+
 print('ADE result')
 paramVecADE = np.array(tmp2[0])
-paramVecADE[7:,:] = paramVecADE[7:,:]*paramVecADE[6,0]
+paramVecADE[(p+1):,:] = paramVecADE[(p+1):,:]*paramVecADE[p,0]
 print(paramVecADE)
-print(llh_ADE(tmp2[0], X, Y, n, nlevels, nraneffs, Dinds, KinshipA, KinshipC))
+print(llh_ADE(tmp2[0], X, Y, n, p, nlevels, nraneffs, Dinds, KinshipA, KinshipC))
 print('Done')
 
-betaADE = paramVecADE[0:6,:]
-sigma2ADE = paramVecADE[6,0]**2
+varBeta_ADE(paramVecADE, p, KinshipA, KinshipC, nlevels, nraneffs)
 
-DdictADE = dict()
-for k in np.arange(len(nraneffs)):
-    # Construct D using sigma^2A and sigma^2D
-    DdictADE[k] = vecAE[0,0]**2*KinshipA[k] + vecAE[1,0]**2*KinshipD[k]
+L = np.zeros((1,p))
+L[0,0]=1
 
-for i in np.arange(len(nraneffs)):
-    for j in np.arange(nlevels[i]):
-        # Add block
-        if i == 0 and j == 0:
-            DADE = DdictADE[i]
-        else:
-            DADE = scipy.linalg.block_diag(DADE, DdictADE[i])
-
-
-DinvIplusZtZDADE = DADE @ np.linalg.pinv(np.eye(DADE.shape[0]) + DADE)
+print('swdf: ', get_swdf_ADE_T2D(L, paramVecADE, X, nlevels, nraneffs, KinshipA, KinshipC, structMat1stDict))
 
 t1 = time.time()
-tmp = minimize(llh_ADE, initParams, args=(X, Y, n, nlevels, nraneffs, Dinds, KinshipA, KinshipC), method='Nelder-Mead', tol=1e-10)
-# tmp = minimize(llh_ADE, initParams, args=(X, Y, n, nlevels, nraneffs, Dinds, KinshipA, KinshipD), method='BFGS', tol=1e-3)
-# tmp = minimize(llh_ADE, initParams, args=(X, Y, n, nlevels, nraneffs, Dinds, KinshipA, KinshipD), method='Newton-CG', tol=1e-3)
-# tmp = minimize(llh_ADE, initParams, args=(X, Y, n, nlevels, nraneffs, Dinds, KinshipA, KinshipD), method='trust-ncg', tol=1e-3)
-# tmp = minimize(llh_ADE, initParams, args=(X, Y, n, nlevels, nraneffs, Dinds, KinshipA, KinshipD), method='trust-krylov', tol=1e-3)
-# tmp = minimize(llh_ADE, initParams, args=(X, Y, n, nlevels, nraneffs, Dinds, KinshipA, KinshipD), method='trust-exact', tol=1e-3)
+tmp = minimize(llh_ADE, initParams, args=(X, Y, n, p, nlevels, nraneffs, Dinds, KinshipA, KinshipC), method='Nelder-Mead', tol=1e-6)
 
 t2 = time.time()
 print(t2-t1)
 
 print('Optimizer result')
-paramVecOpt = tmp['x'].reshape(9,1)
-paramVecOpt[7:,:] = paramVecOpt[7:,:]*paramVecOpt[6,0]
+paramVecOpt = tmp['x'].reshape((p+3),1)
+paramVecOpt[(p+1):,:] = paramVecOpt[(p+1):,:]*paramVecOpt[p,0]
 print(paramVecOpt)
 print(np.array([[tmp['fun']]]))
 
 t1 = time.time()
+tmp = minimize(llh_ADE, initParams, args=(X, Y, n, p, nlevels, nraneffs, Dinds, KinshipA, KinshipC), method='Powell', tol=1e-6)
+
+t2 = time.time()
+print(t2-t1)
+
+print('Optimizer result 2')
+paramVecOpt = tmp['x'].reshape((p+3),1)
+paramVecOpt[(p+1):,:] = paramVecOpt[(p+1):,:]*paramVecOpt[p,0]
+print(paramVecOpt)
+print(np.array([[tmp['fun']]]))
+varBeta_ADE(paramVecOpt, p, KinshipA, KinshipC, nlevels, nraneffs)
+
+
+t1 = time.time()
 betaOLS = np.linalg.pinv(X.transpose() @ X) @ X.transpose() @ Y
 e = Y - X @ betaOLS
-sigmaOLS = np.sqrt(e.transpose() @ e/(n-p))
+sigmaOLS = np.sqrt(e.transpose() @ e/n)
 t2 = time.time()
 print(t2-t1)
 
 sigma2OLS = sigmaOLS**2
 
-paramVecOLS = np.zeros((9,1))
-paramVecOLS[0:6,:] = betaOLS
-paramVecOLS[6,:] = sigmaOLS[0,0]
+paramVecOLS = np.zeros(((p+3),1))
+paramVecOLS[0:p,:] = betaOLS
+paramVecOLS[p,:] = sigmaOLS[0,0]
 
 print('OLS result')
 print(paramVecOLS)
-print(llh_ADE(paramVecOLS, X, Y, n, nlevels, nraneffs, Dinds, KinshipA, KinshipC))
+print(llh_ADE(paramVecOLS, X, Y, n, p, nlevels, nraneffs, Dinds, KinshipA, KinshipC))
+varBeta_ADE(paramVecOLS, p, KinshipA, KinshipC, nlevels, nraneffs)
 
-for i in np.arange(X.shape[1]):
+
+#for i in np.arange(X.shape[1]):
 
     # Get beta
-    L = np.zeros((1,X.shape[1]))
-    L[0,i]=1
+#    L = np.zeros((1,X.shape[1]))
+#    L[0,i]=1
 
-    TADE = get_T2D(L, XtX, X.transpose(), DinvIplusZtZDADE, betaADE, sigma2ADE)
+#    TADE = get_T2D(L, XtX, X.transpose(), DinvIplusZtZDADE, betaADE, sigma2ADE)
     #get_T2D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2)
-    df_ADE = get_swdf_T2D(L, DADE, sigma2ADE, XtX, X.transpose(), X, np.eye(n), n, nlevels, nraneffs)
+#    df_ADE = get_swdf_T2D(L, DADE, sigma2ADE, XtX, X.transpose(), X, np.eye(n), n, nlevels, nraneffs)
 
-    pvalADE = 10**(-T2P2D(TADE,df_ADE,minlog=-1e20))
+#    pvalADE = 10**(-T2P2D(TADE,df_ADE,minlog=-1e20))
 
-    TOLS = (L @ betaOLS)/ np.sqrt(sigma2OLS*(L @ np.linalg.pinv(XtX) @ L.transpose()))
+#    TOLS = (L @ betaOLS)/ np.sqrt(sigma2OLS*(L @ np.linalg.pinv(XtX) @ L.transpose()))
 
-    df_OLS = n-p
+#    df_OLS = n-p
 
-    pvalOLS =10**(-T2P2D(TOLS,df_OLS,minlog=-1e20))
+#    pvalOLS =10**(-T2P2D(TOLS,df_OLS,minlog=-1e20))
 
-    print('T', TADE, TOLS)
-    print('p', pvalADE,pvalOLS)
-    print('df', df_ADE,df_OLS)
+#    print('T', TADE, TOLS)
+#    print('p', pvalADE,pvalOLS)
+#    print('df', df_ADE,df_OLS)

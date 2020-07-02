@@ -97,11 +97,14 @@ def vec2vech2D(vec):
 # top of one another to it's corresponding square matrix.
 #
 # ============================================================================
-def vec2mat2D(vec):
+def vec2mat2D(vec,shape=None):
   
   # Return matrix
-  return(vec.reshape(np.int64(np.sqrt(vec.shape[0])),np.int64(np.sqrt(vec.shape[0]))).transpose())
-
+  if shape is None:
+    return(vec.reshape(np.int64(np.sqrt(vec.shape[0])),np.int64(np.sqrt(vec.shape[0]))).transpose())
+  else:
+    return(vec.reshape(shape[1],shape[0]).transpose())
+  
 
 # ============================================================================
 #
@@ -1368,7 +1371,7 @@ def llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,reml=False, XtX=0, XtZ=0, Zt
   
   if reml:
     logdet = np.linalg.slogdet(XtX - XtZ @ DinvIplusZtZD @ ZtX)
-    llh = llh - 0.5*logdet[0]*logdet[1]
+    llh = llh - 0.5*logdet[0]*logdet[1] + 0.5*XtX.shape[1]*np.log(sigma2)
 
   # Return result
   return(llh)
