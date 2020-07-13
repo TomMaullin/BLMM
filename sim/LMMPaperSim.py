@@ -256,7 +256,7 @@ def runSim(simInd, desInd, OutDir):
     # Record Time and number of iterations
     results.at['Time','pSFS']=t2-t1
     results.at['nit','pSFS']=nit
-    results.at['llh','pSFS']=llh-n/2*np.log(np.pi)
+    results.at['llh','pSFS']=llh-n/2*np.log(2*np.pi)
 
     # Record parameters
     for i in np.arange(3,p+qu+4):
@@ -286,7 +286,7 @@ def runSim(simInd, desInd, OutDir):
     # Record time and number of iterations
     results.at['Time','cSFS']=t2-t1
     results.at['nit','cSFS']=nit
-    results.at['llh','cSFS']=llh-n/2*np.log(np.pi)
+    results.at['llh','cSFS']=llh-n/2*np.log(2*np.pi)
     
     # Save parameters
     for i in np.arange(3,p+qu+4):
@@ -315,7 +315,7 @@ def runSim(simInd, desInd, OutDir):
     # Record time and number of iterations
     results.at['Time','FS']=t2-t1
     results.at['nit','FS']=nit
-    results.at['llh','FS']=llh-n/2*np.log(np.pi)
+    results.at['llh','FS']=llh-n/2*np.log(2*np.pi)
     
     # Save parameters
     for i in np.arange(3,p+qu+4):
@@ -349,7 +349,7 @@ def runSim(simInd, desInd, OutDir):
     # Record time and number of iterations
     results.at['Time','SFS']=t2-t1
     results.at['nit','SFS']=nit
-    results.at['llh','SFS']=llh-n/2*np.log(np.pi)
+    results.at['llh','SFS']=llh-n/2*np.log(2*np.pi)
 
     # Save parameters
     for i in np.arange(3,p+qu+4):
@@ -378,7 +378,7 @@ def runSim(simInd, desInd, OutDir):
     # Record time and number of iterations
     results.at['Time','pFS']=t2-t1
     results.at['nit','pFS']=nit
-    results.at['llh','pFS']=llh-n/2*np.log(np.pi)
+    results.at['llh','pFS']=llh-n/2*np.log(2*np.pi)
 
     # Save parameters
     for i in np.arange(3,p+qu+4):
