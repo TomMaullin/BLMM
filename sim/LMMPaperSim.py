@@ -75,8 +75,12 @@ def runSim(simInd, desInd, OutDir):
     else:
         n = 40
 
-    # Create the factor vectors, X and Z if this is the first run.
-    if simInd == 1:
+    # If we are doing a degrees of freedom simulation, create the factor vectors, X and Z if 
+    # this is the first run. These will then be used across all following simulations. If we
+    # are doing a simulation to look at parameter estimation, we recreate the design on every
+    # run as our focus is to stress test the performance of the algorithms, rather than compare
+    # performance of one specific model in particular. 
+    if simInd == 1 or not runDF:
 
         # Delete any factor vectors from a previous run.
         for i in range(len(nlevels)):
