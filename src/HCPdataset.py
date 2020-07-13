@@ -3,6 +3,7 @@ import numpy as np
 from lib.npMatrix2d import *
 from src.ADE import *
 from scipy.optimize import minimize
+from scipy import stats
 
 cov = 'ACE'
 model = 23
@@ -43,10 +44,16 @@ newTab = pd.merge(newTab,parentTable,on=['Mother_ID','Father_ID'])
 unrestricted = pd.read_csv('/home/tommaullin/Documents/BLMM_creation/unrestricted_nicholst_4_21_2020_8_30_43.csv')
 
 # Reduce the unrestricted Table to what we need
-if needPMAT==True:
+if model == 23:
     reducedUnrestricted = unrestricted[['Subject','Gender','ReadEng_Unadj','PSQI_Score']]
-else:
-    reducedUnrestricted = unrestricted[['Subject','Gender','ReadEng_Unadj','FS_Total_GM_Vol','FS_IntraCranial_Vol','FS_L_Hippo_Vol','FS_R_Hippo_Vol','WM_Task_Acc','MMSE_Score']]
+if model == 22:
+    reducedUnrestricted = unrestricted[['Subject','Gender','Language_Task_Acc','MMSE_Score']]
+if model == 24:
+    reducedUnrestricted = unrestricted[['Subject','Gender','Language_Task_Acc','PSQI_Score']]
+if model == 25:
+    reducedUnrestricted = unrestricted[['Subject','Gender','ReadEng_Unadj','MMSE_Score']]
+if model == 26:
+    reducedUnrestricted = unrestricted[['Subject','Gender','PSQI_Score','MMSE_Score']]
 
 # Total Hippo
 #reducedUnrestricted['FS_Total_Hippo_Vol'] = reducedUnrestricted['FS_L_Hippo_Vol'] + reducedUnrestricted['FS_R_Hippo_Vol']
@@ -85,8 +92,6 @@ UniqueFamilyTypes = UniqueFamilyTypes[np.argsort(idx)]
 
 # Number of grouping factors r
 r = len(UniqueFamilyTypes)
-
-print('newt1: ', newTab.shape)
 
 # Loop through each family type (these are our factors)
 for k in np.arange(r):
@@ -135,7 +140,6 @@ for k in np.arange(r):
 # Recalculate the unique types of family
 UniqueFamilyTypes, idx = np.unique(newTab[['familyType']], return_index=True)
 UniqueFamilyTypes = UniqueFamilyTypes[np.argsort(idx)]
-print('famTypes: ', UniqueFamilyTypes)
 
 # Recalculate number of grouping factors r
 r = len(UniqueFamilyTypes)
@@ -156,12 +160,10 @@ elif model in [15]:
     X = newTab[['Age_in_Yrs','Gender','Age:Sex','FS_IntraCranial_Vol','FS_L_Hippo_Vol']].values
 elif model in [16]:
     X = newTab[['Age_in_Yrs','Gender','Age:Sex','FS_IntraCranial_Vol','FS_Total_GM_Vol','FS_L_Hippo_Vol']].values
-elif model in [17, 23]:
+elif model in [17, 23, 24, 26]:
     X = newTab[['Age_in_Yrs','Gender','Age:Sex','PSQI_Score']].values 
-elif model in [22]:
+elif model in [22, 25]:
     X = newTab[['Age_in_Yrs','Gender','Age:Sex','MMSE_Score']].values 
-elif model in [24]:
-    X = newTab[['Age_in_Yrs','Gender','Age:Sex','FS_IntraCranial_Vol','FS_Total_GM_Vol','MMSE_Score']].values 
 
 # Add an intercept to X
 X = np.concatenate((np.ones((X.shape[0],1)),X),axis=1)
@@ -173,7 +175,7 @@ X = np.concatenate((np.ones((X.shape[0],1)),X),axis=1)
 # Construct Y
 if model in [1, 15, 16, 17]:
     Y = newTab[['ReadEng_AgeAdj']].values
-elif model in [2, 23]:
+elif model in [2, 23, 25]:
     Y = newTab[['ReadEng_Unadj']].values
 elif model in [3, 4, 5]:
     Y = newTab[['FS_Total_GM_Vol']].values
@@ -185,9 +187,9 @@ elif model in [8, 11, 14]:
     Y = newTab[['FS_Total_Hippo_Vol']].values
 elif model in [18, 19]:
     Y = newTab[['PMAT24_A_CR']].values
-elif model in [20, 21]:
+elif model in [20, 21, 26]:
     Y = newTab[['MMSE_Score']].values
-elif model in [22]:
+elif model in [22, 24]:
     Y = newTab[['Language_Task_Acc']].values
 
 # Number of fixed effects parameters p
@@ -221,8 +223,6 @@ for k in np.arange(r):
         uniqueType = UniqueFamilyTypes[k]
         familyTypeTable = newTab[newTab['familyType']==uniqueType]
 
-        print(familyTypeTable)
-
         # Read in the first family in this category
         uniqueFamilyIDs = np.unique(familyTypeTable[['familyID']])
         famID = uniqueFamilyIDs[0]
@@ -231,8 +231,6 @@ for k in np.arange(r):
         # Work out how many subjects in family
         numSubs = len(famTable)
 
-        print('famtab: ', len(famTable))
-        print('famtypetab: ', len(familyTypeTable))
         # Initialize empty D_A and D_D structure
         KinshipA[k] = np.zeros((numSubs,numSubs))
         KinshipC[k] = np.ones((numSubs,numSubs))
@@ -335,6 +333,30 @@ tol = 1e-6
 n = X.shape[0]
 
 # -----------------------------------------------------------------------------------
+# Get the sum of X kron X (only for speeding up optimizer to ensure fair comparison)
+# -----------------------------------------------------------------------------------
+
+# Work out sum over j of X_(k,j) kron X_(k,j), for each k
+XkXdict = dict()
+
+# Loop through levels and factors
+for k in np.arange(r):
+
+    # Get qk
+    qk = nraneffs[k]
+
+    # Sum XkX
+    XkXdict[k] = np.zeros((p**2,qk**2))
+
+    for j in np.arange(nlevels[k]):
+
+        # Indices for level j of factor k
+        Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
+
+        # Add to running sum
+        XkXdict[k] = XkXdict[k] + np.kron(X[Ikj,:].transpose(),X[Ikj,:].transpose())
+
+# -----------------------------------------------------------------------------------
 # Run pFS
 # -----------------------------------------------------------------------------------
 
@@ -417,7 +439,7 @@ initParams = np.concatenate((beta, sigma2, vecAE*sigma2))
 
 
 
-def llh_ADE(paramVec, X, Y, n, p, nlevels, nraneffs, Dinds, KinshipA, KinshipC):
+def llh_ADE(paramVec, X, Y, n, p, nlevels, nraneffs, Dinds, KinshipA, KinshipC, reml=False, XkXdict=None):
 
     paramVec = paramVec.reshape(p+3,1)
 
@@ -463,6 +485,19 @@ def llh_ADE(paramVec, X, Y, n, p, nlevels, nraneffs, Dinds, KinshipA, KinshipC):
 
     # Work out the log likelihood
     llhcurr = 0.5*(n*np.log(sigma2)+(1/sigma2)*etinvVe + logdetV)
+
+    if reml:
+
+        # Work out X'V^(-1)X as matrix reshape of (sum over k of ((sum_j X_(k,j) kron X_(k,j))vec(D_k)))
+        XtinvVX = np.zeros((p,p))
+
+        # Loop through levels and factors
+        for k in np.arange(r):
+
+            XtinvVX = XtinvVX + vec2mat2D(XkXdict[k] @ mat2vec2D(invIplusDdict[k]),shape=np.array([p,p]))
+
+        logdet = np.linalg.slogdet(XtinvVX)
+        llhcurr = llhcurr - 0.5*logdet[0]*logdet[1] + 0.5*p*np.log(sigma2)
 
     return(llhcurr)
 
@@ -511,7 +546,6 @@ def varBeta_ADE(paramVec, p, KinshipA, KinshipC, nlevels, nraneffs):
 
         XtinvVX = XtinvVX + vec2mat2D(XkXdict[k] @ mat2vec2D(np.linalg.pinv(np.eye(nraneffs[k])+Ddict[k])),shape=np.array([p,p]))
 
-
     # Check
     # Work out indices (there is one block of D per level)
     inds = np.zeros(np.sum(nlevels)+1)
@@ -551,48 +585,109 @@ def varBeta_ADE(paramVec, p, KinshipA, KinshipC, nlevels, nraneffs):
 
 print('ADE result')
 paramVecADE = np.array(tmp2[0])
-paramVecADE[(p+1):,:] = paramVecADE[(p+1):,:]*paramVecADE[p,0]
-print(paramVecADE)
-print(llh_ADE(tmp2[0], X, Y, n, p, nlevels, nraneffs, Dinds, KinshipA, KinshipC))
+toDisplay = np.array(paramVecADE)
+toDisplay[(p+1):,:] = toDisplay[(p+1):,:]*toDisplay[p,0]
+print(toDisplay)
+print(llh_ADE(paramVecADE, X, Y, n, p, nlevels, nraneffs, Dinds, KinshipA, KinshipC, reml=reml, XkXdict=XkXdict))
 print('Done')
 
-varBeta_ADE(paramVecADE, p, KinshipA, KinshipC, nlevels, nraneffs)
+varBeta_ADE(toDisplay, p, KinshipA, KinshipC, nlevels, nraneffs)
 
-L = np.zeros((1,p))
-L[0,0]=1
+for j in np.arange(p):
+    L = np.zeros((1,p))
+    L[0,j]=1
+    
+    swdf = get_swdf_ADE_T2D(L, paramVecADE, X, nlevels, nraneffs, KinshipA, KinshipC, structMat1stDict)
+    print('swdf: ', swdf)
+    T = get_T_ADE_2D(L, X, paramVecADE, KinshipA, KinshipC, nlevels, nraneffs)
+    print('T: ', T)
+    if T < 0:
+        pvalADE = 1-stats.t.cdf(T, swdf)
+    else:
+        pvalADE = stats.t.cdf(-T, swdf)
 
-print('swdf: ', get_swdf_ADE_T2D(L, paramVecADE, X, nlevels, nraneffs, KinshipA, KinshipC, structMat1stDict))
+    if pvalADE < 0.5:
+        pvalADE = 2*pvalADE
+    else:
+        pvalADE = 2*(1-pvalADE)
+
+    print('P: ', pvalADE)
+
 
 t1 = time.time()
-tmp = minimize(llh_ADE, initParams, args=(X, Y, n, p, nlevels, nraneffs, Dinds, KinshipA, KinshipC), method='Nelder-Mead', tol=1e-6)
-
+tmp = minimize(llh_ADE, initParams, args=(X, Y, n, p, nlevels, nraneffs, Dinds, KinshipA, KinshipC, reml, XkXdict), method='Nelder-Mead', tol=1e-6)
 t2 = time.time()
 print(t2-t1)
 
-print('Optimizer result')
+print('Optimizer result 1')
 paramVecOpt = tmp['x'].reshape((p+3),1)
-paramVecOpt[(p+1):,:] = paramVecOpt[(p+1):,:]*paramVecOpt[p,0]
-print(paramVecOpt)
+toDisplay = np.array(paramVecOpt)
+toDisplay[(p+1):,:] = toDisplay[(p+1):,:]*toDisplay[p,0]
+print(toDisplay)
 print(np.array([[tmp['fun']]]))
 
-t1 = time.time()
-tmp = minimize(llh_ADE, initParams, args=(X, Y, n, p, nlevels, nraneffs, Dinds, KinshipA, KinshipC), method='Powell', tol=1e-6)
+varBeta_ADE(toDisplay, p, KinshipA, KinshipC, nlevels, nraneffs)
+for j in np.arange(p):
+    L = np.zeros((1,p))
+    L[0,j]=1
+    
+    swdf = get_swdf_ADE_T2D(L, paramVecOpt, X, nlevels, nraneffs, KinshipA, KinshipC, structMat1stDict)
+    print('swdf: ', swdf)
+    T = get_T_ADE_2D(L, X, paramVecOpt, KinshipA, KinshipC, nlevels, nraneffs)
+    print('T: ', T)
+    if T < 0:
+        pvalOpt = 1-stats.t.cdf(T, swdf)
+    else:
+        pvalOpt = stats.t.cdf(-T, swdf)
 
+    if pvalOpt < 0.5:
+        pvalOpt = 2*pvalOpt
+    else:
+        pvalOpt = 2*(1-pvalOpt)
+
+    print('P: ', pvalOpt)
+
+t1 = time.time()
+tmp = minimize(llh_ADE, initParams, args=(X, Y, n, p, nlevels, nraneffs, Dinds, KinshipA, KinshipC, reml, XkXdict), method='Powell', tol=1e-6)
 t2 = time.time()
 print(t2-t1)
 
 print('Optimizer result 2')
 paramVecOpt = tmp['x'].reshape((p+3),1)
-paramVecOpt[(p+1):,:] = paramVecOpt[(p+1):,:]*paramVecOpt[p,0]
-print(paramVecOpt)
+toDisplay = np.array(paramVecOpt)
+toDisplay[(p+1):,:] = toDisplay[(p+1):,:]*toDisplay[p,0]
+print(toDisplay)
 print(np.array([[tmp['fun']]]))
-varBeta_ADE(paramVecOpt, p, KinshipA, KinshipC, nlevels, nraneffs)
+
+varBeta_ADE(toDisplay, p, KinshipA, KinshipC, nlevels, nraneffs)
+for j in np.arange(p):
+    L = np.zeros((1,p))
+    L[0,j]=1
+    
+    swdf = get_swdf_ADE_T2D(L, paramVecOpt, X, nlevels, nraneffs, KinshipA, KinshipC, structMat1stDict)
+    print('swdf: ', swdf)
+    T = get_T_ADE_2D(L, X, paramVecOpt, KinshipA, KinshipC, nlevels, nraneffs)
+    print('T: ', T)
+    if T < 0:
+        pvalOpt = 1-stats.t.cdf(T, swdf)
+    else:
+        pvalOpt = stats.t.cdf(-T, swdf)
+
+    if pvalOpt < 0.5:
+        pvalOpt = 2*pvalOpt
+    else:
+        pvalOpt = 2*(1-pvalOpt)
+
+    print('P: ', pvalOpt)
 
 
 t1 = time.time()
 betaOLS = np.linalg.pinv(X.transpose() @ X) @ X.transpose() @ Y
 e = Y - X @ betaOLS
-sigmaOLS = np.sqrt(e.transpose() @ e/n)
+if not reml:
+    sigmaOLS = np.sqrt(e.transpose() @ e/n)
+else:
+    sigmaOLS = np.sqrt(e.transpose() @ e/(n-p))
 t2 = time.time()
 print(t2-t1)
 
@@ -601,31 +696,33 @@ sigma2OLS = sigmaOLS**2
 paramVecOLS = np.zeros(((p+3),1))
 paramVecOLS[0:p,:] = betaOLS
 paramVecOLS[p,:] = sigmaOLS[0,0]
+toDisplay = np.array(paramVecOLS)
 
 print('OLS result')
-print(paramVecOLS)
-print(llh_ADE(paramVecOLS, X, Y, n, p, nlevels, nraneffs, Dinds, KinshipA, KinshipC))
-varBeta_ADE(paramVecOLS, p, KinshipA, KinshipC, nlevels, nraneffs)
+print(toDisplay)
+print(llh_ADE(toDisplay, X, Y, n, p, nlevels, nraneffs, Dinds, KinshipA, KinshipC, reml=reml, XkXdict=XkXdict))
+varBeta_ADE(toDisplay, p, KinshipA, KinshipC, nlevels, nraneffs)
 
-
-#for i in np.arange(X.shape[1]):
+for i in np.arange(X.shape[1]):
 
     # Get beta
-#    L = np.zeros((1,X.shape[1]))
-#    L[0,i]=1
+    L = np.zeros((1,X.shape[1]))
+    L[0,i]=1
 
-#    TADE = get_T2D(L, XtX, X.transpose(), DinvIplusZtZDADE, betaADE, sigma2ADE)
-    #get_T2D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2)
-#    df_ADE = get_swdf_T2D(L, DADE, sigma2ADE, XtX, X.transpose(), X, np.eye(n), n, nlevels, nraneffs)
+    TOLS = (L @ betaOLS)/ np.sqrt(sigma2OLS*(L @ np.linalg.pinv(XtX) @ L.transpose()))
 
-#    pvalADE = 10**(-T2P2D(TADE,df_ADE,minlog=-1e20))
+    df_OLS = n-p
 
-#    TOLS = (L @ betaOLS)/ np.sqrt(sigma2OLS*(L @ np.linalg.pinv(XtX) @ L.transpose()))
+    if T < 0:
+        pvalOLS = 1-stats.t.cdf(TOLS, df_OLS)
+    else:
+        pvalOLS = stats.t.cdf(-TOLS, df_OLS)
 
-#    df_OLS = n-p
+    if pvalOLS < 0.5:
+        pvalOLS = 2*pvalOLS
+    else:
+        pvalOLS = 2*(1-pvalOLS)
 
-#    pvalOLS =10**(-T2P2D(TOLS,df_OLS,minlog=-1e20))
-
-#    print('T', TADE, TOLS)
-#    print('p', pvalADE,pvalOLS)
-#    print('df', df_ADE,df_OLS)
+    print('df: ', df_OLS)
+    print('T: ', TOLS)
+    print('pval: ', pvalOLS)

@@ -40,6 +40,8 @@ def testSchoolExample():
     # Read in csv
     dataReduced = pd.read_csv('./schools_reduced.csv')
 
+    print(dataReduced)
+
     # Number of subjects in reduced model
     nr = len(dataReduced)
 
@@ -65,7 +67,7 @@ def testSchoolExample():
     print(Z_red.shape)
 
     # Convergence tolerance
-    tol = 1e-6
+    tol = 1e-9
 
     # nlevels for reduced
     nlevels_red = np.array([len(np.unique(studfac_red)),len(np.unique(tchrfac_red))])
@@ -132,6 +134,9 @@ def testSchoolExample():
     # Run Fisher Scoring
     paramVector_FS,_,nit,llh = SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels_red, nraneffs_red, tol, nr, init_paramVector=None)
     t2 = time.time()
+
+    print(XtX.shape)
+    print(ZtZ.shape)
 
 
     print('SFS')

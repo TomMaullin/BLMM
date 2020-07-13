@@ -26,7 +26,7 @@ from lib.npMatrix3d import *
 # - OutDir: The output directory.
 # - desInd: Integer value between 1 and 3 representing which design to run. The 
 #           designs are as follows:
-#           - Design 1: nlevels=[25], nraneffs=[2]
+#           - Design 1: nlevels=[50], nraneffs=[2]
 #           - Design 2: nlevels=[50,10], nraneffs=[3,2]
 #           - Design 3: nlevels=[100,50,10], nraneffs=[4,3,2]
 #
@@ -50,6 +50,13 @@ def runSim(simInd, desInd, OutDir):
     # Setup
     #===============================================================================
 
+    # Decide on REML or ML
+    REML = False
+
+    # Decide whether we wish to run T statistics/degrees of freedom estimation
+    runDF = False
+
+    # Different designs
     if desInd==1:
         nlevels = np.array([50])
         nraneffs = np.array([2])
@@ -213,20 +220,22 @@ def runSim(simInd, desInd, OutDir):
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
 
     # True log likelihood
-    llh = llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,True,XtX,XtZ,ZtX)[0,0]-n/2*np.log(np.pi)
+    llh = llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,True,XtX,XtZ,ZtX)[0,0]-n/2*np.log(2*np.pi)
 
     results.at['llh','Truth']=llh
 
 
     # MARKER 
 
-    # Contrast vector (1 in last place 0 elsewhere)
-    L = np.zeros(p)
-    L[-1] = 1
-    L = L.reshape(1,p)
+    if runDF:
 
-    v = groundTruth_TDF(X, Z, beta, sigma2, D, L, nlevels, nraneffs, tol)
-    results.at[indexVec[p+6+2*qu],'Truth']=v[0,0]
+        # Contrast vector (1 in last place 0 elsewhere)
+        L = np.zeros(p)
+        L[-1] = 1
+        L = L.reshape(1,p)
+
+        v = groundTruth_TDF(X, Z, beta, sigma2, D, L, nlevels, nraneffs, tol)
+        results.at[indexVec[p+6+2*qu],'Truth']=v[0,0]
 
 
     #===============================================================================
@@ -241,7 +250,7 @@ def runSim(simInd, desInd, OutDir):
 
     # Run Pseudo Simplified Fisher Scoring
     t1 = time.time()
-    paramVector_pSFS,_,nit,llh = pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=True, init_paramVector=None)
+    paramVector_pSFS,_,nit,llh = pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=REML, init_paramVector=None)
     t2 = time.time()
 
     # Record Time and number of iterations
@@ -258,11 +267,12 @@ def runSim(simInd, desInd, OutDir):
     for i in np.arange(4+p,p+qu+4):
         results.at[indexVec[i+qu],'pSFS']=paramVector_pSFS[p,0]*paramVector_pSFS[i-3,0]
             
-    # Get T statistic, p value and Satterthwaite degrees of freedom
-    T,Pval,df = simT(paramVector_pSFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
-    results.at[indexVec[p+4+2*qu],'pSFS']=T[0,0]
-    results.at[indexVec[p+5+2*qu],'pSFS']=Pval[0,0]
-    results.at[indexVec[p+6+2*qu],'pSFS']=df[0,0]
+    if runDF:
+        # Get T statistic, p value and Satterthwaite degrees of freedom
+        T,Pval,df = simT(paramVector_pSFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
+        results.at[indexVec[p+4+2*qu],'pSFS']=T[0,0]
+        results.at[indexVec[p+5+2*qu],'pSFS']=Pval[0,0]
+        results.at[indexVec[p+6+2*qu],'pSFS']=df[0,0]
 
     #===============================================================================
     # cSFS
@@ -270,7 +280,7 @@ def runSim(simInd, desInd, OutDir):
 
     # Run Cholesky Simplified Fisher Scoring
     t1 = time.time()
-    paramVector_cSFS,_,nit,llh = cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=True, init_paramVector=None)
+    paramVector_cSFS,_,nit,llh = cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=REML, init_paramVector=None)
     t2 = time.time()
 
     # Record time and number of iterations
@@ -287,10 +297,11 @@ def runSim(simInd, desInd, OutDir):
         results.at[indexVec[i+qu],'cSFS']=paramVector_cSFS[p,0]*paramVector_cSFS[i-3,0]
 
     # Get T statistic, p value and Satterthwaite degrees of freedom
-    T,Pval,df = simT(paramVector_cSFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
-    results.at[indexVec[p+4+2*qu],'cSFS']=T[0,0]
-    results.at[indexVec[p+5+2*qu],'cSFS']=Pval[0,0]
-    results.at[indexVec[p+6+2*qu],'cSFS']=df[0,0]
+    if runDF:
+        T,Pval,df = simT(paramVector_cSFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
+        results.at[indexVec[p+4+2*qu],'cSFS']=T[0,0]
+        results.at[indexVec[p+5+2*qu],'cSFS']=Pval[0,0]
+        results.at[indexVec[p+6+2*qu],'cSFS']=df[0,0]
 
     #===============================================================================
     # FS
@@ -298,7 +309,7 @@ def runSim(simInd, desInd, OutDir):
 
     # Run Fisher Scoring
     t1 = time.time()
-    paramVector_FS,_,nit,llh = FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=True, init_paramVector=None)
+    paramVector_FS,_,nit,llh = FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=REML, init_paramVector=None)
     t2 = time.time()
 
     # Record time and number of iterations
@@ -315,15 +326,16 @@ def runSim(simInd, desInd, OutDir):
         results.at[indexVec[i+qu],'FS']=paramVector_FS[p,0]*paramVector_FS[i-3,0]
 
     # Get T statistic, p value and Satterthwaite degrees of freedom
-    T,Pval,df = simT(paramVector_FS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n, Hessian=False)
-    results.at[indexVec[p+4+2*qu],'FS']=T[0,0]
-    results.at[indexVec[p+5+2*qu],'FS']=Pval[0,0]
-    results.at[indexVec[p+6+2*qu],'FS']=df[0,0]
+    if runDF:
+        T,Pval,df = simT(paramVector_FS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n, Hessian=False)
+        results.at[indexVec[p+4+2*qu],'FS']=T[0,0]
+        results.at[indexVec[p+5+2*qu],'FS']=Pval[0,0]
+        results.at[indexVec[p+6+2*qu],'FS']=df[0,0]
 
-    T,Pval,df = simT(paramVector_FS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n, Hessian=True)
-    results.at[indexVec[p+4+2*qu],'FS (hess)']=T[0,0]
-    results.at[indexVec[p+5+2*qu],'FS (hess)']=Pval[0,0]
-    results.at[indexVec[p+6+2*qu],'FS (hess)']=df[0,0]
+    # T,Pval,df = simT(paramVector_FS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n, Hessian=True)
+    # results.at[indexVec[p+4+2*qu],'FS (hess)']=T[0,0]
+    # results.at[indexVec[p+5+2*qu],'FS (hess)']=Pval[0,0]
+    # results.at[indexVec[p+6+2*qu],'FS (hess)']=df[0,0]
 
     #===============================================================================
     # SFS
@@ -331,7 +343,7 @@ def runSim(simInd, desInd, OutDir):
 
     # Run Simplified Fisher Scoring
     t1 = time.time()
-    paramVector_SFS,_,nit,llh = SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=True, init_paramVector=None)
+    paramVector_SFS,_,nit,llh = SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=REML, init_paramVector=None)
     t2 = time.time()
 
     # Record time and number of iterations
@@ -348,10 +360,11 @@ def runSim(simInd, desInd, OutDir):
         results.at[indexVec[i+qu],'SFS']=paramVector_SFS[p,0]*paramVector_SFS[i-3,0]
 
     # Get T statistic, p value and Satterthwaite degrees of freedom
-    T,Pval,df = simT(paramVector_SFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
-    results.at[indexVec[p+4+2*qu],'SFS']=T[0,0]
-    results.at[indexVec[p+5+2*qu],'SFS']=Pval[0,0]
-    results.at[indexVec[p+6+2*qu],'SFS']=df[0,0]
+    if runDF:
+        T,Pval,df = simT(paramVector_SFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
+        results.at[indexVec[p+4+2*qu],'SFS']=T[0,0]
+        results.at[indexVec[p+5+2*qu],'SFS']=Pval[0,0]
+        results.at[indexVec[p+6+2*qu],'SFS']=df[0,0]
 
     #===============================================================================
     # pFS
@@ -359,7 +372,7 @@ def runSim(simInd, desInd, OutDir):
 
     # Run Pseudo Fisher Scoring
     t1 = time.time()
-    paramVector_pFS,_,nit,llh = pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=True, init_paramVector=None)
+    paramVector_pFS,_,nit,llh = pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=REML, init_paramVector=None)
     t2 = time.time()
 
     # Record time and number of iterations
@@ -376,10 +389,11 @@ def runSim(simInd, desInd, OutDir):
         results.at[indexVec[i+qu],'pFS']=paramVector_pFS[p,0]*paramVector_pFS[i-3,0]
 
     # Get T statistic, p value and Satterthwaite degrees of freedom
-    T,Pval,df = simT(paramVector_pFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
-    results.at[indexVec[p+4+2*qu],'pFS']=T[0,0]
-    results.at[indexVec[p+5+2*qu],'pFS']=Pval[0,0]
-    results.at[indexVec[p+6+2*qu],'pFS']=df[0,0]
+    if runDF:
+        T,Pval,df = simT(paramVector_pFS, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, nraneffs, nlevels, n)
+        results.at[indexVec[p+4+2*qu],'pFS']=T[0,0]
+        results.at[indexVec[p+5+2*qu],'pFS']=Pval[0,0]
+        results.at[indexVec[p+6+2*qu],'pFS']=df[0,0]
 
     # Save results
     results.to_csv(os.path.join(OutDir,'Sim'+str(simInd)+'_Design'+str(desInd)+'_results.csv'))

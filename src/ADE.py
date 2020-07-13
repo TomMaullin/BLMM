@@ -310,7 +310,7 @@ def pFS_ADE2D(X, Y, nlevels, nraneffs, tol, n, KinshipA, KinshipD, Structmat1stD
             # Work out derivative of D_k
             #-----------------------------------------------------------------------
 
-            # Get the indices for the factors 
+            # Get the indices for the factors
             Ik = fac_indices2D(k, nlevels, nraneffs)
 
             # Get Ek
@@ -403,6 +403,8 @@ def pFS_ADE2D(X, Y, nlevels, nraneffs, tol, n, KinshipA, KinshipD, Structmat1stD
     # Save parameters
     # ------------------------------------------------------------------------------
     paramVector = np.concatenate((beta, np.sqrt(sigma2), vecAE))
+
+    print('Nit: ', nit)
         
     return(paramVector, llhcurr)
 
@@ -417,13 +419,13 @@ def get_swdf_ADE_T2D(L, paramVec, X, nlevels, nraneffs, KinshipA, KinshipC, Stru
     # Work out beta, sigma2 and the vector of variance components
     beta = paramVec[0:p,:]
     sigma2 = paramVec[p,0]**2
-    vecAE = paramVec[(p+1):,:]**2/sigma2
+    vecAE = paramVec[(p+1):,:]
 
     # Get D in dictionary form
     Ddict = dict()
     for k in np.arange(len(nraneffs)):
         # Construct D using sigma^2A and sigma^2D
-        Ddict[k] = vecAE[0,0]*KinshipA[k] + vecAE[1,0]*KinshipC[k]
+        Ddict[k] = vecAE[0,0]**2*KinshipA[k] + vecAE[1,0]**2*KinshipC[k]
 
     # Get S^2 (= Var(L\beta))
     S2 = get_varLB_ADE_2D(L, X, Ddict, sigma2, nlevels, nraneffs)
@@ -566,13 +568,7 @@ def get_dS2_ADE_2D(L, X, Ddict, vecAE, sigma2, nlevels, nraneffs, Structmat1stDi
         dS2[1:,0:1] = dS2[1:,0:1] + Structmat1stDict[k] @ dS2dvechDk.reshape((nraneffs[k]**2,1))
 
     # Multiply by 2vecAE elementwise
-    dS2[1:,0:1] = vecAE*dS2[1:,0:1]
-
-    print('sigma2: ', sigma2)
-    print('vecAE: ', vecAE)
-    print('stcuct: ', Structmat1stDict)
-    print('dS2: ', dS2)
-
+    dS2[1:,0:1] = 2*vecAE*dS2[1:,0:1]
 
     return(dS2)
 
@@ -589,7 +585,7 @@ def get_InfoMat_ADE_2D(Ddict, vecAE, sigma2, n, nlevels, nraneffs, Structmat1stD
     FisherInfoMat = np.zeros((3,3))
 
     # Covariance of dl/dsigma2
-    C = n/(2*(sigma2**2))
+    C = n/(2*sigma2**2)
 
     # Add dl/dsigma2 covariance
     FisherInfoMat[0,0] = C
@@ -603,7 +599,7 @@ def get_InfoMat_ADE_2D(Ddict, vecAE, sigma2, n, nlevels, nraneffs, Structmat1stD
         H = H + Structmat1stDict[k] @ get_covdldDkdsigma2_ADE_2D(k, sigma2, nlevels, nraneffs, Ddict).reshape((nraneffs[k]**2,1))
 
     # Assign to the relevant block
-    FisherInfoMat[1:,0:1] = H
+    FisherInfoMat[1:,0:1] = 2*vecAE*H
     FisherInfoMat[0:1,1:] = FisherInfoMat[1:,0:1].transpose()
 
     # Initial zero matrix to hold F
@@ -622,12 +618,10 @@ def get_InfoMat_ADE_2D(Ddict, vecAE, sigma2, n, nlevels, nraneffs, Structmat1stD
         F = F + forceSym2D(nlevels[k]*Structmat1stDict[k] @ kronTerm @ Structmat1stDict[k].transpose())
 
     # Multiply by 2vecAE elementwise on both sides
-    F = forceSym2D(F)*(vecAE @ vecAE.transpose())
+    F = 2*forceSym2D(F)*(vecAE @ vecAE.transpose())
 
     # Assign to the relevant block
     FisherInfoMat[1:, 1:] = F
-
-    print('FImat: ', FisherInfoMat)
 
     # Return result
     return(FisherInfoMat)
@@ -642,13 +636,46 @@ def get_covdldDkdsigma2_ADE_2D(k, sigma2, nlevels, nraneffs, Ddict):
     lk = nlevels[k]
 
     # Work out block size
-    q = np.sum(nlevels*nraneffs)
     qk = nraneffs[k]
 
     # Obtain sum of Rk = lk*(I+Dk)^(-1)
-    RkSum = nlevels[k]*np.linalg.pinv(np.eye(qk)+Ddict[k])
+    RkSum = lk*np.linalg.pinv(np.eye(qk)+Ddict[k])
 
     # save and return
     covdldDdldsigma2 = 1/(2*sigma2) * mat2vec2D(RkSum)  
 
     return(covdldDdldsigma2)
+
+
+
+def get_T_ADE_2D(L, X, paramVec, KinshipA, KinshipC, nlevels, nraneffs):
+
+    # Work out n and p
+    n = X.shape[0]
+    p = X.shape[1]
+
+    # Work out beta, sigma2 and the vector of variance components
+    beta = paramVec[0:p,:]
+    sigma2 = paramVec[p,0]**2
+    vecAE = paramVec[(p+1):,:]
+
+    # Get D in dictionary form
+    Ddict = dict()
+    for k in np.arange(len(nraneffs)):
+        # Construct D using sigma^2A and sigma^2D
+        Ddict[k] = vecAE[0,0]**2*KinshipA[k] + vecAE[1,0]**2*KinshipC[k]
+    
+    # Work out the rank of L
+    rL = np.linalg.matrix_rank(L)
+
+    # Work out Lbeta
+    LB = L @ beta
+
+    # Work out se(T)
+    varLB = get_varLB_ADE_2D(L, X, Ddict, sigma2, nlevels, nraneffs)
+
+    # Work out T
+    T = LB/np.sqrt(varLB)
+
+    # Return T
+    return(T)
