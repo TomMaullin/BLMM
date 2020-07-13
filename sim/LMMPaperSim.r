@@ -17,7 +17,7 @@ if (!timing){
 }
 
 # REML
-reml <- TRUE
+reml <- FALSE
 
 
 #trace(name_of_function, edit = T)
