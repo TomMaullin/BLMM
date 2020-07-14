@@ -405,7 +405,7 @@ def runSim(simInd, desInd, OutDir):
 
 
 
-def timings(desInd, OutDir):
+def performanceTables(desInd, OutDir):
 
     # Make row indices
     row = ['sim'+str(i) for i in range(1,1001)]
@@ -468,6 +468,34 @@ def timings(desInd, OutDir):
     nitTable.to_csv(os.path.join(OutDir,'nitTable.csv'))
 
     print(nitTable.describe().to_string())
+
+    #-----------------------------------------------------------------------------
+    # Work out log-likelihood stats
+    #-----------------------------------------------------------------------------
+
+    # Make timing table
+    llhTable = pd.DataFrame(index=row, columns=col)
+
+    # Make sure pandas knows the table is numeric
+    llhTable = nitTable.apply(pd.to_numeric)
+
+    for simInd in range(1,101):
+        
+        # Name of results file
+        results_file = os.path.join(OutDir,'Sim'+str(simInd)+'_Design'+str(desInd)+'_results.csv')
+
+        # Read in results file
+        results_table = pd.read_csv(results_file, index_col=0)
+
+        # Get the log-likelihoods
+        simllh = results_table.loc['nit','FS':]
+
+        # Add them to the table
+        llhTable.loc['sim'+str(simInd),:]=simllh
+
+    llhTable.to_csv(os.path.join(OutDir,'llhTable.csv'))
+
+    print(llhTable.describe().to_string())
 
 def differenceMetrics(desInd, OutDir):
 
