@@ -488,7 +488,7 @@ def performanceTables(desInd, OutDir):
         results_table = pd.read_csv(results_file, index_col=0)
 
         # Get the log-likelihoods
-        simllh = results_table.loc['nit','FS':]
+        simllh = results_table.loc['llh','FS':]
 
         # Add them to the table
         llhTable.loc['sim'+str(simInd),:]=simllh
@@ -539,15 +539,15 @@ def differenceMetrics(desInd, OutDir):
             simVar = results_table.loc['sigma2*D1,1':'sigma2*D3,3',:]
 
         # Work out the maximum relative differences for betas
-        maxRelDiffBetas = (simBetas.sub(simBetas['lmer'], axis=0)).abs().div(results_table.loc['beta1':'beta5','lmer'], axis=0).max()
+        maxRelDiffBetas = (simBetas.sub(simBetas['lmer'], axis=0)).abs().max()#.div(results_table.loc['beta1':'beta5','lmer'], axis=0).max()
 
         # Work out the maximum relative differences for sigma2D
         if desInd==1:
-            maxRelDiffVar = (simVar.sub(simVar['lmer'], axis=0)).abs().div(results_table.loc['sigma2*D1,1':'sigma2*D1,3','lmer'], axis=0).max()
+            maxRelDiffVar = (simVar.sub(simVar['lmer'], axis=0)).abs().max()#.div(results_table.loc['sigma2*D1,1':'sigma2*D1,3','lmer'], axis=0).max()
         if desInd==2:
-            maxRelDiffVar = (simVar.sub(simVar['lmer'], axis=0)).abs().div(results_table.loc['sigma2*D1,1':'sigma2*D2,3','lmer'], axis=0).max()
+            maxRelDiffVar = (simVar.sub(simVar['lmer'], axis=0)).abs().max()#.div(results_table.loc['sigma2*D1,1':'sigma2*D2,3','lmer'], axis=0).max()
         if desInd==3:
-            maxRelDiffVar = (simVar.sub(simVar['lmer'], axis=0)).abs().div(results_table.loc['sigma2*D1,1':'sigma2*D3,3','lmer'], axis=0).max()
+            maxRelDiffVar = (simVar.sub(simVar['lmer'], axis=0)).abs().max()#.div(results_table.loc['sigma2*D1,1':'sigma2*D3,3','lmer'], axis=0).max()
             
         # Add them to the tables
         diffTableBetas.loc['sim'+str(simInd),:]=maxRelDiffBetas
