@@ -83,11 +83,12 @@ def runSim(simInd, desInd, OutDir):
     if simInd == 1 or not runDF:
 
         # Delete any factor vectors from a previous run.
-        for i in range(len(nlevels)):
+        if runDF:
+            for i in range(len(nlevels)):
 
-            if os.path.isfile(os.path.join(OutDir, 'fv_' + str(desInd) + '_' + str(i) + '.csv')):
+                if os.path.isfile(os.path.join(OutDir, 'fv_' + str(desInd) + '_' + str(i) + '.csv')):
 
-                os.remove(os.path.join(OutDir, 'fv_' + str(desInd) + '_' + str(i) + '.csv'))
+                    os.remove(os.path.join(OutDir, 'fv_' + str(desInd) + '_' + str(i) + '.csv'))
 
         fvs = None
         X = None
