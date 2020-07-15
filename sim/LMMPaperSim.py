@@ -687,11 +687,11 @@ def differenceMetrics(desInd, OutDir):
 
         # Work out the maximum relative differences for sigma2D
         if desInd==1:
-            maxRelDiffVar = (simVar.sub(simVar['lmer'], axis=0)).abs().div(results_table.loc['sigma2*D1,1':'sigma2*D1,3','lmer'], axis=0).max()
+            maxRelDiffVar = (simVar.sub(simVar['lmer'], axis=0)).abs().div(simVar.plus(results_table.loc['sigma2*D1,1':'sigma2*D1,3','Truth'])/2).max()
         if desInd==2:
-            maxRelDiffVar = (simVar.sub(simVar['lmer'], axis=0)).abs().div(results_table.loc['sigma2*D1,1':'sigma2*D2,3','lmer'], axis=0).max()
+            maxRelDiffVar = (simVar.sub(simVar['lmer'], axis=0)).abs().div(simVar.plus(results_table.loc['sigma2*D1,1':'sigma2*D2,3','Truth'])/2).max()
         if desInd==3:
-            maxRelDiffVar = (simVar.sub(simVar['lmer'], axis=0)).abs().div(results_table.loc['sigma2*D1,1':'sigma2*D3,3','lmer'], axis=0).max()
+            maxRelDiffVar = (simVar.sub(simVar['lmer'], axis=0)).abs().div(simVar.plus(results_table.loc['sigma2*D1,1':'sigma2*D3,3','Truth'])/2).max()
             
         # Add them to the tables
         diffTableBetas.loc['sim'+str(simInd),:]=maxRelDiffBetas
@@ -741,11 +741,11 @@ def differenceMetrics(desInd, OutDir):
 
         # Work out the maximum relative differences for sigma2D
         if desInd==1:
-            maxRelDiffVar = (simVar.sub(simVar['Truth'], axis=0)).abs().div(results_table.loc['sigma2*D1,1':'sigma2*D1,3','Truth'], axis=0).dropna().max()
+            maxRelDiffVar = (simVar.sub(simVar['Truth'], axis=0)).abs().div(simVar.plus(results_table.loc['sigma2*D1,1':'sigma2*D1,3','Truth'])/2).dropna().max()
         if desInd==2:
-            maxRelDiffVar = (simVar.sub(simVar['Truth'], axis=0)).abs().div(results_table.loc['sigma2*D1,1':'sigma2*D2,3','Truth'], axis=0).dropna().max()
+            maxRelDiffVar = (simVar.sub(simVar['Truth'], axis=0)).abs().div(simVar.plus(results_table.loc['sigma2*D1,1':'sigma2*D1,3','Truth'])/2).dropna().max()
         if desInd==3:
-            maxRelDiffVar = (simVar.sub(simVar['Truth'], axis=0)).abs().div(results_table.loc['sigma2*D1,1':'sigma2*D3,3','Truth'], axis=0).dropna().max()
+            maxRelDiffVar = (simVar.sub(simVar['Truth'], axis=0)).abs().div(simVar.plus(results_table.loc['sigma2*D1,1':'sigma2*D1,3','Truth'])/2).dropna().max()
             
         # Add them to the tables
         diffTableBetas.loc['sim'+str(simInd),:]=maxRelDiffBetas
