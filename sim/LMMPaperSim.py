@@ -559,7 +559,7 @@ def differenceMetrics(desInd, OutDir):
         results_file = os.path.join(OutDir,'Sim'+str(simInd)+'_Design'+str(desInd)+'_results.csv')
 
         # Read in results file
-        results_table = pd.read_csv(results_file, index_col=0)
+        results_table = pd.read_csv(results_file, index_col=0).drop(['FS..hess.'], axis=1)
 
         # Get the betas
         simBetas = results_table.loc['beta1':'beta5',:]
@@ -613,7 +613,7 @@ def differenceMetrics(desInd, OutDir):
         results_file = os.path.join(OutDir,'Sim'+str(simInd)+'_Design'+str(desInd)+'_results.csv')
 
         # Read in results file
-        results_table = pd.read_csv(results_file, index_col=0)
+        results_table = pd.read_csv(results_file, index_col=0).drop(['FS..hess.'], axis=1)
 
         # Get the betas
         simBetas = results_table.loc['beta1':'beta5',:]
@@ -667,7 +667,7 @@ def differenceMetrics(desInd, OutDir):
         results_file = os.path.join(OutDir,'Sim'+str(simInd)+'_Design'+str(desInd)+'_results.csv')
 
         # Read in results file
-        results_table = pd.read_csv(results_file, index_col=0)
+        results_table = pd.read_csv(results_file, index_col=0).drop(['FS..hess.'], axis=1)
 
         # Get the betas
         simBetas = results_table.loc['beta1':'beta5',:]
@@ -721,7 +721,7 @@ def differenceMetrics(desInd, OutDir):
         results_file = os.path.join(OutDir,'Sim'+str(simInd)+'_Design'+str(desInd)+'_results.csv')
 
         # Read in results file
-        results_table = pd.read_csv(results_file, index_col=0)
+        results_table = pd.read_csv(results_file, index_col=0).drop(['FS..hess.'], axis=1)
 
         # Get the betas
         simBetas = results_table.loc['beta1':'beta5',:]
