@@ -75,7 +75,11 @@ for (simInd in 1:1000){
     
     results[1,'lmer']<-lmertime2
     results[2,'lmer'] <- opt$feval
-    results[3,'lmer']<-logLik(m)[1]
+    if (!reml){
+      results[3,'lmer']<-logLik(m)[1]
+    } else {
+      results[3,'lmer']<-logLik(m)[1]/2
+    }
     results[4:8,'lmer'] <- fixef(m)
     results[9,'lmer']<-as.data.frame(VarCorr(m))$vcov[20]
     
@@ -162,7 +166,11 @@ for (simInd in 1:1000){
     
     results[1,'lmer']<-lmertime
     results[2,'lmer'] <- opt$feval
-    results[3,'lmer']<-logLik(m)[1]
+    if (!reml){
+      results[3,'lmer']<-logLik(m)[1]
+    } else {
+      results[3,'lmer']<-logLik(m)[1]/2
+    }
     results[4:8,'lmer'] <- fixef(m)
     results[9,'lmer']<-as.data.frame(VarCorr(m))$vcov[10]
     
@@ -241,7 +249,11 @@ for (simInd in 1:1000){
     
     results[1,'lmer']<-lmertime
     results[2,'lmer'] <- opt$feval
-    results[3,'lmer']<-logLik(m)[1]
+    if (!reml){
+      results[3,'lmer']<-logLik(m)[1]
+    } else {
+      results[3,'lmer']<-logLik(m)[1]/2
+    }
     results[4:8,'lmer'] <- fixef(m)
     results[9,'lmer']<-as.data.frame(VarCorr(m))$vcov[4]
     

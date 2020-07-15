@@ -542,7 +542,7 @@ def differenceMetrics(desInd, OutDir):
     col = ['FS','pFS','SFS','pSFS','cSFS','lmer']
 
     #-----------------------------------------------------------------------------
-    # Work out difference metrics for lmer
+    # Work out absolute difference metrics for lmer
     #-----------------------------------------------------------------------------
 
     # Make difference tables
@@ -592,8 +592,119 @@ def differenceMetrics(desInd, OutDir):
     print(diffTableBetas.describe().to_string())
     print(diffTableVar.describe().to_string())
 
+    diffTableVar.to_csv(os.path.join(OutDir,'diffTableVar_lmer_abs.csv'))
+    diffTableBetas.to_csv(os.path.join(OutDir,'diffTableBetas_lmer_abs.csv'))
+
     #-----------------------------------------------------------------------------
-    # Work out difference metrics for Truth
+    # Work out absolute difference metrics for Truth
+    #-----------------------------------------------------------------------------
+
+    # Make difference tables
+    diffTableBetas = pd.DataFrame(index=row, columns=col)
+    diffTableVar = pd.DataFrame(index=row, columns=col)
+
+    # Make sure pandas knows the table is numeric
+    diffTableBetas = diffTableBetas.apply(pd.to_numeric)
+    diffTableVar = diffTableVar.apply(pd.to_numeric)
+
+    for simInd in range(1,1001):
+        
+        # Name of results file
+        results_file = os.path.join(OutDir,'Sim'+str(simInd)+'_Design'+str(desInd)+'_results.csv')
+
+        # Read in results file
+        results_table = pd.read_csv(results_file, index_col=0)
+
+        # Get the betas
+        simBetas = results_table.loc['beta1':'beta5',:]
+
+        if desInd==1:
+            # Get the variance components
+            simVar = results_table.loc['sigma2*D1,1':'sigma2*D1,3',:]
+        if desInd==2:
+            # Get the variance components
+            simVar = results_table.loc['sigma2*D1,1':'sigma2*D2,3',:]
+        if desInd==3:
+            # Get the variance components
+            simVar = results_table.loc['sigma2*D1,1':'sigma2*D3,3',:]
+
+        # Work out the maximum relative differences for betas
+        maxRelDiffBetas = (simBetas.sub(simBetas['Truth'], axis=0)).abs().max()#.div(results_table.loc['beta1':'beta5','Truth'], axis=0).dropna().max()
+
+        # Work out the maximum relative differences for sigma2D
+        if desInd==1:
+            maxRelDiffVar = (simVar.sub(simVar['Truth'], axis=0)).abs().max()#.div(results_table.loc['sigma2*D1,1':'sigma2*D1,3','Truth'], axis=0).dropna().max()
+        if desInd==2:
+            maxRelDiffVar = (simVar.sub(simVar['Truth'], axis=0)).abs().max()#.div(results_table.loc['sigma2*D1,1':'sigma2*D2,3','Truth'], axis=0).dropna().max()
+        if desInd==3:
+            maxRelDiffVar = (simVar.sub(simVar['Truth'], axis=0)).abs().max()#.div(results_table.loc['sigma2*D1,1':'sigma2*D3,3','Truth'], axis=0).dropna().max()
+            
+        # Add them to the tables
+        diffTableBetas.loc['sim'+str(simInd),:]=maxRelDiffBetas
+        diffTableVar.loc['sim'+str(simInd),:]=maxRelDiffVar
+
+    diffTableVar.to_csv(os.path.join(OutDir,'diffTableVar_truth_abs.csv'))
+    diffTableBetas.to_csv(os.path.join(OutDir,'diffTableBetas_truth_abs.csv'))
+
+    print(diffTableBetas.describe().to_string())
+    print(diffTableVar.describe().to_string())
+
+    #-----------------------------------------------------------------------------
+    # Work out relative difference metrics for lmer
+    #-----------------------------------------------------------------------------
+
+    # Make difference tables
+    diffTableBetas = pd.DataFrame(index=row, columns=col)
+    diffTableVar = pd.DataFrame(index=row, columns=col)
+
+    # Make sure pandas knows the table is numeric
+    diffTableBetas = diffTableBetas.apply(pd.to_numeric)
+    diffTableVar = diffTableVar.apply(pd.to_numeric)
+
+    for simInd in range(1,1001):
+        
+        # Name of results file
+        results_file = os.path.join(OutDir,'Sim'+str(simInd)+'_Design'+str(desInd)+'_results.csv')
+
+        # Read in results file
+        results_table = pd.read_csv(results_file, index_col=0)
+
+        # Get the betas
+        simBetas = results_table.loc['beta1':'beta5',:]
+
+        if desInd==1:
+            # Get the variance components
+            simVar = results_table.loc['sigma2*D1,1':'sigma2*D1,3',:]
+        if desInd==2:
+            # Get the variance components
+            simVar = results_table.loc['sigma2*D1,1':'sigma2*D2,3',:]
+        if desInd==3:
+            # Get the variance components
+            simVar = results_table.loc['sigma2*D1,1':'sigma2*D3,3',:]
+
+        # Work out the maximum relative differences for betas
+        maxRelDiffBetas = (simBetas.sub(simBetas['lmer'], axis=0)).abs().div(results_table.loc['beta1':'beta5','lmer'], axis=0).max()
+
+        # Work out the maximum relative differences for sigma2D
+        if desInd==1:
+            maxRelDiffVar = (simVar.sub(simVar['lmer'], axis=0)).abs().div(results_table.loc['sigma2*D1,1':'sigma2*D1,3','lmer'], axis=0).max()
+        if desInd==2:
+            maxRelDiffVar = (simVar.sub(simVar['lmer'], axis=0)).abs().div(results_table.loc['sigma2*D1,1':'sigma2*D2,3','lmer'], axis=0).max()
+        if desInd==3:
+            maxRelDiffVar = (simVar.sub(simVar['lmer'], axis=0)).abs().div(results_table.loc['sigma2*D1,1':'sigma2*D3,3','lmer'], axis=0).max()
+            
+        # Add them to the tables
+        diffTableBetas.loc['sim'+str(simInd),:]=maxRelDiffBetas
+        diffTableVar.loc['sim'+str(simInd),:]=maxRelDiffVar
+
+    print(diffTableBetas.describe().to_string())
+    print(diffTableVar.describe().to_string())
+
+    diffTableVar.to_csv(os.path.join(OutDir,'diffTableVar_lmer_rel.csv'))
+    diffTableBetas.to_csv(os.path.join(OutDir,'diffTableBetas_lmer_rel.csv'))
+
+    #-----------------------------------------------------------------------------
+    # Work out relative difference metrics for Truth
     #-----------------------------------------------------------------------------
 
     # Make difference tables
@@ -639,6 +750,9 @@ def differenceMetrics(desInd, OutDir):
         # Add them to the tables
         diffTableBetas.loc['sim'+str(simInd),:]=maxRelDiffBetas
         diffTableVar.loc['sim'+str(simInd),:]=maxRelDiffVar
+
+    diffTableVar.to_csv(os.path.join(OutDir,'diffTableVar_truth_rel.csv'))
+    diffTableBetas.to_csv(os.path.join(OutDir,'diffTableBetas_truth_rel.csv'))
 
     print(diffTableBetas.describe().to_string())
     print(diffTableVar.describe().to_string())
