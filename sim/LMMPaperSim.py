@@ -225,7 +225,13 @@ def runSim(simInd, desInd, OutDir):
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
 
     # True log likelihood
-    llh = llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,True,XtX,XtZ,ZtX)[0,0]-n/2*np.log(2*np.pi)
+    llh = llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,REML,XtX,XtZ,ZtX)[0,0]
+
+    # Add back on constant term
+    if REML:
+        llh = llh - (n-p)/2*np.log(2*np.pi)
+    else:
+        llh = llh - n/2*np.log(2*np.pi)
 
     results.at['llh','Truth']=llh
 
@@ -258,10 +264,16 @@ def runSim(simInd, desInd, OutDir):
     paramVector_pSFS,_,nit,llh = pSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=REML, init_paramVector=None)
     t2 = time.time()
 
+    # Add back on constant term for llh
+    if REML:
+        llh = llh - (n-p)/2*np.log(2*np.pi)
+    else:
+        llh = llh - n/2*np.log(2*np.pi)
+
     # Record Time and number of iterations
     results.at['Time','pSFS']=t2-t1
     results.at['nit','pSFS']=nit
-    results.at['llh','pSFS']=llh-n/2*np.log(2*np.pi)
+    results.at['llh','pSFS']=llh
 
     # Record parameters
     for i in np.arange(3,p+qu+4):
@@ -288,10 +300,16 @@ def runSim(simInd, desInd, OutDir):
     paramVector_cSFS,_,nit,llh = cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=REML, init_paramVector=None)
     t2 = time.time()
 
+    # Add back on constant term for llh
+    if REML:
+        llh = llh - (n-p)/2*np.log(2*np.pi)
+    else:
+        llh = llh - n/2*np.log(2*np.pi)
+
     # Record time and number of iterations
     results.at['Time','cSFS']=t2-t1
     results.at['nit','cSFS']=nit
-    results.at['llh','cSFS']=llh-n/2*np.log(2*np.pi)
+    results.at['llh','cSFS']=llh
     
     # Save parameters
     for i in np.arange(3,p+qu+4):
@@ -317,10 +335,16 @@ def runSim(simInd, desInd, OutDir):
     paramVector_FS,_,nit,llh = FS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=REML, init_paramVector=None)
     t2 = time.time()
 
+    # Add back on constant term for llh
+    if REML:
+        llh = llh - (n-p)/2*np.log(2*np.pi)
+    else:
+        llh = llh - n/2*np.log(2*np.pi)
+
     # Record time and number of iterations
     results.at['Time','FS']=t2-t1
     results.at['nit','FS']=nit
-    results.at['llh','FS']=llh-n/2*np.log(2*np.pi)
+    results.at['llh','FS']=llh
     
     # Save parameters
     for i in np.arange(3,p+qu+4):
@@ -351,10 +375,16 @@ def runSim(simInd, desInd, OutDir):
     paramVector_SFS,_,nit,llh = SFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=REML, init_paramVector=None)
     t2 = time.time()
 
+    # Add back on constant term for llh
+    if REML:
+        llh = llh - (n-p)/2*np.log(2*np.pi)
+    else:
+        llh = llh - n/2*np.log(2*np.pi)
+
     # Record time and number of iterations
     results.at['Time','SFS']=t2-t1
     results.at['nit','SFS']=nit
-    results.at['llh','SFS']=llh-n/2*np.log(2*np.pi)
+    results.at['llh','SFS']=llh
 
     # Save parameters
     for i in np.arange(3,p+qu+4):
@@ -380,10 +410,16 @@ def runSim(simInd, desInd, OutDir):
     paramVector_pFS,_,nit,llh = pFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=REML, init_paramVector=None)
     t2 = time.time()
 
+    # Add back on constant term for llh
+    if REML:
+        llh = llh - (n-p)/2*np.log(2*np.pi)
+    else:
+        llh = llh - n/2*np.log(2*np.pi)
+
     # Record time and number of iterations
     results.at['Time','pFS']=t2-t1
     results.at['nit','pFS']=nit
-    results.at['llh','pFS']=llh-n/2*np.log(2*np.pi)
+    results.at['llh','pFS']=llh
 
     # Save parameters
     for i in np.arange(3,p+qu+4):
