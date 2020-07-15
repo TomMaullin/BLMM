@@ -451,7 +451,7 @@ def performanceTables(desInd, OutDir):
     # Make sure pandas knows the table is numeric
     nitTable = nitTable.apply(pd.to_numeric)
 
-    for simInd in range(1,101):
+    for simInd in range(1,1001):
         
         # Name of results file
         results_file = os.path.join(OutDir,'Sim'+str(simInd)+'_Design'+str(desInd)+'_results.csv')
@@ -479,7 +479,7 @@ def performanceTables(desInd, OutDir):
     # Make sure pandas knows the table is numeric
     llhTable = nitTable.apply(pd.to_numeric)
 
-    for simInd in range(1,101):
+    for simInd in range(1,1001):
         
         # Name of results file
         results_file = os.path.join(OutDir,'Sim'+str(simInd)+'_Design'+str(desInd)+'_results.csv')
