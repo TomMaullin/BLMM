@@ -317,7 +317,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             #-----------------------------------------------------------------------
 
             # Calculate the update step
-            update = lamTemp*np.linalg.pinv(forceSym2D(covdldcholk)) @ dldcholk
+            update = np.linalg.pinv(forceSym2D(covdldcholk)) @ dldcholk
 
             # Boolean to say whether we have updated or not
             updated = False
@@ -336,7 +336,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
                 diagElsPrev = np.diag(choldict[k])
 
                 # Perform the proposed update
-                newCholFactor = vechTri2mat2D(mat2vechTri2D(cholDict[k]) + update)
+                newCholFactor = vechTri2mat2D(mat2vechTri2D(cholDict[k]) + lamTemp*update)
 
                 # Get the new diagonal elements
                 diagElsCurr = np.diag(newCholFactor)
