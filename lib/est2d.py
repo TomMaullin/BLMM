@@ -327,13 +327,21 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             # carry through to the next iteration)
             lamTemp = lam
 
+            tmpit = 1
+
             # Keep updating and checking if we have seen a sign change on the diagonal
             # of the cholesky factor (if we have we have crossed a discontinuous point
             # in the parameter space and must backtrack a little)
             while not updated:
 
+
+                tmpit = tmpit+1
+                
                 # Get the current diagonal elements of the cholesky decomposition
                 diagElsPrev = np.diag(cholDict[k])
+
+                print('in loop: ', diagElsPrev)
+                print(diagElsPrev)
 
                 # Perform the proposed update
                 newCholFactor = vechTri2mat2D(mat2vechTri2D(cholDict[k]) + lamTemp*update)
@@ -341,8 +349,12 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
                 # Get the new diagonal elements
                 diagElsCurr = np.diag(newCholFactor)
 
+                print('in loop2: ', diagElsCurr)
+
                 # Check whether any of the diagonal elements have changed sign
                 diagSame = np.all(np.float32(np.sign(diagElsCurr)*np.sign(np.diag(diagElsPrev))==1))
+
+                print('diagSame: ', diagElsCurr)
 
                 # If any did change we halve lambda and try applying the update again
                 if not diagSame:
@@ -350,6 +362,9 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
                 else:
                     updated = True
         
+                if tmpit > 100:
+                    break
+
             #-----------------------------------------------------------------------
             # Update D_k and chol_k
             #-----------------------------------------------------------------------
