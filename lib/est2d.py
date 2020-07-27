@@ -198,9 +198,9 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         cholDict = dict()
         for k in np.arange(len(nraneffs)):
 
-            # We just initialize to identity for cholesky.
-            cholDict[k] = np.eye(nraneffs[k])
-            Ddict[k] = np.eye(nraneffs[k])
+            # Initialize D and chol factor for factor k
+            Ddict[k] = makeDpd2D(initDk2D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict))
+            cholDict[k] = np.linalg.cholesky(Ddict[k])
 
         # Matrix version
         D = scipy.sparse.lil_matrix((q,q))
