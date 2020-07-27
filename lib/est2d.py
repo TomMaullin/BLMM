@@ -333,7 +333,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             while not updated:
 
                 # Get the current diagonal elements of the cholesky decomposition
-                diagElsPrev = np.diag(choldict[k])
+                diagElsPrev = np.diag(cholDict[k])
 
                 # Perform the proposed update
                 newCholFactor = vechTri2mat2D(mat2vechTri2D(cholDict[k]) + lamTemp*update)
