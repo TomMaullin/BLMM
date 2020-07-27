@@ -315,12 +315,45 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             #-----------------------------------------------------------------------
             # Perform update
             #-----------------------------------------------------------------------
-            update = lam*np.linalg.pinv(forceSym2D(covdldcholk)) @ dldcholk #lam*np.linalg.solve(forceSym2D(covdldcholk), dldcholk)
+
+            # Calculate the update step
+            update = lamTemp*np.linalg.pinv(forceSym2D(covdldcholk)) @ dldcholk
+
+            # Boolean to say whether we have updated or not
+            updated = False
+
+            # Temporary lambda (we only half this lambda if optimization falls off the 
+            # side of continous space in this iteration - this lambdas value won't 
+            # carry through to the next iteration)
+            lamTemp = lam
+
+            # Keep updating and checking if we have seen a sign change on the diagonal
+            # of the cholesky factor (if we have we have crossed a discontinuous point
+            # in the parameter space and must backtrack a little)
+            while not updated:
+
+                # Get the current diagonal elements of the cholesky decomposition
+                diagElsPrev = np.diag(choldict[k])
+
+                # Perform the proposed update
+                newCholFactor = vechTri2mat2D(mat2vechTri2D(cholDict[k]) + update)
+
+                # Get the new diagonal elements
+                diagElsCurr = np.diag(newCholFactor)
+
+                # Check whether any of the diagonal elements have changed sign
+                diagSame = np.all(np.float32(np.sign(diagElsCurr)*np.sign(np.diag(diagElsPrev))==1))
+
+                # If any did change we halve lambda and try applying the update again
+                if not diagSame:
+                    lamTemp = lamTemp/2
+                else:
+                    updated = True
         
             #-----------------------------------------------------------------------
             # Update D_k and chol_k
             #-----------------------------------------------------------------------
-            cholDict[k] = vechTri2mat2D(mat2vechTri2D(cholDict[k]) + update)
+            cholDict[k] = newCholFactor
             Ddict[k] = cholDict[k] @ cholDict[k].transpose()
 
             # Add D_k back into D and recompute DinvIplusZtZD
