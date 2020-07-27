@@ -332,6 +332,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             # Keep updating and checking if we have seen a sign change on the diagonal
             # of the cholesky factor (if we have we have crossed a discontinuous point
             # in the parameter space and must backtrack a little)
+            print('here3')
             while not updated:
 
 
@@ -355,10 +356,13 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
 
                 print('diagSame: ', diagSame)
 
+                print('here0')
                 # If any did change we halve lambda and try applying the update again
                 if not diagSame:
+                    print('here1')
                     lamTemp = lamTemp/2
                 else:
+                    print('here2')
                     updated = True
         
                 # if tmpit > 100:
