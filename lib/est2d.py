@@ -336,13 +336,12 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
 
 
                 tmpit = tmpit+1
-                
+
                 # Get the current diagonal elements of the cholesky decomposition
                 diagElsPrev = np.diag(cholDict[k])
 
                 print('in loop: ', diagElsPrev)
-                print(diagElsPrev)
-
+                
                 # Perform the proposed update
                 newCholFactor = vechTri2mat2D(mat2vechTri2D(cholDict[k]) + lamTemp*update)
 
@@ -354,7 +353,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
                 # Check whether any of the diagonal elements have changed sign
                 diagSame = np.all(np.float32(np.sign(diagElsCurr)*np.sign(np.diag(diagElsPrev))==1))
 
-                print('diagSame: ', diagElsCurr)
+                print('diagSame: ', diagSame)
 
                 # If any did change we halve lambda and try applying the update again
                 if not diagSame:
