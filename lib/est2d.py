@@ -341,7 +341,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
                 diagElsPrev = np.diag(cholDict[k])
 
                 print('in loop: ', diagElsPrev)
-                
+
                 # Perform the proposed update
                 newCholFactor = vechTri2mat2D(mat2vechTri2D(cholDict[k]) + lamTemp*update)
 
@@ -351,7 +351,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
                 print('in loop2: ', diagElsCurr)
 
                 # Check whether any of the diagonal elements have changed sign
-                diagSame = np.all(np.float32(np.sign(diagElsCurr)*np.sign(np.diag(diagElsPrev))==1))
+                diagSame = np.all(np.float32(np.sign(diagElsCurr)*np.sign(diagElsPrev)==1))
 
                 print('diagSame: ', diagSame)
 
@@ -361,8 +361,8 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
                 else:
                     updated = True
         
-                if tmpit > 100:
-                    break
+                # if tmpit > 100:
+                #     break
 
             #-----------------------------------------------------------------------
             # Update D_k and chol_k
