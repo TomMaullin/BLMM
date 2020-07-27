@@ -350,6 +350,11 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         llhcurr = llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,reml,XtX,XtZ,ZtX)[0,0]
         if llhprev>llhcurr:
             lam = lam/2
+
+            print(np.linalg.matrix_rank(cholDict[0]))
+            print(np.linalg.matrix_rank(cholDict[1]))
+            print(np.linalg.matrix_rank(cholDict[2]))
+
             print(cholDict[0])
             print(cholDict[1])
             print(cholDict[2])
