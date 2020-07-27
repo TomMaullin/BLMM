@@ -348,8 +348,15 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # Update the step size and log likelihood
         #---------------------------------------------------------------------------
         llhcurr = llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,reml,XtX,XtZ,ZtX)[0,0]
+    
+        print(np.all(np.sign(np.diag(cholDict[0]))*np.sign(np.diag(prevchol[0]))==1))
+        print(np.all(np.sign(np.diag(cholDict[1]))*np.sign(np.diag(prevchol[1]))==1))
+        print(np.all(np.sign(np.diag(cholDict[2]))*np.sign(np.diag(prevchol[2]))==1))
         if llhprev>llhcurr:
             lam = lam/2
+
+            print(np.any(cholDict[0]-prevchol[0]))
+
 
             print(np.linalg.matrix_rank(cholDict[0]))
             print(np.linalg.matrix_rank(cholDict[1]))
@@ -367,6 +374,8 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             print('llhprev: ', llhprev)
 
         print('llhcurr: ', llhcurr)
+
+        prevchol = cholDict
 
     #-------------------------------------------------------------------------------
     # Save parameter vector
