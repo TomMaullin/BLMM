@@ -351,6 +351,10 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         if llhprev>llhcurr:
             lam = lam/2
 
+            print('llhprev: ', llhprev)
+
+        print('llhcurr: ', llhcurr)
+
     #-------------------------------------------------------------------------------
     # Save parameter vector
     #-------------------------------------------------------------------------------
