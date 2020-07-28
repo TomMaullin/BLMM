@@ -213,8 +213,6 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
                 counter = counter + 1
         D = D.toarray()
 
-    
-    prevchol = dict(cholDict)
 
     # ------------------------------------------------------------------------------
     # Obtain D(I+Z'ZD)^(-1)
@@ -318,76 +316,12 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             #-----------------------------------------------------------------------
             # Perform update
             #-----------------------------------------------------------------------
-
-            # Calculate the update step
-            update = np.linalg.pinv(forceSym2D(covdldcholk))*(mat2vechTri2D(cholDict[k]) @ mat2vechTri2D(cholDict[k]).transpose()) @ mat2vechTri2D(cholDict[k])*dldcholk
-
-            # Perform the proposed update
-            newCholFactor = vechTri2mat2D(mat2vechTri2D(cholDict[k]) + lam*update)
-
-            # diagElsPrev = np.array(np.diag(cholDict[k]))
-            # diagElsNew = np.array(np.diag(newCholFactor))#UPDATED
-
-            # signChange = np.sign(diagElsNew)*np.sign(diagElsPrev)
-
-            # if np.any(signChange<1):
-            #     print('new: ', newCholFactor)
-            #     print('old: ', cholDict[k])
-            # updateDiag = diagElsNew
-
-            # updateDiag[signChange<1] = np.sign(diagElsPrev[signChange<1])*1e-3
-
-            # qk = cholDict[k].shape[0]
-
-            # diagInds = np.diag_indices(qk)
-
-            # newCholFactor[diagInds] = updateDiag
-
-            # if np.any(signChange<1):
-            #     print('updated: ', newCholFactor)
-            # tmpit = 1
-
-            # # Keep updating and checking if we have seen a sign change on the diagonal
-            # # of the cholesky factor (if we have we have crossed a discontinuous point
-            # # in the parameter space and must backtrack a little)
-            # print('here3')
-            # while not updated:
-
-
-            #     tmpit = tmpit+1
-
-            #     # Get the current diagonal elements of the cholesky decomposition
-            #     diagElsPrev = np.diag(cholDict[k])
-
-            #     print('in loop: ', diagElsPrev)
-
-
-            #     # Get the new diagonal elements
-            #     diagElsCurr = np.diag(newCholFactor)
-
-            #     print('in loop2: ', diagElsCurr)
-
-            #     # Check whether any of the diagonal elements have changed sign
-            #     diagSame = np.all(np.float32(np.sign(diagElsCurr)*np.sign(diagElsPrev)==1))
-
-            #     print('diagSame: ', diagSame)
-
-            #     print('here0')
-            #     # If any did change we halve lambda and try applying the update again
-            #     if not diagSame:
-            #         print('here1')
-            #         lamTemp = lamTemp/2
-            #     else:
-            #         print('here2')
-            #         updated = True
+            update = lam*np.linalg.pinv(forceSym2D(covdldcholk)) @ dldcholk #lam*np.linalg.solve(forceSym2D(covdldcholk), dldcholk)
         
-                # if tmpit > 100:
-                #     break
-
             #-----------------------------------------------------------------------
             # Update D_k and chol_k
             #-----------------------------------------------------------------------
-            cholDict[k] = np.array(newCholFactor)
+            cholDict[k] = vechTri2mat2D(mat2vechTri2D(cholDict[k]) + update)
             Ddict[k] = cholDict[k] @ cholDict[k].transpose()
 
             # Add D_k back into D and recompute DinvIplusZtZD
@@ -419,33 +353,8 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         #---------------------------------------------------------------------------
         llhcurr = llh2D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D,reml,XtX,XtZ,ZtX)[0,0]
 
-        print(np.all(np.sign(np.diag(cholDict[0]))*np.sign(np.diag(prevchol[0]))==1))
-        print(np.all(np.sign(np.diag(cholDict[1]))*np.sign(np.diag(prevchol[1]))==1))
-        print(np.all(np.sign(np.diag(cholDict[2]))*np.sign(np.diag(prevchol[2]))==1))
         if llhprev>llhcurr:
             lam = lam/2
-
-            print(np.any(cholDict[0]-prevchol[0]))
-
-
-            print(np.linalg.matrix_rank(cholDict[0]))
-            print(np.linalg.matrix_rank(cholDict[1]))
-            print(np.linalg.matrix_rank(cholDict[2]))
-
-            print(cholDict[0])
-            print(cholDict[1])
-            print(cholDict[2])
-
-
-            print(Ddict[0])
-            print(Ddict[1])
-            print(Ddict[2])
-
-            print('llhprev: ', llhprev)
-
-        print('llhcurr: ', llhcurr)
-
-        prevchol = dict(cholDict)
 
     #-------------------------------------------------------------------------------
     # Save parameter vector
