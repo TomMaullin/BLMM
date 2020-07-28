@@ -320,7 +320,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             update = np.linalg.pinv(forceSym2D(covdldcholk)) @ dldcholk
 
             # Perform the proposed update
-            newCholFactor = vechTri2mat2D(mat2vechTri2D(cholDict[k]) + lamTemp*update)
+            newCholFactor = vechTri2mat2D(mat2vechTri2D(cholDict[k]) + lam*update)
 
             diagElsPrev = np.array(np.diag(cholDict[k]))
             diagElsNew = np.array(np.diag(newCholFactor))#UPDATED
