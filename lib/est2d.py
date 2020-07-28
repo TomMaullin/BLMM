@@ -319,51 +319,59 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             # Calculate the update step
             update = np.linalg.pinv(forceSym2D(covdldcholk)) @ dldcholk
 
-            # Boolean to say whether we have updated or not
-            updated = False
+            # Perform the proposed update
+            newCholFactor = vechTri2mat2D(mat2vechTri2D(cholDict[k]) + lamTemp*update)
 
-            # Temporary lambda (we only half this lambda if optimization falls off the 
-            # side of continous space in this iteration - this lambdas value won't 
-            # carry through to the next iteration)
-            lamTemp = lam
+            diagElsPrev = np.array(np.diag(cholDict[k]))
+            diagElsNew = np.array(np.diag(newCholFactor))#UPDATED
 
-            tmpit = 1
+            signChange = np.sign(diagElsNew)*np.sign(diagElsPrev)
 
-            # Keep updating and checking if we have seen a sign change on the diagonal
-            # of the cholesky factor (if we have we have crossed a discontinuous point
-            # in the parameter space and must backtrack a little)
-            print('here3')
-            while not updated:
+            updateDiag = diagElsNew
+
+            updateDiag[signChange<1] = np.sign(diagElsPrev[signChange<1])*1e-6
+
+            qk = cholDict[k].shape[0]
+
+            diagInds = np.diag_indices(qk)
+
+            newCholFactor[diagInds] = updateDiag
+
+            # tmpit = 1
+
+            # # Keep updating and checking if we have seen a sign change on the diagonal
+            # # of the cholesky factor (if we have we have crossed a discontinuous point
+            # # in the parameter space and must backtrack a little)
+            # print('here3')
+            # while not updated:
 
 
-                tmpit = tmpit+1
+            #     tmpit = tmpit+1
 
-                # Get the current diagonal elements of the cholesky decomposition
-                diagElsPrev = np.diag(cholDict[k])
+            #     # Get the current diagonal elements of the cholesky decomposition
+            #     diagElsPrev = np.diag(cholDict[k])
 
-                print('in loop: ', diagElsPrev)
+            #     print('in loop: ', diagElsPrev)
 
-                # Perform the proposed update
-                newCholFactor = vechTri2mat2D(mat2vechTri2D(cholDict[k]) + lamTemp*update)
 
-                # Get the new diagonal elements
-                diagElsCurr = np.diag(newCholFactor)
+            #     # Get the new diagonal elements
+            #     diagElsCurr = np.diag(newCholFactor)
 
-                print('in loop2: ', diagElsCurr)
+            #     print('in loop2: ', diagElsCurr)
 
-                # Check whether any of the diagonal elements have changed sign
-                diagSame = np.all(np.float32(np.sign(diagElsCurr)*np.sign(diagElsPrev)==1))
+            #     # Check whether any of the diagonal elements have changed sign
+            #     diagSame = np.all(np.float32(np.sign(diagElsCurr)*np.sign(diagElsPrev)==1))
 
-                print('diagSame: ', diagSame)
+            #     print('diagSame: ', diagSame)
 
-                print('here0')
-                # If any did change we halve lambda and try applying the update again
-                if not diagSame:
-                    print('here1')
-                    lamTemp = lamTemp/2
-                else:
-                    print('here2')
-                    updated = True
+            #     print('here0')
+            #     # If any did change we halve lambda and try applying the update again
+            #     if not diagSame:
+            #         print('here1')
+            #         lamTemp = lamTemp/2
+            #     else:
+            #         print('here2')
+            #         updated = True
         
                 # if tmpit > 100:
                 #     break
