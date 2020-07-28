@@ -320,7 +320,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             #-----------------------------------------------------------------------
 
             # Calculate the update step
-            update = np.linalg.pinv(forceSym2D(covdldcholk))*(mat2vec(cholDict[k]) @ mat2vec(cholDict[k]).transpose()) @ mat2vec(cholDict[k])*dldcholk
+            update = np.linalg.pinv(forceSym2D(covdldcholk))*(mat2vechTri2D(cholDict[k]) @ mat2vechTri2D(cholDict[k]).transpose()) @ mat2vechTri2D(cholDict[k])*dldcholk
 
             # Perform the proposed update
             newCholFactor = vechTri2mat2D(mat2vechTri2D(cholDict[k]) + lam*update)
