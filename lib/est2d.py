@@ -320,31 +320,31 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             #-----------------------------------------------------------------------
 
             # Calculate the update step
-            update = np.linalg.pinv(forceSym2D(covdldcholk)) @ dldcholk
+            update = mat2vec(cholDict[k])*np.linalg.pinv(forceSym2D(covdldcholk))*mat2vec(cholDict[k]).transpose() @ mat2vec(cholDict[k])*dldcholk
 
             # Perform the proposed update
             newCholFactor = vechTri2mat2D(mat2vechTri2D(cholDict[k]) + lam*update)
 
-            diagElsPrev = np.array(np.diag(cholDict[k]))
-            diagElsNew = np.array(np.diag(newCholFactor))#UPDATED
+            # diagElsPrev = np.array(np.diag(cholDict[k]))
+            # diagElsNew = np.array(np.diag(newCholFactor))#UPDATED
 
-            signChange = np.sign(diagElsNew)*np.sign(diagElsPrev)
+            # signChange = np.sign(diagElsNew)*np.sign(diagElsPrev)
 
-            if np.any(signChange<1):
-                print('new: ', newCholFactor)
-                print('old: ', cholDict[k])
-            updateDiag = diagElsNew
+            # if np.any(signChange<1):
+            #     print('new: ', newCholFactor)
+            #     print('old: ', cholDict[k])
+            # updateDiag = diagElsNew
 
-            updateDiag[signChange<1] = np.sign(diagElsPrev[signChange<1])*1e-3
+            # updateDiag[signChange<1] = np.sign(diagElsPrev[signChange<1])*1e-3
 
-            qk = cholDict[k].shape[0]
+            # qk = cholDict[k].shape[0]
 
-            diagInds = np.diag_indices(qk)
+            # diagInds = np.diag_indices(qk)
 
-            newCholFactor[diagInds] = updateDiag
+            # newCholFactor[diagInds] = updateDiag
 
-            if np.any(signChange<1):
-                print('updated: ', newCholFactor)
+            # if np.any(signChange<1):
+            #     print('updated: ', newCholFactor)
             # tmpit = 1
 
             # # Keep updating and checking if we have seen a sign change on the diagonal
