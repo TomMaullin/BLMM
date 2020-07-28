@@ -335,7 +335,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
                 print('old: ', cholDict[k])
             updateDiag = diagElsNew
 
-            updateDiag[signChange<1] = np.sign(diagElsPrev[signChange<1])*1e-6
+            updateDiag[signChange<1] = np.sign(diagElsPrev[signChange<1])*1e-3
 
             qk = cholDict[k].shape[0]
 
@@ -387,7 +387,7 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             #-----------------------------------------------------------------------
             # Update D_k and chol_k
             #-----------------------------------------------------------------------
-            cholDict[k] = newCholFactor
+            cholDict[k] = np.array(newCholFactor)
             Ddict[k] = cholDict[k] @ cholDict[k].transpose()
 
             # Add D_k back into D and recompute DinvIplusZtZD
