@@ -258,6 +258,9 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # Update number of iterations
         nit = nit+1
 
+        if nit > 100:
+            break
+
         #---------------------------------------------------------------------------
         # Update beta
         #---------------------------------------------------------------------------
@@ -327,6 +330,9 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
 
             signChange = np.sign(diagElsNew)*np.sign(diagElsPrev)
 
+            if np.any(signChange<1):
+                print('new: ', newCholFactor)
+                print('old: ', cholDict[k])
             updateDiag = diagElsNew
 
             updateDiag[signChange<1] = np.sign(diagElsPrev[signChange<1])*1e-6
@@ -337,6 +343,8 @@ def cSFS2D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
 
             newCholFactor[diagInds] = updateDiag
 
+            if np.any(signChange<1):
+                print('updated: ', newCholFactor)
             # tmpit = 1
 
             # # Keep updating and checking if we have seen a sign change on the diagonal
