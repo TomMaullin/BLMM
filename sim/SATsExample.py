@@ -67,7 +67,7 @@ def testSchoolExample():
     print(Z_red.shape)
 
     # Convergence tolerance
-    tol = 1e-9
+    tol = 1e-6
 
     # nlevels for reduced
     nlevels_red = np.array([len(np.unique(studfac_red)),len(np.unique(tchrfac_red))])
@@ -88,7 +88,7 @@ def testSchoolExample():
     print(nit)
     print(paramVector_FS)
     print(paramVector_FS[3:,]*paramVector_FS[2])
-    print(llh)
+    print(llh-234/2*np.log(2*np.pi))
 
     sigma2 = paramVector_FS[2]
     d_sigma2t = np.diag(np.repeat(paramVector_FS[3], nlevels_red[0]))
@@ -114,7 +114,7 @@ def testSchoolExample():
     print(nit)
     print(paramVector_FS)
     print(paramVector_FS[3:,]*paramVector_FS[2])
-    print(llh)
+    print(llh-234/2*np.log(2*np.pi))
 
     sigma2 = paramVector_FS[2]
     d_sigma2t = np.diag(np.repeat(paramVector_FS[3], nlevels_red[0]))
@@ -144,7 +144,7 @@ def testSchoolExample():
     print(nit)
     print(paramVector_FS)
     print(paramVector_FS[3:,]*paramVector_FS[2])
-    print(llh)
+    print(llh-234/2*np.log(2*np.pi))
 
     sigma2 = paramVector_FS[2]
     d_sigma2t = np.diag(np.repeat(paramVector_FS[3], nlevels_red[0]))
@@ -171,7 +171,7 @@ def testSchoolExample():
     print(nit)
     print(paramVector_FS)
     print(paramVector_FS[3:,]*paramVector_FS[2])
-    print(llh)
+    print(llh-234/2*np.log(2*np.pi))
 
     sigma2 = paramVector_FS[2]
     d_sigma2t = np.diag(np.repeat(paramVector_FS[3], nlevels_red[0]))
@@ -197,7 +197,7 @@ def testSchoolExample():
     print(nit)
     print(paramVector_FS)
     print(paramVector_FS[3:,]*paramVector_FS[2])
-    print(llh)
+    print(llh-234/2*np.log(2*np.pi))
 
     sigma2 = paramVector_FS[2]
     d_sigma2t = np.diag(np.repeat(paramVector_FS[3], nlevels_red[0]))
@@ -223,4 +223,4 @@ def testSchoolExample():
     Zte = ZtY - ZtX @ beta
     DinvIplusZtZD = forceSym2D(np.linalg.solve(np.eye(ZtZ.shape[0]) + D @ ZtZ, D))
 
-    print(llh2D(X_red.shape[0], ZtZ, Zte, ete, sigma2, DinvIplusZtZD,Dest))
+    print(llh2D(X_red.shape[0], ZtZ, Zte, ete, sigma2, DinvIplusZtZD,Dest)-234/2*np.log(2*np.pi))

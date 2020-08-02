@@ -9,7 +9,7 @@ reducedat <- as.data.frame(read.csv('/home/tommaullin/Documents/BLMM_creation/BL
 y <- as.matrix(reducedat$math)
 tchrfac <- as.factor(reducedat$tchrid)
 studfac <- as.factor(reducedat$studid)
-m1
+
 # Work out design
 x1 <- as.matrix(reducedat$year) # x0 intercept
 
