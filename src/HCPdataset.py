@@ -588,7 +588,7 @@ paramVecADE = np.array(tmp2[0])
 toDisplay = np.array(paramVecADE)
 toDisplay[(p+1):,:] = toDisplay[(p+1):,:]*toDisplay[p,0]
 print(toDisplay)
-print(llh_ADE(paramVecADE, X, Y, n, p, nlevels, nraneffs, Dinds, KinshipA, KinshipC, reml=reml, XkXdict=XkXdict))
+print(llh_ADE(paramVecADE, X, Y, n, p, nlevels, nraneffs, Dinds, KinshipA, KinshipC, reml=reml, XkXdict=XkXdict)-n/2*np.log(2*np.pi))
 print('Done')
 
 varBeta_ADE(toDisplay, p, KinshipA, KinshipC, nlevels, nraneffs)
@@ -624,7 +624,7 @@ paramVecOpt = tmp['x'].reshape((p+3),1)
 toDisplay = np.array(paramVecOpt)
 toDisplay[(p+1):,:] = toDisplay[(p+1):,:]*toDisplay[p,0]
 print(toDisplay)
-print(np.array([[tmp['fun']]]))
+print(np.array([[tmp['fun']]])-n/2*np.log(2*np.pi))
 
 varBeta_ADE(toDisplay, p, KinshipA, KinshipC, nlevels, nraneffs)
 for j in np.arange(p):
@@ -657,7 +657,7 @@ paramVecOpt = tmp['x'].reshape((p+3),1)
 toDisplay = np.array(paramVecOpt)
 toDisplay[(p+1):,:] = toDisplay[(p+1):,:]*toDisplay[p,0]
 print(toDisplay)
-print(np.array([[tmp['fun']]]))
+print(np.array([[tmp['fun']]])-n/2*np.log(2*np.pi))
 
 varBeta_ADE(toDisplay, p, KinshipA, KinshipC, nlevels, nraneffs)
 for j in np.arange(p):
@@ -700,7 +700,7 @@ toDisplay = np.array(paramVecOLS)
 
 print('OLS result')
 print(toDisplay)
-print(llh_ADE(toDisplay, X, Y, n, p, nlevels, nraneffs, Dinds, KinshipA, KinshipC, reml=reml, XkXdict=XkXdict))
+print(llh_ADE(toDisplay, X, Y, n, p, nlevels, nraneffs, Dinds, KinshipA, KinshipC, reml=reml, XkXdict=XkXdict)-n/2*np.log(2*np.pi))
 varBeta_ADE(toDisplay, p, KinshipA, KinshipC, nlevels, nraneffs)
 
 for i in np.arange(X.shape[1]):
