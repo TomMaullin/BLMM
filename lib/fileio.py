@@ -446,6 +446,27 @@ def numVoxelBlocks(inputs):
     am = loadFile(inputs['analysis_mask'])
     am = am.get_data()
   else:
+
+    # --------------------------------------------------------------
+    # Get one Y volume to make full Nifti mask
+    # --------------------------------------------------------------
+
+    # Y volumes
+    with open(inputs['Y_files']) as a:
+
+      Y_files = []
+      i = 0
+      for line in a.readlines():
+
+        Y_files.append(line.replace('\n', ''))  
+
+    # Load in one nifti to check NIFTI size
+    try:
+      Y0 = loadFile(Y_files[0])
+    except Exception as error:
+      raise ValueError('The NIFTI "' + Y_files[0] + '"does not exist')
+
+    # Get mask of ones
     am = np.ones(Y0.shape)
 
   # Work out number of non-zero voxels in analysis mask
