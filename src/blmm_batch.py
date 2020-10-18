@@ -518,7 +518,8 @@ def obtainY(Y_files, M_files, M_t, M_a):
     # Apply analysis mask to Y, we use the analysis mask here as the product
     # matrices across all batches should have the same masking for convinience
     # We can apply the full mask at a later stage.
-    Y = Y[:, np.where(M_a.reshape([v]))[0]]
+    if M_a is not none:
+        Y = Y[:, np.where(M_a.reshape([v]))[0]]
 
     # Work out the mask.
     M = (Y_fm!=0)
