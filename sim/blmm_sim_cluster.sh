@@ -11,7 +11,7 @@ RealPath() {
 
 BLMM_PATH=$(dirname $(RealPath "${BASH_SOURCE[0]}"))
 
-echo $(BLMM_PATH)
+echo $BLMM_PATH
 
 # include parse_yaml function
 . $BLMM_PATH/scripts/parse_yaml.sh
