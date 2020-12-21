@@ -27,7 +27,7 @@ import pandas as pd
 # - `dim`: Dimensions of data to be generated. Must be given as an np array.
 #
 # ===========================================================================
-def generate_data(n,dim,fwhm,OutDir,simNo):
+def generate_data(n,dim,OutDir,simNo):
 
     # Make simulation directory
     simDir = os.path.join(OutDir, 'sim' + str(simNo))
@@ -47,6 +47,9 @@ def generate_data(n,dim,fwhm,OutDir,simNo):
 
     # Number of random effects grouping factors
     r = 2
+
+    # fwhm for smoothing
+    fwhm = 5
 
     # Number of levels for each factor
     nlevels = np.array([20,10])
@@ -846,4 +849,4 @@ def smooth_data(data, D, fwhm, trunc=6, scaling='kernel'):
     return(data)
 
 
-generate_data(100, np.array([100,100,100]), 5, '/home/tommaullin/Documents/BLMM/sim/', 20)
+generate_data(100, np.array([100,100,100]), '/home/tommaullin/Documents/BLMM/sim/', 20)
