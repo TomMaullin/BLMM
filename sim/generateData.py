@@ -13,6 +13,7 @@ import shutil
 import yaml
 from scipy import ndimage
 import time
+import pandas as pd
 
 # ===========================================================================
 #
@@ -26,11 +27,16 @@ import time
 # - `dim`: Dimensions of data to be generated. Must be given as an np array.
 #
 # ===========================================================================
-def get_data(n,dim,fwhm,OutDir):
+def generate_data(n,dim,fwhm,OutDir,simNo):
+
+    # Make simulation directory
+    simDir = os.path.join(OutDir, 'sim' + str(simNo))
+    if not os.path.exists(simDir):
+        os.mkdir(simDir)
 
     # Make new data directory.
-    if not os.path.exists(os.path.join(OutDir,"data")):
-        os.mkdir(os.path.join(OutDir,"data"))
+    if not os.path.exists(os.path.join(simDir,"data")):
+        os.mkdir(os.path.join(simDir,"data"))
 
     # -------------------------------------------------
     # Design parameters
@@ -54,8 +60,8 @@ def get_data(n,dim,fwhm,OutDir):
     # Second dimension of Z
     q = np.sum(nlevels*nraneffs)
 
-
-    print('n: ', n, ', q: ', q, ', p: ', p, ', v:', v)
+    # Relative missingness threshold (percentage)
+    rmThresh = 0.5
 
     # -------------------------------------------------
     # Obtain design matrices
@@ -77,32 +83,11 @@ def get_data(n,dim,fwhm,OutDir):
     beta = get_beta(p)
 
     # -------------------------------------------------
-    # Generate smooth epsilon maps
-    # -------------------------------------------------
-
-    # Generate a smooth epsilon map for each subject
-    for s in np.arange(n):
-
-        # Get epsilon
-        epsilon = get_epsilon(v, 1).reshape(dim)
-
-        # Smooth epsilon
-        epsilon = smooth_data(epsilon, 3, [fwhm]*3, trunc=6, scaling='kernel')
-
-        # Save epsilon to file
-        addBlockToNifti(os.path.join(OutDir,"data","epsilon"+str(s)+".nii"), epsilon, np.arange(v), volInd=0,dim=dim)
-
-
-    # -------------------------------------------------
     # Generate smooth b maps
     # -------------------------------------------------
 
     # Initiate a counter
     counter = 0
-
-    # Obtain the dictionary of cholesky factors of 
-    # diagonal blocks of D
-    #Dhalfdict = get_Dhalf(v, nlevels, nraneffs)
 
     # Loop through each factor in the model
     for k in np.arange(r):
@@ -127,9 +112,6 @@ def get_data(n,dim,fwhm,OutDir):
             b = b.transpose(1,2,3,0)
             b = b.reshape(*(b.shape),1)
 
-            print(Dhalf.shape)
-            print(b.shape)
-
             # Multiply by Dhalf (so now b has correct
             # covariance structure)
             b = Dhalf @ b
@@ -142,10 +124,10 @@ def get_data(n,dim,fwhm,OutDir):
             b = smooth_data(b, 4, [0,fwhm,fwhm,fwhm], trunc=6, scaling='kernel')
 
             # Loop through each random effect and save b
-            for q in np.arange(qk):
+            for re in np.arange(qk):
 
                 # Save b to file
-                addBlockToNifti(os.path.join(OutDir,"data","b"+str(counter)+".nii"), b[q,:,:,:], np.arange(v), volInd=0,dim=dim)
+                addBlockToNifti(os.path.join(simDir,"data","b"+str(counter)+".nii"), b[re,:,:,:], np.arange(v), volInd=0,dim=dim)
 
                 # Increment counter
                 counter = counter + 1
@@ -153,9 +135,6 @@ def get_data(n,dim,fwhm,OutDir):
     # -----------------------------------------------------
     # Obtain Y
     # -----------------------------------------------------
-
-    print('X shape ', X.shape)
-    print('nraneffs ', nraneffs)
 
     # Work out Xbeta
     Xbeta = X @ beta
@@ -192,7 +171,7 @@ def get_data(n,dim,fwhm,OutDir):
                 current_Ind = bkjInds[re]
 
                 # Load in the bkj_re volume
-                bkj_re = nib.load(os.path.join(OutDir,"data","b"+str(current_Ind)+".nii")).get_data()
+                bkj_re = nib.load(os.path.join(simDir,"data","b"+str(current_Ind)+".nii")).get_data()
 
                 # Add it to the bkj volume
                 bkj[:,:,:,re:(re+1),0]=bkj_re
@@ -206,25 +185,206 @@ def get_data(n,dim,fwhm,OutDir):
             # Add Zk_i*bkj to Yi
             Yi = Yi + Zk_i @ bkj
 
-        # Load in epsilon_i
-        epsiloni = nib.load(os.path.join(OutDir,"data","epsilon"+str(i)+".nii")).get_data()
+        # Get epsiloni
+        epsiloni = get_epsilon(v, 1).reshape(dim)
+
+        # Smooth epsiloni
+        epsiloni = smooth_data(epsiloni, 3, [fwhm]*3, trunc=6, scaling='kernel').reshape(dim)
 
         # Reshape Yi to epsiloni shape
-        Yi = Yi.reshape(epsiloni.shape)
+        Yi = Yi.reshape(dim)
 
         # Add epsilon to Yi
         Yi = Yi + epsiloni
 
+        # Obtain mask
+        mask = get_random_sphere(dim).reshape(Yi.shape)
+
+        # Mask Yi
+        Yi = Yi*mask
+
         # Output Yi
-        addBlockToNifti(os.path.join(OutDir,"data","Y"+str(i)+".nii"), Yi, np.arange(v), volInd=0,dim=dim)
+        addBlockToNifti(os.path.join(simDir,"data","Y"+str(i)+".nii"), Yi, np.arange(v), volInd=0,dim=dim)
 
+    # -----------------------------------------------------
+    # Delete epsilons and bs
+    # -----------------------------------------------------
+
+    # Loop through bs and remove them
+    for i in np.arange(q):
+
+        # Remove epsilon i
+        os.remove(os.path.join(simDir,"data","b"+str(i)+".nii"))
+
+    # -----------------------------------------------------
+    # Save X
+    # -----------------------------------------------------
+
+    # Write out Z in full to a csv file
+    pd.DataFrame(X.reshape(n,p)).to_csv(os.path.join(simDir,"data","X.csv"), header=None, index=None)
+
+    # -----------------------------------------------------
+    # Save Z
+    # -----------------------------------------------------
+
+    # Write out Z in full to a csv file
+    pd.DataFrame(Z.reshape(n,q)).to_csv(os.path.join(simDir,"data","Z.csv"), header=None, index=None)
+
+    # Write out factors in full to a csv file
+    for k in np.arange(r):
+
+        # Output raw regressors
+        pd.DataFrame(rrDict[k]).to_csv(os.path.join(simDir, "data", "rr" + str(k) + ".csv"), header=None, index=None)
+
+        # Output factor vectors
+        pd.DataFrame(fDict[k]).to_csv(os.path.join(simDir, "data", "f" + str(k) + ".csv"), header=None, index=None)
+
+    # -----------------------------------------------------
+    # Inputs file
+    # -----------------------------------------------------
+
+    # Write to an inputs file
+    with open(os.path.join(simDir,'inputs.yml'), 'a') as f:
+
+        # X, Y, Z and Masks
+        f.write("Y_files: " + os.path.join(simDir,"data","Yfiles.txt") + os.linesep)
+        f.write("X: " + os.path.join(simDir,"data","X.csv") + os.linesep)
+        f.write("Z: " + os.path.join(simDir,"data","Z.csv") + os.linesep)
+
+        # Add each factor
+        for k in np.arange(r):
+            f.write("  - f" + str(k+1) + ": " + os.linesep)
+            f.write("      name: f" + str(k+1) + os.linesep)
+            f.write("      factor: " + os.path.join(simDir, "data", "f" + str(k) + ".csv") + os.linesep)
+            f.write("      design: " + os.path.join(simDir, "data", "rr" + str(k) + ".csv") + os.linesep)
+
+        # Output directory
+        f.write("outdir: " + os.linesep)
+
+        # Missingness percentage
+        f.write("Missingness: " + os.linesep)
+        f.write("  MinPercent: " + str(rmThresh) + os.linesep)
+
+        # Let's not output covariance maps for now!
+        f.write("OutputCovB: False" + os.linesep)
+
+        # Contrast vectors
+        f.write("contrasts: " + os.linesep)
+        f.write("  - c1: " + os.linesep)
+        f.write("      name: null_contrast" + os.linesep)
+        f.write("      vector: [0, 0, 0, 1]" + os.linesep)
+        f.write("      statType:  T ")
+
+    # -----------------------------------------------------
+    # Yfiles.txt
+    # -----------------------------------------------------
+    with open(os.path.join(simDir,"data",'Yfiles.txt'), 'a') as f:
+
+        # Loop through listing mask files in text file
+        for i in np.arange(n):
+
+            # Write filename to text file
+            if i < n-1:
+                f.write(os.path.join(simDir,"data","Y"+str(i)+".nii") + os.linesep)
+            else:
+                f.write(os.path.join(simDir,"data","Y"+str(i)+".nii"))
+
+
+    # -----------------------------------------------------
+    # Version of data which can be fed into R
+    # -----------------------------------------------------
+    #  - i.e. seperate Y out into thousands of csv files
+    #         each containing number of subjects by 1000 
+    #         voxel arrays.
+    # -----------------------------------------------------
+
+    # Number of voxels in each batch
+    nvb = 10000
+
+    # Work out number of groups we have to split indices into.
+    nvg = int(v//nvb)
+
+    # Write out the number of voxel groups we split the data into
+    with open(os.path.join(simDir, "data", "nb.txt"), 'w') as f:
+        print(int(nvg), file=f)
+
+    # Split voxels we want to look at into groups we can compute
+    voxelGroups = np.array_split(np.arange(v), nvg)
+
+    # Loop through list of voxel indices, looking at each group of voxels, in
+    # turn.
+    for cv in range(nvg):
+
+        # Current group of voxels
+        inds_cv = voxelGroups[cv]
+
+        # Number of voxels currently (should be ~1000)
+        v_current = len(inds_cv)
+
+        # Loop through each subject reading in Y and reducing to just the voxels 
+        # needed
+        for i in np.arange(n):
     
-    # # -------------------------------------------------
-    # # Get spherical mask
-    # # -------------------------------------------------
+            # Load in the Y volume
+            Yi = nib.load(os.path.join(simDir,"data","Y"+str(i)+".nii")).get_data()
 
-    #    # Obtain non-random mask
-    #    mask = get_sphere(dim)
+            # Flatten Yi
+            Yi = Yi.reshape(v)
+
+            # Get just the voxels we're interested in
+            Yi = Yi[inds_cv].reshape(1, v_current)
+
+            # Concatenate
+            if i==0:
+                Y_concat = Yi
+            else:
+                Y_concat = np.concatenate((Y_concat, Yi), axis=0)
+
+        # Loop through voxels checking missingness
+        for vox in np.arange(v_current):
+
+            # Threshold out the voxels which have too much missingness
+            if np.count_nonzero(Y_concat[:,vox], axis=0)/n < rmThresh:
+
+                # If we don't have enough data lets replace that voxel 
+                # with zeros
+                Y_concat[:,vox] = np.zeros(Y_concat[:,vox].shape)
+
+        # Write out Z in full to a csv file
+        pd.DataFrame(Y_concat.reshape(n,v_current)).to_csv(os.path.join(simDir,"data","Y_Rversion_" + str(cv) + ".csv"), header=None, index=None)
+
+    print('---------------------------------------------------------------------')
+    print('Data generation complete')
+    print('---------------------------------------------------------------------')
+
+
+def get_random_sphere(dim):
+
+    # Radius
+    r = 20
+
+    # FWHM
+    fwhm = 15
+
+    # Work out circle center (setting origin to the image center).
+    center = np.array([dim[-3]//2, dim[-2]//2, dim[-1]//2])
+
+    # Get an ogrid
+    X, Y, Z = np.ogrid[:dim[-3], :dim[-2], :dim[-1]]
+
+    # Make unsmoothed circular signal
+    mu = np.array(np.sqrt((X-center[-3])**2+(Y-center[-2])**2 +(Z-center[-1])**2) < r, dtype='float')
+
+    # Add some noise
+    mu = mu + 0.3*np.random.randn(*(mu.shape))
+
+    # Smooth the data
+    mu = smooth_data(mu, 3, [fwhm]*3)
+
+    # Re-threshold (this has induced a bit of randomness in the mask shape)
+    mu = 1*(mu > 0.7)
+
+    return(mu)
 
 def get_bInds_kj(k,j, nlevels, nraneffs):
 
@@ -495,40 +655,19 @@ def addBlockToNifti(fname, block, blockInds,dim=None,volInd=None,aff=None,hdr=No
 
         volInd = int(volInd)
 
-    print(fname)
-    print(os.path.isfile(fname))
-
     # Check whether the NIFTI exists already
     if os.path.isfile(fname):
-
-        print('here')
-
-        # Load in NIFTI
-        #img = nib.Nifti1Image.from_filename(fname, mmap=False)
 
         # Work out dim if we don't already have it
         dim = nib.Nifti1Image.from_filename(fname, mmap=False).shape
 
-        # print('in mem 1 ', img.in_memory)
-
         # Work out data
         data = nib.Nifti1Image.from_filename(fname, mmap=False).get_fdata().copy()
-        # data_array = np.asarray(img.dataobj)
-
-        # print('in mem 2 ', img.in_memory)
 
         # Work out affine
         affine = nib.Nifti1Image.from_filename(fname, mmap=False).affine.copy()
-
-        # # Delete image
-        # img.uncache()
-
-        # print('in mem 3 ', img.in_memory)
-        # del img
         
     else:
-
-        print('here2')
 
         # If we know how, make the NIFTI
         if dim is not None:
@@ -594,20 +733,9 @@ def addBlockToNifti(fname, block, blockInds,dim=None,volInd=None,aff=None,hdr=No
         data_out[:,:,:,volInd] = data[:,0].reshape(int(dim[0]),
                                                  int(dim[1]),
                                                  int(dim[2]))
-
-
-    # Make NIFTI
-    #nifti = nib.Nifti1Image(data_out, affine, header=hdr)
-    
-    #print('in mem 4 ', nifti.in_memory)
     
     # Save NIFTI
     nib.save(nib.Nifti1Image(data_out, affine, header=hdr), fname)
-
-    # Uncache NIFTI
-    #nifti.uncache()
-
-    #print('in mem 5 ', nifti.in_memory)
 
     # Delete lock file, so other jobs know they can now write to the
     # file
@@ -630,8 +758,6 @@ def smooth_data(data, D, fwhm, trunc=6, scaling='kernel'):
 
     # Non-zero dimensions
     D_nz = np.sum(fwhm>0)
-
-    print('fwhm  ', fwhm)
 
     # Convert fwhm to sigma values
     sigma = fwhm / np.sqrt(8 * np.log(2))
@@ -720,4 +846,4 @@ def smooth_data(data, D, fwhm, trunc=6, scaling='kernel'):
     return(data)
 
 
-get_data(100, np.array([100,100,100]), 5, '/home/tommaullin/Documents/BLMM/sim/')
+generate_data(100, np.array([100,100,100]), 5, '/home/tommaullin/Documents/BLMM/sim/', 20)
