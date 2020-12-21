@@ -13,10 +13,12 @@ SIM_PATH=$(dirname $(RealPath "${BASH_SOURCE[0]}"))
 
 echo $SIM_PATH
 
+simInd=44
+
 # -----------------------------------------------------------------------
 # Submit data generation job
 # -----------------------------------------------------------------------
-fsl_sub -l sim/sim$simInd/logDataGen/ -N dataGen$simInd bash $SIM_PATH/generate_data.sh $i $inputs > /tmp/$$ && dataGenID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
+fsl_sub -l sim/sim$simInd/logDataGen/ -N dataGen$simInd bash $SIM_PATH/generate_data.sh $SIM_PATH $simInd > /tmp/$$ && dataGenID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
 
 # This loop waits for the data generation job to finish before
 # deciding how many batches to run. It also checks to see if the data

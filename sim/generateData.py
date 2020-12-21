@@ -849,4 +849,4 @@ def smooth_data(data, D, fwhm, trunc=6, scaling='kernel'):
     return(data)
 
 
-generate_data(100, np.array([100,100,100]), '/home/tommaullin/Documents/BLMM/sim/', 20)
+#generate_data(100, np.array([100,100,100]), '/home/tommaullin/Documents/BLMM/sim/', 20)
