@@ -38,6 +38,9 @@ def generate_data(n,dim,OutDir,simNo):
     if not os.path.exists(os.path.join(simDir,"data")):
         os.mkdir(os.path.join(simDir,"data"))
 
+    # Make sure in numpy format
+    dim = np.array(dim)
+
     # -------------------------------------------------
     # Design parameters
     # -------------------------------------------------
