@@ -57,7 +57,7 @@ done
 # while [ "$i" -le "$nb" ]; do
 
 # Submit nb batches and get the ids for them
-fsl_sub -j $dataGenID -l log/ -N lmerParamEst$simInd $SIM_PATH/lmer_paramEst.R $simInd $batchInd $SIM_PATH > /tmp/$$ && lmerParamID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$lmerParamID
+fsl_sub -j $dataGenID -l log/ -N lmerParamEst$simInd bash $SIM_PATH/lmer_paramEst.sh $simInd $batchInd $SIM_PATH > /tmp/$$ && lmerParamID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$lmerParamID
 i=$(($i + 1))
 
 #done
