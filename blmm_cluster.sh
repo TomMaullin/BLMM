@@ -157,3 +157,8 @@ else
   echo "Submitted: Cleanup job."
 fi
 echo "Analysis submission complete. Please use qstat to monitor progress."
+
+# Record cleanup ID if needed.
+# if [ "$2" == "1" ] ; then
+#   echo $cleanupID > $BLMM_PATH/sim/cleanupID.txt
+# fi

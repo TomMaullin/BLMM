@@ -309,11 +309,7 @@ def generate_data(n,dim,OutDir,simNo):
 
     # Work out number of groups we have to split indices into.
     nvg = int(v//nvb)
-
-    # Write out the number of voxel groups we split the data into
-    with open(os.path.join(simDir, "data", "nb.txt"), 'w') as f:
-        print(int(nvg), file=f)
-
+    
     # Split voxels we want to look at into groups we can compute
     voxelGroups = np.array_split(np.arange(v), nvg)
 
@@ -358,6 +354,11 @@ def generate_data(n,dim,OutDir,simNo):
 
         # Write out Z in full to a csv file
         pd.DataFrame(Y_concat.reshape(n,v_current)).to_csv(os.path.join(simDir,"data","Y_Rversion_" + str(cv) + ".csv"), header=None, index=None)
+
+
+    # Write out the number of voxel groups we split the data into
+    with open(os.path.join(simDir, "data", "nb.txt"), 'w') as f:
+        print(int(nvg), file=f)
 
     print('---------------------------------------------------------------------')
     print('Data generation complete')

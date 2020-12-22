@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "Setting up distributed analysis..."
+echo "Setting up simulation..."
 
 # -----------------------------------------------------------------------
 # Work out BLMM path
@@ -37,7 +37,7 @@ do
 
   # Check for error
   if [ $i -gt 30 ]; then
-    errorlog="/sim$simInd/logDataGen/dataGen.e$setupID"
+    errorlog="/sim$simInd/logDataGen/dataGen.e$dataGenID"
     if [ -s $errorlog ]; then
       echo "Data generation has errored"
       exit
@@ -51,19 +51,21 @@ do
 done
 
 # -----------------------------------------------------------------------
-# Submit 
+# Submit R parameter estimation job
 # -----------------------------------------------------------------------
-i=1
-while [ "$i" -le "$nb" ]; do
+# i=1
+# while [ "$i" -le "$nb" ]; do
 
-  # Submit nb batches and get the ids for them
-  fsl_sub -j $setupID -l log/ -N batch${i} bash $SIM_PATH/scripts/cluster_blmm_batch.sh $i $inputs > /tmp/$$ && batchIDs=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$batchIDs
-  i=$(($i + 1))
-done
-if [ "$batchIDs" == "" ] ; then
-  echo "Batch jobs submission failed!"
+# Submit nb batches and get the ids for them
+fsl_sub -j $dataGenID -l log/ -N lmerParamEst$simInd lmer_paramEst.R $simInd $batchInd $SIM_PATH > /tmp/$$ && lmerParamID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$lmerParamID
+i=$(($i + 1))
+
+#done
+
+if [ "$lmerParamID" == "" ] ; then
+  echo "Lmer parameter estimation job submission failed!"
 else
-  echo "Submitted: Batch jobs."
+  echo "Submitted: Lmer parameter estimation job."
 fi
 
 # -----------------------------------------------------------------------

@@ -1,8 +1,8 @@
 #!/apps/well/R/3.4.3/bin/Rscript
 #$ -cwd
 #$ -q short.qc
-#$ -o ./loglmer/
-#$ -e ./loglmer/
+#$ -o sim/sim$simInd/logDataGen/
+#$ -e sim/sim$simInd/logDataGen/
 
 library(MASS)
 library(Matrix)
@@ -22,9 +22,16 @@ library(tictoc)
 # 
 # ---------------------------------------------------------------------------------------
 
-simInd <-20
-batchNo <- 51
-outDir <- '/home/tommaullin/Documents/BLMM/sim'
+# Read in arguments
+args <- commandArgs(trailingOnly = TRUE)
+
+simInd <- args[1]
+batchNo <- args[2]
+outDir <- args[3]
+
+# simInd <-20
+# batchNo <- 51
+# outDir <- '/home/tommaullin/Documents/BLMM/sim'
 
 # Read in the fixed effects design
 X <- read.csv(file = paste(outDir,'/sim',toString(simInd),'/data/X.csv',sep=''),sep=',', header=FALSE)
