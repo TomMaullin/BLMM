@@ -22,6 +22,7 @@ library(tictoc)
 # 
 # ---------------------------------------------------------------------------------------
 
+print('heeeeere')
 # Read in arguments from command line
 args=(commandArgs(TRUE))
 
