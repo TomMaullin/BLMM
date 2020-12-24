@@ -22,12 +22,13 @@ library(tictoc)
 # 
 # ---------------------------------------------------------------------------------------
 
-# Read in arguments
-args <- commandArgs(trailingOnly = TRUE)
+# Read in arguments from command line
+args=(commandArgs(TRUE))
 
-simInd <- args[1]
-batchNo <- args[2]
-outDir <- args[3]
+# Evaluate arguments
+for(i in 1:length(args)){
+  eval(parse(text=args[[i]]))
+}
 
 # simInd <-20
 # batchNo <- 51
