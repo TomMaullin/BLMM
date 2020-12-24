@@ -3,7 +3,7 @@
 # Load R
 module load R/3.4.3 
 
-echo $SIM_PATH/sim$simInd/logDataGen/Rout.txt
+echo $3/sim$1/logDataGen/Rout.txt
 
 # Run script
-R CMD BATCH --no-save --no-restore '--args simInd=$1 batchNo=$2 outDir="$3"' $SIM_PATH/lmer_paramEst.R $SIM_PATH/sim$simInd/logDataGen/Rout.txt &
+R CMD BATCH --no-save --no-restore '--args simInd=$1 batchNo=$2 outDir="$3"' $3/lmer_paramEst.R $3/sim$1/logDataGen/Rout.txt &
