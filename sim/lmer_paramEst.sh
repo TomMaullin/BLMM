@@ -3,6 +3,10 @@
 # Load R
 module load R/3.4.3 
 
+echo $1
+echo $2
+echo $3
+
 echo $3/sim$1/logDataGen/Rout.txt
 
 # Run script
