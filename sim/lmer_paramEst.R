@@ -30,6 +30,10 @@ for(i in 1:length(args)){
   eval(parse(text=args[[i]]))
 }
 
+print(simInd)
+print(batchNo)
+print(outDir)
+
 # simInd <-20
 # batchNo <- 51
 # outDir <- '/home/tommaullin/Documents/BLMM/sim'
