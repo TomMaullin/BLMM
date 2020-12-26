@@ -265,7 +265,7 @@ def generate_data(n,dim,OutDir,simNo):
             f.write("      design: " + os.path.join(simDir, "data", "rr" + str(k) + ".csv") + os.linesep)
 
         # Output directory
-        f.write("outdir: " + os.linesep)
+        f.write("outdir: " + os.path.join(simDir,"BLMM") + os.linesep)
 
         # Missingness percentage
         f.write("Missingness: " + os.linesep)

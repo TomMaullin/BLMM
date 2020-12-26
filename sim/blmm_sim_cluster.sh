@@ -58,20 +58,30 @@ done
 
 echo $SIM_PATH
 
+echo 'num batches'
+echo $nb
+
 # Set batch index
-batchInd=51
+batchInd=0
 
-# Submit nb batches and get the ids for them
-fsl_sub -j $dataGenID -l sim/sim$simInd/logDataGen/ -N lmerParamEst$simInd bash $SIM_PATH/lmer_paramEst.sh $simInd $batchInd $SIM_PATH > /tmp/$$ && lmerParamID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$lmerParamID
-i=$(($i + 1))
+while [ $batchInd -lt $nb ]
+do
+  # Submit nb batches and get the ids for them
+  fsl_sub -j $dataGenID -l sim/sim$simInd/logDataGen/ -N lmerParamEst$simInd'_'$batchInd bash $SIM_PATH/lmer_paramEst.sh $simInd $batchInd $SIM_PATH > /tmp/$$ && lmerParamID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$lmerParamID
+  i=$(($i + 1))
 
-#done
+  #done
 
-if [ "$lmerParamID" == "" ] ; then
-  echo "Lmer parameter estimation job submission failed!"
-else
-  echo "Submitted: Lmer parameter estimation job."
-fi
+  if [ "$lmerParamID" == "" ] ; then
+    echo "Lmer parameter estimation job submission failed!"
+  else
+    echo "Submitted: Lmer parameter estimation job."
+  fi
+
+  # Incrememnt batch index
+  batchInd=$(($batchInd + 1))
+
+done
 
 # -----------------------------------------------------------------------
 # Submit Concatenation job
