@@ -165,9 +165,9 @@ if (!file.exists(lmerDir)) {
 }
 
 # Write results back to csv file
-write.csv(betas,paste(lmerDir,paste('/beta_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
-write.csv(sigma2,paste(lmerDir,paste('/sigma2_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
-write.csv(vechD,paste(lmerDir,paste('/vechD_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
-write.csv(llh,paste(lmerDir,paste('/llh_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
-write.csv(tct,paste(lmerDir,paste('/time_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
-write.csv(nvox_est,paste(lmerDir,paste('/v_est_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
+write.csv(betas,paste(lmerDir,'/beta_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
+write.csv(sigma2,paste(lmerDir,'/sigma2_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
+write.csv(vechD,paste(lmerDir,'/vechD_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
+write.csv(llh,paste(lmerDir,'/llh_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
+write.csv(tct,paste(lmerDir,'/time_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
+write.csv(nvox_est,paste(lmerDir,'/v_est_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
