@@ -171,3 +171,6 @@ write.csv(vechD,paste(lmerDir,'/vechD_',toString(batchNo),'.csv',sep=''), row.na
 write.csv(llh,paste(lmerDir,'/llh_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
 write.csv(tct,paste(lmerDir,'/time_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
 write.csv(nvox_est,paste(lmerDir,'/v_est_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
+
+# Remove the R file for this batch as we no longer need it
+file.remove(paste(outDir,'/sim',toString(simInd),'/data/Y_Rversion_',toString(batchNo),'.csv',sep=''))
