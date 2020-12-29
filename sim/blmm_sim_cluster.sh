@@ -90,7 +90,7 @@ done
 # -----------------------------------------------------------------------
 # Run BLMM
 # -----------------------------------------------------------------------
-bash ./blmm_cluster.sh ./sim/sim$simInd/data/inputs.yml
+bash ./blmm_cluster.sh ./sim/sim$simInd/inputs.yml
 
 # -----------------------------------------------------------------------
 # Submit Concatenation job
