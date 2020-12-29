@@ -279,7 +279,7 @@ def generate_data(n,dim,OutDir,simNo):
         f.write("  - c1: " + os.linesep)
         f.write("      name: null_contrast" + os.linesep)
         f.write("      vector: [0, 0, 0, 1]" + os.linesep)
-        f.write("      statType:  T ")
+        f.write("      statType: T ")
 
     # -----------------------------------------------------
     # Yfiles.txt
