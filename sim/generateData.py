@@ -255,7 +255,7 @@ def generate_data(n,dim,OutDir,simNo):
         # X, Y, Z and Masks
         f.write("Y_files: " + os.path.join(simDir,"data","Yfiles.txt") + os.linesep)
         f.write("X: " + os.path.join(simDir,"data","X.csv") + os.linesep)
-        f.write("Z: " + os.path.join(simDir,"data","Z.csv") + os.linesep)
+        f.write("Z: " + os.linesep)
 
         # Add each factor
         for k in np.arange(r):
