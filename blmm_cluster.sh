@@ -47,17 +47,10 @@ touch $config_outdir/nb.txt
 inputs=$config_outdir/inputs.yml
 cp $cfg $inputs
 
-echo 'log dir'
-echo $not_config_logdir
-echo $config_logdir
-if [ "$not_config_logdir" == "" ] ; then
-  not_config_logdir='log/'
-fi
+# Set log directory to default if it has not been specified
 if [ "$config_logdir" == "" ] ; then
   config_logdir='log/'
 fi
-echo $not_config_logdir
-echo $config_logdir
 
 
 # -----------------------------------------------------------------------
@@ -170,8 +163,3 @@ else
   echo "Submitted: Cleanup job."
 fi
 echo "Analysis submission complete. Please use qstat to monitor progress."
-
-# Record cleanup ID if needed.
-# if [ "$2" == "1" ] ; then
-#   echo $cleanupID > $BLMM_PATH/sim/cleanupID.txt
-# fi

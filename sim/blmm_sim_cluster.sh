@@ -84,16 +84,12 @@ do
 done
 
 # -----------------------------------------------------------------------
-# Run R cleanup job
-# -----------------------------------------------------------------------
-
-# -----------------------------------------------------------------------
 # Run BLMM
 # -----------------------------------------------------------------------
 bash ./blmm_cluster.sh $SIM_PATH/sim$simInd/inputs.yml
 
 # -----------------------------------------------------------------------
-# Submit Concatenation job
+# Check if BLMM has finished executing
 # -----------------------------------------------------------------------
 
 # Variable to check if blmm finished running (see if cleanup job output
@@ -106,7 +102,7 @@ while [ "$blmmran"  == "" ]
 do
 
   # Wait a bit before checking file again
-  sleep 20
+  sleep 1
 
   # Check to see if blmm ran
   blmmran=$(cat $SIM_PATH/sim$simInd/simlog/cleanup.o* 2> /dev/null)
@@ -115,13 +111,15 @@ do
   i=$(($i + 1))
 
   # Timeout
-  if [ $i -gt 10 ]; then
+  if [ $i -gt 10000 ]; then
     echo "Something seems to be taking a while. Please check for errors."
   fi
 
-  echo "blmm running..."
-
 done
+
+# -----------------------------------------------------------------------
+# Cleanup and concatenate results!
+# -----------------------------------------------------------------------
 
 echo "blmm ran!"
 
