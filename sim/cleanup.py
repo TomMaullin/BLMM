@@ -69,7 +69,7 @@ def cleanup(OutDir,simNo):
     q = np.sum(nraneffs*nlevels)
 
     # Number of covariance parameters
-    ncov = q*(q+1)//2
+    ncov = np.sum(nraneffs*(nraneffs+1)//2)
 
     # -----------------------------------------------------------------------
     # Get number of observations and fixed effects
