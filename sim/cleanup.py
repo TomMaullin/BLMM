@@ -158,7 +158,7 @@ def cleanup(OutDir,simNo):
         # -------------------------------------------------------------------
 
         # Read in file
-        vechD_current = pd.io.parsers.read_csv(os.path.join(simDir, 'lmer', 'vechD' + str(cv) + '.csv')).values
+        vechD_current = pd.io.parsers.read_csv(os.path.join(simDir, 'lmer', 'vechD_' + str(cv) + '.csv')).values
 
         # Loop through covariance parameters adding them one voxel at a time
         for param in np.arange(ncov):
