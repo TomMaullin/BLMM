@@ -51,21 +51,19 @@ echo 'log dir'
 echo $not_config_logdir
 echo $config_logdir
 if [ "$not_config_logdir" == "" ] ; then
-  echo "1"
-else
-  echo "2"
+  not_config_logdir='log/'
 fi
 if [ "$config_logdir" == "" ] ; then
-  echo "3"
-else
-  echo "4"
+  config_logdir='log/'
 fi
+echo $not_config_logdir
+echo $config_logdir
 
 
 # -----------------------------------------------------------------------
 # Submit setup job
 # -----------------------------------------------------------------------
-fsl_sub -l log/ -N setup bash $BLMM_PATH/scripts/cluster_blmm_setup.sh $inputs > /tmp/$$ && setupID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
+fsl_sub -l $config_logdir -N setup bash $BLMM_PATH/scripts/cluster_blmm_setup.sh $inputs > /tmp/$$ && setupID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
 if [ "$setupID" == "" ] ; then
   echo "Setup job submission failed!"
 else
@@ -113,7 +111,7 @@ i=1
 while [ "$i" -le "$nb" ]; do
 
   # Submit nb batches and get the ids for them
-  fsl_sub -j $setupID -l log/ -N batch${i} bash $BLMM_PATH/scripts/cluster_blmm_batch.sh $i $inputs > /tmp/$$ && batchIDs=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$batchIDs
+  fsl_sub -j $setupID -l $config_logdir -N batch${i} bash $BLMM_PATH/scripts/cluster_blmm_batch.sh $i $inputs > /tmp/$$ && batchIDs=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$batchIDs
   i=$(($i + 1))
 done
 if [ "$batchIDs" == "" ] ; then
@@ -125,7 +123,7 @@ fi
 # -----------------------------------------------------------------------
 # Submit Concatenation job
 # -----------------------------------------------------------------------
-fsl_sub -j $batchIDs -l log/ -N concat bash $BLMM_PATH/scripts/cluster_blmm_concat.sh $inputs > /tmp/$$ && concatID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
+fsl_sub -j $batchIDs -l $config_logdir -N concat bash $BLMM_PATH/scripts/cluster_blmm_concat.sh $inputs > /tmp/$$ && concatID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
 if [ "$concatID" == "" ] ; then
   echo "Concatenation job submission failed!"
 else
@@ -139,7 +137,7 @@ fi
 if [ -z $config_voxelBatching ] || [ "$config_voxelBatching" == "0" ] ; then
     
   # Voxel batching is not turned on
-  fsl_sub -j $concatID -l log/ -N results bash $BLMM_PATH/scripts/cluster_blmm_results.sh $inputs "-1" > /tmp/$$ && resultsIDs=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
+  fsl_sub -j $concatID -l $config_logdir -N results bash $BLMM_PATH/scripts/cluster_blmm_results.sh $inputs "-1" > /tmp/$$ && resultsIDs=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
   if [ "$resultsIDs" == "" ] ; then
     echo "Results job submission failed!"
   else
@@ -155,7 +153,7 @@ else
   while [ "$i" -le "$nvb" ]; do
 
     # Submit nb batches and get the ids for them
-    fsl_sub -j $concatID -l log/ -N results$i bash $BLMM_PATH/scripts/cluster_blmm_results.sh $inputs $i > /tmp/$$ && resultsIDs=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$resultsIDs
+    fsl_sub -j $concatID -l $config_logdir -N results$i bash $BLMM_PATH/scripts/cluster_blmm_results.sh $inputs $i > /tmp/$$ && resultsIDs=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$resultsIDs
     i=$(($i + 1))
   done
   echo "Submitted: Results jobs (in Voxel Batch mode)."
@@ -165,7 +163,7 @@ fi
 # -----------------------------------------------------------------------
 # Submit Cleanup job
 # -----------------------------------------------------------------------
-fsl_sub -j $resultsIDs -l log/ -N cleanup bash $BLMM_PATH/scripts/cluster_blmm_cleanup.sh $inputs > /tmp/$$ && cleanupID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
+fsl_sub -j $resultsIDs -l $config_logdir -N cleanup bash $BLMM_PATH/scripts/cluster_blmm_cleanup.sh $inputs > /tmp/$$ && cleanupID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
 if [ "$cleanupID" == "" ] ; then
   echo "Clean up job submission failed!"
 else
