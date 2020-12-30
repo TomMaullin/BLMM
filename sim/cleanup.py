@@ -110,12 +110,11 @@ def cleanup(OutDir,simNo):
     # Convert R files to NIFTI images
     # -----------------------------------------------------------------------
 
-    # List all beta parameter files for simulation
-    beta_files = glob.glob(os.path.join(simDir,'lmer', 'beta_*'))
+    # Number of voxels in each batch
+    nvb = 10000
 
     # Work out number of groups we have to split indices into.
-    nvg = len(beta_files)
-    print('nvg', nvg)
+    nvg = int(v//nvb)
     
     # Split voxels we want to look at into groups we can compute
     voxelGroups = np.array_split(np.arange(v), nvg)
