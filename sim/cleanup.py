@@ -151,7 +151,7 @@ def cleanup(OutDir,simNo):
         sigma2_current = pd.io.parsers.read_csv(os.path.join(simDir, 'lmer', 'sigma2_' + str(cv) + '.csv')).values
 
         # Add back to a NIFTI file
-        addBlockToNifti(os.path.join(simDir,"lmer","lmer_vox_sigma2.nii"), sigma2_current, inds_cv, volInd=param,dim=(*dim,1))
+        addBlockToNifti(os.path.join(simDir,"lmer","lmer_vox_sigma2.nii"), sigma2_current, inds_cv, volInd=0,dim=(*dim,1))
 
         # -------------------------------------------------------------------
         # vechD combine
@@ -174,7 +174,7 @@ def cleanup(OutDir,simNo):
         llh_current = pd.io.parsers.read_csv(os.path.join(simDir, 'lmer', 'llh_' + str(cv) + '.csv')).values
 
         # Add back to a NIFTI file
-        addBlockToNifti(os.path.join(simDir,"lmer","lmer_vox_llh.nii"), llh_current, inds_cv, volInd=param,dim=(*dim,1))
+        addBlockToNifti(os.path.join(simDir,"lmer","lmer_vox_llh.nii"), llh_current, inds_cv, volInd=0,dim=(*dim,1))
 
 
     # write.csv(betas,paste(lmerDir,'/beta_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
