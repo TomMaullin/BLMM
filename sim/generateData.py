@@ -103,7 +103,7 @@ def generate_data(n,dim,OutDir,simNo):
         qk = nraneffs[k]
 
         # Reshape
-        DhalfDict[k]= DhalfDict[k].reshape(*np.ones(len(dim)),qk,qk)
+        DhalfDict[k]= DhalfDict[k].reshape(*np.ones(len(dim), dtype=np.int16),qk,qk)
 
     # -------------------------------------------------
     # Generate smooth b maps
