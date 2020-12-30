@@ -279,7 +279,12 @@ def generate_data(n,dim,OutDir,simNo):
         f.write("  - c1: " + os.linesep)
         f.write("      name: null_contrast" + os.linesep)
         f.write("      vector: [0, 0, 0, 1]" + os.linesep)
-        f.write("      statType: T ")
+        f.write("      statType: T " + os.linesep)
+
+        # Voxel-wise batching for speedup - not necessary - but
+        # convinient
+        f.write("voxelBatching: 1")
+        f.write("MAXMEM: 2**34")
 
     # -----------------------------------------------------
     # Yfiles.txt
