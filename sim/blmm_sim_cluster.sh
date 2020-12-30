@@ -18,7 +18,7 @@ simInd=44
 # -----------------------------------------------------------------------
 # Submit data generation job
 # -----------------------------------------------------------------------
-fsl_sub -l sim/sim$simInd/simlog/ -N dataGen$simInd bash $SIM_PATH/generateData.sh $SIM_PATH $simInd > /tmp/$$ && dataGenID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
+fsl_sub -l $SIM_PATH/sim$simInd/simlog/ -N dataGen$simInd bash $SIM_PATH/generateData.sh $SIM_PATH $simInd > /tmp/$$ && dataGenID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
 
 # This loop waits for the data generation job to finish before
 # deciding how many batches to run. It also checks to see if the data
@@ -67,7 +67,7 @@ batchInd=0
 while [ $batchInd -lt $nb ]
 do
   # Submit nb batches and get the ids for them
-  fsl_sub -j $dataGenID -l sim/sim$simInd/simlog/ -N lmerParamEst$simInd'_'$batchInd bash $SIM_PATH/lmer_paramEst.sh $simInd $batchInd $SIM_PATH > /tmp/$$ && lmerParamID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$lmerParamID
+  fsl_sub -j $dataGenID -l $SIM_PATH/sim$simInd/simlog/ -N lmerParamEst$simInd'_'$batchInd bash $SIM_PATH/lmer_paramEst.sh $simInd $batchInd $SIM_PATH > /tmp/$$ && lmerParamID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$lmerParamID
   i=$(($i + 1))
 
   #done
@@ -90,11 +90,41 @@ done
 # -----------------------------------------------------------------------
 # Run BLMM
 # -----------------------------------------------------------------------
-bash ./blmm_cluster.sh ./sim/sim$simInd/inputs.yml
+bash ./blmm_cluster.sh $SIM_PATH/sim$simInd/inputs.yml
 
 # -----------------------------------------------------------------------
 # Submit Concatenation job
 # -----------------------------------------------------------------------
+
+# Variable to check if blmm finished running (see if cleanup job output
+# the analysis complete message)
+blmmran=$(cat $SIM_PATH/sim$simInd/simlog/cleanup.o* 2> /dev/null)
+
+# Wait for blmm to finish running
+i=0
+while [ "$blmmran"  == "" ]
+do
+
+  # Wait a bit before checking file again
+  sleep 20
+
+  # Check to see if blmm ran
+  blmmran=$(cat $SIM_PATH/sim$simInd/simlog/cleanup.o* 2> /dev/null)
+
+  # Update i
+  i=$(($i + 1))
+
+  # Timeout
+  if [ $i -gt 10 ]; then
+    echo "Something seems to be taking a while. Please check for errors."
+  fi
+
+  echo "blmm running..."
+
+done
+
+echo "blmm ran!"
+
 # fsl_sub -j $batchIDs -l log/ -N concat bash $SIM_PATH/scripts/cluster_blmm_concat.sh $inputs > /tmp/$$ && concatID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
 # if [ "$concatID" == "" ] ; then
 #   echo "Concatenation job submission failed!"
