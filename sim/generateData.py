@@ -89,6 +89,23 @@ def generate_data(n,dim,OutDir,simNo):
     beta = get_beta(p)
 
     # -------------------------------------------------
+    # Get Dhalf
+    # -------------------------------------------------
+    DhalfDict = dict()
+    DhalfDict[0] = np.array([[1,0],[1/2, np.sqrt(3)/2]])
+    DhalfDict[1] = np.array([[1]])
+
+    # Loop through and reshape for broadcasting
+    for k in np.arange(r):
+
+        # Obtain number of random effects for this 
+        # factor
+        qk = nraneffs[k]
+
+        # Reshape
+        DhalfDict[k]= DhalfDict[k].reshape(np.ones(len(dim)),qk,qk)
+
+    # -------------------------------------------------
     # Generate smooth b maps
     # -------------------------------------------------
 

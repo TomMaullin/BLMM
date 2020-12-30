@@ -133,7 +133,7 @@ def cleanup(OutDir,simNo):
         # -------------------------------------------------------------------
 
         # Read in file
-        beta_current = pd.io.parsers.read_csv(os.path.join(simDir, 'lmer', 'beta_' + str(cv) + '.csv'), header=None).values
+        beta_current = pd.io.parsers.read_csv(os.path.join(simDir, 'lmer', 'beta_' + str(cv) + '.csv')).values
 
         print('beta_current shape', beta_current.shape)
 
@@ -148,7 +148,7 @@ def cleanup(OutDir,simNo):
         # -------------------------------------------------------------------
 
         # Read in file
-        sigma2_current = pd.io.parsers.read_csv(os.path.join(simDir, 'lmer', 'sigma2_' + str(cv) + '.csv'), header=None).values
+        sigma2_current = pd.io.parsers.read_csv(os.path.join(simDir, 'lmer', 'sigma2_' + str(cv) + '.csv')).values
 
         # Add back to a NIFTI file
         addBlockToNifti(os.path.join(simDir,"lmer","lmer_vox_sigma2.nii"), sigma2_current, inds_cv, volInd=param,dim=dim)
@@ -158,7 +158,7 @@ def cleanup(OutDir,simNo):
         # -------------------------------------------------------------------
 
         # Read in file
-        vechD_current = pd.io.parsers.read_csv(os.path.join(simDir, 'lmer', 'vechD' + str(cv) + '.csv'), header=None).values
+        vechD_current = pd.io.parsers.read_csv(os.path.join(simDir, 'lmer', 'vechD' + str(cv) + '.csv')).values
 
         # Loop through covariance parameters adding them one voxel at a time
         for param in np.arange(ncov):
@@ -171,7 +171,7 @@ def cleanup(OutDir,simNo):
         # -------------------------------------------------------------------
 
         # Read in file
-        llh_current = pd.io.parsers.read_csv(os.path.join(simDir, 'lmer', 'llh_' + str(cv) + '.csv'), header=None).values
+        llh_current = pd.io.parsers.read_csv(os.path.join(simDir, 'lmer', 'llh_' + str(cv) + '.csv')).values
 
         # Add back to a NIFTI file
         addBlockToNifti(os.path.join(simDir,"lmer","lmer_vox_llh.nii"), llh_current, inds_cv, volInd=param,dim=dim)
