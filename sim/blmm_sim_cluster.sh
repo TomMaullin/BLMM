@@ -18,7 +18,9 @@ simInd=44
 # -----------------------------------------------------------------------
 # Submit data generation job
 # -----------------------------------------------------------------------
-fsl_sub -l $SIM_PATH/sim$simInd/simlog/ -N dataGen$simInd bash $SIM_PATH/generateData.sh $SIM_PATH $simInd > /tmp/$$ && dataGenID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
+fsl_sub -l $SIM_PATH/sim$simInd/simlog/ -N dataGen$simInd \
+        bash $SIM_PATH/generateData.sh $SIM_PATH $simInd > /tmp/$$ && \
+        dataGenID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
 
 # This loop waits for the data generation job to finish before
 # deciding how many batches to run. It also checks to see if the data
@@ -67,7 +69,11 @@ batchInd=0
 while [ $batchInd -lt $nb ]
 do
   # Submit nb batches and get the ids for them
-  fsl_sub -j $dataGenID -l $SIM_PATH/sim$simInd/simlog/ -N lmerParamEst$simInd'_'$batchInd bash $SIM_PATH/lmer_paramEst.sh $simInd $batchInd $SIM_PATH > /tmp/$$ && lmerParamID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$lmerParamID
+  fsl_sub -j $dataGenID -l $SIM_PATH/sim$simInd/simlog/ \
+          -N lmerParamEst$simInd'_'$batchInd \
+          bash $SIM_PATH/lmer_paramEst.sh $simInd $batchInd $SIM_PATH > /tmp/$$ && \
+          lmerParamID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$lmerParamID
+
   i=$(($i + 1))
 
   #done
@@ -118,15 +124,16 @@ do
 done
 
 # -----------------------------------------------------------------------
-# Cleanup and concatenate results!
+# Cleanup simulation
 # -----------------------------------------------------------------------
 
 echo "blmm ran!"
 
-# fsl_sub -j $batchIDs -l log/ -N concat bash $SIM_PATH/scripts/cluster_blmm_concat.sh $inputs > /tmp/$$ && concatID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
-# if [ "$concatID" == "" ] ; then
-#   echo "Concatenation job submission failed!"
-# else
-#   echo "Submitted: Concatenation job."
-# fi
+fsl_sub -j $lmerParamID -l $SIM_PATH/sim$simInd/simlog/ -N cleanup$simInd \
+        bash $SIM_PATH/cleanup.sh $SIM_PATH $simInd > /tmp/$$ && \
+        cleanupID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
+  
+# -----------------------------------------------------------------------
+# Concatenate results!
+# -----------------------------------------------------------------------
 

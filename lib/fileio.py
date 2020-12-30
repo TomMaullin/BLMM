@@ -182,7 +182,7 @@ def addBlockToNifti(fname, block, blockInds,dim=None,volInd=None,aff=None,hdr=No
     while fileLocked:
         try:
             # Create lock file, so other jobs know we are writing to this file
-            os.open(fname + ".lock", os.O_CREAT|os.O_EXCL|os.O_RDWR)
+            f = os.open(fname + ".lock", os.O_CREAT|os.O_EXCL|os.O_RDWR)
             fileLocked = False
         except FileExistsError:
             fileLocked = True
@@ -284,6 +284,7 @@ def addBlockToNifti(fname, block, blockInds,dim=None,volInd=None,aff=None,hdr=No
     # Delete lock file, so other jobs know they can now write to the
     # file
     os.remove(fname + ".lock")
+    os.close(f)
 
     del nifti, fname, data_out, affine
 
