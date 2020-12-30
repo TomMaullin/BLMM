@@ -123,7 +123,7 @@ def generate_data(n,dim,OutDir,simNo):
         lk = nlevels[k]
 
         # Obtain Dhalf for the factor
-        Dhalf = np.random.randn(*dim,qk,qk)#Dhalfdict[k].reshape(*(dim),qk,qk)
+        Dhalf = DhalfDict[k]
 
         # Loop through each level of the factor
         for l in np.arange(lk):

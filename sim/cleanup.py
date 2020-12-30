@@ -141,7 +141,7 @@ def cleanup(OutDir,simNo):
         for param in np.arange(p):
 
             # Add back to a NIFTI file
-            addBlockToNifti(os.path.join(simDir,"lmer","lmer_vox_beta.nii"), beta_current[:,param], inds_cv, volInd=param,dim=dim)
+            addBlockToNifti(os.path.join(simDir,"lmer","lmer_vox_beta.nii"), beta_current[:,param], inds_cv, volInd=param,dim=(*dim,int(p)))
 
         # -------------------------------------------------------------------
         # Sigma2 combine
@@ -151,7 +151,7 @@ def cleanup(OutDir,simNo):
         sigma2_current = pd.io.parsers.read_csv(os.path.join(simDir, 'lmer', 'sigma2_' + str(cv) + '.csv')).values
 
         # Add back to a NIFTI file
-        addBlockToNifti(os.path.join(simDir,"lmer","lmer_vox_sigma2.nii"), sigma2_current, inds_cv, volInd=param,dim=dim)
+        addBlockToNifti(os.path.join(simDir,"lmer","lmer_vox_sigma2.nii"), sigma2_current, inds_cv, volInd=param,dim=(*dim,1))
 
         # -------------------------------------------------------------------
         # vechD combine
@@ -164,7 +164,7 @@ def cleanup(OutDir,simNo):
         for param in np.arange(ncov):
 
             # Add back to a NIFTI file
-            addBlockToNifti(os.path.join(simDir,"lmer","lmer_vox_D.nii"), vechD_current[:,param], inds_cv, volInd=param,dim=dim)
+            addBlockToNifti(os.path.join(simDir,"lmer","lmer_vox_D.nii"), vechD_current[:,param], inds_cv, volInd=param,dim=(*dim,int(ncov)))
 
         # -------------------------------------------------------------------
         # Log-likelihood combine
@@ -174,7 +174,7 @@ def cleanup(OutDir,simNo):
         llh_current = pd.io.parsers.read_csv(os.path.join(simDir, 'lmer', 'llh_' + str(cv) + '.csv')).values
 
         # Add back to a NIFTI file
-        addBlockToNifti(os.path.join(simDir,"lmer","lmer_vox_llh.nii"), llh_current, inds_cv, volInd=param,dim=dim)
+        addBlockToNifti(os.path.join(simDir,"lmer","lmer_vox_llh.nii"), llh_current, inds_cv, volInd=param,dim=(*dim,1))
 
 
     # write.csv(betas,paste(lmerDir,'/beta_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
