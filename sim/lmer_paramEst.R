@@ -1,8 +1,8 @@
 #!/apps/well/R/3.4.3/bin/Rscript
 #$ -cwd
 #$ -q short.qc
-#$ -o sim/sim$simInd/logDataGen/
-#$ -e sim/sim$simInd/logDataGen/
+#$ -o sim/sim$simInd/simlog/
+#$ -e sim/sim$simInd/simlog/
 
 library(MASS)
 library(Matrix)

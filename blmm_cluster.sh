@@ -47,6 +47,21 @@ touch $config_outdir/nb.txt
 inputs=$config_outdir/inputs.yml
 cp $cfg $inputs
 
+echo 'log dir'
+echo $not_config_simdir
+echo $config_simdir
+if [ "$not_config_simdir" == "" ] ; then
+  echo "1"
+else
+  echo "2"
+fi
+if [ "$config_simdir" == "" ] ; then
+  echo "3"
+else
+  echo "4"
+fi
+
+
 # -----------------------------------------------------------------------
 # Submit setup job
 # -----------------------------------------------------------------------

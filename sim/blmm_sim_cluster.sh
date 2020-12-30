@@ -18,7 +18,7 @@ simInd=44
 # -----------------------------------------------------------------------
 # Submit data generation job
 # -----------------------------------------------------------------------
-fsl_sub -l sim/sim$simInd/logDataGen/ -N dataGen$simInd bash $SIM_PATH/generateData.sh $SIM_PATH $simInd > /tmp/$$ && dataGenID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
+fsl_sub -l sim/sim$simInd/simlog/ -N dataGen$simInd bash $SIM_PATH/generateData.sh $SIM_PATH $simInd > /tmp/$$ && dataGenID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
 
 # This loop waits for the data generation job to finish before
 # deciding how many batches to run. It also checks to see if the data
@@ -37,7 +37,7 @@ do
 
   # Check for error
   if [ $i -gt 30 ]; then
-    errorlog="/sim$simInd/logDataGen/dataGen.e$dataGenID"
+    errorlog="/sim$simInd/simlog/dataGen.e$dataGenID"
     if [ -s $errorlog ]; then
       echo "Data generation has errored"
       exit
@@ -67,7 +67,7 @@ batchInd=0
 while [ $batchInd -lt $nb ]
 do
   # Submit nb batches and get the ids for them
-  fsl_sub -j $dataGenID -l sim/sim$simInd/logDataGen/ -N lmerParamEst$simInd'_'$batchInd bash $SIM_PATH/lmer_paramEst.sh $simInd $batchInd $SIM_PATH > /tmp/$$ && lmerParamID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$lmerParamID
+  fsl_sub -j $dataGenID -l sim/sim$simInd/simlog/ -N lmerParamEst$simInd'_'$batchInd bash $SIM_PATH/lmer_paramEst.sh $simInd $batchInd $SIM_PATH > /tmp/$$ && lmerParamID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$lmerParamID
   i=$(($i + 1))
 
   #done

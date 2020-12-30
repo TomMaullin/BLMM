@@ -284,7 +284,11 @@ def generate_data(n,dim,OutDir,simNo):
         # Voxel-wise batching for speedup - not necessary - but
         # convinient
         f.write("voxelBatching: 1" + os.linesep)
-        f.write("MAXMEM: 2**34")
+        f.write("MAXMEM: 2**34" + os.linesep)
+
+        # Log directory and simulation mode (backdoor options)
+        f.write("sim: 1" + os.linesep)
+        f.write("logdir: " + os.path.join(simDir,"simlog"))
 
     # -----------------------------------------------------
     # Yfiles.txt
