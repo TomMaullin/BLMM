@@ -2111,7 +2111,7 @@ def T2P3D(T,df,minlog,logten=True):
     # Initialize empty P
     P = np.zeros(np.shape(T))
 
-    if log10:
+    if logten:
       # Do this seperately for >0 and <0 to avoid underflow
       P[T < 0] = -np.log10(1-stats.t.cdf(T[T < 0], df[T < 0]))
       P[T >= 0] = -np.log10(stats.t.cdf(-T[T >= 0], df[T >= 0]))
