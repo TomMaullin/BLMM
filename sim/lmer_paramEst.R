@@ -60,24 +60,20 @@ Zdata1 <- read.csv(file = paste(outDir,'/sim',toString(simInd),'/data/rr1.csv',s
 # Number of voxels we have
 nvox <- dim(all_Y)[2]
 
-# Number of voxels we estimated
-nvox_est <- 0
-
 # Empty array for beta estimates
 betas <- matrix(0,dim(all_Y)[2],4)
 
 # Empty array for sigma2 estimates
 sigma2 <- matrix(0,dim(all_Y)[2],1)
 
+# Empty array for computation times
+times <- matrix(0,dim(all_Y)[2],1)
+
 # Empty array for vechD estimates
 vechD <- matrix(0,dim(all_Y)[2],4)
 
 # Empty array for log-likelihoods
 llh <- matrix(0,dim(all_Y)[2],1)
-
-# Total computation time (used to get mean across computed
-# voxels)
-tct <- 0 
 
 # Loop through each model and run lmer for each voxel
 for (i in 1:nvox){
@@ -128,11 +124,8 @@ for (i in 1:nvox){
     # Calculate time
     lmertime <- t$toc-t$tic
     
-    # Add to total computation time
-    tct <- tct + lmertime
-    
-    # Update number of voxels estimated
-    nvox_est <- nvox_est + 1
+    # Add to computation time
+    times[i,1]<-lmertime
     
     # Record fixed effects estimates
     betas[i,1:4] <- fixef(m)
@@ -176,8 +169,7 @@ write.csv(betas,paste(lmerDir,'/beta_',toString(batchNo),'.csv',sep=''), row.nam
 write.csv(sigma2,paste(lmerDir,'/sigma2_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
 write.csv(vechD,paste(lmerDir,'/vechD_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
 write.csv(llh,paste(lmerDir,'/llh_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
-write.csv(tct,paste(lmerDir,'/time_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
-write.csv(nvox_est,paste(lmerDir,'/v_est_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
+write.csv(times,paste(lmerDir,'/time_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
 
 # Remove the R file for this batch as we no longer need it
 file.remove(paste(outDir,'/sim',toString(simInd),'/data/Y_Rversion_',toString(batchNo),'.csv',sep=''))
