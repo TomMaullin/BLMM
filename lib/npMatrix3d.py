@@ -2094,8 +2094,6 @@ def get_F3D(L, XtX, XtZ, DinvIplusZtZD, betahat, sigma2, nraneffs):
 # - `T`: A matrix of T statistics.
 # - `df`: The degrees of freedom of the T statistic (can be spatially varying).
 # - `minlog`: A value to replace `-inf` p-values with.
-# - `logten`: Optional. If true, a -log10(p) map is returned, if false a p map
-#             is returned. (Default: True). 
 #
 # ----------------------------------------------------------------------------
 #
@@ -2106,20 +2104,14 @@ def get_F3D(L, XtX, XtZ, DinvIplusZtZD, betahat, sigma2, nraneffs):
 # - `P`: The matrix of -log10(p) values.
 #
 # ============================================================================
-def T2P3D(T,df,minlog,logten=True):
+def T2P3D(T,df,minlog):
 
     # Initialize empty P
     P = np.zeros(np.shape(T))
 
-    if logten:
-      # Do this seperately for >0 and <0 to avoid underflow
-      P[T < 0] = -np.log10(1-stats.t.cdf(T[T < 0], df[T < 0]))
-      P[T >= 0] = -np.log10(stats.t.cdf(-T[T >= 0], df[T >= 0]))
-    else:
-      # Do this seperately for >0 and <0 to avoid underflow
-      P[T < 0] = 1-stats.t.cdf(T[T < 0], df[T < 0])
-      P[T >= 0] = stats.t.cdf(-T[T >= 0], df[T >= 0])
-
+    # Do this seperately for >0 and <0 to avoid underflow
+    P[T < 0] = -np.log10(1-stats.t.cdf(T[T < 0], df[T < 0]))
+    P[T >= 0] = -np.log10(stats.t.cdf(-T[T >= 0], df[T >= 0]))
 
     # Remove infs
     P[np.logical_and(np.isinf(P), P<0)]=minlog
