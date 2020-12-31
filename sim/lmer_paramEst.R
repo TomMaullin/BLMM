@@ -35,9 +35,9 @@ print(simInd)
 print(batchNo)
 print(outDir)
 
-# simInd <-20
-# batchNo <- 51
-# outDir <- '/home/tommaullin/Documents/BLMM/sim'
+#simInd <-20
+#batchNo <- 51
+#outDir <- '/home/tommaullin/Documents/BLMM/sim'
 
 # Read in the fixed effects design
 X <- read.csv(file = paste(outDir,'/sim',toString(simInd),'/data/X.csv',sep=''),sep=',', header=FALSE)
@@ -92,27 +92,33 @@ for (i in 1:nvox){
   # result of missing data
   if (!all(y==0)){
     
-    # Get mask
-    m <- 1.0*(y !=0)
-    
     # Reformat X into columns and mask
-    x1 <- m*as.matrix(X[,1])
-    x2 <- m*as.matrix(X[,2])
-    x3 <- m*as.matrix(X[,3])
-    x4 <- m*as.matrix(X[,4])
+    x1 <- as.matrix(X[,1])[y!=0]
+    x2 <- as.matrix(X[,2])[y!=0]
+    x3 <- as.matrix(X[,3])[y!=0]
+    x4 <- as.matrix(X[,4])[y!=0]
     
     # Reformat the raw regressor matrix for the first random factor into columns
-    z01 <- m*as.matrix(Zdata0[,1])
-    z02 <- m*as.matrix(Zdata0[,2])
+    z01 <- as.matrix(Zdata0[,1])[y!=0]
+    z02 <- as.matrix(Zdata0[,2])[y!=0]
     
     # Reformat the raw regressor matrix for the second random factor into columns
-    z11 <- m*as.matrix(Zdata1[,1])
+    z11 <- as.matrix(Zdata1[,1])[y!=0]
+    
+    # Drop missing from factor 0
+    Zf0 <- Zfactor0[y!=0]
+    
+    # Drop missing from factor 1
+    Zf1 <- Zfactor1[y!=0]
+    
+    # Finally, drop any missing Y
+    y <- y[y!=0]
   
     # Run the model
-    m <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + (0 + z01 + z02|Zfactor0) + (0 + z11|Zfactor1), REML=FALSE) 
+    m <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + (0 + z01 + z02|Zf0) + (0 + z11|Zf1), REML=FALSE) 
   
     # Get the function which is optimized
-    devfun <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + (0 + z01 + z02|Zfactor0) + (0 + z11|Zfactor1), REML=FALSE, devFunOnly = TRUE) 
+    devfun <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + (0 + z01 + z02|Zf0) + (0 + z11|Zf1), REML=FALSE, devFunOnly = TRUE) 
   
     # Time lmer from only the devfun point onwards (to ensure fair comparison)
     tic('lmer time')
