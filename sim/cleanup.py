@@ -143,6 +143,9 @@ def cleanup(OutDir,simNo):
             # Add back to a NIFTI file
             addBlockToNifti(os.path.join(simDir,"lmer","lmer_vox_beta.nii"), beta_current[:,param], inds_cv, volInd=param,dim=(*dim,int(p)))
 
+        # Remove file
+        os.remove(os.path.join(simDir, 'lmer', 'beta_' + str(cv) + '.csv'))
+
         # -------------------------------------------------------------------
         # Sigma2 combine
         # -------------------------------------------------------------------
@@ -152,6 +155,9 @@ def cleanup(OutDir,simNo):
 
         # Add back to a NIFTI file
         addBlockToNifti(os.path.join(simDir,"lmer","lmer_vox_sigma2.nii"), sigma2_current, inds_cv, volInd=0,dim=(*dim,1))
+
+        # Remove file
+        os.remove(os.path.join(simDir, 'lmer', 'sigma2_' + str(cv) + '.csv'))
 
         # -------------------------------------------------------------------
         # vechD combine
@@ -166,6 +172,9 @@ def cleanup(OutDir,simNo):
             # Add back to a NIFTI file
             addBlockToNifti(os.path.join(simDir,"lmer","lmer_vox_D.nii"), vechD_current[:,param], inds_cv, volInd=param,dim=(*dim,int(ncov)))
 
+        # Remove file
+        os.remove(os.path.join(simDir, 'lmer', 'vechD_' + str(cv) + '.csv'))
+
         # -------------------------------------------------------------------
         # Log-likelihood combine
         # -------------------------------------------------------------------
@@ -176,13 +185,21 @@ def cleanup(OutDir,simNo):
         # Add back to a NIFTI file
         addBlockToNifti(os.path.join(simDir,"lmer","lmer_vox_llh.nii"), llh_current, inds_cv, volInd=0,dim=(*dim,1))
 
+        # Remove file
+        os.remove(os.path.join(simDir, 'lmer', 'llh_' + str(cv) + '.csv'))
 
-    # write.csv(betas,paste(lmerDir,'/beta_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
-    # write.csv(sigma2,paste(lmerDir,'/sigma2_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
-    # write.csv(vechD,paste(lmerDir,'/vechD_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
-    # write.csv(llh,paste(lmerDir,'/llh_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
-    # write.csv(tct,paste(lmerDir,'/time_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
-    # write.csv(nvox_est,paste(lmerDir,'/v_est_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
+        # -------------------------------------------------------------------
+        # Times combine
+        # -------------------------------------------------------------------
+
+        # Read in file
+        times_current = pd.io.parsers.read_csv(os.path.join(simDir, 'lmer', 'times_' + str(cv) + '.csv')).values
+
+        # Add back to a NIFTI file
+        addBlockToNifti(os.path.join(simDir,"lmer","lmer_vox_times.nii"), times_current, inds_cv, volInd=0,dim=(*dim,1))
+
+        # Remove file
+        os.remove(os.path.join(simDir, 'lmer', 'times_' + str(cv) + '.csv'))
 
     # -----------------------------------------------------------------------
     # Remove BLMM maps we are not interested in (for memory purposes)

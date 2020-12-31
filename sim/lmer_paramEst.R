@@ -169,7 +169,7 @@ write.csv(betas,paste(lmerDir,'/beta_',toString(batchNo),'.csv',sep=''), row.nam
 write.csv(sigma2,paste(lmerDir,'/sigma2_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
 write.csv(vechD,paste(lmerDir,'/vechD_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
 write.csv(llh,paste(lmerDir,'/llh_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
-write.csv(times,paste(lmerDir,'/time_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
+write.csv(times,paste(lmerDir,'/times_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
 
 # Remove the R file for this batch as we no longer need it
 file.remove(paste(outDir,'/sim',toString(simInd),'/data/Y_Rversion_',toString(batchNo),'.csv',sep=''))
