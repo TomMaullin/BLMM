@@ -223,9 +223,19 @@ def main(inputs, nraneffs, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX
             Tc = get_T3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2, nraneffs).reshape(v)
             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT.nii'), Tc, inds,volInd=current_nt,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
-            # Obatin and output p-values
+            # Obtain and output p-values
             pc = T2P3D(Tc,swdfc,minlog)
             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conTlp.nii'), pc, inds,volInd=current_nt,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+
+            # When running simulations, we also produce a non-logged p-value map as
+            # it is easier to assess null-distribution performance in the non-logged
+            # space
+            if 'sim' in inputs:
+                if inputs['sim']:
+                    # Obtain and output p-values
+                    pc = T2P3D(Tc,swdfc,minlog,False)
+                    addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conTp.nii'), pc, inds,volInd=current_nt,dim=dimT,aff=nifti.affine,hdr=nifti.header)
+
 
             # Record that we have seen another T contrast
             current_nt = current_nt + 1
