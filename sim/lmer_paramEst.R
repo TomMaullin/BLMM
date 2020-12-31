@@ -96,6 +96,7 @@ for (i in 1:nvox){
     m <- 1.0*(y !=0)
     
     # Reformat X into columns and mask
+    x1 <- m*as.matrix(X[,1])
     x2 <- m*as.matrix(X[,2])
     x3 <- m*as.matrix(X[,3])
     x4 <- m*as.matrix(X[,4])
@@ -108,10 +109,10 @@ for (i in 1:nvox){
     z11 <- m*as.matrix(Zdata1[,1])
   
     # Run the model
-    m <- lmer(y ~ x2 + x3 + x4 + (0 + z01 + z02|Zfactor0) + (0 + z11|Zfactor1), REML=FALSE) #Don't need intercepts in R - automatically assumed
+    m <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + (0 + z01 + z02|Zfactor0) + (0 + z11|Zfactor1), REML=FALSE) 
   
     # Get the function which is optimized
-    devfun <- lmer(y ~ x2 + x3 + x4 + (0 + z01 + z02|Zfactor0) + (0 + z11|Zfactor1), REML=FALSE, devFunOnly = TRUE) #Don't need intercepts in R - automatically assumed
+    devfun <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + (0 + z01 + z02|Zfactor0) + (0 + z11|Zfactor1), REML=FALSE, devFunOnly = TRUE) 
   
     # Time lmer from only the devfun point onwards (to ensure fair comparison)
     tic('lmer time')
