@@ -39,7 +39,7 @@ def cleanup(OutDir,simNo):
     resDir = os.path.join(OutDir,'results')
 
     # If resDir doesn't exist, make it
-    if !os.path.exists(resDir):
+    if not os.path.exists(resDir):
         os.mkdir(resDir)
 
     # -----------------------------------------------------------------------
