@@ -33,6 +33,16 @@ def cleanup(OutDir,simNo):
     simDir = os.path.join(OutDir, 'sim' + str(simNo))
 
     # -----------------------------------------------------------------------
+    # Create results directory (if we are on the first simulation)
+    # -----------------------------------------------------------------------
+    # Results directory
+    resDir = os.path.join(OutDir,'results')
+
+    # If resDir doesn't exist, make it
+    if !os.path.exists(resDir):
+        os.mkdir(resDir)
+
+    # -----------------------------------------------------------------------
     # Read in design in BLMM inputs form (this just is easier as code already
     # exists for using this format).
     # -----------------------------------------------------------------------
@@ -213,6 +223,210 @@ def cleanup(OutDir,simNo):
     os.remove(os.path.join(simDir, 'BLMM', 'blmm_vox_n.nii'))
 
     # -----------------------------------------------------------------------
+    # MAE and MRD for beta maps
+    # -----------------------------------------------------------------------
+
+    # Get BLMM beta
+    beta_blmm = nib.load(os.path.join(simDir, 'BLMM', 'blmm_vox_beta.nii')).get_data()
+
+    # Get lmer beta
+    beta_lmer = nib.load(os.path.join(simDir, 'lmer', 'lmer_vox_beta.nii')).get_data()
+
+    # Remove zero values
+    beta_blmm = beta_blmm[beta_lmer!=0]
+    beta_lmer = beta_lmer[beta_lmer!=0]
+
+    # Get MAE
+    MAE_beta = np.max(np.abs(beta_blmm-beta_lmer))
+
+    # Get MRD
+    MRD_beta = np.max(2*np.abs((beta_blmm-beta_lmer)/(beta_blmm+beta_lmer)))
+
+    # Make line to add to csv for MAE
+    MAE_beta_line = np.array([simNo, MAE_beta])
+
+    # Make line to add to csv for MRD
+    MRD_beta_line = np.array([simNo, MRD_beta])
+
+    # MAE beta file name
+    fname_MAE = os.path.join(resDir, 'MAE_beta.csv')
+
+    # MRD beta file name
+    fname_MRD = os.path.join(resDir, 'MRD_beta.csv')
+
+    # Add to files 
+    addLineToCSV(fname_MAE, MAE_beta_line)
+    addLineToCSV(fname_MRD, MRD_beta_line)
+
+    # Cleanup
+    del beta_lmer, beta_blmm, MAE_beta, MRD_beta, MAE_beta_line, MRD_beta_line
+
+    # -----------------------------------------------------------------------
+    # MAE and MRD for sigma2 maps
+    # -----------------------------------------------------------------------
+
+    # Get BLMM sigma2
+    sigma2_blmm = nib.load(os.path.join(simDir, 'BLMM', 'blmm_vox_sigma2.nii')).get_data()
+
+    # Get lmer sigma2
+    sigma2_lmer = nib.load(os.path.join(simDir, 'lmer', 'lmer_vox_sigma2.nii')).get_data()
+
+    # Remove zero values
+    sigma2_blmm = sigma2_blmm[sigma2_lmer!=0]
+    sigma2_lmer = sigma2_lmer[sigma2_lmer!=0]
+
+    # Get MAE
+    MAE_sigma2 = np.max(np.abs(sigma2_blmm-sigma2_lmer))
+
+    # Get MRD
+    MRD_sigma2 = np.max(2*np.abs((sigma2_blmm-sigma2_lmer)/(sigma2_blmm+sigma2_lmer)))
+
+    # Make line to add to csv for MAE
+    MAE_sigma2_line = np.array([simNo, MAE_sigma2])
+
+    # Make line to add to csv for MRD
+    MRD_sigma2_line = np.array([simNo, MRD_sigma2])
+
+    # MAE sigma2 file name
+    fname_MAE = os.path.join(resDir, 'MAE_sigma2.csv')
+
+    # MRD sigma2 file name
+    fname_MRD = os.path.join(resDir, 'MRD_sigma2.csv')
+
+    # Add to files 
+    addLineToCSV(fname_MAE, MAE_sigma2_line)
+    addLineToCSV(fname_MRD, MRD_sigma2_line)
+
+    # Cleanup
+    del sigma2_lmer, sigma2_blmm, MAE_sigma2, MRD_sigma2, MAE_sigma2_line, MRD_sigma2_line
+
+    # -----------------------------------------------------------------------
+    # MAE and MRD for vechD maps
+    # -----------------------------------------------------------------------
+
+    # Get BLMM vechD
+    vechD_blmm = nib.load(os.path.join(simDir, 'BLMM', 'blmm_vox_D.nii')).get_data()
+
+    # Get lmer vechD
+    vechD_lmer = nib.load(os.path.join(simDir, 'lmer', 'lmer_vox_D.nii')).get_data()
+
+    # Remove zero values
+    vechD_blmm = vechD_blmm[vechD_lmer!=0]
+    vechD_lmer = vechD_lmer[vechD_lmer!=0]
+
+    # Get MAE
+    MAE_vechD = np.max(np.abs(vechD_blmm-vechD_lmer))
+
+    # Get MRD
+    MRD_vechD = np.max(2*np.abs((vechD_blmm-vechD_lmer)/(vechD_blmm+vechD_lmer)))
+
+    # Make line to add to csv for MAE
+    MAE_vechD_line = np.array([simNo, MAE_vechD])
+
+    # Make line to add to csv for MRD
+    MRD_vechD_line = np.array([simNo, MRD_vechD])
+
+    # MAE vechD file name
+    fname_MAE = os.path.join(resDir, 'MAE_vechD.csv')
+
+    # MRD vechD file name
+    fname_MRD = os.path.join(resDir, 'MRD_vechD.csv')
+
+    # Add to files 
+    addLineToCSV(fname_MAE, MAE_vechD_line)
+    addLineToCSV(fname_MRD, MRD_vechD_line)
+
+    # Cleanup
+    del vechD_lmer, vechD_blmm, MAE_vechD, MRD_vechD, MAE_vechD_line, MRD_vechD_line
+
+    # -----------------------------------------------------------------------
+    # Log-likelihood difference
+    # -----------------------------------------------------------------------
+
+    # Get BLMM llh
+    llh_blmm = nib.load(os.path.join(simDir, 'BLMM', 'blmm_vox_llh.nii')).get_data()
+
+    # Get lmer llh
+    llh_lmer = nib.load(os.path.join(simDir, 'lmer', 'lmer_vox_llh.nii')).get_data()
+
+    # Remove zero values
+    llh_blmm = llh_blmm[llh_lmer!=0]
+    llh_lmer = llh_lmer[llh_lmer!=0]
+
+    # Get maximum absolute difference
+    MAD_llh = np.max(np.abs(llh_blmm-llh_lmer))
+
+    # Make line to add to csv for MAD
+    MAD_llh_line = np.array([simNo, MAD_llh])
+
+    # MAD llh file name
+    fname_MAD = os.path.join(resDir, 'MAD_llh.csv')
+
+    # Add to files 
+    addLineToCSV(fname_MAD, MAD_llh_line)
+
+    # Cleanup
+    del llh_lmer, llh_blmm, MAD_llh, MAE_llh_line
+    
+    # -----------------------------------------------------------------------
     # P value counts for histograms
     # -----------------------------------------------------------------------
-    #plt.hist(nparray, bins=10, label='hist')
+    # Load logp map
+    logp = nib.load(os.path.join(simDir, 'BLMM', 'blmm_vox_conTlp.nii')).get_data()
+
+    # Remove zeros
+    logp = logp[logp!=0]
+
+    # Un-"log"
+    p = 10**(-logp)
+
+    # Get bin counts
+    counts,_,_=plt.hist(p, bins=100, label='hist')
+
+    # Make line to add to csv for bin counts
+    pval_line = np.concatenate((np.array([simNo]),counts))
+
+    # pval file name
+    fname_pval = os.path.join(resDir, 'pval_counts.csv')
+
+    # Save histogram
+    plt.savefig(os.path.join(simDir, 'BLMM', 'pValHist.png'))
+
+
+# This function adds a line to a csv. If the csv does not exist it creates it.
+# It uses a filelock system
+def addLineToCSV(fname, line):
+
+    # Check if file is in use
+    fileLocked = True
+    while fileLocked:
+        try:
+            # Create lock file, so other jobs know we are writing to this file
+            f = os.open(fname + ".lock", os.O_CREAT|os.O_EXCL|os.O_RDWR)
+            fileLocked = False
+        except FileExistsError:
+            fileLocked = True
+
+    # Check if file already exists and if so read it in
+    if os.path.isfile(fname):
+
+        # Read in data
+        data = pd.io.parsers.read_csv(fname, header=None, index_col=None).values
+
+        # Append line to data
+        data = np.concatenate((data, line),axis=0)
+
+    else:
+
+        # The data is just this line
+        data = line
+
+    # Write data back to file
+    pd.DataFrame(data).to_csv(fname, header=None, index=None)
+
+    # Delete lock file, so other jobs know they can now write to the
+    # file
+    os.remove(fname + ".lock")
+    os.close(f)
+
+    del fname

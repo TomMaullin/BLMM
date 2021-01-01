@@ -143,7 +143,7 @@ def main(inputs, inds, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, n, nlevels, 
             t2 = time.time()
 
             # Output an "average estimation time nifti"
-            addBlockToNifti(os.path.join(OutDir, 'blmm_vox_time.nii'), np.ones((v,1))*(t2-t1)/v, inds,volInd=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
+            addBlockToNifti(os.path.join(OutDir, 'blmm_vox_times.nii'), np.ones((v,1))*(t2-t1)/v, inds,volInd=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
 
     # ----------------------------------------------------------------------
     # Parameter outputting
