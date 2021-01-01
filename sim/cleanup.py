@@ -243,10 +243,10 @@ def cleanup(OutDir,simNo):
     MRD_beta = np.max(2*np.abs((beta_blmm-beta_lmer)/(beta_blmm+beta_lmer)))
 
     # Make line to add to csv for MAE
-    MAE_beta_line = np.array([simNo, MAE_beta])
+    MAE_beta_line = np.array([[simNo, MAE_beta]])
 
     # Make line to add to csv for MRD
-    MRD_beta_line = np.array([simNo, MRD_beta])
+    MRD_beta_line = np.array([[simNo, MRD_beta]])
 
     # MAE beta file name
     fname_MAE = os.path.join(resDir, 'MAE_beta.csv')
@@ -282,10 +282,10 @@ def cleanup(OutDir,simNo):
     MRD_sigma2 = np.max(2*np.abs((sigma2_blmm-sigma2_lmer)/(sigma2_blmm+sigma2_lmer)))
 
     # Make line to add to csv for MAE
-    MAE_sigma2_line = np.array([simNo, MAE_sigma2])
+    MAE_sigma2_line = np.array([[simNo, MAE_sigma2]])
 
     # Make line to add to csv for MRD
-    MRD_sigma2_line = np.array([simNo, MRD_sigma2])
+    MRD_sigma2_line = np.array([[simNo, MRD_sigma2]])
 
     # MAE sigma2 file name
     fname_MAE = os.path.join(resDir, 'MAE_sigma2.csv')
@@ -321,10 +321,10 @@ def cleanup(OutDir,simNo):
     MRD_vechD = np.max(2*np.abs((vechD_blmm-vechD_lmer)/(vechD_blmm+vechD_lmer)))
 
     # Make line to add to csv for MAE
-    MAE_vechD_line = np.array([simNo, MAE_vechD])
+    MAE_vechD_line = np.array([[simNo, MAE_vechD]])
 
     # Make line to add to csv for MRD
-    MRD_vechD_line = np.array([simNo, MRD_vechD])
+    MRD_vechD_line = np.array([[simNo, MRD_vechD]])
 
     # MAE vechD file name
     fname_MAE = os.path.join(resDir, 'MAE_vechD.csv')
@@ -357,7 +357,7 @@ def cleanup(OutDir,simNo):
     MAD_llh = np.max(np.abs(llh_blmm-llh_lmer))
 
     # Make line to add to csv for MAD
-    MAD_llh_line = np.array([simNo, MAD_llh])
+    MAD_llh_line = np.array([[simNo, MAD_llh]])
 
     # MAD llh file name
     fname_MAD = os.path.join(resDir, 'MAD_llh.csv')
@@ -366,7 +366,7 @@ def cleanup(OutDir,simNo):
     addLineToCSV(fname_MAD, MAD_llh_line)
 
     # Cleanup
-    del llh_lmer, llh_blmm, MAD_llh, MAE_llh_line
+    del llh_lmer, llh_blmm, MAD_llh, MAD_llh_line
     
     # -----------------------------------------------------------------------
     # P value counts for histograms
@@ -384,7 +384,7 @@ def cleanup(OutDir,simNo):
     counts,_,_=plt.hist(p, bins=100, label='hist')
 
     # Make line to add to csv for bin counts
-    pval_line = np.concatenate((np.array([simNo]),counts))
+    pval_line = np.concatenate((np.array([[simNo]]),np.array([counts]))
 
     # pval file name
     fname_pval = os.path.join(resDir, 'pval_counts.csv')
@@ -395,7 +395,7 @@ def cleanup(OutDir,simNo):
     # -----------------------------------------------------------------------
     # Cleanup finished!
     # -----------------------------------------------------------------------
-    
+
     print('----------------------------------------------------------------')
     print('Simulation instance ' + str(simNo) + ' complete!')
     print('----------------------------------------------------------------')
