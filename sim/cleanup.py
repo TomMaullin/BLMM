@@ -392,6 +392,13 @@ def cleanup(OutDir,simNo):
     # Save histogram
     plt.savefig(os.path.join(simDir, 'BLMM', 'pValHist.png'))
 
+    # -----------------------------------------------------------------------
+    # Cleanup finished!
+    # -----------------------------------------------------------------------
+    
+    print('----------------------------------------------------------------')
+    print('Simulation instance ' + str(simNo) + ' complete!')
+    print('----------------------------------------------------------------')
 
 # This function adds a line to a csv. If the csv does not exist it creates it.
 # It uses a filelock system

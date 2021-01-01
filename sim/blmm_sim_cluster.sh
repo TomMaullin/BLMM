@@ -134,6 +134,38 @@ fsl_sub -j $lmerParamID -l $SIM_PATH/sim$simInd/simlog/ -N cleanup$simInd \
         cleanupID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
   
 # -----------------------------------------------------------------------
-# Concatenate results!
+# Remove log directory
 # -----------------------------------------------------------------------
 
+# Variable to check if simulation cleanup finished running 
+simcleanran=$(cat $SIM_PATH/sim$simInd/simlog/cleanup$simInd.o* 2> /dev/null)
+
+# Wait for blmm to finish running
+i=0
+while [ "$simcleanran"  == "" ]
+do
+
+  # Wait a bit before checking file again
+  sleep 1
+
+  # Check to see if blmm ran
+  simcleanran=$(cat $SIM_PATH/sim$simInd/simlog/cleanup$simInd.o* 2> /dev/null)
+
+  # Update i
+  i=$(($i + 1))
+
+  # Timeout
+  if [ $i -gt 10000 ]; then
+    echo "Something seems to be taking a while. Please check for errors."
+  fi
+
+done
+
+# Remove simulation log and inputs file (there will now be a copy of this
+# in the BLMM folder anyway)
+rm -rf $SIM_PATH/sim$simInd/simlog/
+rm -rf $SIM_PATH/sim$simInd/inputs.yml
+
+# -----------------------------------------------------------------------
+# Concatenate results!
+# -----------------------------------------------------------------------

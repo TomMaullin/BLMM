@@ -577,7 +577,7 @@ def memorySafeAtB(A,B,MAXMEM,filename):
     while fileLocked:
         try:
             # Create lock file, so other jobs know we are writing to this file
-            os.open(filename + ".lock", os.O_CREAT|os.O_EXCL|os.O_RDWR)
+            f = os.open(filename + ".lock", os.O_CREAT|os.O_EXCL|os.O_RDWR)
             fileLocked = False
         except FileExistsError:
             fileLocked = True
@@ -629,6 +629,7 @@ def memorySafeAtB(A,B,MAXMEM,filename):
     # Delete lock file, so other jobs know they can now write to the
     # file
     os.remove(filename + ".lock")
+    os.close(f)
 
 if __name__ == "__main__":
     main()
