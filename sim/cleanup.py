@@ -89,8 +89,6 @@ def cleanup(OutDir,simNo):
     n = X.shape[0]
     p = X.shape[1]
 
-    print('n, p, q, ncov: ', n, p, q, ncov)
-
     # -----------------------------------------------------------------------
     # Get number voxels and dimensions
     # -----------------------------------------------------------------------
@@ -109,8 +107,6 @@ def cleanup(OutDir,simNo):
 
     # Delete nmap
     del nmap
-
-    print('v, dim ', v, dim)
 
     # -----------------------------------------------------------------------
     # Remove data directory
