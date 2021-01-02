@@ -368,6 +368,7 @@ def cleanup(OutDir,simNo):
 
     # Cleanup
     del llh_lmer, llh_blmm, MAD_llh, MAD_llh_line
+
     
     # -----------------------------------------------------------------------
     # P value counts for histograms
@@ -390,8 +391,14 @@ def cleanup(OutDir,simNo):
     # pval file name
     fname_pval = os.path.join(resDir, 'pval_counts.csv')
 
+    # Add to files 
+    addLineToCSV(fname_pval, pval_line)
+
     # Save histogram
     plt.savefig(os.path.join(simDir, 'BLMM', 'pValHist.png'))
+
+    # Cleanup
+    del p, logp, counts, fname_pval, pval_line
 
     # -----------------------------------------------------------------------
     # Cleanup finished!
