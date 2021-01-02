@@ -385,7 +385,7 @@ def cleanup(OutDir,simNo):
     counts,_,_=plt.hist(p, bins=100, label='hist')
 
     # Make line to add to csv for bin counts
-    pval_line = np.concatenate((np.array([[simNo]]),np.array([counts])))
+    pval_line = np.concatenate((np.array([[simNo]]),np.array([counts])),axis=1)
 
     # pval file name
     fname_pval = os.path.join(resDir, 'pval_counts.csv')
