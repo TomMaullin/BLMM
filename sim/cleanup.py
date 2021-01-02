@@ -15,6 +15,7 @@ from scipy import ndimage
 import time
 import pandas as pd
 from lib.fileio import *
+from matplotlib import pyplot as plt
 
 
 # ===========================================================================
