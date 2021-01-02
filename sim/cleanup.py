@@ -367,6 +367,48 @@ def cleanup(OutDir,simNo):
 
     
     # -----------------------------------------------------------------------
+    # Times
+    # -----------------------------------------------------------------------
+
+    # Get BLMM times
+    times_blmm = nib.load(os.path.join(simDir, 'BLMM', 'blmm_vox_times.nii')).get_data()
+
+    # Get lmer times
+    times_lmer = nib.load(os.path.join(simDir, 'lmer', 'lmer_vox_times.nii')).get_data()
+
+    # Remove zero values
+    times_blmm = times_blmm[times_lmer!=0]
+    times_lmer = times_lmer[times_lmer!=0]
+
+    # Get mean difference
+    MD_times = np.mean(times_lmer-times_blmm)
+
+    # Get total difference
+    TD_times = np.sum(times_lmer-times_blmm)
+
+    # Make line to add to csv for MD
+    MD_times_line = np.array([[simNo, MD_times]])
+
+    # Make line to add to csv for TD
+    TD_times_line = np.array([[simNo, TD_times]])
+
+    # MD times file name
+    fname_MD = os.path.join(resDir, 'MD_times.csv')
+
+    # TD times file name
+    fname_TD = os.path.join(resDir, 'TD_times.csv')
+
+    # Add to files 
+    addLineToCSV(fname_MD, MD_times_line)
+
+    # Add to files 
+    addLineToCSV(fname_TD, TD_times_line)
+
+    # Cleanup
+    del times_lmer, times_blmm, MD_times, MD_times_line, TD_times, TD_times_line
+
+
+    # -----------------------------------------------------------------------
     # P value counts for histograms
     # -----------------------------------------------------------------------
     # Load logp map
