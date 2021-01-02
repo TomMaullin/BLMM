@@ -53,10 +53,13 @@ do
 done
 
 # -----------------------------------------------------------------------
+# Run BLMM
+# -----------------------------------------------------------------------
+bash ./blmm_cluster.sh $SIM_PATH/sim$simInd/inputs.yml
+
+# -----------------------------------------------------------------------
 # Submit R parameter estimation job
 # -----------------------------------------------------------------------
-# i=1
-# while [ "$i" -le "$nb" ]; do
 
 echo $SIM_PATH
 
@@ -76,8 +79,6 @@ do
 
   i=$(($i + 1))
 
-  #done
-
   if [ "$lmerParamID" == "" ] ; then
     echo "Lmer parameter estimation job submission failed!"
   else
@@ -90,9 +91,9 @@ do
 done
 
 # -----------------------------------------------------------------------
-# Run BLMM
+# Check if BLMM has reached the concatenation stage (so we can delete
+# simulation data)
 # -----------------------------------------------------------------------
-bash ./blmm_cluster.sh $SIM_PATH/sim$simInd/inputs.yml
 
 # -----------------------------------------------------------------------
 # Check if BLMM has finished executing

@@ -237,10 +237,10 @@ def cleanup(OutDir,simNo):
     beta_lmer = beta_lmer[beta_lmer!=0]
 
     # Get MAE
-    MAE_beta = np.max(np.abs(beta_blmm-beta_lmer))
+    MAE_beta = np.mean(np.abs(beta_blmm-beta_lmer))
 
     # Get MRD
-    MRD_beta = np.max(2*np.abs((beta_blmm-beta_lmer)/(beta_blmm+beta_lmer)))
+    MRD_beta = np.mean(2*np.abs((beta_blmm-beta_lmer)/(beta_blmm+beta_lmer)))
 
     # Make line to add to csv for MAE
     MAE_beta_line = np.array([[simNo, MAE_beta]])
@@ -276,10 +276,10 @@ def cleanup(OutDir,simNo):
     sigma2_lmer = sigma2_lmer[sigma2_lmer!=0]
 
     # Get MAE
-    MAE_sigma2 = np.max(np.abs(sigma2_blmm-sigma2_lmer))
+    MAE_sigma2 = np.mean(np.abs(sigma2_blmm-sigma2_lmer))
 
     # Get MRD
-    MRD_sigma2 = np.max(2*np.abs((sigma2_blmm-sigma2_lmer)/(sigma2_blmm+sigma2_lmer)))
+    MRD_sigma2 = np.mean(2*np.abs((sigma2_blmm-sigma2_lmer)/(sigma2_blmm+sigma2_lmer)))
 
     # Make line to add to csv for MAE
     MAE_sigma2_line = np.array([[simNo, MAE_sigma2]])
@@ -315,10 +315,10 @@ def cleanup(OutDir,simNo):
     vechD_lmer = vechD_lmer[vechD_lmer!=0]
 
     # Get MAE
-    MAE_vechD = np.max(np.abs(vechD_blmm-vechD_lmer))
+    MAE_vechD = np.mean(np.abs(vechD_blmm-vechD_lmer))
 
     # Get MRD
-    MRD_vechD = np.max(2*np.abs((vechD_blmm-vechD_lmer)/(vechD_blmm+vechD_lmer)))
+    MRD_vechD = np.mean(2*np.abs((vechD_blmm-vechD_lmer)/(vechD_blmm+vechD_lmer)))
 
     # Make line to add to csv for MAE
     MAE_vechD_line = np.array([[simNo, MAE_vechD]])
@@ -354,7 +354,7 @@ def cleanup(OutDir,simNo):
     llh_lmer = llh_lmer[llh_lmer!=0]
 
     # Get maximum absolute difference
-    MAD_llh = np.max(np.abs(llh_blmm-llh_lmer))
+    MAD_llh = np.mean(np.abs(llh_blmm-llh_lmer))
 
     # Make line to add to csv for MAD
     MAD_llh_line = np.array([[simNo, MAD_llh]])
