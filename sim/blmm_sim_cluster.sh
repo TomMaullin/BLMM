@@ -165,8 +165,8 @@ do
   rm -rf $SIM_PATH/sim$simInd/simlog/
   rm -rf $SIM_PATH/sim$simInd/inputs.yml
 
-  simInd=$(($simInd + 1))
-
   echo "Simulation "$simInd" ran."
+
+  simInd=$(($simInd + 1))
 
 done
