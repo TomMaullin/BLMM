@@ -71,8 +71,15 @@ do
 
   while [ $batchInd -lt $nb ]
   do
-    # Submit nb batches and get the ids for them
+
+    # Submit job to get voxel data into R dataframe format
     fsl_sub -j $dataGenID -l $SIM_PATH/sim$simInd/simlog/ \
+            -N Rpreproc$simInd'_'$batchInd \
+            bash $SIM_PATH/Rpreproc.sh $SIM_PATH $simInd $nb $batchInd > /tmp/$$ && \
+            RpreprocID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
+
+    # R parameter estimation job for group of voxels
+    fsl_sub -j $RpreprocID -l $SIM_PATH/sim$simInd/simlog/ \
             -N lmerParamEst$simInd'_'$batchInd \
             bash $SIM_PATH/lmer_paramEst.sh $simInd $batchInd $SIM_PATH > /tmp/$$ && \
             lmerParamID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$lmerParamID

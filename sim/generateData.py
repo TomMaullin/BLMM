@@ -335,51 +335,6 @@ def generate_data(n,dim,OutDir,simNo):
 
     # Work out number of groups we have to split indices into.
     nvg = int(v//nvb)
-    
-    # Split voxels we want to look at into groups we can compute
-    voxelGroups = np.array_split(np.arange(v), nvg)
-
-    # Loop through list of voxel indices, looking at each group of voxels, in
-    # turn.
-    for cv in range(nvg):
-
-        # Current group of voxels
-        inds_cv = voxelGroups[cv]
-
-        # Number of voxels currently (should be ~1000)
-        v_current = len(inds_cv)
-
-        # Loop through each subject reading in Y and reducing to just the voxels 
-        # needed
-        for i in np.arange(n):
-    
-            # Load in the Y volume
-            Yi = nib.load(os.path.join(simDir,"data","Y"+str(i)+".nii")).get_data()
-
-            # Flatten Yi
-            Yi = Yi.reshape(v)
-
-            # Get just the voxels we're interested in
-            Yi = Yi[inds_cv].reshape(1, v_current)
-
-            # Concatenate
-            if i==0:
-                Y_concat = Yi
-            else:
-                Y_concat = np.concatenate((Y_concat, Yi), axis=0)
-
-        # Loop through voxels checking missingness
-        for vox in np.arange(v_current):
-
-            # Threshold out the voxels which have too much missingness
-            if np.count_nonzero(Y_concat[:,vox], axis=0)/n < rmThresh:
-
-                # If we don't have enough data lets replace that voxel 
-                # with zeros
-                Y_concat[:,vox] = np.zeros(Y_concat[:,vox].shape)
-
-        # Write out Z in full to a csv file
-        pd.DataFrame(Y_concat.reshape(n,v_current)).to_csv(os.path.join(simDir,"data","Y_Rversion_" + str(cv) + ".csv"), header=None, index=None)
 
 
     # Write out the number of voxel groups we split the data into
@@ -390,6 +345,58 @@ def generate_data(n,dim,OutDir,simNo):
     print('Data generation complete')
     print('---------------------------------------------------------------------')
 
+# R preprocessing
+def Rpreproc(OutDir,simNo,dim,nvg,cv):
+
+    # Make simulation directory
+    simDir = os.path.join(OutDir, 'sim' + str(simNo))
+
+    # Make sure in numpy format
+    dim = np.array(dim)
+
+    # Number of voxels
+    v = np.prod(dim)
+
+    # Split voxels we want to look at into groups we can compute
+    voxelGroups = np.array_split(np.arange(v), nvg)
+
+    # Current group of voxels
+    inds_cv = voxelGroups[cv]
+
+    # Number of voxels currently (should be ~1000)
+    v_current = len(inds_cv)
+
+    # Loop through each subject reading in Y and reducing to just the voxels 
+    # needed
+    for i in np.arange(n):
+
+        # Load in the Y volume
+        Yi = nib.load(os.path.join(simDir,"data","Y"+str(i)+".nii")).get_data()
+
+        # Flatten Yi
+        Yi = Yi.reshape(v)
+
+        # Get just the voxels we're interested in
+        Yi = Yi[inds_cv].reshape(1, v_current)
+
+        # Concatenate
+        if i==0:
+            Y_concat = Yi
+        else:
+            Y_concat = np.concatenate((Y_concat, Yi), axis=0)
+
+    # Loop through voxels checking missingness
+    for vox in np.arange(v_current):
+
+        # Threshold out the voxels which have too much missingness
+        if np.count_nonzero(Y_concat[:,vox], axis=0)/n < rmThresh:
+
+            # If we don't have enough data lets replace that voxel 
+            # with zeros
+            Y_concat[:,vox] = np.zeros(Y_concat[:,vox].shape)
+
+    # Write out Z in full to a csv file
+    pd.DataFrame(Y_concat.reshape(n,v_current)).to_csv(os.path.join(simDir,"data","Y_Rversion_" + str(cv) + ".csv"), header=None, index=None)
 
 def get_random_sphere(dim):
 
