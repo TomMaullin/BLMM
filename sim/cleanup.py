@@ -288,7 +288,7 @@ def cleanup(OutDir,simNo):
 
 
 # Add R output to nifti files
-def Rcleanup(outDir, simNo, nvg, cv):
+def Rcleanup(OutDir, simNo, nvg, cv):
 
     # Get simulation directory
     simDir = os.path.join(OutDir, 'sim' + str(simNo))
