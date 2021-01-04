@@ -346,7 +346,7 @@ def generate_data(n,dim,OutDir,simNo):
     print('---------------------------------------------------------------------')
 
 # R preprocessing
-def Rpreproc(OutDir,simNo,dim,nvg,cv):
+def Rpreproc(OutDir,simNo,dim,nvg,cv,n):
 
     # Make simulation directory
     simDir = os.path.join(OutDir, 'sim' + str(simNo))
