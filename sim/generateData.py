@@ -346,7 +346,7 @@ def generate_data(n,dim,OutDir,simNo):
     print('---------------------------------------------------------------------')
 
 # R preprocessing
-def Rpreproc(OutDir,simNo,dim,nvg,cv,n):
+def Rpreproc(OutDir,simNo,dim,nvg,cv):
 
     # Make simulation directory
     simDir = os.path.join(OutDir, 'sim' + str(simNo))
@@ -356,6 +356,17 @@ def Rpreproc(OutDir,simNo,dim,nvg,cv,n):
 
     # Number of voxels
     v = np.prod(dim)
+
+    # There should be an inputs file in each simulation directory
+    with open(os.path.join(simDir,'inputs.yml'), 'r') as stream:
+        inputs = yaml.load(stream,Loader=yaml.FullLoader)
+
+    # Number of observations
+    X = pd.io.parsers.read_csv(os.path.join(simDir,"data","X.csv"), header=None).values
+    n = X.shape[0]
+
+    # Relative masking threshold
+    rmThresh = inputs['Missingness']['MinPercent']
 
     # Split voxels we want to look at into groups we can compute
     voxelGroups = np.array_split(np.arange(v), nvg)
