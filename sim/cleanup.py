@@ -118,7 +118,7 @@ def cleanup(OutDir,simNo):
     # -----------------------------------------------------------------------
 
     # Number of voxels in each batch
-    nvb = 10000
+    nvb = 1000
 
     # Work out number of groups we have to split indices into.
     nvg = int(v//nvb)
