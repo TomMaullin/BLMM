@@ -226,11 +226,23 @@ def cleanup(OutDir,simNo):
     # Get total difference
     TD_times = np.sum(times_lmer-times_blmm)
 
+    # Get total lmer
+    lmer_times = np.sum(times_lmer)
+
+    # Get total blmm
+    blmm_times = np.sum(times_blmm)
+
     # Make line to add to csv for MD
     MD_times_line = np.array([[simNo, MD_times]])
 
     # Make line to add to csv for TD
     TD_times_line = np.array([[simNo, TD_times]])
+
+    # Make line to add to csv for lmer
+    lmer_times_line = np.array([[simNo, lmer_times]])
+
+    # Make line to add to csv for blmm
+    blmm_times_line = np.array([[simNo, blmm_times]])
 
     # MD times file name
     fname_MD = os.path.join(resDir, 'MD_times.csv')
@@ -238,11 +250,23 @@ def cleanup(OutDir,simNo):
     # TD times file name
     fname_TD = os.path.join(resDir, 'TD_times.csv')
 
+    # lmer times file name
+    fname_lmer = os.path.join(resDir, 'lmer_times.csv')
+
+    # blmm times file name
+    fname_blmm = os.path.join(resDir, 'blmm_times.csv')
+
     # Add to files 
     addLineToCSV(fname_MD, MD_times_line)
 
     # Add to files 
     addLineToCSV(fname_TD, TD_times_line)
+
+    # Add to files 
+    addLineToCSV(fname_lmer, lmer_times_line)
+
+    # Add to files 
+    addLineToCSV(fname_blmm, blmm_times_line)
 
     # Cleanup
     del times_lmer, times_blmm, MD_times, MD_times_line, TD_times, TD_times_line

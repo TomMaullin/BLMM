@@ -348,7 +348,7 @@ def generate_data(n,dim,OutDir,simNo):
 # R preprocessing
 def Rpreproc(OutDir,simNo,dim,nvg,cv):
 
-    # Make simulation directory
+    # Get simulation directory
     simDir = os.path.join(OutDir, 'sim' + str(simNo))
 
     # Make sure in numpy format
