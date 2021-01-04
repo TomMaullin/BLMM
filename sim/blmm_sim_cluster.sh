@@ -52,7 +52,7 @@ do
     fi
 
     # Timeout
-    if [ $i -gt 1000 ]; then
+    if [ $i -gt 10000 ]; then
       echo "Something seems to be taking a while. Please check for errors."
     fi
   done
@@ -125,7 +125,7 @@ do
     i=$(($i + 1))
 
     # Timeout
-    if [ $i -gt 10000 ]; then
+    if [ $i -gt 100000 ]; then
       echo "Something seems to be taking a while. Please check for errors."
     fi
 
@@ -161,7 +161,7 @@ do
     i=$(($i + 1))
 
     # Timeout
-    if [ $i -gt 10000 ]; then
+    if [ $i -gt 100000 ]; then
       echo "Something seems to be taking a while. Please check for errors."
     fi
 
@@ -170,7 +170,7 @@ do
   # Remove simulation log and inputs file (there will now be a copy of this
   # in the BLMM folder anyway)
   rm -rf $SIM_PATH/sim$simInd/simlog/
-  rm -rf $SIM_PATH/sim$simInd/inputs.yml
+  #rm -rf $SIM_PATH/sim$simInd/inputs.yml
 
   echo "Simulation "$simInd" ran."
 
