@@ -72,27 +72,15 @@ do
   while [ $batchInd -lt $nb ]
   do
 
-    # Submit job to get voxel data into R dataframe format
+    # R parameter estimation job for group of voxels
     fsl_sub -j $dataGenID -l $SIM_PATH/sim$simInd/simlog/ \
-            -N Rpreproc$simInd'_'$batchInd \
-            bash $SIM_PATH/Rpreproc.sh $SIM_PATH $simInd $nb $batchInd > /tmp/$$ && \
-            RpreprocID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
-
-    # R parameter estimation job for group of voxels
-    fsl_sub -j $RpreprocID -l $SIM_PATH/sim$simInd/simlog/ \
             -N lmerParamEst$simInd'_'$batchInd \
-            bash $SIM_PATH/lmer_paramEst.sh $simInd $batchInd $SIM_PATH > /tmp/$$ && \
-            lmerParamID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
-
-    # R parameter estimation job for group of voxels
-    fsl_sub -j $lmerParamID -l $SIM_PATH/sim$simInd/simlog/ \
-            -N Rcleanup$simInd'_'$batchInd \
-            bash $SIM_PATH/Rcleanup.sh $SIM_PATH $simInd $nb $batchInd > /tmp/$$ && \
-            RcleanupID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$RcleanupID
+            bash $SIM_PATH/lmer_paramEst.sh $SIM_PATH $simInd $nb $batchInd > /tmp/$$ && \
+            lmerParamID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$lmerParamID
 
     i=$(($i + 1))
 
-    if [ "$RcleanupID" == "" ] ; then
+    if [ "$lmerParamID" == "" ] ; then
       echo "Lmer parameter estimation job submission failed!"
     fi
 
@@ -141,7 +129,7 @@ do
   # Cleanup simulation
   # -----------------------------------------------------------------------
 
-  fsl_sub -j $RcleanupID -l $SIM_PATH/sim$simInd/simlog/ -N cleanup$simInd \
+  fsl_sub -j $lmerParamID -l $SIM_PATH/sim$simInd/simlog/ -N cleanup$simInd \
           bash $SIM_PATH/cleanup.sh $SIM_PATH $simInd > /tmp/$$ && \
           cleanupID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
     
