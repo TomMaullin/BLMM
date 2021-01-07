@@ -68,6 +68,7 @@ do
 
   # Set batch index
   batchInd=0
+  lmerParamID=''
 
   while [ $batchInd -lt $nb ]
   do
