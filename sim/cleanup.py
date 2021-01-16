@@ -329,10 +329,10 @@ def cleanup(OutDir,simNo):
 
     # Make line to add to csv for fwe
     fwe_line = np.concatenate((np.array([[simNo]]),
-                               np.array([fwep_bonferroni]),
-                               np.array([fwep_sidak]),
-                               np.array([fwep_holm]),
-                               np.array([fwep_holmsidak])),axis=1)
+                               np.array([[fwep_bonferroni]]),
+                               np.array([[fwep_sidak]]),
+                               np.array([[fwep_holm]]),
+                               np.array([[fwep_holmsidak]])),axis=1)
 
     # pval file name
     fname_fwe = os.path.join(resDir, 'pval_fwe.csv')

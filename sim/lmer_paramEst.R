@@ -212,7 +212,7 @@ for (i in 1:nvox){
         vechD0 <- Ds[1:2,1:2][lower.tri(Ds[1:2,1:2],diag = TRUE)]
 
         # Record vech(D_0)
-        vechD[i,1:3]<-vechD0/as.data.frame(VarCorr(m))$vcov[5]        
+        vechD[i,1:3]<-vechD0/as.data.frame(VarCorr(m))$vcov[4]        
 
     } else if (desInd==1){
 
@@ -220,7 +220,7 @@ for (i in 1:nvox){
         vechD0 <- Ds[1:1,1:1][lower.tri(Ds[1:1,1:1],diag = TRUE)]
 
         # Record vech(D_0)
-        vechD[i,1:1]<-vechD0/as.data.frame(VarCorr(m))$vcov[5]     
+        vechD[i,1:1]<-vechD0/as.data.frame(VarCorr(m))$vcov[2]     
 
     }
 
