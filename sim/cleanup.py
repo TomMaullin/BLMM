@@ -16,6 +16,7 @@ import time
 import pandas as pd
 from lib.fileio import *
 from matplotlib import pyplot as plt
+from statsmodels.stats import multitest
 
 
 # ===========================================================================
@@ -273,7 +274,7 @@ def cleanup(OutDir,simNo):
 
 
     # -----------------------------------------------------------------------
-    # P value counts for histograms
+    # P values 
     # -----------------------------------------------------------------------
     # Load logp map
     logp = nib.load(os.path.join(simDir, 'BLMM', 'blmm_vox_conTlp.nii')).get_data()
@@ -296,11 +297,51 @@ def cleanup(OutDir,simNo):
     # Add to files 
     addLineToCSV(fname_pval, pval_line)
 
-    # Save histogram
-    plt.savefig(os.path.join(simDir, 'BLMM', 'pValHist.png'))
+    # Convert to one tailed
+    p_ot = np.zeros(p.shape)
+    p_ot[p<0.5] = 2*p[p<0.5]
+    p_ot[p>0.5] = 2*(1-p[p>0.5])
+    p = p_ot
+
+    # Perform bonferroni
+    fwep_bonferroni = multitest.multipletests(p,alpha=0.05,method='bonferroni')[0]
+
+    # Get number of false positives
+    fwep_bonferroni = np.sum(fwep_bonferroni)
+
+    # Perform sidak
+    fwep_sidak = multitest.multipletests(p,alpha=0.05,method='sidak')[0]
+
+    # Get number of false positives
+    fwep_sidak = np.sum(fwep_sidak)
+
+    # Perform holm
+    fwep_holm = multitest.multipletests(p,alpha=0.05,method='holm')[0]
+
+    # Get number of false positives
+    fwep_holm = np.sum(fwep_holm)
+
+    # Perform holm-sidak
+    fwep_holmsidak = multitest.multipletests(p,alpha=0.05,method='holm-sidak')[0]
+
+    # Get number of false positives
+    fwep_holmsidak = np.sum(fwep_holmsidak)
+
+    # Make line to add to csv for fwe
+    fwe_line = np.concatenate((np.array([[simNo]]),
+                               np.array([fwep_bonferroni]),
+                               np.array([fwep_sidak]),
+                               np.array([fwep_holm]),
+                               np.array([fwep_holmsidak])),axis=1)
+
+    # pval file name
+    fname_fwe = os.path.join(resDir, 'pval_fwe.csv')
+
+    # Add to files 
+    addLineToCSV(fname_fwe, fwe_line)
 
     # Cleanup
-    del p, logp, counts, fname_pval, pval_line
+    del p, logp, counts, fname_pval, pval_line, fname_fwe, fwe_line
 
     # -----------------------------------------------------------------------
     # Cleanup finished!

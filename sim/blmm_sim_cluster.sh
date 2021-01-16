@@ -13,6 +13,10 @@ SIM_PATH=$(dirname $(RealPath "${BASH_SOURCE[0]}"))
 
 echo $SIM_PATH
 
+# Index representing which design we are running
+desInd=2
+
+# Index representing which simulation instance we are running
 simInd=1
 
 while [ $simInd -lt 101 ]
@@ -24,7 +28,7 @@ do
   # Submit data generation job
   # -----------------------------------------------------------------------
   fsl_sub -l $SIM_PATH/sim$simInd/simlog/ -N dataGen$simInd \
-          bash $SIM_PATH/generateData.sh $SIM_PATH $simInd > /tmp/$$ && \
+          bash $SIM_PATH/generateData.sh $SIM_PATH $simInd $desInd > /tmp/$$ && \
           dataGenID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
 
   # This loop waits for the data generation job to finish before
@@ -76,7 +80,7 @@ do
     # R parameter estimation job for group of voxels
     fsl_sub -j $dataGenID -l $SIM_PATH/sim$simInd/simlog/ \
             -N lmerParamEst$simInd'_'$batchInd \
-            bash $SIM_PATH/lmer_paramEst.sh $SIM_PATH $simInd $nb $batchInd > /tmp/$$ && \
+            bash $SIM_PATH/lmer_paramEst.sh $SIM_PATH $simInd $nb $batchInd $desInd > /tmp/$$ && \
             lmerParamID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$lmerParamID
 
     i=$(($i + 1))

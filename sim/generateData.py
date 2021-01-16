@@ -27,7 +27,7 @@ import pandas as pd
 # - `dim`: Dimensions of data to be generated. Must be given as an np array.
 #
 # ===========================================================================
-def generate_data(n,dim,OutDir,simNo):
+def generate_data(n,dim,OutDir,simNo,desInd):
 
     # Make simulation directory
     simDir = os.path.join(OutDir, 'sim' + str(simNo))
@@ -48,17 +48,42 @@ def generate_data(n,dim,OutDir,simNo):
     # Number of fixed effects parameters
     p = 4
 
-    # Number of random effects grouping factors
-    r = 2
+    # Check which design we want
+    if desInd == 3:
+
+        # Number of random effects grouping factors
+        r = 2
+
+        # Number of levels for each factor
+        nlevels = np.array([20,10])
+
+        # Number of levels for each factor
+        nraneffs = np.array([2,1])
+
+    elif desInd == 2:
+
+        # Number of random effects grouping factors
+        r = 1
+
+        # Number of levels for each factor
+        nlevels = np.array([50])
+
+        # Number of levels for each factor
+        nraneffs = np.array([2])
+
+    elif desInd == 1:
+
+        # Number of random effects grouping factors
+        r = 1
+
+        # Number of levels for each factor
+        nlevels = np.array([100])
+
+        # Number of levels for each factor
+        nraneffs = np.array([1])
 
     # fwhm for smoothing
     fwhm = 5
-
-    # Number of levels for each factor
-    nlevels = np.array([20,10])
-
-    # Number of levels for each factor
-    nraneffs = np.array([2,1])
 
     # Number of voxels
     v = np.prod(dim)
@@ -91,9 +116,18 @@ def generate_data(n,dim,OutDir,simNo):
     # -------------------------------------------------
     # Get Dhalf
     # -------------------------------------------------
+    
+    # New empty dictionary for Dhalf
     DhalfDict = dict()
-    DhalfDict[0] = np.array([[1,0],[1/2, np.sqrt(3)/2]])
-    DhalfDict[1] = np.array([[1]])
+
+    # Dhalf for each design
+    if desInd == 3:
+        DhalfDict[0] = np.array([[1,0],[1/2, np.sqrt(3)/2]])
+        DhalfDict[1] = np.array([[1]])
+    elif desInd == 2:
+        DhalfDict[0] = np.array([[1,0],[1/2, np.sqrt(3)/2]])
+    elif desInd == 1:
+        DhalfDict[0] = np.array([[1]])
 
     # Loop through and reshape for broadcasting
     for k in np.arange(r):
