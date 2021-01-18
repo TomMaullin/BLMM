@@ -186,13 +186,13 @@ for (i in 1:nvox){
     # Record fixed effects estimates
     betas[i,1:4] <- fixef(m)
     
-    # Record fixed effects variance estimate
-    sigma2[i,1]<-as.data.frame(VarCorr(m))$vcov[5]
-    
     # Recover D parameters
     Ds <- as.matrix(Matrix::bdiag(VarCorr(m)))
     
     if (desInd==3){
+    
+        # Record fixed effects variance estimate
+        sigma2[i,1]<-as.data.frame(VarCorr(m))$vcov[5]
 
         # Calculate vech(D_0)*sigma2
         vechD0 <- Ds[1:2,1:2][lower.tri(Ds[1:2,1:2],diag = TRUE)]
@@ -207,6 +207,9 @@ for (i in 1:nvox){
         vechD[i,4:4]<-vechD1/as.data.frame(VarCorr(m))$vcov[5]
 
     } else if (desInd==2){
+    
+        # Record fixed effects variance estimate
+        sigma2[i,1]<-as.data.frame(VarCorr(m))$vcov[4]
 
         # Calculate vech(D_0)*sigma2
         vechD0 <- Ds[1:2,1:2][lower.tri(Ds[1:2,1:2],diag = TRUE)]
@@ -215,6 +218,9 @@ for (i in 1:nvox){
         vechD[i,1:3]<-vechD0/as.data.frame(VarCorr(m))$vcov[4]        
 
     } else if (desInd==1){
+
+        # Record fixed effects variance estimate
+        sigma2[i,1]<-as.data.frame(VarCorr(m))$vcov[2]
 
         # Calculate vech(D_0)*sigma2
         vechD0 <- Ds[1:1,1:1][lower.tri(Ds[1:1,1:1],diag = TRUE)]
