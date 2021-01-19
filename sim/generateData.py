@@ -546,6 +546,10 @@ def get_Z(n, nlevels, nraneffs):
             # The factor is randomly arranged 
             factorVec = np.random.randint(0,nlevels[i],size=n) 
 
+            # Ensure all levels included
+            while len(np.unique(factorVec))<nlevels[i]:
+                factorVec = np.random.randint(0,nlevels[i],size=n)
+
         # Save factor vector and raw regressor matrix
         fDict[i] = factorVec
         rrDict[i] = Zdata_factor
