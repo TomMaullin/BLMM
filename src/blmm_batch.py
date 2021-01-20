@@ -279,6 +279,13 @@ def main(*args):
 
         # We reshape to n by q^2 so that we can save as a csv.
         ZtZ = ZtZ.reshape([ZtZ.shape[0], nlevels[0]])
+    
+    # If we are looking at the one random factor multiple random effect model
+    # we only need record the diagonal blocks of ZtZ
+    elif r == 1 and nraneffs[0]>1:
+
+        # Cut Z'Z down to diagonal elements only.
+        ZtZ = flattenZtZ(ZtZ, nlevels[0], nraneffs[0])
 
     else:
 

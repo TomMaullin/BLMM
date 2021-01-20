@@ -177,10 +177,9 @@ def main(ipath, vb):
 
     # Work out the number of voxels we can actually compute at a time.
     # (This is really just a rule of thumb guess but works reasonably in
-    # practice). We allow slightly more for the one random factor one
-    # random effect model since we do not construct any additional q by q
-    # matrices.
-    if nraneffs[0]==1 and r==1:
+    # practice). We allow slightly more for the one random factor model
+    # since we do not construct any additional q by q matrices.
+    if  r == 1:
         nvb = MAXMEM/(10*4*(q**2))
     else:
         nvb = MAXMEM/(10*8*(q**2))
@@ -253,7 +252,15 @@ def main(ipath, vb):
             # the diagonal elements of Z'Z.
             if r == 1 and nraneffs[0]==1:
                 ZtZ_r = readAndSumUniqueAtB('ZtZ', OutDir, R_inds, n_b, True).reshape([v_r, q])
+            
+            # In the one random effect multiple random factor setting we have only
+            # the diagonal blocks of Z'Z.
+            elif r == 1 and nraneffs[0]>1:
+                
+                ZtZ_r = readAndSumUniqueAtB('ZtZ', OutDir, R_inds, n_b, True).reshape([v_r, nraneffs[0], q])
+
             else:
+
                 ZtZ_r = readAndSumUniqueAtB('ZtZ', OutDir, R_inds, n_b, True).reshape([v_r, q, q])
             ZtX_r = readAndSumUniqueAtB('ZtX', OutDir, R_inds, n_b, True).reshape([v_r, q, p])
             XtX_r = readAndSumUniqueAtB('XtX', OutDir, R_inds, n_b, True).reshape([v_r, p, p])
@@ -289,7 +296,7 @@ def main(ipath, vb):
                 
                 # In the one random effect one random factor setting we have only
                 # the diagonal elements of Z'Z.
-                if r == 1 and nraneffs[0]==1:
+                if r == 1 and nraneffs[0] == 1:
                     ZtZ_r = ZtZ_r[fullrank_inds,:]
                 else:
                     ZtZ_r = ZtZ_r[fullrank_inds,:,:]
@@ -303,6 +310,13 @@ def main(ipath, vb):
             # the diagonal elements of Z'Z.
             if r == 1 and nraneffs[0]==1:
                 ZtZ_i = readAndSumUniqueAtB('ZtZ', OutDir, I_inds, n_b, False).reshape([1, q])
+
+            # In the one random effect multiple random factor setting we have only
+            # the diagonal blocks of Z'Z.
+            elif r == 1 and nraneffs[0]>1:
+                
+                ZtZ_i = readAndSumUniqueAtB('ZtZ', OutDir, I_inds, n_b, False).reshape([1, nraneffs[0], q])
+
             else:
                 ZtZ_i = readAndSumUniqueAtB('ZtZ', OutDir, I_inds, n_b, False).reshape([1, q, q])
 
