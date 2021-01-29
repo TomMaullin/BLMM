@@ -231,7 +231,7 @@ for (i in 1:nvox){
     }
 
     # Record log likelihood
-    llh[i,1] <- logLik(m)[1]
+    llh[i,1] <- logLik(m, REML=TRUE)[1]
     
   }
   
