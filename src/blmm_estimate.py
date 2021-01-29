@@ -112,9 +112,9 @@ def main(inputs, inds, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, n, nlevels, 
     qu = np.sum(nraneffs*(nraneffs+1)//2) # (Number of unique random effects)
 
 
-    # REML is just a backdoor option at the moment as it isn't that useful
-    # in the large n setting. For now we just set it to false.
-    REML = False
+    # REML is just a backdoor option at the moment. For now we just set it
+    # to false.
+    REML = True
 
     # ----------------------------------------------------------------------
     # Parameter estimation
