@@ -118,7 +118,7 @@ def main(inputs, nraneffs, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX
 
     # REML (currently only exists as a backdoor option as is not much 
     # practical use in the high n setting)
-    REML = False
+    REML = True
 
     # ----------------------------------------------------------------------
     # Calculate log-likelihood
