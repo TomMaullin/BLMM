@@ -147,27 +147,27 @@ for (i in 1:nvox){
     if (desInd==3){
 
         # Run the model
-        m <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + (0 + z01 + z02|Zf0) + (0 + z11|Zf1), REML=FALSE) 
+        m <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + (0 + z01 + z02|Zf0) + (0 + z11|Zf1), REML=TRUE) 
       
         # Get the function which is optimized
-        devfun <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + (0 + z01 + z02|Zf0) + (0 + z11|Zf1), REML=FALSE, devFunOnly = TRUE)
+        devfun <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + (0 + z01 + z02|Zf0) + (0 + z11|Zf1), REML=TRUE, devFunOnly = TRUE)
 
     } else if (desInd==2){
 
         # Run the model
-        m <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + (0 + z01 + z02|Zf0), REML=FALSE) 
+        m <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + (0 + z01 + z02|Zf0), REML=TRUE) 
       
         # Get the function which is optimized
-        devfun <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + (0 + z01 + z02|Zf0), REML=FALSE, devFunOnly = TRUE)
+        devfun <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + (0 + z01 + z02|Zf0), REML=TRUE, devFunOnly = TRUE)
 
 
     } else if (desInd==1){
 
         # Run the model
-        m <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + (0 + z01|Zf0), REML=FALSE) 
+        m <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + (0 + z01|Zf0), REML=TRUE) 
       
         # Get the function which is optimized
-        devfun <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + (0 + z01|Zf0), REML=FALSE, devFunOnly = TRUE)
+        devfun <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + (0 + z01|Zf0), REML=TRUE, devFunOnly = TRUE)
 
     }
 
