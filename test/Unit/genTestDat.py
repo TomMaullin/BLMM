@@ -159,7 +159,7 @@ def genTestData2D(n=None, p=None, nlevels=None, nraneffs=None):
         indicatorMatrix_factor = np.repeat(indicatorMatrix_factor, nraneffs[i], axis=1)
 
         # Enter the Z values
-        indicatorMatrix_factor[indicatorMatrix_factor==1]=Zdata_factor.reshape(Zdata_factor.shape[0]*Zdata_factor.shape[1])
+        indicatorMatrix_factor[indicatorMatrix_factor == 1]=Zdata_factor.reshape(Zdata_factor.shape[0]*Zdata_factor.shape[1])
 
         # Make sparse
         Zfactor = scipy.sparse.csr_matrix(indicatorMatrix_factor)
@@ -438,7 +438,7 @@ def genTestData3D(n=None, p=None, nlevels=None, nraneffs=None, v=None):
         indicatorMatrix_factor = np.repeat(indicatorMatrix_factor, nraneffs[i], axis=1)
 
         # Enter the Z values
-        indicatorMatrix_factor[indicatorMatrix_factor==1]=Zdata_factor.reshape(Zdata_factor.shape[0]*Zdata_factor.shape[1])
+        indicatorMatrix_factor[indicatorMatrix_factor == 1]=Zdata_factor.reshape(Zdata_factor.shape[0]*Zdata_factor.shape[1])
 
         # Make sparse
         Zfactor = scipy.sparse.csr_matrix(indicatorMatrix_factor)
