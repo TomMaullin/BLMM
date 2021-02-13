@@ -16,6 +16,7 @@ np.set_printoptions(threshold=np.nan)
 from lib.fileio import *
 import scipy.sparse
 import pandas as pd
+from lib.npMatrix3d import flattenZtZ
 
 # ====================================================================================
 #
