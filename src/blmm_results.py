@@ -319,7 +319,7 @@ def main(ipath, vb):
         # Calculate betahat = (X'X)^(-1)X'Y and output beta maps
         # --------------------------------------------------------------------------------
 
-        REML = False
+        REML = True
 
         # If we have indices where only some studies are present, work out X'X and
         # X'Y for these studies. (Remember X'Y, Y'Y and Z'Y have already had the 

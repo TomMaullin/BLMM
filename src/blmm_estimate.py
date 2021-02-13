@@ -4,6 +4,7 @@ import warnings as w
 w.simplefilter(action = 'ignore', category = FutureWarning)
 import numpy as np
 import os
+import time
 np.set_printoptions(threshold=np.nan)
 from scipy import stats
 from lib.npMatrix3d import *
@@ -111,13 +112,18 @@ def main(inputs, inds, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, n, nlevels, 
     qu = np.sum(nraneffs*(nraneffs+1)//2) # (Number of unique random effects)
 
 
-    # REML is just a backdoor option at the moment as it isn't that useful
-    # in the large n setting. For now we just set it to false.
-    REML = False
+    # REML is just a backdoor option at the moment. For now we just set it
+    # to false.
+    REML = True
 
     # ----------------------------------------------------------------------
     # Parameter estimation
     # ----------------------------------------------------------------------  
+
+    # If running simulations we record the time used for parameter estimation
+    if 'sim' in inputs:
+        if inputs['sim']:
+            t1 = time.time()
 
     if method=='pSFS': # Recommended, default method
         paramVec = pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=REML)
@@ -130,6 +136,14 @@ def main(inputs, inds, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, n, nlevels, 
 
     if method=='pFS': 
         paramVec = pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n)
+
+    # If running simulations we record the time used for parameter estimation
+    if 'sim' in inputs:
+        if inputs['sim']:
+            t2 = time.time()
+
+            # Output an "average estimation time nifti"
+            addBlockToNifti(os.path.join(OutDir, 'blmm_vox_times.nii'), np.ones((v,1))*(t2-t1)/v, inds,volInd=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
 
     # ----------------------------------------------------------------------
     # Parameter outputting
