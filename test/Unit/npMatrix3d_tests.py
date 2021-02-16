@@ -553,15 +553,25 @@ def test_initDk3D():
     # Decide on a random factor
     k = np.random.randint(0,nraneffs.shape[0])
 
+    # Shorthand q0 and l0
+    q0 = nraneffs[0]
+    l0 = nlevels[0]
+
+    # Flattened ZtZ
+    ZtZ_flattened = flattenZtZ(ZtZ, l0, q0)
+
+    # Flattened ZtZ_sv
+    ZtZ_sv_flattened = flattenZtZ(ZtZ_sv, l0, q0)
+
     # First test spatially varying
-    initDk_sv_test = initDk3D(k, ZtZ_sv, Zte_sv, sigma2, nlevels, nraneffs, dupMatTdict)[testv,:,:]
+    initDk_sv_test = initDk3D(k, ZtZ_sv_flattened, Zte_sv, sigma2, nlevels, nraneffs, dupMatTdict)[testv,:,:]
     initDk_sv_expected = initDk2D(k, ZtZ_sv[testv,:,:], Zte_sv[testv,:,:], sigma2[testv], nlevels, nraneffs, dupMatTdict)
     
     # Check if results are all close.
     sv_testVal = np.allclose(initDk_sv_test,initDk_sv_expected)
 
     # Now test non spatially varying
-    initDk_nsv_test = initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict)[testv,:,:]
+    initDk_nsv_test = initDk3D(k, ZtZ_flattened, Zte, sigma2, nlevels, nraneffs, dupMatTdict)[testv,:,:]
     initDk_nsv_expected = initDk2D(k, ZtZ[0,:,:], Zte[testv,:,:], sigma2[testv], nlevels, nraneffs, dupMatTdict)
     
     # Check if results are all close.
@@ -733,18 +743,38 @@ def test_get_DinvIplusZtZD3D():
     # Expected result (nsv)
     DinvIplusZtZD_nsv_expected = forceSym3D(np.linalg.solve(np.eye(q) + D @ ZtZ, D))
 
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Shorthand q0 and l0
+    q0 = nraneffs[0]
+    l0 = nlevels[0]
+
+    # Flattened ZtZ
+    ZtZ_flattened = flattenZtZ(ZtZ, l0, q0)
+
+    # Flattened ZtZ_sv
+    ZtZ_sv_flattened = flattenZtZ(ZtZ_sv, l0, q0)
+
     # Test result (nsv)
-    DinvIplusZtZD_nsv_test = get_DinvIplusZtZD3D(Ddict, D, ZtZ, nlevels, nraneffs) 
+    DinvIplusZtZD_nsv_test = get_DinvIplusZtZD3D(Ddict, D, ZtZ_flattened, nlevels, nraneffs) 
 
     # Expected result (sv)
     DinvIplusZtZD_sv_expected = forceSym3D(np.linalg.solve(np.eye(q) + D @ ZtZ_sv, D))
 
     # Test result (sv)
-    DinvIplusZtZD_sv_test = get_DinvIplusZtZD3D(Ddict, D, ZtZ_sv, nlevels, nraneffs) 
+    DinvIplusZtZD_sv_test = get_DinvIplusZtZD3D(Ddict, D, ZtZ_sv_flattened, nlevels, nraneffs) 
 
-    # Check if results are all close.
-    testVal_nsv = np.allclose(DinvIplusZtZD_nsv_test,DinvIplusZtZD_nsv_expected)
-    testVal_sv = np.allclose(DinvIplusZtZD_sv_test,DinvIplusZtZD_sv_expected)
+    # Initial test values
+    testVal_nsv = True
+    testVal_sv = True
+
+    # Loop through and check all expected blocks are equal
+    for i in np.arange(l0):
+        
+        testVal_sv = testVal_sv and np.allclose(DinvIplusZtZD_sv_test[testv,:,i*q0:(i+1)*q0],DinvIplusZtZD_sv_expected[testv,i*q0:(i+1)*q0,i*q0:(i+1)*q0])
+        testVal_nsv = testVal_nsv and np.allclose(DinvIplusZtZD_nsv_test[0,:,i*q0:(i+1)*q0],DinvIplusZtZD_nsv_expected[0,i*q0:(i+1)*q0,i*q0:(i+1)*q0])
+
     testVal_tc2 = testVal_nsv and testVal_sv
 
     # -------------------------------------------------------------------------
@@ -955,20 +985,33 @@ def test_llh3D():
         # Add Dk to the dict
         Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
 
-    # Obtain D(I+Z'ZD)^(-1) diag
-    DinvIplusZtZD = get_DinvIplusZtZD3D(Ddict, D, ZtZ, nlevels, nraneffs) 
-    DinvIplusZtZD_sv = get_DinvIplusZtZD3D(Ddict, D, ZtZ_sv, nlevels, nraneffs) 
+    # Obtain D(I+Z'ZD)^(-1) 
+    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+    DinvIplusZtZD_sv = D @ np.linalg.inv(np.eye(q) + ZtZ_sv @ D)
+
+    # q0 and l0
+    q0 = nraneffs[0]
+    l0 = nlevels[0]
+
+    # Use function to get flattened matrices
+    ZtZ_flattened = flattenZtZ(ZtZ, l0, q0)
+    ZtZ_sv_flattened = flattenZtZ(ZtZ_sv, l0, q0)
+
+    # Obtain D(I+Z'ZD)^(-1) flattened
+    DinvIplusZtZD_flattened = get_DinvIplusZtZD3D(Ddict, D, ZtZ_flattened, nlevels, nraneffs) 
+    DinvIplusZtZD_sv_flattened = get_DinvIplusZtZD3D(Ddict, D, ZtZ_sv_flattened, nlevels, nraneffs) 
 
     # First test spatially varying
-    llh_sv_test = llh3D(n, ZtZ_sv, Zte_sv, ete_sv, sigma2, DinvIplusZtZD_sv,D, Ddict, nlevels, nraneffs)[testv]
+    llh_sv_test = llh3D(n, ZtZ_sv_flattened, Zte_sv, ete_sv, sigma2, DinvIplusZtZD_sv_flattened,D, Ddict, nlevels, nraneffs)[testv]
     llh_sv_expected = llh2D(n, ZtZ_sv[testv,:,:], Zte_sv[testv,:,:], ete_sv[testv,:,:], sigma2[testv], DinvIplusZtZD_sv[testv,:,:],D[testv,:,:])[0,0]
     
     # Check if results are all close.
     sv_testVal = np.allclose(llh_sv_test,llh_sv_expected)
 
     # Now test non spatially varying
-    llh_nsv_test = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D, Ddict, nlevels, nraneffs)[testv]
+    llh_nsv_test = llh3D(n, ZtZ_flattened, Zte, ete, sigma2, DinvIplusZtZD_flattened,D, Ddict, nlevels, nraneffs)[testv]
     llh_nsv_expected = llh2D(n, ZtZ[0,:,:], Zte[testv,:,:], ete[testv,:,:], sigma2[testv], DinvIplusZtZD[testv,:,:],D[testv,:,:])[0,0]
+
     # Check if results are all close.
     nsv_testVal = np.allclose(llh_nsv_test,llh_nsv_expected)
 
@@ -1154,19 +1197,44 @@ def test_get_dldB3D():
     Xte = XtY - XtX @ beta
     Xte_sv = XtY_sv - XtX_sv @ beta 
 
+    # Work out the indices in D where a new block Dk appears
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+
+    # New empty D dict
+    Ddict = dict()
+
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+
     # Obtain D(I+Z'ZD)^(-1)
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
     DinvIplusZtZD_sv = D @ np.linalg.inv(np.eye(q) + ZtZ_sv @ D)
 
+    # Shorthand q0 and l0
+    q0 = nraneffs[0]
+    l0 = nlevels[0]
+
+    # Use function to get flattened matrices
+    ZtZ_flattened = flattenZtZ(ZtZ, l0, q0)
+    ZtZ_sv_flattened = flattenZtZ(ZtZ_sv, l0, q0)
+
+    # Obtain D(I+Z'ZD)^(-1) flattened
+    DinvIplusZtZD_flattened = get_DinvIplusZtZD3D(Ddict, D, ZtZ_flattened, nlevels, nraneffs) 
+    DinvIplusZtZD_sv_flattened = get_DinvIplusZtZD3D(Ddict, D, ZtZ_sv_flattened, nlevels, nraneffs) 
+
     # First test spatially varying
-    dldB_sv_test = get_dldB3D(sigma2, Xte_sv, XtZ_sv, DinvIplusZtZD_sv, Zte_sv, nraneffs)[testv,:,:]
+    dldB_sv_test = get_dldB3D(sigma2, Xte_sv, XtZ_sv, DinvIplusZtZD_sv_flattened, Zte_sv, nraneffs)[testv,:,:]
     dldB_sv_expected = get_dldB2D(sigma2[testv], Xte_sv[testv,:,:], XtZ_sv[testv,:,:], DinvIplusZtZD_sv[testv,:,:], Zte_sv[testv,:,:])
 
     # Check if results are all close.
     sv_testVal = np.allclose(dldB_sv_test,dldB_sv_expected)
 
     # Now test non spatially varying
-    dldB_nsv_test = get_dldB3D(sigma2, Xte, XtZ, DinvIplusZtZD, Zte, nraneffs)[testv,:,:]
+    dldB_nsv_test = get_dldB3D(sigma2, Xte, XtZ, DinvIplusZtZD_flattened, Zte, nraneffs)[testv,:,:]
     dldB_nsv_expected = get_dldB2D(sigma2[testv], Xte[testv,:,:], XtZ[0,:,:], DinvIplusZtZD[testv,:,:], Zte[testv,:,:])
 
     # Check if results are all close.
@@ -1350,15 +1418,40 @@ def test_get_dldsigma23D():
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
     DinvIplusZtZD_sv = D @ np.linalg.inv(np.eye(q) + ZtZ_sv @ D)
 
+    # Work out the indices in D where a new block Dk appears
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+
+    # New empty D dict
+    Ddict = dict()
+
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+
+    # Shorthand q0 and l0
+    q0 = nraneffs[0]
+    l0 = nlevels[0]
+
+    # Use function to get flattened matrices
+    ZtZ_flattened = flattenZtZ(ZtZ, l0, q0)
+    ZtZ_sv_flattened = flattenZtZ(ZtZ_sv, l0, q0)
+
+    # Obtain D(I+Z'ZD)^(-1) flattened
+    DinvIplusZtZD_flattened = get_DinvIplusZtZD3D(Ddict, D, ZtZ_flattened, nlevels, nraneffs) 
+    DinvIplusZtZD_sv_flattened = get_DinvIplusZtZD3D(Ddict, D, ZtZ_sv_flattened, nlevels, nraneffs) 
+
     # First test spatially varying
-    dldsigma2_sv_test = get_dldsigma23D(n_sv, ete_sv, Zte_sv, sigma2, DinvIplusZtZD_sv, nraneffs)[testv]
+    dldsigma2_sv_test = get_dldsigma23D(n_sv, ete_sv, Zte_sv, sigma2, DinvIplusZtZD_sv_flattened, nraneffs)[testv]
     dldsigma2_sv_expected = get_dldsigma22D(n_sv[testv,:], ete_sv[testv,:,:], Zte_sv[testv,:,:], sigma2[testv], DinvIplusZtZD_sv[testv,:,:])
 
     # Check if results are all close.
     sv_testVal = np.allclose(dldsigma2_sv_test,dldsigma2_sv_expected)
 
     # Now test non spatially varying
-    dldsigma2_nsv_test = get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD, nraneffs)[testv]
+    dldsigma2_nsv_test = get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD_flattened, nraneffs)[testv]
     dldsigma2_nsv_expected = get_dldsigma22D(n, ete[testv,:,:], Zte[testv,:,:], sigma2[testv], DinvIplusZtZD[testv,:,:])
 
     # Check if results are all close.
@@ -1535,16 +1628,41 @@ def test_get_dldDk3D():
     Zte = ZtY - ZtX @ beta
     Zte_sv = ZtY_sv - ZtX_sv @ beta
 
+    # Shorthand q0 and l0
+    q0 = nraneffs[0]
+    l0 = nlevels[0]
+    
+    # Work out the indices in D where a new block Dk appears
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+
+    # New empty D dict
+    Ddict = dict()
+
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+
     # Obtain D(I+Z'ZD)^(-1)
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
     DinvIplusZtZD_sv = D @ np.linalg.inv(np.eye(q) + ZtZ_sv @ D)
 
-    # Decide on a random factor
-    k = np.random.randint(0,nraneffs.shape[0])
+    # Use function to get flattened matrices
+    ZtZ_flattened = flattenZtZ(ZtZ, l0, q0)
+    ZtZ_sv_flattened = flattenZtZ(ZtZ_sv, l0, q0)
+
+    # Obtain D(I+Z'ZD)^(-1) flattened
+    DinvIplusZtZD_flattened = get_DinvIplusZtZD3D(Ddict, D, ZtZ_flattened, nlevels, nraneffs) 
+    DinvIplusZtZD_sv_flattened = get_DinvIplusZtZD3D(Ddict, D, ZtZ_sv_flattened, nlevels, nraneffs) 
+
+    # Factor number
+    k = 0
 
     # First test spatially varying
-    dldDk_sv_test,ZtZmat = get_dldDk3D(k, nlevels, nraneffs, ZtZ_sv, Zte_sv, sigma2, DinvIplusZtZD_sv)
-    dldDk_sv_test,_ = get_dldDk3D(k, nlevels, nraneffs, ZtZ_sv, Zte_sv, sigma2, DinvIplusZtZD_sv, ZtZmat=ZtZmat)
+    dldDk_sv_test,ZtZmat = get_dldDk3D(k, nlevels, nraneffs, ZtZ_sv_flattened, Zte_sv, sigma2, DinvIplusZtZD_sv_flattened)
+    dldDk_sv_test,_ = get_dldDk3D(k, nlevels, nraneffs, ZtZ_sv_flattened, Zte_sv, sigma2, DinvIplusZtZD_sv_flattened, ZtZmat=ZtZmat)
     dldDk_sv_test = dldDk_sv_test[testv,:,:] 
     dldDk_sv_expected = get_dldDk2D(k, nlevels, nraneffs, ZtZ_sv[testv,:,:], Zte_sv[testv,:,:], sigma2[testv], DinvIplusZtZD_sv[testv,:,:])[0]
 
@@ -1552,8 +1670,8 @@ def test_get_dldDk3D():
     sv_testVal = np.allclose(dldDk_sv_test,dldDk_sv_expected)
 
     # Now test non spatially varying
-    dldDk_nsv_test,ZtZmat = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD)
-    dldDk_nsv_test,_ = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD)
+    dldDk_nsv_test,ZtZmat = get_dldDk3D(k, nlevels, nraneffs, ZtZ_flattened, Zte, sigma2, DinvIplusZtZD_flattened)
+    dldDk_nsv_test,_ = get_dldDk3D(k, nlevels, nraneffs, ZtZ_flattened, Zte, sigma2, DinvIplusZtZD_flattened)
     dldDk_nsv_test = dldDk_nsv_test[testv,:,:] 
     dldDk_nsv_expected = get_dldDk2D(k, nlevels, nraneffs, ZtZ[0,:,:], Zte[testv,:,:], sigma2[testv], DinvIplusZtZD[testv,:,:])[0]
     
@@ -1624,6 +1742,72 @@ def test_get_dldDk3D():
     print('-------------------------------------------------------------')
     print('Result: ', result)
     
+    return(result)
+
+# =============================================================================
+#
+# The below function tests the function `flattenZtZ`. It does this by 
+# simulating random test data and testing the reshape was performed correctly.
+#
+# =============================================================================
+def test_flattenZtZ():
+
+    # Setup variables
+    nraneffs = np.array([np.random.randint(2,10)])
+    nlevels = np.array([30])
+    q = np.sum(nlevels*nraneffs)
+    v = 10
+
+    # Generate test data
+    Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, n=100, nlevels=nlevels, nraneffs=nraneffs)
+
+    # ZtZ
+    ZtZ = Z.transpose() @ Z
+
+    # Spatially varying ZtZ
+    ZtZ_sv = Z_sv.transpose(0,2,1) @ Z_sv
+
+    # q0 and l0
+    q0 = nraneffs[0]
+    l0 = nlevels[0]
+
+    # Use function to get flattened matrices
+    ZtZ_flattened = flattenZtZ(ZtZ, l0, q0)
+    ZtZ_sv_flattened = flattenZtZ(ZtZ_sv, l0, q0)
+
+    # Choose random voxel to check worked correctly
+    testv = np.random.randint(0,v)
+
+    # Boolean testing whether flattening worked
+    passed_sv = True
+    passed = True
+
+    # Loop through and check all expected blocks are equal
+    for i in np.arange(l0):
+
+        passed = passed and np.allclose(ZtZ_flattened[:,i*q0:(i+1)*q0],ZtZ[i*q0:(i+1)*q0,i*q0:(i+1)*q0])
+        passed_sv = passed_sv and np.allclose(ZtZ_sv_flattened[testv,:,i*q0:(i+1)*q0],ZtZ_sv[testv,i*q0:(i+1)*q0,i*q0:(i+1)*q0])
+
+    # Result
+    if passed:
+        result = 'Passed'
+    else:
+        result = 'Failed'
+
+    # Result spatially varying
+    if passed_sv:
+        result_sv = 'Passed'
+    else:
+        result_sv = 'Failed'
+
+    # Combine results
+    result = result and result_sv
+        
+    print('=============================================================')
+    print('Unit test for: get_dldDk3D')
+    print('-------------------------------------------------------------')
+    print('Result: ', result)
+
     return(result)
 
 
@@ -1709,6 +1893,10 @@ def test_get_covdldbeta3D():
     q = np.sum(nlevels*nraneffs)
     v = 10
 
+    # Shorthand q0 and l0
+    q0 = nraneffs[0]
+    l0 = nlevels[0]
+
     # Generate a random mass univariate linear mixed model.
     Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
     n = Y.shape[1]
@@ -1720,19 +1908,40 @@ def test_get_covdldbeta3D():
     # Choose random voxel to check worked correctly
     testv = np.random.randint(0,v)
 
+    # Work out the indices in D where a new block Dk appears
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+
+    # New empty D dict
+    Ddict = dict()
+
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+
+    # Use function to get flattened matrices
+    ZtZ_flattened = flattenZtZ(ZtZ, l0, q0)
+    ZtZ_sv_flattened = flattenZtZ(ZtZ_sv, l0, q0)
+
+    # Obtain D(I+Z'ZD)^(-1) flattened
+    DinvIplusZtZD_flattened = get_DinvIplusZtZD3D(Ddict, D, ZtZ_flattened, nlevels, nraneffs) 
+    DinvIplusZtZD_sv_flattened = get_DinvIplusZtZD3D(Ddict, D, ZtZ_sv_flattened, nlevels, nraneffs) 
+
     # Obtain D(I+Z'ZD)^(-1)
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
     DinvIplusZtZD_sv = D @ np.linalg.inv(np.eye(q) + ZtZ_sv @ D)
 
     # First test spatially varying
-    covdldB_sv_test = get_covdldbeta3D(XtZ_sv, XtX_sv, ZtZ_sv, DinvIplusZtZD_sv, sigma2, nraneffs)[testv,:,:]
+    covdldB_sv_test = get_covdldbeta3D(XtZ_sv, XtX_sv, ZtZ_sv_flattened, DinvIplusZtZD_sv_flattened, sigma2, nraneffs)[testv,:,:]
     covdldB_sv_expected = get_covdldbeta2D(XtZ_sv[testv,:,:], XtX_sv[testv,:,:], ZtZ_sv[testv,:,:], DinvIplusZtZD_sv[testv,:,:], sigma2[testv])
 
     # Check if results are all close.
     sv_testVal = np.allclose(covdldB_sv_test,covdldB_sv_expected)
 
     # Now test non spatially varying
-    covdldB_nsv_test = get_covdldbeta3D(XtZ, XtX, ZtZ, DinvIplusZtZD, sigma2, nraneffs)[testv,:,:]
+    covdldB_nsv_test = get_covdldbeta3D(XtZ, XtX, ZtZ_flattened, DinvIplusZtZD_flattened, sigma2, nraneffs)[testv,:,:]
     covdldB_nsv_expected = get_covdldbeta2D(XtZ[0,:,:], XtX[0,:,:], ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], sigma2[testv])
 
     # Check if results are all close.
@@ -1903,8 +2112,29 @@ def test_get_covdldDkdsigma23D():
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
     DinvIplusZtZD_sv = D @ np.linalg.inv(np.eye(q) + ZtZ_sv @ D)
 
-    # Decide on a random factor
-    k = np.random.randint(0,nraneffs.shape[0])
+    # Factor number
+    k = 0
+
+    # New empty D dict
+    Ddict = dict()
+
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+
+    # Shorthand q0 and l0
+    q0 = nraneffs[0]
+    l0 = nlevels[0]
+
+    # Use function to get flattened matrices
+    ZtZ_flattened = flattenZtZ(ZtZ, l0, q0)
+    ZtZ_sv_flattened = flattenZtZ(ZtZ_sv, l0, q0)
+
+    # Obtain D(I+Z'ZD)^(-1) flattened
+    DinvIplusZtZD_flattened = get_DinvIplusZtZD3D(Ddict, D, ZtZ_flattened, nlevels, nraneffs) 
+    DinvIplusZtZD_sv_flattened = get_DinvIplusZtZD3D(Ddict, D, ZtZ_sv_flattened, nlevels, nraneffs) 
 
     # Work out the transpose duplication matrices we need.
     dupMatTdict = dict()
@@ -1913,8 +2143,8 @@ def test_get_covdldDkdsigma23D():
       dupMatTdict[i] = dupMat2D(nraneffs[i]).toarray().transpose()
 
     # First test spatially varying
-    covdldDsigma2_sv_test,ZtZmat = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ_sv, DinvIplusZtZD_sv, dupMatTdict)
-    covdldDsigma2_sv_test,_ = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ_sv, DinvIplusZtZD_sv, dupMatTdict, ZtZmat=ZtZmat)
+    covdldDsigma2_sv_test,ZtZmat = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ_sv_flattened, DinvIplusZtZD_sv_flattened, dupMatTdict)
+    covdldDsigma2_sv_test,_ = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ_sv_flattened, DinvIplusZtZD_sv_flattened, dupMatTdict, ZtZmat=ZtZmat)
     covdldDsigma2_sv_test = covdldDsigma2_sv_test[testv,:,:]
     covdldDsigma2_sv_expected,_ = get_covdldDkdsigma22D(k, sigma2[testv], nlevels, nraneffs, ZtZ_sv[testv,:,:], DinvIplusZtZD_sv[testv,:,:], dupMatTdict)
 
@@ -1922,8 +2152,8 @@ def test_get_covdldDkdsigma23D():
     sv_testVal = np.allclose(covdldDsigma2_sv_test,covdldDsigma2_sv_expected)
 
     # Now test non spatially varying
-    covdldDsigma2_nsv_test,ZtZmat = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict)
-    covdldDsigma2_nsv_test,_ = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, ZtZmat=ZtZmat)
+    covdldDsigma2_nsv_test,ZtZmat = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ_flattened, DinvIplusZtZD_flattened, dupMatTdict)
+    covdldDsigma2_nsv_test,_ = get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ_flattened, DinvIplusZtZD_flattened, dupMatTdict, ZtZmat=ZtZmat)
     covdldDsigma2_nsv_test = covdldDsigma2_nsv_test[testv,:,:]
     covdldDsigma2_nsv_expected,_ = get_covdldDkdsigma22D(k, sigma2[testv], nlevels, nraneffs, ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], dupMatTdict)
 
@@ -2094,6 +2324,10 @@ def test_get_covdldDk1Dk23D():
     q = np.sum(nlevels*nraneffs)
     v = 10
 
+    # Shorthand q0 and l0
+    q0 = nraneffs[0]
+    l0 = nlevels[0]
+
     # Generate a random mass univariate linear mixed model.
     Y,X,Z,nlevels,nraneffs,beta,sigma2,b,D,X_sv,Z_sv,n_sv = genTestData3D(v=v, nlevels=nlevels, nraneffs=nraneffs)
     n = Y.shape[1]
@@ -2108,9 +2342,30 @@ def test_get_covdldDk1Dk23D():
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
     DinvIplusZtZD_sv = D @ np.linalg.inv(np.eye(q) + ZtZ_sv @ D)
 
-    # Decide on 2 random factors
-    k1 = np.random.randint(0,nraneffs.shape[0])
-    k2 = np.random.randint(0,nraneffs.shape[0])
+    # Work out the indices in D where a new block Dk appears
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+
+    # New empty D dict
+    Ddict = dict()
+
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+
+    # Use function to get flattened matrices
+    ZtZ_flattened = flattenZtZ(ZtZ, l0, q0)
+    ZtZ_sv_flattened = flattenZtZ(ZtZ_sv, l0, q0)
+
+    # Obtain D(I+Z'ZD)^(-1) flattened
+    DinvIplusZtZD_flattened = get_DinvIplusZtZD3D(Ddict, D, ZtZ_flattened, nlevels, nraneffs) 
+    DinvIplusZtZD_sv_flattened = get_DinvIplusZtZD3D(Ddict, D, ZtZ_sv_flattened, nlevels, nraneffs) 
+
+    # The factors
+    k1 = 0
+    k2 = 0
 
     # Work out the transpose duplication matrices we need.
     dupMatTdict = dict()
@@ -2119,8 +2374,8 @@ def test_get_covdldDk1Dk23D():
       dupMatTdict[i] = dupMat2D(nraneffs[i]).toarray().transpose()
 
     # First test spatially varying
-    covdldD_sv_test,perm = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ_sv, DinvIplusZtZD_sv, dupMatTdict)
-    covdldD_sv_test,_ = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ_sv, DinvIplusZtZD_sv, dupMatTdict,perm=perm)
+    covdldD_sv_test,perm = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ_sv_flattened, DinvIplusZtZD_sv_flattened, dupMatTdict)
+    covdldD_sv_test,_ = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ_sv_flattened, DinvIplusZtZD_sv_flattened, dupMatTdict,perm=perm)
     covdldD_sv_test = covdldD_sv_test[testv,:,:]
     covdldD_sv_expected = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ_sv[testv,:,:], DinvIplusZtZD_sv[testv,:,:], dupMatTdict)[0]
   
@@ -2128,8 +2383,8 @@ def test_get_covdldDk1Dk23D():
     sv_testVal = np.allclose(covdldD_sv_test,covdldD_sv_expected)
 
     # Now test non spatially varying
-    covdldD_nsv_test,perm = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict)
-    covdldD_nsv_test,_ = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict)
+    covdldD_nsv_test,perm = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ_flattened, DinvIplusZtZD_flattened, dupMatTdict)
+    covdldD_nsv_test,_ = get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ_flattened, DinvIplusZtZD_flattened, dupMatTdict)
     covdldD_nsv_test = covdldD_nsv_test[testv,:,:]
     covdldD_nsv_expected = get_covdldDk1Dk22D(k1, k2, nlevels, nraneffs, ZtZ[0,:,:], DinvIplusZtZD[testv,:,:], dupMatTdict)[0]
     
@@ -2698,6 +2953,26 @@ def test_get_covB3D():
     # Choose random voxel to check worked correctly
     testv = np.random.randint(0,v)
 
+    # Shorthand q0 and l0
+    q0 = nraneffs[0]
+    l0 = nlevels[0]
+
+    # Flattened ZtZ
+    ZtZ_flattened = flattenZtZ(ZtZ, l0, q0)
+
+    # Work out the indices in D where a new block Dk appears
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+
+    # New empty D dict
+    Ddict = dict()
+
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+
     # Test contrast vector
     L = np.random.binomial(1,0.5,size=(1,p))
     L[:,0]=1
@@ -2721,7 +2996,7 @@ def test_get_covB3D():
     # ----------------------------------------------------------------------
 
     # Obtain D(I+Z'ZD)^(-1)
-    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+    DinvIplusZtZD = get_DinvIplusZtZD3D(Ddict, None, ZtZ_flattened, nlevels, nraneffs) 
 
     # Run F test
     covB_test = get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs)[testv,:]
@@ -4143,11 +4418,31 @@ def test_get_dS23D():
         # Add to dS2
         dS2_expected[DerivInds[k]:DerivInds[k+1]] = dS2dvechDk.reshape(dS2_expected[DerivInds[k]:DerivInds[k+1]].shape)
 
-    # Obtain D(I+Z'ZD)^(-1)
-    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+    # Work out the indices in D where a new block Dk appears
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+
+    # New empty D dict
+    Ddict = dict()
+
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+
+    # Shorthand q0 and l0
+    q0 = nraneffs[0]
+    l0 = nlevels[0]
+
+    # Flattened ZtZ
+    ZtZ_flattened = flattenZtZ(ZtZ, l0, q0)
+
+    # Test result (nsv)
+    DinvIplusZtZD_flattened = get_DinvIplusZtZD3D(Ddict, D, ZtZ_flattened, nlevels, nraneffs) 
 
     # Obtain result from function
-    dS2_test = get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2)[testv,:,:]
+    dS2_test = get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ_flattened, DinvIplusZtZD_flattened, sigma2)[testv,:,:]
 
     # Check if results are all close.
     testVal_tc2 = np.allclose(dS2_test,dS2_expected)
@@ -4611,6 +4906,15 @@ def run_all3D():
     # Test get_DinvIplusZtZD3D
     name = 'get_DinvIplusZtZD3D'
     result = test_get_DinvIplusZtZD3D()
+    # Add result to arrays.
+    if result=='Passed':
+        passedTests = np.append(passedTests, name)
+    if result=='Failed':
+        failedTests = np.append(failedTests, name)
+
+    # Test flattenZtZ
+    name = 'flattenZtZ'
+    result = test_flattenZtZ()
     # Add result to arrays.
     if result=='Passed':
         passedTests = np.append(passedTests, name)

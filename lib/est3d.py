@@ -92,6 +92,13 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n, 
     # Number of factors, r
     r = len(nlevels)
 
+    # Useful shorthand in single factor case
+    if r == 1:
+
+        # Get q0 and l0
+        q0 = nraneffs[0]
+        l0 = nlevels[0]
+
     # Number of random effects, q
     q = np.sum(np.dot(nraneffs,nlevels))
 
@@ -133,9 +140,9 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n, 
 
         Ddict[k] = makeDnnd3D(initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict))
     
-    # Full version of D (not needed in the 1 random effect 1 random factor case as there
-    # is only one unique element in D)
-    if r == 1 and nraneffs[0] == 1:
+    # Full version of D (not needed in the 1 random factor case as there is only one
+    # unique element in D)
+    if r == 1:
         D = None
     else:
         D = getDfromDict3D(Ddict, nraneffs, nlevels)
@@ -311,9 +318,9 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n, 
 
             Ddict[k] = makeDnnd3D(vech2mat3D(paramVector[:,FishIndsDk[k]:FishIndsDk[k+1],:]))
             
-        # Full version of D (not needed in the 1 random effect 1 random factor case as there
-        # is only one unique element in D)
-        if r == 1 and nraneffs[0] == 1:
+        # Full version of D (not needed in the 1 random factor case as there
+        # is only one unique block in D)
+        if r == 1:
             D = None
         else:
             D = getDfromDict3D(Ddict, nraneffs, nlevels)
@@ -367,7 +374,7 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n, 
         # In the one factor, one random effect case we only have the diagonal 
         # D(I+Z'Z)^(-1) elements because D(I+Z'Z)^(-1) is diagonal in this use
         # case.
-        if r==1 and nraneffs[0]==1:
+        if r == 1 and nraneffs[0]==1:
             DinvIplusZtZD = DinvIplusZtZD[localnotconverged, :]
         else:
             DinvIplusZtZD = DinvIplusZtZD[localnotconverged, :, :]
@@ -381,7 +388,7 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n, 
                 
             # In the one factor, one random effect case we only have the diagonal 
             # Z'Z elements because Z'Z is diagonal in this use case.
-            if r==1 and nraneffs[0]==1:
+            if r == 1 and nraneffs[0]==1:
                 ZtZ = ZtZ[localnotconverged, :]
             else:
                 ZtZ = ZtZ[localnotconverged, :, :]
@@ -421,8 +428,8 @@ def FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n, 
         beta = beta[localnotconverged, :, :]
         sigma2 = sigma2[localnotconverged]
         # We don't need this representation of D in the simple case of 1 random 
-        # factor, 1 random effect
-        if not (r == 1 and nraneffs[0] == 1):
+        # factor
+        if r!=1:
             D = D[localnotconverged, :, :]
 
         for k in np.arange(len(nraneffs)):
@@ -508,6 +515,13 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n,
 
     # Number of factors, r
     r = len(nlevels)
+    
+    # Useful shorthand in single factor case
+    if r == 1:
+
+        # Get q0 and l0
+        q0 = nraneffs[0]
+        l0 = nlevels[0]
 
     # Number of random effects, q
     q = np.sum(np.dot(nraneffs,nlevels))
@@ -550,9 +564,9 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n,
 
         Ddict[k] = makeDnnd3D(initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict))
     
-    # Full version of D (not needed in the 1 random effect 1 random factor case as there
-    # is only one unique element in D)
-    if r == 1 and nraneffs[0] == 1:
+    # Full version of D (not needed in the 1 random factor case as there
+    # is only one unique block in D)
+    if r == 1:
         D = None
     else:
         D = getDfromDict3D(Ddict, nraneffs, nlevels)
@@ -727,9 +741,9 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n,
 
             Ddict[k] = makeDnnd3D(vec2mat3D(paramVector[:,FishIndsDk[k]:FishIndsDk[k+1],:]))
             
-        # Full version of D (not needed in the 1 random effect 1 random factor case as there
-        # is only one unique element in D)
-        if r == 1 and nraneffs[0] == 1:
+        # Full version of D (not needed in the 1 random factor case as there
+        # is only one unique block in D)
+        if r == 1:
             D = None
         else:
             D = getDfromDict3D(Ddict, nraneffs, nlevels)
@@ -783,7 +797,7 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n,
         # In the one factor, one random effect case we only have the diagonal 
         # D(I+Z'Z)^(-1) elements because D(I+Z'Z)^(-1) is diagonal in this use
         # case.
-        if r==1 and nraneffs[0]==1:
+        if r == 1 and nraneffs[0]==1:
             DinvIplusZtZD = DinvIplusZtZD[localnotconverged, :]
         else:
             DinvIplusZtZD = DinvIplusZtZD[localnotconverged, :, :]
@@ -797,7 +811,7 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n,
                 
             # In the one factor, one random effect case we only have the diagonal 
             # Z'Z elements because Z'Z is diagonal in this use case.
-            if r==1 and nraneffs[0]==1:
+            if r == 1 and nraneffs[0]==1:
                 ZtZ = ZtZ[localnotconverged, :]
             else:
                 ZtZ = ZtZ[localnotconverged, :, :]
@@ -834,8 +848,8 @@ def pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n,
         beta = beta[localnotconverged, :, :]
         sigma2 = sigma2[localnotconverged]
         # We don't need this representation of D in the simple case of 1 random 
-        # factor, 1 random effect
-        if not (r == 1 and nraneffs[0] == 1):
+        # factor
+        if r!=1:
             D = D[localnotconverged, :, :]
 
         for k in np.arange(len(nraneffs)):
@@ -935,6 +949,13 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n,
 
     # Number of voxels, v
     v = XtY.shape[0]
+
+    # Useful shorthand in single factor case
+    if r == 1:
+
+        # Get q0 and l0
+        q0 = nraneffs[0]
+        l0 = nlevels[0]
     
     # ------------------------------------------------------------------------------
     # Initial estimates
@@ -968,9 +989,9 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n,
 
         Ddict[k] = makeDnnd3D(initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict))
     
-    # Full version of D (not needed in the 1 random effect 1 random factor case as there
-    # is only one unique element in D)
-    if r == 1 and nraneffs[0] == 1:
+    # Full version of D (not needed in the 1 random factor case as there
+    # is only one unique block in D)
+    if r == 1:
         D = None
     else:
         D = getDfromDict3D(Ddict, nraneffs, nlevels)
@@ -1073,6 +1094,19 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n,
             # Multiply by Z'X
             DinvIplusZtZDZtX = np.einsum('ij,ijk->ijk', DinvIplusZtZD, ZtX)
 
+        # This can also be performed faster in the one factor, multiple random effect
+        # case by using only the diagonal blocks of DinvIplusZtZD 
+        elif r == 1 and nraneffs[0] > 1:
+
+            # Reshape DinvIplusZtZD appropriately
+            DinvIplusZtZDZtX = DinvIplusZtZD.transpose(0,2,1).reshape(v_iter,l0,q0,q0)
+
+            # Multiply by ZtX
+            DinvIplusZtZDZtX = DinvIplusZtZDZtX @ ZtX.reshape(ZtX.shape[0],l0,q0,p)    
+
+            # Reshape appropriately
+            DinvIplusZtZDZtX = DinvIplusZtZDZtX.reshape(v_iter,q0*l0,p)
+
         else:
 
             # Multiply by Z'X
@@ -1105,6 +1139,26 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n,
                 sigma2 = (1/n*(ete - Zte.transpose((0,2,1)) @ np.einsum('ij,ijk->ijk',DinvIplusZtZD, Zte))).reshape(v_iter)
             else:
                 sigma2 = (1/(n-p)*(ete - Zte.transpose((0,2,1)) @ np.einsum('ij,ijk->ijk',DinvIplusZtZD, Zte))).reshape(v_iter)
+
+        # This can also be performed faster in the one factor, mutliple random effect
+        # case by using only the diagonal blocks of DinvIplusZtZD. 
+        elif r == 1 and nraneffs[0] > 1:
+
+            # Reshape DinvIplusZtZD appropriately
+            DinvIplusZtZDZte = DinvIplusZtZD.transpose(0,2,1).reshape(v_iter,l0,q0,q0)
+
+            # Multiply by Zte
+            DinvIplusZtZDZte = DinvIplusZtZDZte @ Zte.reshape(v_iter,l0,q0,1)    
+
+            # Reshape appropriately
+            DinvIplusZtZDZte = DinvIplusZtZDZte.reshape(v_iter,q0*l0,1)
+
+            if reml == False:
+                sigma2 = (1/n*(ete - Zte.transpose((0,2,1)) @ DinvIplusZtZDZte)).reshape(v_iter)
+            else:
+                sigma2 = (1/(n-p)*(ete - Zte.transpose((0,2,1)) @ DinvIplusZtZDZte)).reshape(v_iter)
+
+
         else:
             if reml == False:
                 sigma2 = (1/n*(ete - Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte)).reshape(v_iter)
@@ -1149,7 +1203,7 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n,
             # Add D_k back into D and recompute DinvIplusZtZD (This isn't necessary for the
             # one random effect, one random factor use case as D only contains one unique 
             # element)
-            if not (r == 1 and nraneffs[0] == 1):
+            if not (r!=1 and nraneffs[0] == 1):
 
                 for j in np.arange(nlevels[k]):
                     D[:, Dinds[counter]:Dinds[counter+1], Dinds[counter]:Dinds[counter+1]] = Ddict[k]
@@ -1212,7 +1266,7 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n,
         # In the one factor, one random effect case we only have the diagonal 
         # D(I+Z'Z)^(-1) elements because D(I+Z'Z)^(-1) is diagonal in this use
         # case.
-        if r==1 and nraneffs[0]==1:
+        if r == 1 and nraneffs[0]==1:
             DinvIplusZtZD = DinvIplusZtZD[localnotconverged, :]
         else:
             DinvIplusZtZD = DinvIplusZtZD[localnotconverged, :, :]
@@ -1226,7 +1280,7 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n,
                 
             # In the one factor, one random effect case we only have the diagonal 
             # Z'Z elements because Z'Z is diagonal in this use case.
-            if r==1 and nraneffs[0]==1:
+            if r == 1 and nraneffs[0]==1:
                 ZtZ = ZtZ[localnotconverged, :]
             else:
                 ZtZ = ZtZ[localnotconverged, :, :]
@@ -1263,8 +1317,8 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n,
         beta = beta[localnotconverged, :, :]
         sigma2 = sigma2[localnotconverged]
         # We don't need this representation of D in the simple case of 1 random 
-        # factor, 1 random effect
-        if not (r == 1 and nraneffs[0] == 1):
+        # factor
+        if r!=1:
             D = D[localnotconverged, :, :]
 
         for k in np.arange(len(nraneffs)):
@@ -1359,6 +1413,13 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
     # Number of factors, r
     r = len(nlevels)
 
+    # Useful shorthand in single factor case
+    if r == 1:
+
+        # Get q0 and l0
+        q0 = nraneffs[0]
+        l0 = nlevels[0]
+
     # Number of random effects, q
     q = np.sum(np.dot(nraneffs,nlevels))
 
@@ -1400,9 +1461,9 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
 
         Ddict[k] = makeDnnd3D(initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict))
 
-    # Full version of D (not needed in the 1 random effect 1 random factor case as there
-    # is only one unique element in D)
-    if r == 1 and nraneffs[0] == 1:
+    # Full version of D (not needed in the 1 random factor case as there
+    # is only one unique block in D)
+    if r == 1:
         D = None
     else:
         D = getDfromDict3D(Ddict, nraneffs, nlevels)
@@ -1504,6 +1565,19 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             # Multiply by Z'X
             DinvIplusZtZDZtX = np.einsum('ij,ijk->ijk', DinvIplusZtZD, ZtX)
 
+        # This can also be performed faster in the one factor, multiple random effect
+        # case by using only the diagonal blocks of DinvIplusZtZD 
+        elif r == 1 and nraneffs[0] > 1:
+
+            # Reshape DinvIplusZtZD appropriately
+            DinvIplusZtZDZtX = DinvIplusZtZD.transpose(0,2,1).reshape(v_iter,l0,q0,q0)
+
+            # Multiply by ZtX
+            DinvIplusZtZDZtX = DinvIplusZtZDZtX @ ZtX.reshape(ZtX.shape[0],l0,q0,p)    
+
+            # Reshape appropriately
+            DinvIplusZtZDZtX = DinvIplusZtZDZtX.reshape(v_iter,q0*l0,p)
+
         else:
 
             # Multiply by Z'X
@@ -1536,6 +1610,25 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
                 sigma2 = (1/n*(ete - Zte.transpose((0,2,1)) @ np.einsum('ij,ijk->ijk',DinvIplusZtZD, Zte))).reshape(v_iter)
             else:
                 sigma2 = (1/(n-p)*(ete - Zte.transpose((0,2,1)) @ np.einsum('ij,ijk->ijk',DinvIplusZtZD, Zte))).reshape(v_iter)
+
+        # This can also be performed faster in the one factor, mutliple random effect
+        # case by using only the diagonal blocks of DinvIplusZtZD. 
+        elif r == 1 and nraneffs[0] > 1:
+
+            # Reshape DinvIplusZtZD appropriately
+            DinvIplusZtZDZte = DinvIplusZtZD.transpose(0,2,1).reshape(v_iter,l0,q0,q0)
+
+            # Multiply by Zte
+            DinvIplusZtZDZte = DinvIplusZtZDZte @ Zte.reshape(v_iter,l0,q0,1)    
+
+            # Reshape appropriately
+            DinvIplusZtZDZte = DinvIplusZtZDZte.reshape(v_iter,q0*l0,1)
+
+            if reml == False:
+                sigma2 = (1/n*(ete - Zte.transpose((0,2,1)) @ DinvIplusZtZDZte)).reshape(v_iter)
+            else:
+                sigma2 = (1/(n-p)*(ete - Zte.transpose((0,2,1)) @ DinvIplusZtZDZte)).reshape(v_iter)
+
         else:
             if reml == False:
                 sigma2 = (1/n*(ete - Zte.transpose((0,2,1)) @ DinvIplusZtZD @ Zte)).reshape(v_iter)
@@ -1553,9 +1646,9 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             #-----------------------------------------------------------------------
             # Work out derivative
             if ZtZmatdict[k] is None:
-                dldDk,ZtZmatdict[k] = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=None)
+                dldDk,ZtZmatdict[k] = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=None, reml=reml, ZtX=ZtX, XtX=XtX)
             else:
-                dldDk,_ = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD,ZtZmat=ZtZmatdict[k])
+                dldDk,_ = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=ZtZmatdict[k], reml=reml, ZtX=ZtX, XtX=XtX)
         
             #-----------------------------------------------------------------------
             # Calculate covariance of derivative with respect to D_k
@@ -1577,9 +1670,8 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             Ddict[k] = makeDnnd3D(vec2mat3D(mat2vec3D(Ddict[k]) + update_p))
 
             # Add D_k back into D and recompute DinvIplusZtZD (This isn't necessary for the
-            # one random effect, one random factor use case as D only contains one unique 
-            # element)
-            if not (r == 1 and nraneffs[0] == 1):
+            # one random factor use case as D only contains one unique element)
+            if r!=1:
 
                 for j in np.arange(nlevels[k]):
 
@@ -1654,7 +1746,7 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
                 
             # In the one factor, one random effect case we only have the diagonal 
             # Z'Z elements because Z'Z is diagonal in this use case.
-            if r==1 and nraneffs[0]==1:
+            if r == 1 and nraneffs[0]==1:
                 ZtZ = ZtZ[localnotconverged, :]
             else:
                 ZtZ = ZtZ[localnotconverged, :, :]
@@ -1682,7 +1774,7 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # In the one factor, one random effect case we only have the diagonal 
         # D(I+Z'Z)^(-1) elements because D(I+Z'Z)^(-1) is diagonal in this use
         # case.
-        if r==1 and nraneffs[0]==1:
+        if r == 1 and nraneffs[0]==1:
             DinvIplusZtZD = DinvIplusZtZD[localnotconverged, :]
         else:
             DinvIplusZtZD = DinvIplusZtZD[localnotconverged, :, :]
@@ -1701,8 +1793,8 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         sigma2 = sigma2[localnotconverged]
 
         # We don't need this representation of D in the simple case of 1 random 
-        # factor, 1 random effect
-        if not (r == 1 and nraneffs[0] == 1):
+        # factor
+        if r!=1:
             D = D[localnotconverged, :, :]
 
         for k in np.arange(len(nraneffs)):

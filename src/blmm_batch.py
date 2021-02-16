@@ -16,6 +16,7 @@ np.set_printoptions(threshold=np.nan)
 from lib.fileio import *
 import scipy.sparse
 import pandas as pd
+from lib.npMatrix3d import flattenZtZ
 
 # ====================================================================================
 #
@@ -279,6 +280,16 @@ def main(*args):
 
         # We reshape to n by q^2 so that we can save as a csv.
         ZtZ = ZtZ.reshape([ZtZ.shape[0], nlevels[0]])
+    
+    # If we are looking at the one random factor multiple random effect model
+    # we only need record the diagonal blocks of ZtZ
+    elif r == 1 and nraneffs[0]>1:
+
+        # Cut Z'Z down to diagonal elements only.
+        ZtZ = flattenZtZ(ZtZ, nlevels[0], nraneffs[0])
+
+        # We reshape to n by q*q0 so that we can save as a csv.
+        ZtZ = ZtZ.reshape([ZtZ.shape[0], ZtZ.shape[1]*ZtZ.shape[2]])
 
     else:
 
