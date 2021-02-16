@@ -379,10 +379,10 @@ def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict):
 
     # Work out block size (should be 1)
     qk = nraneffs[k]
-    p = np.array([qk,1])
+    pttn = np.array([qk,1])
 
     # Work out Z'ee'Z/sigma^2 - Z'Z
-    invSig2ZteetZminusZtZ = np.einsum('i,ijk->ijk',1/sigma2,sumAijBijt3D(Zte, Zte, p, p)) - np.sum(ZtZ,axis=1).reshape(ZtZ.shape[0],1,1)
+    invSig2ZteetZminusZtZ = np.einsum('i,ijk->ijk',1/sigma2,sumAijBijt3D(Zte, Zte, pttn, pttn)) - np.sum(ZtZ,axis=1).reshape(ZtZ.shape[0],1,1)
 
   else:
 
@@ -1116,6 +1116,10 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
   # Work out lk
   lk = nlevels[k]
 
+  # Work out block size and partition
+  qk = nraneffs[k]
+  pttn = np.array([qk,1])
+
   # We now work out the sum of Z_(k,j)'Z(I+Z'ZD)^(-1)Z'Z_(k,j). In the one random
   # factor, one random effect setting, this can be sped up massively using the
   # sumTTt_1fac1ran3D function.
@@ -1134,13 +1138,8 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
     secondTerm = np.sum(ZtZblocks @ DinvIplusZtZDblocks @ ZtZblocks,axis=1)
 
   else:
-
-    # Work out block size
-    qk = nraneffs[k]
-    p = np.array([qk,1])
-    
     # Work out the second term in TT'
-    secondTerm = sumAijBijt3D(ZtZ[:,Ik,:] @ DinvIplusZtZD, ZtZ[:,Ik,:], p, p)
+    secondTerm = sumAijBijt3D(ZtZ[:,Ik,:] @ DinvIplusZtZD, ZtZ[:,Ik,:], pttn, pttn)
 
   # Obtain RkSum=sum (TkjTkj')
   RkSum = ZtZmat - secondTerm
@@ -1169,7 +1168,7 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
     TuSig = Zte[:,Ik,:] - (ZtZ[:,Ik,:] @ (DinvIplusZtZD @ Zte))
 
   # Obtain Sum Tu(Tu)'
-  TuuTSum = np.einsum('i,ijk->ijk',1/sigma2,sumAijBijt3D(TuSig, TuSig, p, p))
+  TuuTSum = np.einsum('i,ijk->ijk',1/sigma2,sumAijBijt3D(TuSig, TuSig, pttn, pttn))
 
   # Work out dldDk
   dldDk = 0.5*(forceSym3D(TuuTSum - RkSum))
@@ -1198,6 +1197,9 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
       # Reshape DinvIplusZtZD appropriately
       DinvIplusZtZDZtX = DinvIplusZtZD.transpose(0,2,1).reshape(sigma2.shape[0],l0,q0,q0)
+
+      # Number of fixed effects parameters, p
+      p = XtX.shape[1]
 
       # Multiply by ZtX
       print('where failed ', ZtX.shape[0],l0,q0,p)
@@ -1512,10 +1514,10 @@ def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupM
   # Work out lk
   lk = nlevels[k]
 
-  # Work out block size
+  # Work out block size and partition
   q = np.sum(nlevels*nraneffs)
   qk = nraneffs[k]
-  p = np.array([qk,q])
+  pttn = np.array([qk,q])
 
   # We now work out the sum of Z_(k,j)'ZD(I+Z'ZD)^(-1)ZZ_(k,j). In the one random
   # factor, one random effect setting, this can be sped up massively using the
@@ -1536,7 +1538,7 @@ def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupM
 
   else:
     # Work out the second term
-    secondTerm = sumAijBijt3D(ZtZ[:,Ik,:] @ DinvIplusZtZD, ZtZ[:,Ik,:], p, p)
+    secondTerm = sumAijBijt3D(ZtZ[:,Ik,:] @ DinvIplusZtZD, ZtZ[:,Ik,:], pttn, pttn)
 
   # Obtain ZtZmat
   RkSum = ZtZmat - secondTerm
@@ -1710,10 +1712,10 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
     Rk1k2 = ZtZ[np.ix_(np.arange(ZtZ.shape[0]),Ik1,Ik2)] - (ZtZ[:,Ik1,:] @ DinvIplusZtZD @ ZtZ[:,:,Ik2])
     
     # Work out block sizes
-    p = np.array([nraneffs[k1],nraneffs[k2]])
+    pttn = np.array([nraneffs[k1],nraneffs[k2]])
 
     # Obtain permutation
-    RkRSum,perm=sumAijKronBij3D(Rk1k2, Rk1k2, p, perm)
+    RkRSum,perm=sumAijKronBij3D(Rk1k2, Rk1k2, pttn, perm)
 
     # Multiply by duplication matrices and save
     if not vec:
@@ -2158,8 +2160,8 @@ def flattenZtZ(ZtZ, l0, q0):
 #
 #  - `A`: A 3D matrix of dimension (v by m1 by m2).
 #  - `B`: A 3D matrix of dimension (v by m1 by m2).
-#  - `p`: The size of the block partitions of A and B, e.g. if A_{i,j} and 
-#         B_{i,j} are of dimension (n1 by n2) then pA=[n1, n2].
+#  - `pttn`: The size of the block partitions of A and B, e.g. if A_{i,j} and 
+#            B_{i,j} are of dimension (n1 by n2) then pA=[n1, n2].
 #  - `perm` (optional): The permutation vector representing the matrix kronecker
 #                       product I_{n2} kron K_{n2,n1} kron I_{n1}.
 #
@@ -2175,11 +2177,11 @@ def flattenZtZ(ZtZ, l0, q0):
 #           later computation).
 #
 # ============================================================================
-def sumAijKronBij3D(A, B, p, perm=None):
+def sumAijKronBij3D(A, B, pttn, perm=None):
 
   # Check dim A and B and pA and pB all same
-  n1 = p[0]
-  n2 = p[1]
+  n1 = pttn[0]
+  n2 = pttn[1]
 
   # Number of voxels
   v = A.shape[0]
@@ -2189,8 +2191,8 @@ def sumAijKronBij3D(A, B, p, perm=None):
     perm = permOfIkKkI2D(n2,n1,n2,n1) 
 
   # Convert to vecb format
-  atilde = mat2vecb3D(A,p)
-  btilde = mat2vecb3D(B,p)
+  atilde = mat2vecb3D(A,pttn)
+  btilde = mat2vecb3D(B,pttn)
 
   # Multiply and convert to vector
   vecba = mat2vec3D(btilde.transpose((0,2,1)) @ atilde)
