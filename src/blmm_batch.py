@@ -291,8 +291,6 @@ def main(*args):
         # We reshape to n by q*q0 so that we can save as a csv.
         ZtZ = ZtZ.reshape([ZtZ.shape[0], ZtZ.shape[1]*ZtZ.shape[2]])
 
-        print('ZtZ shape: ', ZtZ.shape)
-
     else:
 
         # We reshape to n by q^2 so that we can save as a csv.

@@ -1202,7 +1202,6 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
       p = XtX.shape[1]
 
       # Multiply by ZtX
-      print('where failed ', ZtX.shape[0],l0,q0,p)
       DinvIplusZtZDZtX = DinvIplusZtZDZtX @ ZtX.reshape(ZtX.shape[0],l0,q0,p)    
 
       # Reshape appropriately
