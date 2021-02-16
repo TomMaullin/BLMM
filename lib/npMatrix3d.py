@@ -1116,10 +1116,6 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
   # Work out lk
   lk = nlevels[k]
 
-  # Work out block size
-  qk = nraneffs[k]
-  p = np.array([qk,1])
-
   # We now work out the sum of Z_(k,j)'Z(I+Z'ZD)^(-1)Z'Z_(k,j). In the one random
   # factor, one random effect setting, this can be sped up massively using the
   # sumTTt_1fac1ran3D function.
@@ -1138,6 +1134,11 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
     secondTerm = np.sum(ZtZblocks @ DinvIplusZtZDblocks @ ZtZblocks,axis=1)
 
   else:
+
+    # Work out block size
+    qk = nraneffs[k]
+    p = np.array([qk,1])
+    
     # Work out the second term in TT'
     secondTerm = sumAijBijt3D(ZtZ[:,Ik,:] @ DinvIplusZtZD, ZtZ[:,Ik,:], p, p)
 

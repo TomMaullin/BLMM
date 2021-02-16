@@ -444,6 +444,9 @@ def readAndSumUniqueAtB(AtBstr, OutDir, vinds, n_b, sv):
         if sv:
             # Work out Z'Z, Z'X and X'X for the ring
             print(AtBstr)
+            print(AtB.shape)
+            print(AtB_batch_unique.shape)
+            print(uniquenessMask.shape)
             print(AtB[np.where(uniquenessMask==m),:].shape)
             print(AtB_batch_unique[(m-1),:].shape)
             AtB[np.where(uniquenessMask==m),:] = AtB_batch_unique[(m-1),:]
