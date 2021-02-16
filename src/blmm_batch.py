@@ -288,6 +288,9 @@ def main(*args):
         # Cut Z'Z down to diagonal elements only.
         ZtZ = flattenZtZ(ZtZ, nlevels[0], nraneffs[0])
 
+        # We reshape to n by q*q0 so that we can save as a csv.
+        ZtZ = ZtZ.reshape([ZtZ.shape[0], ZtZ.shape[1]*ZtZ.shape[2]])
+
     else:
 
         # We reshape to n by q^2 so that we can save as a csv.
