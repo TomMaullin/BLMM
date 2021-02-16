@@ -717,7 +717,7 @@ def llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D, Ddict, nlevels, nraneffs, r
       DinvIplusZtZDZtX = DinvIplusZtZDZtX.reshape(v,q0*l0,p)
 
       # Get log det
-      logdet = np.linalg.slogdet(XtX - XtZ @ DinvIplusZtZD @ ZtX)
+      logdet = np.linalg.slogdet(XtX - XtZ @ DinvIplusZtZDZtX)
 
     else:
       logdet = np.linalg.slogdet(XtX - XtZ @ DinvIplusZtZD @ ZtX)
