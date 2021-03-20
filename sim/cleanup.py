@@ -285,6 +285,15 @@ def cleanup(OutDir,simNo):
     # Un-"log"
     p = 10**(-logp)
 
+    # Load logp map
+    logp_lmer = nib.load(os.path.join(simDir, 'BLMM', 'lmer_vox_conTlp.nii')).get_data()
+
+    # Remove zeros
+    logp_lmer = logp_lmer[logp_lmer!=0]
+
+    # Un-"log"
+    p_lmer = 10**(-logp_lmer)
+
     # Get bin counts
     counts,_,_=plt.hist(p, bins=100, label='hist')
 
@@ -297,11 +306,29 @@ def cleanup(OutDir,simNo):
     # Add to files 
     addLineToCSV(fname_pval, pval_line)
 
+    # Get bin counts
+    counts_lmer,_,_=plt.hist(p_lmer, bins=100, label='hist')
+
+    # Make line to add to csv for bin counts
+    pval_lmer_line = np.concatenate((np.array([[simNo]]),np.array([counts_lmer])),axis=1)
+
+    # pval file name
+    fname_pval_lmer = os.path.join(resDir, 'pval_lmer_counts.csv')
+
+    # Add to files 
+    addLineToCSV(fname_pval_lmer, pval_lmer_line)
+
     # Convert to one tailed
     p_ot = np.zeros(p.shape)
     p_ot[p<0.5] = 2*p[p<0.5]
     p_ot[p>0.5] = 2*(1-p[p>0.5])
     p = p_ot
+
+    # Convert to one tailed
+    p_lmer_ot = np.zeros(p_lmer.shape)
+    p_lmer_ot[p_lmer<0.5] = 2*p_lmer[p_lmer<0.5]
+    p_lmer_ot[p_lmer>0.5] = 2*(1-p_lmer[p_lmer>0.5])
+    p_lmer = p_lmer_ot
 
     # Perform bonferroni
     fwep_bonferroni = multitest.multipletests(p,alpha=0.05,method='bonferroni')[0]
@@ -309,30 +336,16 @@ def cleanup(OutDir,simNo):
     # Get number of false positives
     fwep_bonferroni = np.sum(fwep_bonferroni)
 
-    # Perform sidak
-    fwep_sidak = multitest.multipletests(p,alpha=0.05,method='sidak')[0]
+    # Perform bonferroni
+    fwep_lmer_bonferroni = multitest.multipletests(p_lmer,alpha=0.05,method='bonferroni')[0]
 
     # Get number of false positives
-    fwep_sidak = np.sum(fwep_sidak)
-
-    # Perform holm
-    fwep_holm = multitest.multipletests(p,alpha=0.05,method='holm')[0]
-
-    # Get number of false positives
-    fwep_holm = np.sum(fwep_holm)
-
-    # Perform holm-sidak
-    fwep_holmsidak = multitest.multipletests(p,alpha=0.05,method='holm-sidak')[0]
-
-    # Get number of false positives
-    fwep_holmsidak = np.sum(fwep_holmsidak)
+    fwep_lmer_bonferroni = np.sum(fwep_lmer_bonferroni)
 
     # Make line to add to csv for fwe
     fwe_line = np.concatenate((np.array([[simNo]]),
                                np.array([[fwep_bonferroni]]),
-                               np.array([[fwep_sidak]]),
-                               np.array([[fwep_holm]]),
-                               np.array([[fwep_holmsidak]])),axis=1)
+                               np.array([[fwep_lmer_bonferroni]])),axis=1)
 
     # pval file name
     fname_fwe = os.path.join(resDir, 'pval_fwe.csv')
@@ -341,7 +354,7 @@ def cleanup(OutDir,simNo):
     addLineToCSV(fname_fwe, fwe_line)
 
     # Cleanup
-    del p, logp, counts, fname_pval, pval_line, fname_fwe, fwe_line
+    del p, logp, counts, fname_pval, pval_line, p_lmer, logp_lmer, counts_lmer, fname_pval_lmer, pval_lmer_line, fname_fwe, fwe_line
 
     # -----------------------------------------------------------------------
     # Cleanup finished!
@@ -495,6 +508,35 @@ def Rcleanup(OutDir, simNo, nvg, cv):
 
     # Remove file
     os.remove(os.path.join(simDir, 'lmer', 'llh_' + str(cv) + '.csv'))
+
+    # -------------------------------------------------------------------
+    # T statistic combine
+    # -------------------------------------------------------------------
+
+    # Read in file
+    Tstat_current = pd.io.parsers.read_csv(os.path.join(simDir, 'lmer', 'Tstat_' + str(cv) + '.csv')).values
+
+    # Add back to a NIFTI file
+    addBlockToNifti(os.path.join(simDir,"lmer","lmer_vox_conT.nii"), Tstat_current, inds_cv, volInd=0,dim=(*dim,1))
+
+    # Remove file
+    os.remove(os.path.join(simDir, 'lmer', 'Tstat_' + str(cv) + '.csv'))
+
+    # -------------------------------------------------------------------
+    # P value combine
+    # -------------------------------------------------------------------
+
+    # Read in file
+    Pval_current = pd.io.parsers.read_csv(os.path.join(simDir, 'lmer', 'Pval_' + str(cv) + '.csv')).values
+
+    # Change to log scale
+    Pval_current[Pval_current!=0]=-np.log10(Pval_current[Pval_current!=0])
+
+    # Add back to a NIFTI file
+    addBlockToNifti(os.path.join(simDir,"lmer","lmer_vox_conTlp.nii"), Pval_current, inds_cv, volInd=0,dim=(*dim,1))
+
+    # Remove file
+    os.remove(os.path.join(simDir, 'lmer', 'Pval_' + str(cv) + '.csv'))
 
     # -------------------------------------------------------------------
     # Times combine

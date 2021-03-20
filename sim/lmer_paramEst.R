@@ -7,6 +7,7 @@
 library(MASS)
 library(Matrix)
 library(lme4)
+library(lmerTest)
 library(tictoc)
 
 # ---------------------------------------------------------------------------------------
@@ -24,21 +25,22 @@ library(tictoc)
 
 print('heeeeere')
 # Read in arguments from command line
-args=(commandArgs(TRUE))
+#args=(commandArgs(TRUE))
 
 # Evaluate arguments
-for(i in 1:length(args)){
-  eval(parse(text=args[[i]]))
-}
+#for(i in 1:length(args)){
+#  eval(parse(text=args[[i]]))
+#}
 
-print(simInd)
-print(batchNo)
-print(outDir)
-print(desInd)
+#print(simInd)
+#print(batchNo)
+#print(outDir)
+#print(desInd)
 
-#simInd <-20
-#batchNo <- 51
-#outDir <- '/home/tommaullin/Documents/BLMM/sim'
+desInd <-2
+simInd <-20
+batchNo <- 524
+outDir <- '/home/tommaullin/Documents/BLMM/sim'
 
 # Read in the fixed effects design
 X <- read.csv(file = paste(outDir,'/sim',toString(simInd),'/data/X.csv',sep=''),sep=',', header=FALSE)
@@ -73,6 +75,12 @@ sigma2 <- matrix(0,dim(all_Y)[2],1)
 # Empty array for computation times
 times <- matrix(0,dim(all_Y)[2],1)
 
+# Empty array for T statistics
+Tstats <- matrix(0,dim(all_Y)[2],1)
+
+# Empty array for pvals
+Pvals <- matrix(0,dim(all_Y)[2],1)
+
 if (desInd==3) {
     # Empty array for vechD estimates
     vechD <- matrix(0,dim(all_Y)[2],4)
@@ -91,16 +99,19 @@ llh <- matrix(0,dim(all_Y)[2],1)
 # Loop through each model and run lmer for each voxel
 for (i in 1:nvox){
   
+  # Use lmerTest for everything but timing
+  lmer <- lmerTest::lmer
+
   # Print i
   print(i)
-  
+
   # Get Y
   y <- as.matrix(all_Y[,i])
-  
-  # If all y are zero this voxel was dropped from analysis as a 
+
+  # If all y are zero this voxel was dropped from analysis as a
   # result of missing data
   if (!all(y==0)){
-    
+
     # Reformat X into columns and mask
     x1 <- as.matrix(X[,1])[y!=0]
     x2 <- as.matrix(X[,2])[y!=0]
@@ -108,26 +119,26 @@ for (i in 1:nvox){
     x4 <- as.matrix(X[,4])[y!=0]
 
     if (desInd==3){
-    
+
         # Reformat the raw regressor matrix for the first random factor into columns
         z01 <- as.matrix(Zdata0[,1])[y!=0]
         z02 <- as.matrix(Zdata0[,2])[y!=0]
-        
+
         # Reformat the raw regressor matrix for the second random factor into columns
         z11 <- as.matrix(Zdata1[,1])[y!=0]
-        
+
         # Drop missing from factor 0
         Zf0 <- Zfactor0[y!=0]
-        
+
         # Drop missing from factor 1
         Zf1 <- Zfactor1[y!=0]
 
     } else if (desInd==2){
-    
+
         # Reformat the raw regressor matrix for the first random factor into columns
         z01 <- as.matrix(Zdata0[,1])[y!=0]
         z02 <- as.matrix(Zdata0[,2])[y!=0]
-        
+
         # Drop missing from factor 0
         Zf0 <- Zfactor0[y!=0]
 
@@ -135,28 +146,34 @@ for (i in 1:nvox){
 
         # Reformat the raw regressor matrix for the first random factor into columns
         z01 <- as.matrix(Zdata0[,1])[y!=0]
-        
+
         # Drop missing from factor 0
         Zf0 <- Zfactor0[y!=0]
 
     }
-    
+
     # Finally, drop any missing Y
     y <- y[y!=0]
-  
+
     if (desInd==3){
 
         # Run the model
-        m <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + (0 + z01 + z02|Zf0) + (0 + z11|Zf1), REML=TRUE) 
-      
+        m <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + (0 + z01 + z02|Zf0) + (0 + z11|Zf1), REML=TRUE)
+        
+        # Timing function with lme4
+        lmer <- lme4::lmer
+
         # Get the function which is optimized
         devfun <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + (0 + z01 + z02|Zf0) + (0 + z11|Zf1), REML=TRUE, devFunOnly = TRUE)
 
     } else if (desInd==2){
 
         # Run the model
-        m <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + (0 + z01 + z02|Zf0), REML=TRUE) 
-      
+        m <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + (0 + z01 + z02|Zf0), REML=TRUE)
+        
+        # Timing function with lme4
+        lmer <- lme4::lmer
+
         # Get the function which is optimized
         devfun <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + (0 + z01 + z02|Zf0), REML=TRUE, devFunOnly = TRUE)
 
@@ -164,8 +181,11 @@ for (i in 1:nvox){
     } else if (desInd==1){
 
         # Run the model
-        m <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + (0 + z01|Zf0), REML=TRUE) 
-      
+        m <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + (0 + z01|Zf0), REML=TRUE)
+        
+        # Timing function with lme4
+        lmer <- lme4::lmer
+
         # Get the function which is optimized
         devfun <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + (0 + z01|Zf0), REML=TRUE, devFunOnly = TRUE)
 
@@ -176,38 +196,38 @@ for (i in 1:nvox){
     tic('lmer time')
     opt<-optimizeLmer(devfun)
     t<-toc()
-    
+
     # Calculate time
     lmertime <- t$toc-t$tic
-    
+
     # Add to computation time
     times[i,1]<-lmertime
-    
+
     # Record fixed effects estimates
     betas[i,1:4] <- fixef(m)
-    
+
     # Recover D parameters
     Ds <- as.matrix(Matrix::bdiag(VarCorr(m)))
-    
+
     if (desInd==3){
-    
+
         # Record fixed effects variance estimate
         sigma2[i,1]<-as.data.frame(VarCorr(m))$vcov[5]
 
         # Calculate vech(D_0)*sigma2
         vechD0 <- Ds[1:2,1:2][lower.tri(Ds[1:2,1:2],diag = TRUE)]
-        
+
         # Calculate vech(D_1)*sigma2
         vechD1 <- Ds[3:3,3:3][lower.tri(Ds[3,3],diag = TRUE)]
-        
+
         # Record vech(D_0)
         vechD[i,1:3]<-vechD0/as.data.frame(VarCorr(m))$vcov[5]
-        
+
         # Record vech(D_1)
         vechD[i,4:4]<-vechD1/as.data.frame(VarCorr(m))$vcov[5]
 
     } else if (desInd==2){
-    
+
         # Record fixed effects variance estimate
         sigma2[i,1]<-as.data.frame(VarCorr(m))$vcov[4]
 
@@ -215,7 +235,7 @@ for (i in 1:nvox){
         vechD0 <- Ds[1:2,1:2][lower.tri(Ds[1:2,1:2],diag = TRUE)]
 
         # Record vech(D_0)
-        vechD[i,1:3]<-vechD0/as.data.frame(VarCorr(m))$vcov[4]        
+        vechD[i,1:3]<-vechD0/as.data.frame(VarCorr(m))$vcov[4]
 
     } else if (desInd==1){
 
@@ -226,15 +246,38 @@ for (i in 1:nvox){
         vechD0 <- Ds[1:1,1:1][lower.tri(Ds[1:1,1:1],diag = TRUE)]
 
         # Record vech(D_0)
-        vechD[i,1:1]<-vechD0/as.data.frame(VarCorr(m))$vcov[2]     
+        vechD[i,1:1]<-vechD0/as.data.frame(VarCorr(m))$vcov[2]
 
     }
 
     # Record log likelihood
     llh[i,1] <- logLik(m, REML=TRUE)[1]
     
+    # Run T statistic inference
+    Tresults<-lmerTest::contest1D(m, c(0,0,0,1),ddf=c("Satterthwaite"))
+    
+    # Get the T statistic
+    Tstat<-Tresults$`t value`
+    
+    # Get the P value
+    p<-Tresults$`Pr(>|t|)`
+    
+    # Make p-values 1 sided
+    if (Tstat>0){
+      p <- p/2
+    } else {
+      p <- 1-p/2
+    }
+    
+    # Record p value
+    Pvals[i,1] <- p
+    
+    # Record T stat
+    Tstats[i,1] <- Tstat
+    
+    
   }
-  
+
 }
 
 
@@ -252,6 +295,8 @@ write.csv(sigma2,paste(lmerDir,'/sigma2_',toString(batchNo),'.csv',sep=''), row.
 write.csv(vechD,paste(lmerDir,'/vechD_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
 write.csv(llh,paste(lmerDir,'/llh_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
 write.csv(times,paste(lmerDir,'/times_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
+write.csv(Tstats,paste(lmerDir,'/Tstat_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
+write.csv(Pvals,paste(lmerDir,'/Pval_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
 
 # Remove the R file for this batch as we no longer need it
-file.remove(paste(outDir,'/sim',toString(simInd),'/data/Y_Rversion_',toString(batchNo),'.csv',sep=''))
+#file.remove(paste(outDir,'/sim',toString(simInd),'/data/Y_Rversion_',toString(batchNo),'.csv',sep=''))

@@ -177,8 +177,8 @@ def generate_data(n,dim,OutDir,simNo,desInd):
             b = b.reshape(b.shape[:-1])
             b = b.transpose(3,0,1,2)
 
-            # Smoothed b
-            b = smooth_data(b, 4, [0,fwhm,fwhm,fwhm], trunc=6, scaling='kernel')
+            # # Smoothed b
+            # b = smooth_data(b, 4, [0,fwhm,fwhm,fwhm], trunc=6, scaling='kernel')
 
             # Loop through each random effect and save b
             for re in np.arange(qk):
@@ -245,14 +245,17 @@ def generate_data(n,dim,OutDir,simNo,desInd):
         # Get epsiloni
         epsiloni = get_epsilon(v, 1).reshape(dim)
 
-        # Smooth epsiloni
-        epsiloni = smooth_data(epsiloni, 3, [fwhm]*3, trunc=6, scaling='kernel').reshape(dim)
+        # # Smooth epsiloni
+        # epsiloni = smooth_data(epsiloni, 3, [fwhm]*3, trunc=6, scaling='kernel').reshape(dim)
 
         # Reshape Yi to epsiloni shape
         Yi = Yi.reshape(dim)
 
         # Add epsilon to Yi
         Yi = Yi + epsiloni
+
+        # Smooth Y_i
+        Yi = Yi + smooth_data(Yi, 3, [fwhm]*3, trunc=6, scaling='kernel').reshape(dim)
 
         # Obtain mask
         mask = get_random_sphere(dim).reshape(Yi.shape)
@@ -493,7 +496,7 @@ def get_bInds_kj(k,j, nlevels, nraneffs):
 def get_X(n,p):
 
     # Generate random X.
-    X = np.random.randn(n,p)
+    X = np.random.uniform(low=-0.5,high=0.5,size=(n,p))
     
     # Make the first column an intercept
     X[:,0]=1
@@ -519,7 +522,7 @@ def get_Z(n, nlevels, nraneffs):
     # We need to create a block of Z for each level of each factor
     for i in np.arange(r):
 
-        Zdata_factor = np.random.randn(n,nraneffs[i])
+        Zdata_factor = np.random.uniform(low=-0.5,high=0.5,size=(n,nraneffs[i]))
 
         if i==0:
 
@@ -633,7 +636,7 @@ def get_Dhalf(v, nlevels, nraneffs):
     for k in np.arange(len(nraneffs)):
 
         # Generate random D block for this factor
-        Dhalfdict[k] = np.random.randn(v,nraneffs[k],nraneffs[k])
+        Dhalfdict[k] = np.random.uniform(low=-0.5,high=0.5,size=(v,nraneffs[k],nraneffs[k]))
         Ddict[k] = Dhalfdict[k] @ Dhalfdict[k].transpose(0,2,1)
 
         for j in np.arange(nlevels[k]):
@@ -934,5 +937,14 @@ def smooth_data(data, D, fwhm, trunc=6, scaling='kernel'):
 
     return(data)
 
+#generate_data(n,dim,OutDir,simNo,desInd)
+generate_data(500, np.array([100,100,100]), '/home/tommaullin/Documents/BLMM/sim/', 20, 2)
 
-#generate_data(100, np.array([100,100,100]), '/home/tommaullin/Documents/BLMM/sim/', 20)
+
+nvb = 1000
+
+# Work out number of groups we have to split indices into.
+nvg = int(100**3//nvb)
+#Rpreproc('$1', $2, [100,100,100], $3, $4)
+for i in np.arange(400,600):
+    Rpreproc('/home/tommaullin/Documents/BLMM/sim/',20,[100,100,100],nvg,i)
