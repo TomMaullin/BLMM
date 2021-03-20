@@ -25,22 +25,22 @@ library(tictoc)
 
 print('heeeeere')
 # Read in arguments from command line
-#args=(commandArgs(TRUE))
+args=(commandArgs(TRUE))
 
 # Evaluate arguments
-#for(i in 1:length(args)){
-#  eval(parse(text=args[[i]]))
-#}
+for(i in 1:length(args)){
+  eval(parse(text=args[[i]]))
+}
 
 #print(simInd)
 #print(batchNo)
 #print(outDir)
 #print(desInd)
 
-desInd <-2
-simInd <-20
-batchNo <- 524
-outDir <- '/home/tommaullin/Documents/BLMM/sim'
+#desInd <-2
+#simInd <-20
+#batchNo <- 524
+#outDir <- '/home/tommaullin/Documents/BLMM/sim'
 
 # Read in the fixed effects design
 X <- read.csv(file = paste(outDir,'/sim',toString(simInd),'/data/X.csv',sep=''),sep=',', header=FALSE)
@@ -299,4 +299,4 @@ write.csv(Tstats,paste(lmerDir,'/Tstat_',toString(batchNo),'.csv',sep=''), row.n
 write.csv(Pvals,paste(lmerDir,'/Pval_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
 
 # Remove the R file for this batch as we no longer need it
-#file.remove(paste(outDir,'/sim',toString(simInd),'/data/Y_Rversion_',toString(batchNo),'.csv',sep=''))
+file.remove(paste(outDir,'/sim',toString(simInd),'/data/Y_Rversion_',toString(batchNo),'.csv',sep=''))
