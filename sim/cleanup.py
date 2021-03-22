@@ -286,7 +286,7 @@ def cleanup(OutDir,simNo):
     p = 10**(-logp)
 
     # Load logp map
-    logp_lmer = nib.load(os.path.join(simDir, 'BLMM', 'lmer_vox_conTlp.nii')).get_data()
+    logp_lmer = nib.load(os.path.join(simDir, 'lmer', 'lmer_vox_conTlp.nii')).get_data()
 
     # Remove zeros
     logp_lmer = logp_lmer[logp_lmer!=0]
