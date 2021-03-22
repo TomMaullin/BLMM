@@ -937,14 +937,14 @@ def smooth_data(data, D, fwhm, trunc=6, scaling='kernel'):
 
     return(data)
 
-#generate_data(n,dim,OutDir,simNo,desInd)
-generate_data(500, np.array([100,100,100]), '/home/tommaullin/Documents/BLMM/sim/', 20, 2)
+# #generate_data(n,dim,OutDir,simNo,desInd)
+# generate_data(500, np.array([100,100,100]), '/home/tommaullin/Documents/BLMM/sim/', 20, 2)
 
 
-nvb = 1000
+# nvb = 1000
 
-# Work out number of groups we have to split indices into.
-nvg = int(100**3//nvb)
-#Rpreproc('$1', $2, [100,100,100], $3, $4)
-for i in np.arange(400,600):
-    Rpreproc('/home/tommaullin/Documents/BLMM/sim/',20,[100,100,100],nvg,i)
+# # Work out number of groups we have to split indices into.
+# nvg = int(100**3//nvb)
+# #Rpreproc('$1', $2, [100,100,100], $3, $4)
+# for i in np.arange(400,600):
+#     Rpreproc('/home/tommaullin/Documents/BLMM/sim/',20,[100,100,100],nvg,i)
