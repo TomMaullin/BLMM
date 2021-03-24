@@ -254,11 +254,23 @@ def generate_data(n,dim,OutDir,simNo,desInd):
         # Add epsilon to Yi
         Yi = Yi + epsiloni
 
+        # Output epsiloni
+        #addBlockToNifti(os.path.join(simDir,"data","eps"+str(i)+".nii"), epsiloni, np.arange(v), volInd=0,dim=dim)
+
+        # Output Yi unmasked
+        #addBlockToNifti(os.path.join(simDir,"data","Y"+str(i)+"_unsmoothed.nii"), Yi, np.arange(v), volInd=0,dim=dim)
+
         # Smooth Y_i
-        Yi = Yi + smooth_data(Yi, 3, [fwhm]*3, trunc=6, scaling='kernel').reshape(dim)
+        Yi = smooth_data(Yi, 3, [fwhm]*3, trunc=6, scaling='kernel').reshape(dim)
 
         # Obtain mask
         mask = get_random_sphere(dim).reshape(Yi.shape)
+
+        # Output Yi unmasked
+        #addBlockToNifti(os.path.join(simDir,"data","Y"+str(i)+"_unmask.nii"), Yi, np.arange(v), volInd=0,dim=dim)
+
+        # Save mask
+        #addBlockToNifti(os.path.join(simDir,"data","M"+str(i)+".nii"), mask, np.arange(v), volInd=0,dim=dim)
 
         # Mask Yi
         Yi = Yi*mask
@@ -449,10 +461,10 @@ def Rpreproc(OutDir,simNo,dim,nvg,cv):
 def get_random_sphere(dim):
 
     # Radius
-    r = 20
+    r = 25
 
     # FWHM
-    fwhm = 15
+    fwhm = 10
 
     # Work out circle center (setting origin to the image center).
     center = np.array([dim[-3]//2, dim[-2]//2, dim[-1]//2])
@@ -464,13 +476,13 @@ def get_random_sphere(dim):
     mu = np.array(np.sqrt((X-center[-3])**2+(Y-center[-2])**2 +(Z-center[-1])**2) < r, dtype='float')
 
     # Add some noise
-    mu = mu + 0.3*np.random.randn(*(mu.shape))
+    mu = smooth_data(mu + 8*np.random.randn(*(mu.shape)), 3, [fwhm]*3)
 
-    # Smooth the data
-    mu = smooth_data(mu, 3, [fwhm]*3)
+    # # Smooth the data
+    # mu = smooth_data(mu, 3, [fwhm]*3)
 
     # Re-threshold (this has induced a bit of randomness in the mask shape)
-    mu = 1*(mu > 0.7)
+    mu = 1*(mu > 0.6)
 
     return(mu)
 
@@ -916,16 +928,25 @@ def smooth_data(data, D, fwhm, trunc=6, scaling='kernel'):
         # Create the D_nz dimensional grid
         grids = np.meshgrid(*phis);
 
-        # Initialize empty product grid
-        product_grid = np.ones(grids[0].shape)
+        # Initialize normalizing constant
+        ss = 1
 
         # Loop through axes and take products
-        for j in np.arange(D_nz):
+        for j in np.arange(D_nz-1):
 
-            product_grid = grids[j]*product_grid
+            # Smoothing kernel along plane (j,j+1)
+            product_gridj = (grids[j]*(grids[j+1]*np.ones(grids[0].shape)).T)
 
-        # Get the normalizing constant by summing over grid
-        ss = np.sum(product_grid**2)
+            # Get normalizing constant along this plane
+            ssj = np.sum((product_gridj)**2)
+
+            # Add to running smoothing constant the sum of squares of this kernel
+            # (Developer note: This is the normalizing constant. When you smooth
+            # you are mutliplying everything by a grid of values along each dimension.
+            # To restandardize you then need to take the sum the squares of this grid
+            # and squareroot it. You then divide your data by this number at the end.
+            # This must be done once for every dimension, hence the below product.)
+            ss = ssj*ss
 
         # Rescale noise
         data = data/np.sqrt(ss)
@@ -938,7 +959,7 @@ def smooth_data(data, D, fwhm, trunc=6, scaling='kernel'):
     return(data)
 
 # #generate_data(n,dim,OutDir,simNo,desInd)
-# generate_data(500, np.array([100,100,100]), '/home/tommaullin/Documents/BLMM/sim/', 20, 2)
+#generate_data(10, np.array([100,100,100]), '/home/tommaullin/Documents/BLMM/sim/', 23, 2)
 
 
 # nvb = 1000
