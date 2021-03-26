@@ -70,7 +70,7 @@ def cleanup(OutDir,simNo):
     n = np.amax(n_sv)
 
     # Work out which voxels had readings for all subjects
-    loc_sv = (n_sv>0)&(n_sv<n)
+    loc_sv = (n_sv>n//2)&(n_sv<n)
     loc_nsv = (n_sv==n)
 
     # Work out number of spatially varying and non-spatially varying voxels
