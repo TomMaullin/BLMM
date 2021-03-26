@@ -387,7 +387,7 @@ def generate_data(n,dim,OutDir,simNo,desInd):
     nvb = 1000
 
     # Work out number of groups we have to split indices into.
-    nvg = int(v//nvb)
+    nvg = int(np.prod(origdim)//nvb)
 
 
     # Write out the number of voxel groups we split the data into
@@ -468,7 +468,7 @@ def get_random_mask(dim):
     fwhm = 10
 
     # Load analysis mask
-    mu = nib.load(os.path.join(os.path.dirname(sys.argv[0]),'mask.nii')).get_data()
+    mu = nib.load(os.path.join(os.path.dirname(__file__),'mask.nii')).get_data()
 
     # Add some noise and smooth
     mu = smooth_data(mu + 8*np.random.randn(*(mu.shape)), 3, [fwhm]*3)
