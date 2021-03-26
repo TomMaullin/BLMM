@@ -38,8 +38,9 @@ def generate_data(n,dim,OutDir,simNo,desInd):
     if not os.path.exists(os.path.join(simDir,"data")):
         os.mkdir(os.path.join(simDir,"data"))
 
-    # Make sure in numpy format
-    dim = np.array(dim)
+    # Make sure in numpy format (added 20 for smoothing)
+    origdim = np.array(dim)
+    dim = origdim + 20
 
     # -------------------------------------------------
     # Design parameters
@@ -264,7 +265,7 @@ def generate_data(n,dim,OutDir,simNo,desInd):
         Yi = smooth_data(Yi, 3, [fwhm]*3, trunc=6, scaling='kernel').reshape(dim)
 
         # Obtain mask
-        mask = get_random_sphere(dim).reshape(Yi.shape)
+        mask = get_random_mask(dim).reshape(Yi.shape)
 
         # Output Yi unmasked
         #addBlockToNifti(os.path.join(simDir,"data","Y"+str(i)+"_unmask.nii"), Yi, np.arange(v), volInd=0,dim=dim)
@@ -275,8 +276,11 @@ def generate_data(n,dim,OutDir,simNo,desInd):
         # Mask Yi
         Yi = Yi*mask
 
+        # Truncate off (handles smoothing edge effects)
+        Yi = Yi[10:(dim[0]-10),10:(dim[1]-10),10:(dim[2]-10)]
+
         # Output Yi
-        addBlockToNifti(os.path.join(simDir,"data","Y"+str(i)+".nii"), Yi, np.arange(v), volInd=0,dim=dim)
+        addBlockToNifti(os.path.join(simDir,"data","Y"+str(i)+".nii"), Yi, np.arange(np.prod(origdim)), volInd=0,dim=origdim)
 
     # -----------------------------------------------------
     # Delete epsilons and bs
@@ -285,7 +289,7 @@ def generate_data(n,dim,OutDir,simNo,desInd):
     # Loop through bs and remove them
     for i in np.arange(q):
 
-        # Remove epsilon i
+        # Remove b i
         os.remove(os.path.join(simDir,"data","b"+str(i)+".nii"))
 
     # -----------------------------------------------------
@@ -458,28 +462,16 @@ def Rpreproc(OutDir,simNo,dim,nvg,cv):
     # Write out Z in full to a csv file
     pd.DataFrame(Y_concat.reshape(n,v_current)).to_csv(os.path.join(simDir,"data","Y_Rversion_" + str(cv) + ".csv"), header=None, index=None)
 
-def get_random_sphere(dim):
-
-    # Radius
-    r = 25
+def get_random_mask(dim):
 
     # FWHM
     fwhm = 10
 
-    # Work out circle center (setting origin to the image center).
-    center = np.array([dim[-3]//2, dim[-2]//2, dim[-1]//2])
+    # Load analysis mask
+    mu = nib.load(os.path.join(os.path.dirname(sys.argv[0]),'mask.nii')).get_data()
 
-    # Get an ogrid
-    X, Y, Z = np.ogrid[:dim[-3], :dim[-2], :dim[-1]]
-
-    # Make unsmoothed circular signal
-    mu = np.array(np.sqrt((X-center[-3])**2+(Y-center[-2])**2 +(Z-center[-1])**2) < r, dtype='float')
-
-    # Add some noise
+    # Add some noise and smooth
     mu = smooth_data(mu + 8*np.random.randn(*(mu.shape)), 3, [fwhm]*3)
-
-    # # Smooth the data
-    # mu = smooth_data(mu, 3, [fwhm]*3)
 
     # Re-threshold (this has induced a bit of randomness in the mask shape)
     mu = 1*(mu > 0.6)
