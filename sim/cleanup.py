@@ -97,12 +97,12 @@ def cleanup(OutDir,simNo):
     beta_lmer = nib.load(os.path.join(simDir, 'lmer', 'lmer_vox_beta.nii')).get_data()
 
     # Remove zero values (spatially varying)
-    beta_blmm_sv = beta_blmm[beta_lmer!=0 & loc_sv]
-    beta_lmer_sv = beta_lmer[beta_lmer!=0 & loc_sv]
+    beta_blmm_sv = beta_blmm[(beta_lmer!=0) & loc_sv]
+    beta_lmer_sv = beta_lmer[(beta_lmer!=0) & loc_sv]
 
     # Remove zero values (non spatially varying)
-    beta_blmm_nsv = beta_blmm[beta_lmer!=0 & loc_nsv]
-    beta_lmer_nsv = beta_lmer[beta_lmer!=0 & loc_nsv]
+    beta_blmm_nsv = beta_blmm[(beta_lmer!=0) & loc_nsv]
+    beta_lmer_nsv = beta_lmer[(beta_lmer!=0) & loc_nsv]
 
     # Remove zero values (both)
     beta_blmm = beta_blmm[beta_lmer!=0]
