@@ -275,7 +275,7 @@ def main(*args):
     Y, n_sv, M, Mmap = obtainY(Y_files, M_files, M_t, M_a)
 
 
-    with os.open(os.path.join(OutDir,str(batchNo) + "_10.lock)", os.O_CREAT|os.O_EXCL|os.O_RDWR) as tmp:
+    with os.open(os.path.join(OutDir,str(batchNo) + "_10.lock"), os.O_CREAT|os.O_EXCL|os.O_RDWR) as tmp:
         pass
 
     # Work out voxel specific designs
@@ -283,7 +283,7 @@ def main(*args):
     MZ = applyMask(Z, M) 
 
 
-    with os.open(os.path.join(OutDir,str(batchNo) + "_11.lock)", os.O_CREAT|os.O_EXCL|os.O_RDWR) as tmp:
+    with os.open(os.path.join(OutDir,str(batchNo) + "_11.lock"), os.O_CREAT|os.O_EXCL|os.O_RDWR) as tmp:
         print(MX.shape,MZ.shape,file=tmp)
 
     # Get X'Y, Z'Y and Y'Y. 
@@ -303,7 +303,7 @@ def main(*args):
     memorySafeAtB(Y,Y,MAXMEM,os.path.join(OutDir,"tmp","YtY.npy"))
 
 
-    with os.open(os.path.join(OutDir,str(batchNo) + "_12.lock)", os.O_CREAT|os.O_EXCL|os.O_RDWR) as tmp:
+    with os.open(os.path.join(OutDir,str(batchNo) + "_12.lock"), os.O_CREAT|os.O_EXCL|os.O_RDWR) as tmp:
         print(Z.shape, X.shape, Y.shape, MAXMEM, file=tmp)
 
     # In a spatially varying design XtX has dimensions n by p by p. We
@@ -312,7 +312,7 @@ def main(*args):
     XtX = XtX.reshape([XtX.shape[0], XtX.shape[1]*XtX.shape[2]])
 
 
-    with os.open(os.path.join(OutDir,str(batchNo) + "_13.lock)", os.O_CREAT|os.O_EXCL|os.O_RDWR) as tmp:
+    with os.open(os.path.join(OutDir,str(batchNo) + "_13.lock"), os.O_CREAT|os.O_EXCL|os.O_RDWR) as tmp:
         print(XtX.shape, file=tmp)
 
     # In a spatially varying design ZtX has dimensions n by q by p. We
@@ -321,17 +321,17 @@ def main(*args):
     ZtX = ZtX.reshape([ZtX.shape[0], ZtX.shape[1]*ZtX.shape[2]])
     
 
-    with os.open(os.path.join(OutDir,str(batchNo) + "_14.lock)", os.O_CREAT|os.O_EXCL|os.O_RDWR) as tmp:
+    with os.open(os.path.join(OutDir,str(batchNo) + "_14.lock"), os.O_CREAT|os.O_EXCL|os.O_RDWR) as tmp:
         print(ZtX.shape, file=tmp)
 
     # In a spatially varying design ZtZ has dimensions n by q by q. 
     ZtZ = MZ.transpose(0,2,1) @ MZ
 
 
-    with os.open(os.path.join(OutDir,str(batchNo) + "_15.lock)", os.O_CREAT|os.O_EXCL|os.O_RDWR) as tmp:
+    with os.open(os.path.join(OutDir,str(batchNo) + "_15.lock"), os.O_CREAT|os.O_EXCL|os.O_RDWR) as tmp:
         print(MZ.shape, ZtZ.shape)
 
-    with os.open(os.path.join(OutDir,str(batchNo) + "_16.lock)", os.O_CREAT|os.O_EXCL|os.O_RDWR) as tmp:
+    with os.open(os.path.join(OutDir,str(batchNo) + "_16.lock"), os.O_CREAT|os.O_EXCL|os.O_RDWR) as tmp:
         print('ZtZ shape: ', ZtZ.shape, file=tmp)
 
     # If we are looking at the one random factor one random effect model
@@ -367,7 +367,7 @@ def main(*args):
 
 
 
-    with os.open(os.path.join(OutDir,str(batchNo) + "_17.lock)", os.O_CREAT|os.O_EXCL|os.O_RDWR) as tmp:
+    with os.open(os.path.join(OutDir,str(batchNo) + "_17.lock"), os.O_CREAT|os.O_EXCL|os.O_RDWR) as tmp:
         print('ZtZ shape: ', ZtZ.shape, file=tmp)
 
     # Record product matrices X'X, Y'Y, Z'X and Z'Z.
@@ -379,7 +379,7 @@ def main(*args):
                ZtZ) 
 
 
-    with os.open(os.path.join(OutDir,str(batchNo) + "_18.lock)", os.O_CREAT|os.O_EXCL|os.O_RDWR) as tmp:
+    with os.open(os.path.join(OutDir,str(batchNo) + "_18.lock"), os.O_CREAT|os.O_EXCL|os.O_RDWR) as tmp:
         print(n_sv.shape, file=tmp)
 
     # Get map of number of observations at voxel.
@@ -390,7 +390,7 @@ def main(*args):
                     'blmm_vox_n_batch'+ str(batchNo) + '.nii'))
 
 
-    with os.open(os.path.join(OutDir,str(batchNo) + "_19.lock)", os.O_CREAT|os.O_EXCL|os.O_RDWR) as tmp:
+    with os.open(os.path.join(OutDir,str(batchNo) + "_19.lock"), os.O_CREAT|os.O_EXCL|os.O_RDWR) as tmp:
         pass
 
     # Get Mmap, indicating which design each voxel must use for analysis,
@@ -403,7 +403,7 @@ def main(*args):
                     'blmm_vox_uniqueM_batch'+ str(batchNo) + '.nii'))
 
 
-    with os.open(os.path.join(OutDir,str(batchNo) + "_20.lock)", os.O_CREAT|os.O_EXCL|os.O_RDWR) as tmp:
+    with os.open(os.path.join(OutDir,str(batchNo) + "_20.lock"), os.O_CREAT|os.O_EXCL|os.O_RDWR) as tmp:
         pass
 
     w.resetwarnings()
