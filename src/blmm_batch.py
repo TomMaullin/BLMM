@@ -315,12 +315,17 @@ def main(*args):
     # we only need record the diagonal blocks of ZtZ
     elif r == 1 and nraneffs[0]>1:
 
+        print('here')
+        print(nlevels, nraneffs)
+        print('ZtZ shape: ', ZtZ.shape)
         # Cut Z'Z down to diagonal elements only.
         ZtZ = flattenZtZ(ZtZ, nlevels[0], nraneffs[0])
 
+        print('ZtZ shape: ', ZtZ.shape)
         # We reshape to n by q*q0 so that we can save as a csv.
         ZtZ = ZtZ.reshape([ZtZ.shape[0], ZtZ.shape[1]*ZtZ.shape[2]])
 
+        print('ZtZ shape: ', ZtZ.shape)
 
         os.open("/well/nichols/users/inf852/BLMM_des2_1000/BLMM/" + str(batchNo) + "_16.lock", os.O_CREAT|os.O_EXCL|os.O_RDWR)
     else:
