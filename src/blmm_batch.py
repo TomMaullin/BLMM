@@ -135,7 +135,7 @@ def main(*args):
 
 
     with open(os.path.join(OutDir,str(batchNo) + "_5.lock"), "a+") as tmp:
-        print(NIFTImem.shape,blksize.shape,file=tmp)
+        print(NIFTImem,blksize.shape,file=tmp)
 
     # Number of random effects factors.
     r = len(inputs['Z'])
