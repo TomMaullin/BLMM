@@ -82,7 +82,7 @@ def main(*args):
     # Output directory
     OutDir = inputs['outdir']
 
-    print('1')
+    os.open("/well/nichols/users/inf852/BLMM_des2_1000/BLMM/" + str(batchNo) + "_1.lock", os.O_CREAT|os.O_EXCL|os.O_RDWR)
 
     # Get number of fixed effects parameters
     L1 = str2vec(inputs['contrasts'][0]['c' + str(1)]['vector'])
@@ -90,7 +90,7 @@ def main(*args):
     p = L1.shape[0]
     del L1
 
-    print('2')
+    os.open("/well/nichols/users/inf852/BLMM_des2_1000/BLMM/" + str(batchNo) + "_2.lock", os.O_CREAT|os.O_EXCL|os.O_RDWR)
     # Y volumes
     with open(inputs['Y_files']) as a:
 
@@ -100,7 +100,8 @@ def main(*args):
 
             Y_files.append(line.replace('\n', ''))
 
-    print('3')
+
+    os.open("/well/nichols/users/inf852/BLMM_des2_1000/BLMM/" + str(batchNo) + "_3.lock", os.O_CREAT|os.O_EXCL|os.O_RDWR)
     # Load in one nifti to check NIFTI size
     try:
         Y0 = loadFile(Y_files[0])
@@ -110,7 +111,8 @@ def main(*args):
     # Read in some data as a default nifti
     d0 = Y0.get_data()
 
-    print('4')
+
+    os.open("/well/nichols/users/inf852/BLMM_des2_1000/BLMM/" + str(batchNo) + "_4.lock", os.O_CREAT|os.O_EXCL|os.O_RDWR)
     # Get the maximum memory a NIFTI could take in storage. 
     NIFTImem = sys.getsizeof(np.zeros(d0.shape,dtype='uint64'))
 
@@ -123,7 +125,8 @@ def main(*args):
     X = X[(blksize*(batchNo-1)):min((blksize*batchNo),len(Y_files))]
     
 
-    print('5')
+
+    os.open("/well/nichols/users/inf852/BLMM_des2_1000/BLMM/" + str(batchNo) + "_5.lock", os.O_CREAT|os.O_EXCL|os.O_RDWR)
     # Number of random effects factors.
     r = len(inputs['Z'])
 
@@ -179,7 +182,8 @@ def main(*args):
     nraneffs = np.array(nraneffs)
     nlevels = np.array(nlevels)
 
-    print('6')
+
+    os.open("/well/nichols/users/inf852/BLMM_des2_1000/BLMM/" + str(batchNo) + "_6.lock", os.O_CREAT|os.O_EXCL|os.O_RDWR)
 
     # Mask volumes (if they are given)
     if 'data_mask_files' in inputs:
@@ -217,14 +221,16 @@ def main(*args):
         # There is not a mask for each Y as there are no masks at all!
         M_files = []
 
-    print('7')
+
+    os.open("/well/nichols/users/inf852/BLMM_des2_1000/BLMM/" + str(batchNo) + "_7.lock", os.O_CREAT|os.O_EXCL|os.O_RDWR)
     # Mask threshold for Y (if given)
     if 'data_mask_thresh' in inputs:
         M_t = float(inputs['data_mask_thresh'])
     else:
         M_t = None
 
-    print('8')
+
+    os.open("/well/nichols/users/inf852/BLMM_des2_1000/BLMM/" + str(batchNo) + "_8.lock", os.O_CREAT|os.O_EXCL|os.O_RDWR)
     # Mask volumes (if they are given)
     if 'analysis_mask' in inputs:
 
@@ -238,7 +244,8 @@ def main(*args):
         # Else set to None
         M_a = None
 
-    print('9')
+
+    os.open("/well/nichols/users/inf852/BLMM_des2_1000/BLMM/" + str(batchNo) + "_9.lock", os.O_CREAT|os.O_EXCL|os.O_RDWR)
     # Reduce Y_files to only Y files for this block
     Y_files = Y_files[(blksize*(batchNo-1)):min((blksize*batchNo),len(Y_files))]
     
@@ -249,12 +256,14 @@ def main(*args):
     # This mask is just for voxels with no studies present.
     Y, n_sv, M, Mmap = obtainY(Y_files, M_files, M_t, M_a)
 
-    print('10')
+
+    os.open("/well/nichols/users/inf852/BLMM_des2_1000/BLMM/" + str(batchNo) + "_10.lock", os.O_CREAT|os.O_EXCL|os.O_RDWR)
     # Work out voxel specific designs
     MX = applyMask(X, M)
     MZ = applyMask(Z, M) 
 
-    print('11')
+
+    os.open("/well/nichols/users/inf852/BLMM_des2_1000/BLMM/" + str(batchNo) + "_11.lock", os.O_CREAT|os.O_EXCL|os.O_RDWR)
     # Get X'Y, Z'Y and Y'Y. 
     # ------------------------------------------------------------------
     # Developer note: For these product matrices we do not need to worry
@@ -271,23 +280,27 @@ def main(*args):
     memorySafeAtB(X.reshape(1,X.shape[0],X.shape[1]),Y,MAXMEM,os.path.join(OutDir,"tmp","XtY.npy"))
     memorySafeAtB(Y,Y,MAXMEM,os.path.join(OutDir,"tmp","YtY.npy"))
 
-    print('12')
+
+    os.open("/well/nichols/users/inf852/BLMM_des2_1000/BLMM/" + str(batchNo) + "_12.lock", os.O_CREAT|os.O_EXCL|os.O_RDWR)
     # In a spatially varying design XtX has dimensions n by p by p. We
     # reshape to n by p^2 so that we can save as a csv.
     XtX = MX.transpose(0,2,1) @ MX
     XtX = XtX.reshape([XtX.shape[0], XtX.shape[1]*XtX.shape[2]])
 
-    print('13')
+
+    os.open("/well/nichols/users/inf852/BLMM_des2_1000/BLMM/" + str(batchNo) + "_13.lock", os.O_CREAT|os.O_EXCL|os.O_RDWR)
     # In a spatially varying design ZtX has dimensions n by q by p. We
     # reshape to n by q*p so that we can save as a csv.
     ZtX = MZ.transpose(0,2,1) @ MX
     ZtX = ZtX.reshape([ZtX.shape[0], ZtX.shape[1]*ZtX.shape[2]])
     
-    print('14')
+
+    os.open("/well/nichols/users/inf852/BLMM_des2_1000/BLMM/" + str(batchNo) + "_14.lock", os.O_CREAT|os.O_EXCL|os.O_RDWR)
     # In a spatially varying design ZtZ has dimensions n by q by q. 
     ZtZ = MZ.transpose(0,2,1) @ MZ
 
-    print('15')
+
+    os.open("/well/nichols/users/inf852/BLMM_des2_1000/BLMM/" + str(batchNo) + "_15.lock", os.O_CREAT|os.O_EXCL|os.O_RDWR)
     # If we are looking at the one random factor one random effect model
     # we only need record the diagonal of ZtZ
     if r == 1 and nraneffs[0]==1:
@@ -308,14 +321,16 @@ def main(*args):
         # We reshape to n by q*q0 so that we can save as a csv.
         ZtZ = ZtZ.reshape([ZtZ.shape[0], ZtZ.shape[1]*ZtZ.shape[2]])
 
-        print('16')
+
+        os.open("/well/nichols/users/inf852/BLMM_des2_1000/BLMM/" + str(batchNo) + "_16.lock", os.O_CREAT|os.O_EXCL|os.O_RDWR)
     else:
 
         # We reshape to n by q^2 so that we can save as a csv.
         ZtZ = ZtZ.reshape([ZtZ.shape[0], ZtZ.shape[1]*ZtZ.shape[2]])
 
 
-    print('17')
+
+    os.open("/well/nichols/users/inf852/BLMM_des2_1000/BLMM/" + str(batchNo) + "_17.lock", os.O_CREAT|os.O_EXCL|os.O_RDWR)
     # Record product matrices X'X, Y'Y, Z'X and Z'Z.
     np.save(os.path.join(OutDir,"tmp","XtX" + str(batchNo)), 
                 XtX)
@@ -324,7 +339,8 @@ def main(*args):
     np.save(os.path.join(OutDir,"tmp","ZtZ" + str(batchNo)), 
                ZtZ) 
 
-    print('18')
+
+    os.open("/well/nichols/users/inf852/BLMM_des2_1000/BLMM/" + str(batchNo) + "_18.lock", os.O_CREAT|os.O_EXCL|os.O_RDWR)
     # Get map of number of observations at voxel.
     n_sv = nib.Nifti1Image(n_sv,
                            Y0.affine,
@@ -332,7 +348,8 @@ def main(*args):
     nib.save(n_sv, os.path.join(OutDir,'tmp',
                     'blmm_vox_n_batch'+ str(batchNo) + '.nii'))
 
-    print('19')
+
+    os.open("/well/nichols/users/inf852/BLMM_des2_1000/BLMM/" + str(batchNo) + "_19.lock", os.O_CREAT|os.O_EXCL|os.O_RDWR)
     # Get Mmap, indicating which design each voxel must use for analysis,
     # using an integer representing the order in which X'X, Z'X and Z'Z 
     # appear in the `XtX.npy`, `ZtX.npy` and `ZtZ.npy` files respectively.
@@ -342,7 +359,8 @@ def main(*args):
     nib.save(Mmap, os.path.join(OutDir,'tmp',
                     'blmm_vox_uniqueM_batch'+ str(batchNo) + '.nii'))
 
-    print('20')
+
+    os.open("/well/nichols/users/inf852/BLMM_des2_1000/BLMM/" + str(batchNo) + "_20.lock", os.O_CREAT|os.O_EXCL|os.O_RDWR)
     w.resetwarnings()
 
 
