@@ -59,7 +59,7 @@ def generate_data(n,dim,OutDir,simNo,desInd):
         nlevels = np.array([20,10])
 
         # Number of levels for each factor
-        nraneffs = np.array([2,1])
+        nraneffs = np.array([4,2])
 
     elif desInd == 2:
 
