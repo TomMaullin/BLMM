@@ -201,6 +201,38 @@ def main(*args):
     if NIFTImem > MAXMEM:
         raise ValueError('The NIFTI "' + Y_files[0] + '"is too large')
 
+    # --------------------------------------------------------------------------------
+    # Get q and v
+    # --------------------------------------------------------------------------------
+    # Random factor variables.
+    rfxmats = inputs['Z']
+
+    # Number of random effects
+    r = len(rfxmats)
+
+    # Number of random effects for each factor, q
+    nraneffs = []
+
+    # Number of levels for each factor, l
+    nlevels = []
+
+    for k in range(r):
+
+        rfxdes = loadFile(rfxmats[k]['f' + str(k+1)]['design'])
+        rfxfac = loadFile(rfxmats[k]['f' + str(k+1)]['factor'])
+
+        nraneffs = nraneffs + [rfxdes.shape[1]]
+        nlevels = nlevels + [len(np.unique(rfxfac))]
+
+    # Get number of random effects
+    nraneffs = np.array(nraneffs)
+    nlevels = np.array(nlevels)
+    q = np.sum(nraneffs*nlevels)
+
+    # Get v
+    NIFTIsize = Y0.shape
+    v = int(np.prod(NIFTIsize))
+                
     # Similar to blksize in SwE, we divide by 8 times the size of a nifti
     # to work out how many blocks we use. We also divide though everything
     # by the number of parameters in the analysis.
@@ -233,39 +265,6 @@ def main(*args):
 
             # Check if this is the first run of the disk memory code
             if not glob.glob(os.path.join(OutDir, 'blmm_vox_memmask*.nii')):
-
-
-                # --------------------------------------------------------------------------------
-                # Get q and v
-                # --------------------------------------------------------------------------------
-                # Random factor variables.
-                rfxmats = inputs['Z']
-
-                # Number of random effects
-                r = len(rfxmats)
-
-                # Number of random effects for each factor, q
-                nraneffs = []
-
-                # Number of levels for each factor, l
-                nlevels = []
-
-                for k in range(r):
-
-                    rfxdes = loadFile(rfxmats[k]['f' + str(k+1)]['design'])
-                    rfxfac = loadFile(rfxmats[k]['f' + str(k+1)]['factor'])
-
-                    nraneffs = nraneffs + [rfxdes.shape[1]]
-                    nlevels = nlevels + [len(np.unique(rfxfac))]
-
-                # Get number of random effects
-                nraneffs = np.array(nraneffs)
-                nlevels = np.array(nlevels)
-                q = np.sum(nraneffs*nlevels)
-
-                # Get v
-                NIFTIsize = Y0.shape
-                v = int(np.prod(NIFTIsize))
 
                 # --------------------------------------------------------------------------------
                 # Read Mask 
