@@ -82,18 +82,11 @@ def main(*args):
     # Output directory
     OutDir = inputs['outdir']
 
-    with open(os.path.join(OutDir,str(batchNo) + "_1.lock"), "a+") as tmp:
-        pass
-
-
     # Get number of fixed effects parameters
     L1 = str2vec(inputs['contrasts'][0]['c' + str(1)]['vector'])
     L1 = np.array(L1)
     p = L1.shape[0]
     del L1
-
-    with open(os.path.join(OutDir,str(batchNo) + "_2.lock"), "a+") as tmp:
-        pass
 
     # Y volumes
     with open(inputs['Y_files']) as a:
@@ -103,10 +96,6 @@ def main(*args):
         for line in a.readlines():
 
             Y_files.append(line.replace('\n', ''))
-
-
-    with open(os.path.join(OutDir,str(batchNo) + "_3.lock"), "a+") as tmp:
-        pass
 
     # Load in one nifti to check NIFTI size
     try:
@@ -120,9 +109,6 @@ def main(*args):
     # Get q
     q = int(inputs["q"])
 
-    with open(os.path.join(OutDir,str(batchNo) + "_4.lock"), "a+") as tmp:
-        pass
-
     # Get the maximum memory a NIFTI could take in storage. 
     NIFTImem = sys.getsizeof(np.zeros(d0.shape,dtype='uint64'))
 
@@ -133,10 +119,6 @@ def main(*args):
     # Reduce X to X for this block.
     X = loadFile(inputs['X'])
     X = X[(blksize*(batchNo-1)):min((blksize*batchNo),len(Y_files))]
-
-
-    with open(os.path.join(OutDir,str(batchNo) + "_5.lock"), "a+") as tmp:
-        print(NIFTImem,blksize,file=tmp)
 
     # Number of random effects factors.
     r = len(inputs['Z'])
@@ -193,11 +175,6 @@ def main(*args):
     nraneffs = np.array(nraneffs)
     nlevels = np.array(nlevels)
 
-
-    with open(os.path.join(OutDir,str(batchNo) + "_6.lock"), "a+") as tmp:
-        pass
-
-
     # Mask volumes (if they are given)
     if 'data_mask_files' in inputs:
 
@@ -234,19 +211,11 @@ def main(*args):
         # There is not a mask for each Y as there are no masks at all!
         M_files = []
 
-
-    with open(os.path.join(OutDir,str(batchNo) + "_7.lock"), "a+") as tmp:
-        pass
-
     # Mask threshold for Y (if given)
     if 'data_mask_thresh' in inputs:
         M_t = float(inputs['data_mask_thresh'])
     else:
         M_t = None
-
-
-    with open(os.path.join(OutDir,str(batchNo) + "_8.lock"), "a+") as tmp:
-        pass
 
     # Mask volumes (if they are given)
     if 'analysis_mask' in inputs:
@@ -261,10 +230,6 @@ def main(*args):
         # Else set to None
         M_a = None
 
-
-    with open(os.path.join(OutDir,str(batchNo) + "_9.lock"), "a+") as tmp:
-        pass
-
     # Reduce Y_files to only Y files for this block
     Y_files = Y_files[(blksize*(batchNo-1)):min((blksize*batchNo),len(Y_files))]
     
@@ -275,17 +240,9 @@ def main(*args):
     # This mask is just for voxels with no studies present.
     Y, n_sv, M, Mmap = obtainY(Y_files, M_files, M_t, M_a)
 
-
-    with open(os.path.join(OutDir,str(batchNo) + "_10.lock"), "a+") as tmp:
-        pass
-
     # Work out voxel specific designs
     MX = applyMask(X, M)
     MZ = applyMask(Z, M) 
-
-
-    with open(os.path.join(OutDir,str(batchNo) + "_11.lock"), "a+") as tmp:
-        print(MX.shape,MZ.shape,file=tmp)
 
     # Get X'Y, Z'Y and Y'Y. 
     # ------------------------------------------------------------------
@@ -303,37 +260,18 @@ def main(*args):
     memorySafeAtB(X.reshape(1,X.shape[0],X.shape[1]),Y,MAXMEM,os.path.join(OutDir,"tmp","XtY.npy"))
     memorySafeAtB(Y,Y,MAXMEM,os.path.join(OutDir,"tmp","YtY.npy"))
 
-
-    with open(os.path.join(OutDir,str(batchNo) + "_12.lock"), "a+") as tmp:
-        print(Z.shape, X.shape, Y.shape, MAXMEM, file=tmp)
-
     # In a spatially varying design XtX has dimensions n by p by p. We
     # reshape to n by p^2 so that we can save as a csv.
     XtX = MX.transpose(0,2,1) @ MX
     XtX = XtX.reshape([XtX.shape[0], XtX.shape[1]*XtX.shape[2]])
 
-
-    with open(os.path.join(OutDir,str(batchNo) + "_13.lock"), "a+") as tmp:
-        print(XtX.shape, file=tmp)
-
     # In a spatially varying design ZtX has dimensions n by q by p. We
     # reshape to n by q*p so that we can save as a csv.
     ZtX = MZ.transpose(0,2,1) @ MX
     ZtX = ZtX.reshape([ZtX.shape[0], ZtX.shape[1]*ZtX.shape[2]])
-    
-
-    with open(os.path.join(OutDir,str(batchNo) + "_14.lock"), "a+") as tmp:
-        print(ZtX.shape, file=tmp)
 
     # In a spatially varying design ZtZ has dimensions n by q by q. 
     ZtZ = MZ.transpose(0,2,1) @ MZ
-
-
-    with open(os.path.join(OutDir,str(batchNo) + "_15.lock"), "a+") as tmp:
-        print(MZ.shape, ZtZ.shape)
-
-    with open(os.path.join(OutDir,str(batchNo) + "_16.lock"), "a+") as tmp:
-        print('ZtZ shape: ', ZtZ.shape, file=tmp)
 
     # If we are looking at the one random factor one random effect model
     # we only need record the diagonal of ZtZ
@@ -366,22 +304,13 @@ def main(*args):
         # We reshape to n by q^2 so that we can save as a csv.
         ZtZ = ZtZ.reshape([ZtZ.shape[0], ZtZ.shape[1]*ZtZ.shape[2]])
 
-
-
-    with open(os.path.join(OutDir,str(batchNo) + "_17.lock"), "a+") as tmp:
-        print('ZtZ shape: ', ZtZ.shape, file=tmp)
-
     # Record product matrices X'X, Y'Y, Z'X and Z'Z.
     np.save(os.path.join(OutDir,"tmp","XtX" + str(batchNo)), 
                 XtX)
     np.save(os.path.join(OutDir,"tmp","ZtX" + str(batchNo)), 
                ZtX) 
     np.save(os.path.join(OutDir,"tmp","ZtZ" + str(batchNo)), 
-               ZtZ) 
-
-
-    with open(os.path.join(OutDir,str(batchNo) + "_18.lock"), "a+") as tmp:
-        print(n_sv.shape, file=tmp)
+               ZtZ)
 
     # Get map of number of observations at voxel.
     n_sv = nib.Nifti1Image(n_sv,
@@ -389,10 +318,6 @@ def main(*args):
                            header=Y0.header)
     nib.save(n_sv, os.path.join(OutDir,'tmp',
                     'blmm_vox_n_batch'+ str(batchNo) + '.nii'))
-
-
-    with open(os.path.join(OutDir,str(batchNo) + "_19.lock"), "a+") as tmp:
-        pass
 
     # Get Mmap, indicating which design each voxel must use for analysis,
     # using an integer representing the order in which X'X, Z'X and Z'Z 
@@ -402,10 +327,6 @@ def main(*args):
                            header=Y0.header)
     nib.save(Mmap, os.path.join(OutDir,'tmp',
                     'blmm_vox_uniqueM_batch'+ str(batchNo) + '.nii'))
-
-
-    with open(os.path.join(OutDir,str(batchNo) + "_20.lock"), "a+") as tmp:
-        pass
 
     w.resetwarnings()
 
