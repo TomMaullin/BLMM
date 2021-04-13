@@ -243,7 +243,7 @@ def main(*args):
     # Similar to blksize in SwE, we divide by 8 times the size of a nifti
     # to work out how many blocks we use. We also divide though everything
     # by the number of parameters in the analysis.
-    blksize = np.floor(MAXMEM/NIFTImem/q)
+    blksize = int(np.floor(MAXMEM/NIFTImem/q))
     if blksize == 0:
         raise ValueError('Blocksize too small.')
 

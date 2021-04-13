@@ -128,7 +128,7 @@ def main(*args):
 
     # Similar to blksize in SwE, we divide by 8 times the size of a nifti
     # to work out how many blocks we use.
-    blksize = np.floor(MAXMEM/NIFTImem/q);
+    blksize = int(np.floor(MAXMEM/NIFTImem/q));
 
     # Reduce X to X for this block.
     X = loadFile(inputs['X'])
