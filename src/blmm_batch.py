@@ -117,12 +117,26 @@ def main(*args):
     # Read in some data as a default nifti
     d0 = Y0.get_data()
 
+    # Get q
+    q = inputs["q"]
 
     with open(os.path.join(OutDir,str(batchNo) + "_4.lock"), "a+") as tmp:
         pass
 
     # Get the maximum memory a NIFTI could take in storage. 
     NIFTImem = sys.getsizeof(np.zeros(d0.shape,dtype='uint64'))
+
+    # Similar to blksize in SwE, we divide by 8 times the size of a nifti
+    # to work out how many blocks we use.
+    blksize = np.floor(MAXMEM/NIFTImem/q);
+
+    # Reduce X to X for this block.
+    X = loadFile(inputs['X'])
+    X = X[(blksize*(batchNo-1)):min((blksize*batchNo),len(Y_files))]
+
+
+    with open(os.path.join(OutDir,str(batchNo) + "_5.lock"), "a+") as tmp:
+        print(NIFTImem,blksize,file=tmp)
 
     # Number of random effects factors.
     r = len(inputs['Z'])
@@ -179,20 +193,6 @@ def main(*args):
     nraneffs = np.array(nraneffs)
     nlevels = np.array(nlevels)
 
-    # Dimension q
-    q = np.cumsum(nlevels*nraneffs)
-
-    # Similar to blksize in SwE, we divide by 8 times the size of a nifti
-    # to work out how many blocks we use.
-    blksize = np.floor(MAXMEM/NIFTImem/q);
-
-    # Reduce X to X for this block.
-    X = loadFile(inputs['X'])
-    X = X[(blksize*(batchNo-1)):min((blksize*batchNo),len(Y_files))]
-
-
-    with open(os.path.join(OutDir,str(batchNo) + "_5.lock"), "a+") as tmp:
-        print(NIFTImem,blksize,file=tmp)
 
     with open(os.path.join(OutDir,str(batchNo) + "_6.lock"), "a+") as tmp:
         pass

@@ -229,10 +229,13 @@ def main(*args):
     nlevels = np.array(nlevels)
     q = np.sum(nraneffs*nlevels)
 
+    # Save q (useful to have around)
+    inputs["q"] = q
+
     # Get v
     NIFTIsize = Y0.shape
     v = int(np.prod(NIFTIsize))
-                
+
     # Similar to blksize in SwE, we divide by 8 times the size of a nifti
     # to work out how many blocks we use. We also divide though everything
     # by the number of parameters in the analysis.
