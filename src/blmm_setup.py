@@ -230,7 +230,7 @@ def main(*args):
     q = np.sum(nraneffs*nlevels)
 
     # Save q (useful to have around)
-    inputs["q"] = q
+    inputs["q"] = str(q)
 
     # Update inputs
     with open(ipath, 'w') as outfile:

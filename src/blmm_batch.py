@@ -118,7 +118,7 @@ def main(*args):
     d0 = Y0.get_data()
 
     # Get q
-    q = inputs["q"]
+    q = int(inputs["q"])
 
     with open(os.path.join(OutDir,str(batchNo) + "_4.lock"), "a+") as tmp:
         pass
