@@ -232,6 +232,10 @@ def main(*args):
     # Save q (useful to have around)
     inputs["q"] = q
 
+    # Update inputs
+    with open(ipath, 'w') as outfile:
+        yaml.dump(inputs, outfile, default_flow_style=False)
+
     # Get v
     NIFTIsize = Y0.shape
     v = int(np.prod(NIFTIsize))
