@@ -607,7 +607,6 @@ def memorySafeAtB(A,B,MAXMEM,prodStr,inputs):
         batch_v = len(batch_inds)
 
         print('batch_v: ', batch_v)
-        print('batch_inds: ', batch_inds)
         print('voxBatch: ', voxBatch)
 
         # Check if file is in use
@@ -646,10 +645,11 @@ def memorySafeAtB(A,B,MAXMEM,prodStr,inputs):
 
             # Loop through each group of voxels saving A'B for those voxels
             for vb in range(int(batch_v//vPerBlock+1)):
+                print('shape 1: ', A.transpose(0,2,1).shape)
+                print('shape 2: ', B[voxelGroups_orig[vb],:,:].shape)
+                print('shape 3: ',len(voxelGroups_orig[vb]),pORq)
                 M[voxelGroups_file[vb],:]=(A.transpose(0,2,1) @ B[voxelGroups_orig[vb],:,:]).reshape(len(voxelGroups_orig[vb]),pORq)
-                print('voxelGroups_orig[vb]: ', voxelGroups_orig[vb])
-                print('voxelGroups_file[vb]: ', voxelGroups_file[vb])
-        
+                
         # Otherwise we add to the memory map that does exist
         else:
 
@@ -671,8 +671,6 @@ def memorySafeAtB(A,B,MAXMEM,prodStr,inputs):
             # Loop through each group of voxels saving A'B for those voxels
             for vb in range(int(batch_v//vPerBlock+1)):
                 M[voxelGroups_file[vb],:]=(A.transpose(0,2,1) @ B[voxelGroups_orig[vb],:,:]).reshape(len(voxelGroups_orig[vb]),pORq)
-                print('voxelGroups_orig[vb]: ', voxelGroups_orig[vb])
-                print('voxelGroups_file[vb]: ', voxelGroups_file[vb])
 
         # Delete M from memory (important!)
         del M
