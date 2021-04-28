@@ -254,7 +254,6 @@ def main(*args):
     # is large. We save these "chunk by chunk" as memory map objects just
     # in case they don't fit in working memory (this is only usually a
     # large issue for very large designs).
-    memorySafeAtB(A,B,MAXMEM,prodStr,inputs)
     memorySafeAtB(Z.reshape(1,Z.shape[0],Z.shape[1]),Y,MAXMEM,"ZtY",inputs)
     memorySafeAtB(X.reshape(1,X.shape[0],X.shape[1]),Y,MAXMEM,"XtY",inputs)
     memorySafeAtB(Y,Y,MAXMEM,"YtY",inputs)
