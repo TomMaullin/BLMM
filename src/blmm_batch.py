@@ -620,7 +620,7 @@ def memorySafeAtB(A,B,MAXMEM,prodStr,inputs):
         if not os.path.isfile(filename):
 
             # Create a memory-mapped .npy file with the dimensions and dtype we want
-            M = open_memmap(filename, mode='w+', dtype='float64', shape=(v,pORq))
+            M = open_memmap(filename, mode='w+', dtype='float64', shape=(batch_v,pORq))
 
             # Work out the number of voxels we can save at a time.
             # (8 bytes per numpy float exponent multiplied by 10
@@ -642,7 +642,7 @@ def memorySafeAtB(A,B,MAXMEM,prodStr,inputs):
 
             # Load in the file but in memory map mode
             M = np.load(filename,mmap_mode='r+')
-            M = M.reshape((v,pORq))
+            M = M.reshape((batch_v,pORq))
 
             # Work out the number of voxels we can save at a time.
             # (8 bytes per numpy float exponent multiplied by 10
