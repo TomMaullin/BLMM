@@ -595,7 +595,7 @@ def memorySafeAtB(A,B,MAXMEM,prodStr,inputs):
     pORq = A.shape[2]
 
     # Loop through voxel batches (groups of voxels we wish to partition into)
-    for voxBatch in range(pnvb):
+    for voxBatch in range(int(pnvb)):
 
         # Get filename
         filename = os.path.join(OutDir,"tmp",prodStr + str(voxBatch) + ".npy")
