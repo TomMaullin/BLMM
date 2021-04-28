@@ -637,15 +637,18 @@ def memorySafeAtB(A,B,MAXMEM,prodStr,inputs):
             print('vPerBlock: ', vPerBlock)
             print('batch_v//vPerBlock+1: ', batch_v//vPerBlock+1)
 
-            # Work out the indices for each group of voxels
-            voxelGroups = np.array_split(batch_inds, batch_v//vPerBlock+1)
+            # Work out the indices for each group of voxels for original matrix and
+            # for in file
+            voxelGroups_orig = np.array_split(batch_inds, batch_v//vPerBlock+1) # Indices from original matrix
+            voxelGroups_file = np.array_split(np.arange(batch_v), batch_v//vPerBlock+1) # Indices we write to in file
 
             print('str: ', prodStr)
 
             # Loop through each group of voxels saving A'B for those voxels
             for vb in range(int(batch_v//vPerBlock+1)):
-                M[voxelGroups[vb],:]=(A.transpose(0,2,1) @ B[voxelGroups[vb],:,:]).reshape(len(voxelGroups[vb]),pORq)
-                print('voxelGroups[vb]: ', voxelGroups[vb])
+                M[voxelGroups_file[vb],:]=(A.transpose(0,2,1) @ B[voxelGroups_orig[vb],:,:]).reshape(len(voxelGroups_orig[vb]),pORq)
+                print('voxelGroups_orig[vb]: ', voxelGroups_orig[vb])
+                print('voxelGroups_file[vb]: ', voxelGroups_file[vb])
         
         # Otherwise we add to the memory map that does exist
         else:
@@ -659,14 +662,17 @@ def memorySafeAtB(A,B,MAXMEM,prodStr,inputs):
             # for a safe overhead)
             vPerBlock = MAXMEM/(10*8*pORq)
 
-            # Work out the indices for each group of voxels
-            voxelGroups = np.array_split(batch_inds, batch_v//vPerBlock+1)
+            # Work out the indices for each group of voxels for original matrix and
+            # for in file
+            voxelGroups_orig = np.array_split(batch_inds, batch_v//vPerBlock+1) # Indices from original matrix
+            voxelGroups_file = np.array_split(np.arange(batch_v), batch_v//vPerBlock+1) # Indices we write to in file
             
             print('str: ', prodStr)
             # Loop through each group of voxels saving A'B for those voxels
             for vb in range(int(batch_v//vPerBlock+1)):
-                M[voxelGroups[vb],:]=M[voxelGroups[vb],:]+(A.transpose(0,2,1) @ B[voxelGroups[vb],:,:]).reshape(len(voxelGroups[vb]),pORq)
-                print('voxelGroups[vb]: ', voxelGroups[vb])
+                M[voxelGroups_file[vb],:]=(A.transpose(0,2,1) @ B[voxelGroups_orig[vb],:,:]).reshape(len(voxelGroups_orig[vb]),pORq)
+                print('voxelGroups_orig[vb]: ', voxelGroups_orig[vb])
+                print('voxelGroups_file[vb]: ', voxelGroups_file[vb])
 
         # Delete M from memory (important!)
         del M
