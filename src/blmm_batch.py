@@ -587,7 +587,7 @@ def memorySafeAtB(A,B,MAXMEM,prodStr,inputs):
     # Obtain number of voxel batches for parallelization.
     pnvb = pracNumVoxelBlocks(inputs)
 
-    print('pvnb: ', pvnb)
+    print('pvnb: ', pnvb)
 
     # Get output directory
     OutDir = inputs['outdir']
