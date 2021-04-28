@@ -606,6 +606,10 @@ def memorySafeAtB(A,B,MAXMEM,prodStr,inputs):
         # Number of voxels in this batch
         batch_v = len(batch_inds)
 
+        print('batch_v: ', batch_v)
+        print('batch_inds: ', batch_inds)
+        print('voxBatch: ', voxBatch)
+
         # Check if file is in use
         fileLocked = True
         while fileLocked:
@@ -630,12 +634,18 @@ def memorySafeAtB(A,B,MAXMEM,prodStr,inputs):
             # at any one given time.
             vPerBlock = MAXMEM/(10*8*pORq)
 
+            print('vPerBlock: ', vPerBlock)
+            print('batch_v//vPerBlock+1: ', batch_v//vPerBlock+1)
+
             # Work out the indices for each group of voxels
             voxelGroups = np.array_split(batch_inds, batch_v//vPerBlock+1)
+
+            print('str: ', prodStr)
 
             # Loop through each group of voxels saving A'B for those voxels
             for vb in range(int(batch_v//vPerBlock+1)):
                 M[voxelGroups[vb],:]=(A.transpose(0,2,1) @ B[voxelGroups[vb],:,:]).reshape(len(voxelGroups[vb]),pORq)
+                print('voxelGroups[vb]: ', voxelGroups[vb])
         
         # Otherwise we add to the memory map that does exist
         else:
@@ -652,9 +662,11 @@ def memorySafeAtB(A,B,MAXMEM,prodStr,inputs):
             # Work out the indices for each group of voxels
             voxelGroups = np.array_split(batch_inds, batch_v//vPerBlock+1)
             
+            print('str: ', prodStr)
             # Loop through each group of voxels saving A'B for those voxels
             for vb in range(int(batch_v//vPerBlock+1)):
                 M[voxelGroups[vb],:]=M[voxelGroups[vb],:]+(A.transpose(0,2,1) @ B[voxelGroups[vb],:,:]).reshape(len(voxelGroups[vb]),pORq)
+                print('voxelGroups[vb]: ', voxelGroups[vb])
 
         # Delete M from memory (important!)
         del M
