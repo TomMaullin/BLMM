@@ -242,9 +242,9 @@ def main(ipath, vb):
         # --------------------------------------------------------------------------------
 
         # Ring X'Y, Y'Y, Z'Y
-        XtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp",'XtY'+str(vb)+'.npy'), R_inds_bam).reshape([v_r, p, 1])
-        YtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp",'YtY'+str(vb)+'.npy'), R_inds_bam).reshape([v_r, 1, 1])
-        ZtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp",'ZtY'+str(vb)+'.npy'), R_inds_bam).reshape([v_r, q, 1])
+        XtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp",'XtY'+str(vb-1)+'.npy'), R_inds_bam).reshape([v_r, p, 1])
+        YtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp",'YtY'+str(vb-1)+'.npy'), R_inds_bam).reshape([v_r, 1, 1])
+        ZtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp",'ZtY'+str(vb-1)+'.npy'), R_inds_bam).reshape([v_r, q, 1])
         # XtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp",'XtY.npy'), R_inds_am).reshape([v_r, p, 1])
         # YtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp",'YtY.npy'), R_inds_am).reshape([v_r, 1, 1])
         # ZtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp",'ZtY.npy'), R_inds_am).reshape([v_r, q, 1])
@@ -253,9 +253,9 @@ def main(ipath, vb):
         # XtY_i = readLinesFromNPY(os.path.join(OutDir,"tmp",'XtY.npy'), I_inds_am).reshape([v_i, p, 1])
         # YtY_i = readLinesFromNPY(os.path.join(OutDir,"tmp",'YtY.npy'), I_inds_am).reshape([v_i, 1, 1])
         # ZtY_i = readLinesFromNPY(os.path.join(OutDir,"tmp",'ZtY.npy'), I_inds_am).reshape([v_i, q, 1])
-        XtY_i = readLinesFromNPY(os.path.join(OutDir,"tmp",'XtY'+str(vb)+'.npy'), I_inds_bam).reshape([v_i, p, 1])
-        YtY_i = readLinesFromNPY(os.path.join(OutDir,"tmp",'YtY'+str(vb)+'.npy'), I_inds_bam).reshape([v_i, 1, 1])
-        ZtY_i = readLinesFromNPY(os.path.join(OutDir,"tmp",'ZtY'+str(vb)+'.npy'), I_inds_bam).reshape([v_i, q, 1])
+        XtY_i = readLinesFromNPY(os.path.join(OutDir,"tmp",'XtY'+str(vb-1)+'.npy'), I_inds_bam).reshape([v_i, p, 1])
+        YtY_i = readLinesFromNPY(os.path.join(OutDir,"tmp",'YtY'+str(vb-1)+'.npy'), I_inds_bam).reshape([v_i, 1, 1])
+        ZtY_i = readLinesFromNPY(os.path.join(OutDir,"tmp",'ZtY'+str(vb-1)+'.npy'), I_inds_bam).reshape([v_i, q, 1])
 
         # Ring Z'Z. Z'X, X'X
         if v_r:
