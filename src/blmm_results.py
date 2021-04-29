@@ -109,6 +109,7 @@ def main(ipath, vb):
     nraneffs = np.array(nraneffs)
     nlevels = np.array(nlevels)
     q = np.sum(nraneffs*nlevels)
+    q0 = nraneffs[0]
 
     # Get number of unique random effects
     q_u = np.sum(nraneffs*(nraneffs+1)//2)
@@ -180,7 +181,7 @@ def main(ipath, vb):
     # practice). We allow slightly more for the one random factor model
     # since we do not construct any additional q by q matrices.
     if  r == 1:
-        nvb = MAXMEM/(10*4*(q**2))
+        nvb = MAXMEM/(10*8*(q*q0))
     else:
         nvb = MAXMEM/(10*8*(q**2))
     
