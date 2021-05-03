@@ -1404,7 +1404,7 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n,
 #                   sigma2, vech(D1),...vech(Dr)) for every voxel.
 #
 # ============================================================================
-def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=False):
+def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=False, maxnit=10000):
 
     # ------------------------------------------------------------------------------
     # Useful scalars
@@ -1545,6 +1545,16 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
 
         # Update number of iterations
         nit = nit + 1
+
+        # If we've hit maximum number of iterations halt.
+        if (nit > maxnit):
+
+            # Set tolerance to accept all remaining estimates
+            tol = np.Inf
+
+            # Print warning:
+            print('Maxmimum number of iterations, ' + str(maxnit) + ', reached whilst estimating ' +
+                  str(np.prod(llhprev.shape)) + ' voxels.')
             
         # --------------------------------------------------------------------------
         # Update loglikelihood and number of voxels
