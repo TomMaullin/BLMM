@@ -131,7 +131,7 @@ def main(blmmDir1, blmmDir2, OutDir):
         if r_des1 > 1:
             
             raise ValueError('Likelihood ratio testing is not supported for multifactor models.' +
-                             ' Model 1 contains ' + str(r_des1) + '>1 factors'.)
+                             ' Model 1 contains ' + str(r_des1) + '>1 factors.')
 
         # Number of random effects and levels
         nraneffs_des1 = []
