@@ -120,9 +120,6 @@ analysis_mask: /path/to/data/MNI152_T1_2mm_brain_mask.nii.gz
 
 ### Running the Analysis
 
-
-#### Running an analysis in parallel
-
 To run an analysis in parallel, log into the cluster you wish to run it on and ensure that `fsl` and `fsl_sub` are loaded in the environment. On the `rescomp` cluster this can be done like so:
 
 ```
