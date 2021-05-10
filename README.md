@@ -56,6 +56,7 @@ The following fields are optional:
  - `tol`: Tolerance for convergence for the parameter estimation. Estimates will be output once the log-likelihood changes by less than `tol` from iteration to iteration. The default value is `1e-6`. 
  - `voxelBatching`: (Recommended for large designs). If set to `1`, the parameter estimation and inference steps of the analysis will be performed on seperate groups (batches) of voxels concurrently/in parallel. By default this is set to `0`. This setting is purely for computation speed purposes.
  - `maxnvb`: (Only used when `voxelBatching` is set to `1`). The maximum number of voxel batches/concurrent jobs allowed for estimation and inference. By default this is set to `60`. For large designs, this prevents the code from trying to submit thousands of jobs, should it decide this would be the quickest way to perform computation. This setting is purely for computation speed purposes.
+ - `maxnit`: The maximum number of iterations each voxel is allowed for parameter estimation. By default this is set to `10000` iterations. If the iteration limit is reached a warning is thrown in the log files.
  - `resms`: If set to `1`, the `blmm_vox_resms` volume is output, if set to `0`, the `blmm_vox_resms` volume is not output.
 
  
