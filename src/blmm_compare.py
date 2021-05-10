@@ -290,7 +290,7 @@ def main(blmmDir1, blmmDir2, OutDir):
     mask2 = nib.load(os.path.join(blmmDir2, 'blmm_vox_mask.nii')).get_data()>0
 
     # Combine masks
-    mask = mask0*mask1
+    mask = mask1*mask2
 
     # Save mask
     addBlockToNifti(os.path.join(OutDir, "blmm_vox_mask.nii"), mask.reshape(np.prod(mask.shape)),np.arange(np.prod(mask.shape)), volInd=0,dim=dim,aff=aff,hdr=hdr)
