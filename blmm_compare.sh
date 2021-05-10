@@ -18,10 +18,10 @@ BLMM_PATH=$(dirname $(RealPath "${BASH_SOURCE[0]}"))
 # Read and parse BLMM config files
 # -----------------------------------------------------------------------
 # Read first config
-cfg1=$(RealPath $1)
+cfg1=$(RealPath $1/inputs.yml)
 
 # Read second config
-cfg1=$(RealPath $2)
+cfg1=$(RealPath $2/inputs.yml)
 
 # -----------------------------------------------------------------------
 # Make output directory
