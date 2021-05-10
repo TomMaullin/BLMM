@@ -44,7 +44,8 @@ from lib.fileio import loadFile, str2vec, pracNumVoxelBlocks, get_amInds, addBlo
 #                 to users (as we are yet to see a design that really needs it), it is
 #                 very useful when developing code to be able to run small chunks of 
 #                 the brain instead of the whole thing. For this reason it has been 
-#                 left in here.
+#                 left in here. However, it is not maintained, so may need some
+#                 tweaking to use.
 #
 # ====================================================================================
 def main(*args):

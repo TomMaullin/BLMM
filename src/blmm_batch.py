@@ -254,9 +254,9 @@ def main(*args):
     # is large. We save these "chunk by chunk" as memory map objects just
     # in case they don't fit in working memory (this is only usually a
     # large issue for very large designs).
-    memorySafeAtB(Z.reshape(1,Z.shape[0],Z.shape[1]),Y,MAXMEM,os.path.join(OutDir,"tmp","ZtY.npy"))
-    memorySafeAtB(X.reshape(1,X.shape[0],X.shape[1]),Y,MAXMEM,os.path.join(OutDir,"tmp","XtY.npy"))
-    memorySafeAtB(Y,Y,MAXMEM,os.path.join(OutDir,"tmp","YtY.npy"))
+    memorySafeAtB(Z.reshape(1,Z.shape[0],Z.shape[1]),Y,MAXMEM,"ZtY",inputs)
+    memorySafeAtB(X.reshape(1,X.shape[0],X.shape[1]),Y,MAXMEM,"XtY",inputs)
+    memorySafeAtB(Y,Y,MAXMEM,"YtY",inputs)
 
     # In a spatially varying design XtX has dimensions n by p by p. We
     # reshape to n by p^2 so that we can save as a csv.
@@ -578,69 +578,116 @@ def obtainY(Y_files, M_files, M_t, M_a):
 # - `A`: The (1, k1, k2) shaped matrix.
 # - `B`: The (v, k1, k3) shaped matrix.
 # - `MAXMEM`: The maximum memory allowed for usage, in bytes.
-# - `filename`: The name of the file.
+# - `prodStr`: String representing product matrix i.e. "ZtY", "XtY",... etc.
+# - `inputs`: The inputs structure.
 #
 # ============================================================================
-def memorySafeAtB(A,B,MAXMEM,filename):
+def memorySafeAtB(A,B,MAXMEM,prodStr,inputs):
 
-    # Check if file is in use
-    fileLocked = True
-    while fileLocked:
-        try:
-            # Create lock file, so other jobs know we are writing to this file
-            f = os.open(filename + ".lock", os.O_CREAT|os.O_EXCL|os.O_RDWR)
-            fileLocked = False
-        except FileExistsError:
-            fileLocked = True
+    # Obtain number of voxel batches for parallelization.
+    pnvb = pracNumVoxelBlocks(inputs)
+
+    print('pvnb: ', pnvb)
+
+    # Get output directory
+    OutDir = inputs['outdir']
 
     # Record v and k3 (which is usually p or q)
     v = B.shape[0]
     pORq = A.shape[2]
 
-    # If the memory map doesn't exist already, create it
-    if not os.path.isfile(filename):
+    # Loop through voxel batches (groups of voxels we wish to partition into)
+    for voxBatch in range(int(pnvb)):
 
-        # Create a memory-mapped .npy file with the dimensions and dtype we want
-        M = open_memmap(filename, mode='w+', dtype='float64', shape=(v,pORq))
+        # Get filename
+        filename = os.path.join(OutDir,"tmp",prodStr + str(voxBatch) + ".npy")
 
-        # Work out the number of voxels we can save at a time.
-        # (8 bytes per numpy float exponent multiplied by 10
-        # for a safe overhead)
-        vPerBlock = MAXMEM/(10*8*pORq)
+        # Get indices for this batch of voxels
+        batch_inds = np.array_split(np.arange(v), pnvb)[voxBatch]
 
-        # Work out the indices for each group of voxels
-        voxelGroups = np.array_split(np.arange(v, dtype='int32'), v//vPerBlock+1)
+        # Number of voxels in this batch
+        batch_v = len(batch_inds)
 
-        # Loop through each group of voxels saving A'B for those voxels
-        for vb in range(int(v//vPerBlock+1)):
-            M[voxelGroups[vb],:]=(A.transpose(0,2,1) @ B[voxelGroups[vb],:,:]).reshape(len(voxelGroups[vb]),pORq)
-    
-    # Otherwise we add to the memory map that does exist
-    else:
+        print('batch_v: ', batch_v)
+        print('voxBatch: ', voxBatch)
 
-        # Load in the file but in memory map mode
-        M = np.load(filename,mmap_mode='r+')
-        M = M.reshape((v,pORq))
+        # Check if file is in use
+        fileLocked = True
+        while fileLocked:
+            try:
+                # Create lock file, so other jobs know we are writing to this file
+                f = os.open(filename + ".lock", os.O_CREAT|os.O_EXCL|os.O_RDWR)
+                fileLocked = False
+            except FileExistsError:
+                fileLocked = True
 
-        # Work out the number of voxels we can save at a time.
-        # (8 bytes per numpy float exponent multiplied by 10
-        # for a safe overhead)
-        vPerBlock = MAXMEM/(10*8*pORq)
+        # If the memory map doesn't exist already, create it
+        if not os.path.isfile(filename):
 
-        # Work out the indices for each group of voxels
-        voxelGroups = np.array_split(np.arange(v, dtype='int32'), v//vPerBlock+1)
-        
-        # Loop through each group of voxels saving A'B for those voxels
-        for vb in range(int(v//vPerBlock+1)):
-            M[voxelGroups[vb],:]=M[voxelGroups[vb],:]+(A.transpose(0,2,1) @ B[voxelGroups[vb],:,:]).reshape(len(voxelGroups[vb]),pORq)
+            # Create a memory-mapped .npy file with the dimensions and dtype we want
+            M = open_memmap(filename, mode='w+', dtype='float64', shape=(batch_v,pORq))
 
-    # Delete M from memory (important!)
-    del M
+            # Work out the number of voxels we can save at a time.
+            # (8 bytes per numpy float exponent multiplied by 10
+            # for a safe overhead). Here we are using batch to describe
+            # the number of voxels we want to save to each file and block
+            # to describe the number of voxels we can actually save to a file
+            # at any one given time.
+            vPerBlock = MAXMEM/(10*8*pORq)
 
-    # Delete lock file, so other jobs know they can now write to the
-    # file
-    os.remove(filename + ".lock")
-    os.close(f)
+            print('vPerBlock: ', vPerBlock)
+            print('batch_v//vPerBlock+1: ', batch_v//vPerBlock+1)
+
+            # Work out the indices for each group of voxels for original matrix and
+            # for in file
+            voxelGroups_orig = np.array_split(batch_inds, batch_v//vPerBlock+1) # Indices from original matrix
+            voxelGroups_file = np.array_split(np.arange(batch_v), batch_v//vPerBlock+1) # Indices we write to in file
+
+            print('str: ', prodStr)
+
+            # Loop through each group of voxels saving A'B for those voxels
+            for vb in range(int(batch_v//vPerBlock+1)):
+                print('shape 1: ', A.transpose(0,2,1).shape)
+                print('shape 2: ', B[voxelGroups_orig[vb],:,:].shape)
+                print('shape 3: ',len(voxelGroups_orig[vb]),pORq)
+                if A.shape[0]==1:
+                    M[voxelGroups_file[vb],:]=(A.transpose(0,2,1) @ B[voxelGroups_orig[vb],:,:]).reshape(len(voxelGroups_orig[vb]),pORq)
+                else:
+                    M[voxelGroups_file[vb],:]=(A.transpose(0,2,1)[voxelGroups_orig[vb],:,:] @ B[voxelGroups_orig[vb],:,:]).reshape(len(voxelGroups_orig[vb]),pORq)
+                
+
+        # Otherwise we add to the memory map that does exist
+        else:
+
+            # Load in the file but in memory map mode
+            M = np.load(filename,mmap_mode='r+')
+            M = M.reshape((batch_v,pORq))
+
+            # Work out the number of voxels we can save at a time.
+            # (8 bytes per numpy float exponent multiplied by 10
+            # for a safe overhead)
+            vPerBlock = MAXMEM/(10*8*pORq)
+
+            # Work out the indices for each group of voxels for original matrix and
+            # for in file
+            voxelGroups_orig = np.array_split(batch_inds, batch_v//vPerBlock+1) # Indices from original matrix
+            voxelGroups_file = np.array_split(np.arange(batch_v), batch_v//vPerBlock+1) # Indices we write to in file
+            
+            print('str: ', prodStr)
+            # Loop through each group of voxels saving A'B for those voxels
+            for vb in range(int(batch_v//vPerBlock+1)):
+                if A.shape[0]==1:
+                    M[voxelGroups_file[vb],:]=M[voxelGroups_file[vb],:]+(A.transpose(0,2,1) @ B[voxelGroups_orig[vb],:,:]).reshape(len(voxelGroups_orig[vb]),pORq)
+                else:
+                    M[voxelGroups_file[vb],:]=M[voxelGroups_file[vb],:]+(A.transpose(0,2,1)[voxelGroups_orig[vb],:,:] @ B[voxelGroups_orig[vb],:,:]).reshape(len(voxelGroups_orig[vb]),pORq)
+                
+        # Delete M from memory (important!)
+        del M
+
+        # Delete lock file, so other jobs know they can now write to the
+        # file
+        os.remove(filename + ".lock")
+        os.close(f)
 
 if __name__ == "__main__":
     main()
