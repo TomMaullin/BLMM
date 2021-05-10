@@ -142,7 +142,7 @@ def main(blmmDir1, blmmDir2, OutDir):
         nlevels_des1 = []
 
         # Loop through each factor
-        for k in range(r):
+        for k in range(r_des1):
 
             rfxdes = loadFile(rfxmats[k]['f' + str(k+1)]['design'])
             rfxfac = loadFile(rfxmats[k]['f' + str(k+1)]['factor'])
@@ -186,7 +186,7 @@ def main(blmmDir1, blmmDir2, OutDir):
         nlevels_des2 = []
 
         # Loop through each factor
-        for k in range(r):
+        for k in range(r_des2):
 
             rfxdes = loadFile(rfxmats[k]['f' + str(k+1)]['design'])
             rfxfac = loadFile(rfxmats[k]['f' + str(k+1)]['factor'])
