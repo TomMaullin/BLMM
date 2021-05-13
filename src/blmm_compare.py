@@ -329,7 +329,7 @@ def main(blmmDir1, blmmDir2, OutDir):
     p = p + 0.5*(1-stats.chi2.sf(Chi2[mask], int(qu_des2)))
 
     # Transform to -10log(p)
-    p = -np.log10(p)
+    p = -np.log10(1-p)
 
     # Check if minlog given for model 1
     if ("minlog" in inputs1):
