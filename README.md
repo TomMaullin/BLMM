@@ -218,7 +218,7 @@ Throughout the code, the following notation is universal.
 
 The following subscripts are also common throughout the code:
 
- - `_sv`: Spatially varying. `a_sv` means we have a value of `a` for every voxel we are considers, or rather, `a` "varies" across space.
+ - `_sv`: Spatially varying. `a_sv` means we have a value of `a` for every voxel we are considering, or rather, `a` "varies" across space.
  - `_i`: "Inner" voxels. This refers to the set of voxels which do not have missingness caused by mask variability in their designs. Typically, these make up the vast majority of the brain and tend not to lie near the edge of the brain, hence "inner".
  - `_r`: "Ring" voxels. This refers to the set of voxels which have missingness caused by mask variability in their designs. Special care must be taken with these voxels as `X` and `Z` are not the same across this set. Typically, these make up a small minority of the brain and tend to lie near the edge of the brain; they look like a "ring" around the edge of the brain.
  - `2D`: A function or file with this suffix will contain code designed to work analysis only on one voxel. As `X`,`Y` and `Z` are all 2 dimensional, all arrays considered for one voxel are 2D, hence the suffix.
