@@ -169,6 +169,23 @@ The maps are given the same ordering as the inputs. For example, in `blmm_vox_co
 \*\* The `D` estimates are ordered as `vech(D1)`,...,`vech(Dr)` where `Dk` is the Random effects covariance matrix for the `k`th random factor, `r` is the total number of random factors in the design and `vech` represents ["half-vectorisation"](https://en.wikipedia.org/wiki/Vectorization_(mathematics)#Half-vectorization).
 \*\*\* This is optional and may differ from the estimate of `sigma2`, which accounts for the random effects variance.
 
+### Model Comparison
+
+`BLMM-py` also offers model comparison for nested single-factor models via Likelihood Ratio Tests under a `50:50` chi^2 mixture distribtuion assumption (c.f. Linear Mixed Models for Longitudinal Data. 2000. Verbeke, G. & Molenberghs, G. Chapter 6 Section 3.). To compare the output of two single-factor models in `BLMM-py` (or the output of a single-factor model from `BLMM-py` with the output of a corresponding linear model run using [`BLM-py`](https://github.com/TomMaullin/BLM)) run the following command:
+
+```
+bash ./blmm_compare.sh /path/to/the/results/of/the/smaller/model/ /path/to/the/results/of/the/larger/model/ /path/to/output/directory/
+```
+
+Below is a full list of NIFTI files output after a BLMM likelihood ratio comparison test.
+
+| Filename  | Description  |
+|---|---|
+| `blmm_vox_mask` | This is the analysis mask (this will be the intersection of the masks from each analysis). |
+| `blmm_vox_Chi2.nii` | This is the map of the Likelihood Ratio Statistic. |
+| `blmm_vox_Chi2lp.nii` | This is the map of -log10 of the uncorrected P values for the likelihood ratio test. |
+
+
 ## Developer Notes
 
 ### Testing
@@ -216,6 +233,7 @@ The repository contains 4 main folders, plus 3 files at the head of the reposito
  - `README.md`: This file.
  - `blmm_config.yml`: The file the user must enter their design into.
  - `blmm_cluster.sh`: The shell scipt used to run blmm (see previous).
+ - `blmm_compare.sh`: The shell scipt used to run blmm likelihood ratio tests (see previous).
  - `lib`: Helper functions:
    - `npMatrix2d.py`: Helper functions for 2d numpy array operations.
    - `npMatrix3d.py`: Helper functions for 3d numpy array operations.
@@ -232,6 +250,7 @@ The repository contains 4 main folders, plus 3 files at the head of the reposito
    - `blmm_estimate`: Estimates the parameters beta, sigma^2 and D.
    - `blmm_inference`: Performs statistical inference on parameters and outputs results.
    - `blmm_cleanup`: Removes any leftover files from the analysis.
+   - `blmm_compare`: Performs likelihood ratio tests comparing the results of multiple analyses.
  - `test`: Test functions:
    - `Functional`: (WIP) Adapted from sister project `BLM`. Dummy analyses to check the changes to the code haven't affected the output.
    - `Unit`: Unit tests for individual parts of the code:
