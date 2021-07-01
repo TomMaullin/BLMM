@@ -125,7 +125,7 @@ while [ $batchInd -lt $nr ]
 do
 
   # R parameter estimation job for group of voxels
-  fsl_sub -j $dataGenID -l $config_outdir/lmerlog/ \
+  fsl_sub -j $setupID -l $config_outdir/lmerlog/ \
           -N lmerParamEst'_'$batchInd \
           bash $BLMM_PATH/lmer/lmer_paramEst.sh $config_outdir $nr $batchInd > /tmp/$$ && \
           lmerParamID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$lmerParamID
