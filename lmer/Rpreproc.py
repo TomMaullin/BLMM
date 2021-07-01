@@ -20,7 +20,7 @@ from lib.fileio import *
 def Rpreproc(OutDir,nvg,cv):
 
     # There should be an inputs file
-    with open(os.path.join(outDir,'inputs.yml'), 'r') as stream:
+    with open(os.path.join(OutDir,'inputs.yml'), 'r') as stream:
         inputs = yaml.load(stream,Loader=yaml.FullLoader)
 
     # -------------------------------------------------------------------------------------------------
@@ -184,6 +184,6 @@ def Rpreproc(OutDir,nvg,cv):
             Y_concat[:,vox] = np.zeros(Y_concat[:,vox].shape)
 
     # Write out Z in full to a csv file
-    pd.DataFrame(Y_concat.reshape(n,v_current)).to_csv(os.path.join(outDir,"data","Y_Rversion_" + str(cv) + ".csv"), header=None, index=None)
+    pd.DataFrame(Y_concat.reshape(n,v_current)).to_csv(os.path.join(OutDir,"data","Y_Rversion_" + str(cv) + ".csv"), header=None, index=None)
 
 

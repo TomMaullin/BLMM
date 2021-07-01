@@ -476,7 +476,7 @@ def Rcleanup(OutDir, nvg, cv):
     # -----------------------------------------------------------------------
     # Get number of observations and fixed effects
     # -----------------------------------------------------------------------
-    X = pd.io.parsers.read_csv(os.path.join(OutDir,"data","X.csv"), header=None).values
+    X = pd.io.parsers.read_csv(inputs['X'], header=None).values
     n = X.shape[0]
     p = X.shape[1]
 
