@@ -19,6 +19,10 @@ from lib.fileio import *
 # R preprocessing
 def Rpreproc(OutDir,nvg,cv):
 
+    # There should be an inputs file
+    with open(os.path.join(outDir,'inputs.yml'), 'r') as stream:
+        inputs = yaml.load(stream,Loader=yaml.FullLoader)
+
     # -------------------------------------------------------------------------------------------------
     # Get Y
     # -------------------------------------------------------------------------------------------------
@@ -44,10 +48,6 @@ def Rpreproc(OutDir,nvg,cv):
 
     # Number of voxels
     v = np.prod(dim)
-
-    # There should be an inputs file in each simulation directory
-    with open(os.path.join(outDir,'inputs.yml'), 'r') as stream:
-        inputs = yaml.load(stream,Loader=yaml.FullLoader)
 
     # -------------------------------------------------------------------------------------------------
     # Number of observations
