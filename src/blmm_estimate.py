@@ -120,9 +120,9 @@ def main(inputs, inds, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, n, nlevels, 
     # Parameter estimation
     # ----------------------------------------------------------------------  
 
-    # If running simulations we record the time used for parameter estimation
-    if 'sim' in inputs:
-        if inputs['sim']:
+    # Record the time used for parameter estimation
+    if 'time' in inputs:
+        if inputs['time']:
             t1 = time.time()
 
     if 'maxnit' in inputs:
@@ -142,9 +142,9 @@ def main(inputs, inds, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, n, nlevels, 
     if method=='pFS': 
         paramVec = pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n)
 
-    # If running simulations we record the time used for parameter estimation
-    if 'sim' in inputs:
-        if inputs['sim']:
+    # Record the time used for parameter estimation
+    if 'time' in inputs:
+        if inputs['time']:
             t2 = time.time()
 
             # Output an "average estimation time nifti"
