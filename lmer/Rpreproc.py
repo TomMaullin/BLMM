@@ -53,7 +53,7 @@ def Rpreproc(OutDir,nvg,cv):
     # Number of observations
     # -------------------------------------------------------------------------------------------------
     # Number of observations
-    X = pd.io.parsers.read_csv(os.path.join(outDir,"data","X.csv"), header=None).values
+    X = pd.io.parsers.read_csv(inputs['X'], header=None).values
     n = X.shape[0]
 
     # -------------------------------------------------------------------------------------------------
