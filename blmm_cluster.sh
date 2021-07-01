@@ -127,7 +127,7 @@ do
   # R parameter estimation job for group of voxels
   fsl_sub -j $setupID -l $config_outdir/lmerlog/ \
           -N lmerParamEst'_'$batchInd \
-          bash $BLMM_PATH/lmer/lmer_paramEst.sh $config_outdir $nr $batchInd > /tmp/$$ && \
+          bash $BLMM_PATH/lmer/lmer_paramEst.sh $BLMM_PATH $config_outdir $nr $batchInd > /tmp/$$ && \
           lmerParamID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$lmerParamID
 
   if [ "$lmerParamID" == "" ] ; then
