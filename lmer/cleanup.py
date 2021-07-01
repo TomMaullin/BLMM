@@ -484,20 +484,29 @@ def Rcleanup(OutDir, nvg, cv):
     # Get number voxels and dimensions
     # -----------------------------------------------------------------------
 
-    # nmap location 
-    nmap = os.path.join(OutDir, "data", "Y0.nii")
+    # Y volumes
+    with open(inputs['Y_files']) as a:
 
-    # Work out dim if we don't already have it
-    dim = nib.Nifti1Image.from_filename(nmap, mmap=False).shape[:3]
+        Y_files = []
+        i = 0
+        for line in a.readlines():
+
+            Y_files.append(line.replace('\n', ''))
+
+    # Load one Y for reference
+    Y0 = loadFile(Y_files[0])
+
+    # Make sure in numpy format
+    dim = np.array(Y0.shape)
 
     # Work out affine
-    affine = nib.Nifti1Image.from_filename(nmap, mmap=False).affine.copy()
+    affine = Y0.affine.copy()
 
     # Number of voxels
     v = np.prod(dim)
 
     # Delete nmap
-    del nmap
+    del Y0
     
     # -------------------------------------------------------------------
     # Voxels of interest
