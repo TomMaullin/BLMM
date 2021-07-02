@@ -25,8 +25,6 @@ library(yaml)
 # ---------------------------------------------------------------------------------------
 
 print('heeeeere')
-print(batchNo)
-print(outDir)
 
 # Read in arguments from command line
 args=(commandArgs(TRUE))
