@@ -54,7 +54,7 @@ Zdata0 <- read.csv(file = inputs$Z[[1]]$f1$design,sep=',', header=FALSE)
 nvox <- dim(all_Y)[2]
 
 # Empty array for beta estimates
-betas <- matrix(0,dim(all_Y)[2],4)
+betas <- matrix(0,dim(all_Y)[2],5)
 
 # Empty array for sigma2 estimates
 sigma2 <- matrix(0,dim(all_Y)[2],1)
@@ -163,7 +163,7 @@ for (i in 1:nvox){
     times[i,1]<-lmertime
 
     # Record fixed effects estimates
-    betas[i,1:4] <- fixef(m)
+    betas[i,1:5] <- fixef(m)
 
     # Recover D parameters
     Ds <- as.matrix(Matrix::bdiag(VarCorr(m)))
