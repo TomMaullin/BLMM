@@ -70,7 +70,7 @@ def cleanup(OutDir):
     # -----------------------------------------------------------------------
 
     # Get BLMM beta
-    beta_blmm = nib.load(os.path.join(OutDir, 'BLMM', 'blmm_vox_beta.nii')).get_data()
+    beta_blmm = nib.load(os.path.join(OutDir, 'blmm_vox_beta.nii')).get_data()
 
     # Get lmer beta
     beta_lmer = nib.load(os.path.join(OutDir, 'lmer', 'lmer_vox_beta.nii')).get_data()
@@ -121,7 +121,7 @@ def cleanup(OutDir):
     # -----------------------------------------------------------------------
 
     # Get BLMM sigma2
-    sigma2_blmm = nib.load(os.path.join(OutDir, 'BLMM', 'blmm_vox_sigma2.nii')).get_data()
+    sigma2_blmm = nib.load(os.path.join(OutDir, 'blmm_vox_sigma2.nii')).get_data()
 
     # Get lmer sigma2
     sigma2_lmer = nib.load(os.path.join(OutDir, 'lmer', 'lmer_vox_sigma2.nii')).get_data()
@@ -172,7 +172,7 @@ def cleanup(OutDir):
     # -----------------------------------------------------------------------
 
     # Get BLMM vechD
-    vechD_blmm = nib.load(os.path.join(OutDir, 'BLMM', 'blmm_vox_D.nii')).get_data()
+    vechD_blmm = nib.load(os.path.join(OutDir, 'blmm_vox_D.nii')).get_data()
 
     # Get lmer vechD
     vechD_lmer = nib.load(os.path.join(OutDir, 'lmer', 'lmer_vox_D.nii')).get_data()
