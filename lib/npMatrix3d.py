@@ -1336,13 +1336,15 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
   if reml==True:
 
     if r == 1 and nraneffs[0]==1:
-      
+
       invXtinvVX = np.linalg.pinv(XtX - ZtX.transpose((0,2,1)) @ np.einsum('ij,ijk->ijk',DinvIplusZtZD, ZtX))
       
       ZtinvVX = ZtX - np.einsum('ij,ijk->ijk', ZtZ, np.einsum('ij,ijk->ijk',DinvIplusZtZD, ZtX))
 
       bigTerm = 0.5*ZtinvVX @ invXtinvVX @ ZtinvVX.transpose((0,2,1))
-      
+
+      t3 = time.time()
+
       # For each level j we need to add a term
       for j in np.arange(nlevels[k]):
 
@@ -1351,6 +1353,19 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
         # Running dldDk sum
         dldDk = dldDk + bigTerm[np.ix_(np.arange(v),Ikj,Ikj)]
+
+      t4 = time.time()
+
+      t5 = time.time()
+      dldDk2 = dldDk2 + np.einsum('ijj->i',bigTerm)
+      t6 = time.time()
+
+      print('check')
+      print(np.allclose(dldDk,dldDk2))
+      print(t4-t3)
+      print(t6-t5)
+
+      # Should just be np sum of diag of big term
     
     elif r == 1 and nraneffs[0] > 1:
 
@@ -1384,6 +1399,8 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
         Z_kjtinvVX = Z_kjtX - Z_kjtZ_kj @ DinvIplusZtZDZtX[:,Ikj,:]
 
         dldDk = dldDk + 0.5*Z_kjtinvVX @ invXtinvVX @ Z_kjtinvVX.transpose((0,2,1))
+
+      # Can probably do np sum of diag of big term in some way
 
     else:
 
