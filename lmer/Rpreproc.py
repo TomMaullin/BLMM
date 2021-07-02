@@ -183,10 +183,6 @@ def Rpreproc(OutDir,nvg,cv):
             # with zeros
             Y_concat[:,vox] = np.zeros(Y_concat[:,vox].shape)
 
-    # If directory doesn't exist, make it
-    if not os.path.exists(os.path.join(OutDir,"data")):
-        os.mkdir(os.path.join(OutDir,"data"))
-
     # Write out Z in full to a csv file
     pd.DataFrame(Y_concat.reshape(n,v_current)).to_csv(os.path.join(OutDir,"data","Y_Rversion_" + str(cv) + ".csv"), header=None, index=None)
 

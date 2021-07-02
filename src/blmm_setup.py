@@ -332,6 +332,14 @@ def main(*args):
             with open(os.path.join(OutDir, "nvb.txt"), 'w') as f:
                 print(int(nvb), file=f)
 
+    # --------------------------------------------------------------------------------
+    # lmer directories.
+    # --------------------------------------------------------------------------------
+
+    # If directory doesn't exist, make it
+    if not os.path.exists(os.path.join(OutDir,"data")):
+        os.mkdir(os.path.join(OutDir,"data"))
+
 
     # Reset warnings
     w.resetwarnings()

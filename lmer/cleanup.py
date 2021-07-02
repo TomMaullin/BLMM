@@ -29,7 +29,7 @@ from statsmodels.stats import multitest
 def cleanup(OutDir):
 
     # -----------------------------------------------------------------------
-    # Create results directory (if we are on the first simulation)
+    # Create results directory
     # -----------------------------------------------------------------------
     # Results directory
     resDir = os.path.join(OutDir,'results')
