@@ -25,6 +25,9 @@ library(yaml)
 # ---------------------------------------------------------------------------------------
 
 print('heeeeere')
+print(batchNo)
+print(outDir)
+
 # Read in arguments from command line
 args=(commandArgs(TRUE))
 
@@ -34,7 +37,7 @@ for(i in 1:length(args)){
 }
 
 # Read in the BLMM inputs
-inputs <- yaml.load_file(paste(outDir,"inputs.yml"))
+inputs <- yaml.load_file(paste(outDir,"/inputs.yml",sep=''))
 
 # Read in the response vector
 all_Y <- read.csv(file = paste(outDir,'/data/Y_Rversion_',toString(batchNo),'.csv',sep=''),sep=',', header=FALSE)
@@ -221,7 +224,6 @@ for (i in 1:nvox){
 
 }
 
-
 # Directory for lmer results for this simulation
 lmerDir <- file.path(outDir, 'lmer')
 
@@ -229,6 +231,8 @@ lmerDir <- file.path(outDir, 'lmer')
 if (!file.exists(lmerDir)) {
   dir.create(lmerDir)
 }
+
+print(lmerDir)
 
 # Write results back to csv file
 write.csv(betas,paste(lmerDir,'/beta_',toString(batchNo),'.csv',sep=''), row.names = FALSE)
