@@ -423,6 +423,11 @@ def cleanup(OutDir):
     del p, logp, counts, fname_pval, pval_line, p_lmer, logp_lmer, counts_lmer, fname_pval_lmer, pval_lmer_line, fname_fwe, fwe_line
 
     # -----------------------------------------------------------------------
+    # Remove folders
+    # -----------------------------------------------------------------------
+    shutil.rmtree(os.path.join(OutDir, 'data'))
+
+    # -----------------------------------------------------------------------
     # Cleanup finished!
     # -----------------------------------------------------------------------
 
@@ -502,6 +507,9 @@ def Rcleanup(OutDir, nvg, cv):
     # Work out affine
     affine = Y0.affine.copy()
 
+    # Get header
+    header = Y0.header.copy()
+
     # Number of voxels
     v = np.prod(dim)
 
@@ -534,7 +542,7 @@ def Rcleanup(OutDir, nvg, cv):
     for param in np.arange(p):
 
         # Add back to a NIFTI file
-        addBlockToNifti(os.path.join(OutDir,"lmer","lmer_vox_beta.nii"), beta_current[:,param], inds_cv, volInd=param,dim=(*dim,int(p)))
+        addBlockToNifti(os.path.join(OutDir,"lmer","lmer_vox_beta.nii"), beta_current[:,param], inds_cv, volInd=param,dim=(*dim,int(p)),aff=affine,hdr=header)
 
     # Remove file
     os.remove(os.path.join(OutDir, 'lmer', 'beta_' + str(cv) + '.csv'))
@@ -547,7 +555,7 @@ def Rcleanup(OutDir, nvg, cv):
     sigma2_current = pd.io.parsers.read_csv(os.path.join(OutDir, 'lmer', 'sigma2_' + str(cv) + '.csv')).values
 
     # Add back to a NIFTI file
-    addBlockToNifti(os.path.join(OutDir,"lmer","lmer_vox_sigma2.nii"), sigma2_current, inds_cv, volInd=0,dim=(*dim,1))
+    addBlockToNifti(os.path.join(OutDir,"lmer","lmer_vox_sigma2.nii"), sigma2_current, inds_cv, volInd=0,dim=(*dim,1),aff=affine,hdr=header)
 
     # Remove file
     os.remove(os.path.join(OutDir, 'lmer', 'sigma2_' + str(cv) + '.csv'))
@@ -563,7 +571,7 @@ def Rcleanup(OutDir, nvg, cv):
     for param in np.arange(ncov):
 
         # Add back to a NIFTI file
-        addBlockToNifti(os.path.join(OutDir,"lmer","lmer_vox_D.nii"), vechD_current[:,param], inds_cv, volInd=param,dim=(*dim,int(ncov)))
+        addBlockToNifti(os.path.join(OutDir,"lmer","lmer_vox_D.nii"), vechD_current[:,param], inds_cv, volInd=param,dim=(*dim,int(ncov)),aff=affine,hdr=header)
 
     # Remove file
     os.remove(os.path.join(OutDir, 'lmer', 'vechD_' + str(cv) + '.csv'))
@@ -576,7 +584,7 @@ def Rcleanup(OutDir, nvg, cv):
     llh_current = pd.io.parsers.read_csv(os.path.join(OutDir, 'lmer', 'llh_' + str(cv) + '.csv')).values
 
     # Add back to a NIFTI file
-    addBlockToNifti(os.path.join(OutDir,"lmer","lmer_vox_llh.nii"), llh_current, inds_cv, volInd=0,dim=(*dim,1))
+    addBlockToNifti(os.path.join(OutDir,"lmer","lmer_vox_llh.nii"), llh_current, inds_cv, volInd=0,dim=(*dim,1),aff=affine,hdr=header)
 
     # Remove file
     os.remove(os.path.join(OutDir, 'lmer', 'llh_' + str(cv) + '.csv'))
@@ -589,7 +597,7 @@ def Rcleanup(OutDir, nvg, cv):
     Tstat_current = pd.io.parsers.read_csv(os.path.join(OutDir, 'lmer', 'Tstat_' + str(cv) + '.csv')).values
 
     # Add back to a NIFTI file
-    addBlockToNifti(os.path.join(OutDir,"lmer","lmer_vox_conT.nii"), Tstat_current, inds_cv, volInd=0,dim=(*dim,1))
+    addBlockToNifti(os.path.join(OutDir,"lmer","lmer_vox_conT.nii"), Tstat_current, inds_cv, volInd=0,dim=(*dim,1),aff=affine,hdr=header)
 
     # Remove file
     os.remove(os.path.join(OutDir, 'lmer', 'Tstat_' + str(cv) + '.csv'))
@@ -605,7 +613,7 @@ def Rcleanup(OutDir, nvg, cv):
     Pval_current[Pval_current!=0]=-np.log10(Pval_current[Pval_current!=0])
 
     # Add back to a NIFTI file
-    addBlockToNifti(os.path.join(OutDir,"lmer","lmer_vox_conTlp.nii"), Pval_current, inds_cv, volInd=0,dim=(*dim,1))
+    addBlockToNifti(os.path.join(OutDir,"lmer","lmer_vox_conTlp.nii"), Pval_current, inds_cv, volInd=0,dim=(*dim,1),aff=affine,hdr=header)
 
     # Remove file
     os.remove(os.path.join(OutDir, 'lmer', 'Pval_' + str(cv) + '.csv'))
@@ -618,7 +626,7 @@ def Rcleanup(OutDir, nvg, cv):
     times_current = pd.io.parsers.read_csv(os.path.join(OutDir, 'lmer', 'times_' + str(cv) + '.csv')).values
 
     # Add back to a NIFTI file
-    addBlockToNifti(os.path.join(OutDir,"lmer","lmer_vox_times.nii"), times_current, inds_cv, volInd=0,dim=(*dim,1))
+    addBlockToNifti(os.path.join(OutDir,"lmer","lmer_vox_times.nii"), times_current, inds_cv, volInd=0,dim=(*dim,1),aff=affine,hdr=header)
 
     # Remove file
     os.remove(os.path.join(OutDir, 'lmer', 'times_' + str(cv) + '.csv'))
