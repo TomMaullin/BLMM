@@ -54,7 +54,7 @@ Zdata0 <- read.csv(file = inputs$Z[[1]]$f1$design,sep=',', header=FALSE)
 nvox <- dim(all_Y)[2]
 
 # Empty array for beta estimates
-betas <- matrix(0,dim(all_Y)[2],5)
+betas <- matrix(0,dim(all_Y)[2],6)
 
 # Empty array for sigma2 estimates
 sigma2 <- matrix(0,dim(all_Y)[2],1)
@@ -102,6 +102,7 @@ for (i in 1:nvox){
     x3 <- as.matrix(X[,3])[y!=0]
     x4 <- as.matrix(X[,4])[y!=0]
     x5 <- as.matrix(X[,5])[y!=0]
+    x6 <- as.matrix(X[,6])[y!=0]
 
     if (dim(Zdata0)[2]==2){
 
@@ -128,25 +129,25 @@ for (i in 1:nvox){
     if (dim(Zdata0)[2]==2){
 
         # Run the model
-        m <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + x5 + (0 + z01 + z02|Zf0), REML=TRUE)
+        m <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + x5 + x6 + (0 + z01 + z02|Zf0), REML=TRUE)
         
         # Timing function with lme4
         lmer <- lme4::lmer
 
         # Get the function which is optimized
-        devfun <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + x5 + (0 + z01 + z02|Zf0), REML=TRUE, devFunOnly = TRUE)
+        devfun <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + x5 + x6 + (0 + z01 + z02|Zf0), REML=TRUE, devFunOnly = TRUE)
 
 
     } else if (dim(Zdata0)[2]==1){
 
         # Run the model
-        m <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + x5 + (0 + z01|Zf0), REML=TRUE)
+        m <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + x5 + x6 + (0 + z01|Zf0), REML=TRUE)
         
         # Timing function with lme4
         lmer <- lme4::lmer
 
         # Get the function which is optimized
-        devfun <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + x5 + (0 + z01|Zf0), REML=TRUE, devFunOnly = TRUE)
+        devfun <- lmer(y ~ 0 + x1 + x2 + x3 + x4 + x5 + x6 + (0 + z01|Zf0), REML=TRUE, devFunOnly = TRUE)
 
     }
 
@@ -163,7 +164,7 @@ for (i in 1:nvox){
     times[i,1]<-lmertime
 
     # Record fixed effects estimates
-    betas[i,1:5] <- fixef(m)
+    betas[i,1:6] <- fixef(m)
 
     # Recover D parameters
     Ds <- as.matrix(Matrix::bdiag(VarCorr(m)))
