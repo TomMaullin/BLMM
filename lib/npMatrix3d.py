@@ -1398,9 +1398,9 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
       A = ZtinvVX
       Bt = invXtinvVX @ ZtinvVX.transpose((0,2,1))
 
-      vecmAt = block2stacked2D(A.transpose((0,2,1)),[p,q0])
+      vecmAt = block2stacked3D(A.transpose((0,2,1)),[p,q0])
 
-      vecmBt = block2stacked2D(Bt,[p,q0])
+      vecmBt = block2stacked3D(Bt,[p,q0])
 
       dldDk2 = dldDk2 + vecmAt.transpose((0,2,1)) @ vecmBt
 
