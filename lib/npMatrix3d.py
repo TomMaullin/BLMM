@@ -1355,13 +1355,15 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
       q0 = nraneffs[0]
       p = ZtinvVX.shape[-1]
 
+      # For ease, label A=Z'V^{-1}X and B=Z'V^{-1}XD(I+Z'ZD)^{-1}Z'X 
       A = ZtinvVX
       Bt = invXtinvVX @ ZtinvVX.transpose((0,2,1))
 
+      # Peform vecm operation
       vecmAt = block2stacked3D(A.transpose((0,2,1)),[p,q0])
-
       vecmBt = block2stacked3D(Bt,[p,q0])
 
+      # Update gradient
       dldDk = dldDk + 0.5*vecmAt.transpose((0,2,1)) @ vecmBt
 
       # newt2 = time.time()
