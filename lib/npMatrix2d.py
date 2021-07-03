@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.sparse
 from scipy import stats
+import time
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
@@ -791,6 +792,8 @@ def ssr2D(YtX, YtY, XtX, beta):
 # ============================================================================
 def fac_indices2D(k, nlevels, nraneffs):
   
+  t1 = time.time()
+
   # Get indices for all factors
   allInds = np.concatenate((np.array([0]),np.cumsum(nlevels*nraneffs)))
 
@@ -800,7 +803,12 @@ def fac_indices2D(k, nlevels, nraneffs):
   # Work out the last index
   end = allInds[k+1]
 
-  return(np.arange(start,end))
+  tmp = np.arange(start, end)
+  t2 = time.time()
+
+  print('fac_indices2D time: ', t2-t1)
+  
+  return(tmp)
 
 # ============================================================================
 #
@@ -835,14 +843,21 @@ def fac_indices2D(k, nlevels, nraneffs):
 #
 # ============================================================================
 def faclev_indices2D(k, j, nlevels, nraneffs):
+
+  t1 = time.time()
   
   # Work out the starting point of the indices
   start = np.concatenate((np.array([0]), np.cumsum(nlevels*nraneffs)))[k] + nraneffs[k]*j
   
   # work out the end point of the indices
   end = start + nraneffs[k]
+
+  tmp = np.arange(start, end)
+  t2 = time.time()
+
+  print('faclev_indices2D time: ', t2-t1)
   
-  return(np.arange(start, end))
+  return(tmp)
 
 
 # ============================================================================
