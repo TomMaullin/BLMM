@@ -1340,55 +1340,13 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
   # Work out dldDk
   dldDk = 0.5*(forceSym3D(TuuTSum - RkSum))
-  dldDk2 = np.array(dldDk)
 
   if reml==True:
 
     if r == 1 and nraneffs[0]==1:
 
-      tmpt1 = time.time()
       invXtinvVX = np.linalg.pinv(XtX - ZtX.transpose((0,2,1)) @ np.einsum('ij,ijk->ijk',DinvIplusZtZD, ZtX))
-      tmpt2 = time.time()
-
-      print('new marker 1: ', tmpt2-tmpt1)
-
-      tmpt1 = time.time()
       ZtinvVX = ZtX - np.einsum('ij,ijk->ijk', ZtZ, np.einsum('ij,ijk->ijk',DinvIplusZtZD, ZtX))
-      tmpt2 = time.time()
-
-      print('new marker 2: ', tmpt2-tmpt1)
-
-      tmpt1 = time.time()
-      bigTerm = 0.5*ZtinvVX @ invXtinvVX @ ZtinvVX.transpose((0,2,1))
-      # tmpt2 = time.time()
-
-      # print('new marker 3: ', tmpt2-tmpt1)
-
-      # #t3 = time.time()
-
-      # tmpt1 = time.time()
-      # For each level j we need to add a term
-      for j in np.arange(nlevels[k]):
-
-        # Get the indices for the kth factor jth level
-        Ikj = faclev_indices2D(k, j, nlevels, nraneffs)
-
-        # Running dldDk sum
-        dldDk = dldDk + bigTerm[np.ix_(np.arange(v),Ikj,Ikj)]
-      tmpt2 = time.time()
-
-      print('new marker 4: ', tmpt2-tmpt1)
-
-      # t4 = time.time()
-
-      # t5 = time.time()
-      # print('bigTerm shape: ', bigTerm.shape)
-      # dldDk2 = dldDk2 + np.einsum('ijj->i',bigTerm)
-      # t6 = time.time()
-
-
-      # ==================================================================
-      # WIP AREA
 
       newt1 = time.time()
 
@@ -1402,37 +1360,32 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
       vecmBt = block2stacked3D(Bt,[p,q0])
 
-      dldDk2 = dldDk2 + 0.5*vecmAt.transpose((0,2,1)) @ vecmBt
+      dldDk = dldDk + 0.5*vecmAt.transpose((0,2,1)) @ vecmBt
 
       newt2 = time.time()
 
       print('new time: ', newt2-newt1)
-
-      # ==================================================================
-
-
-
-
-
-      print('check')
-      print(np.allclose(dldDk,dldDk2))
-      print(np.max(np.abs(dldDk-dldDk2)))
-      print(np.mean(np.abs(dldDk-dldDk2)))
-      # print(t4-t3)
-      # print(t6-t5)
-
-      # Should just be np sum of diag of big term
     
     elif r == 1 and nraneffs[0] > 1:
 
+
+      tmpt1 = time.time()
       # Reshape DinvIplusZtZD appropriately
       DinvIplusZtZDZtX = DinvIplusZtZD.transpose(0,2,1).reshape(sigma2.shape[0],l0,q0,q0)
+      tmpt2 = time.time()
 
+      print('new marker 1: ', tmpt2-tmpt1)
+
+
+      tmpt1 = time.time()
       # Number of fixed effects parameters, p
       p = XtX.shape[1]
 
       # Multiply by ZtX
       DinvIplusZtZDZtX = DinvIplusZtZDZtX @ ZtX.reshape(ZtX.shape[0],l0,q0,p)    
+      tmpt2 = time.time()
+
+      print('new marker 2: ', tmpt2-tmpt1)
 
       # Reshape appropriately
       DinvIplusZtZDZtX = DinvIplusZtZDZtX.reshape(sigma2.shape[0],q0*l0,p)
