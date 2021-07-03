@@ -1415,7 +1415,7 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
 
       print('check')
-      print(np.allclose(dldDk-dldDk2))
+      print(np.allclose(dldDk,dldDk2))
       print(np.max(np.abs(dldDk-dldDk2)))
       print(np.mean(np.abs(dldDk-dldDk2)))
       # print(t4-t3)
