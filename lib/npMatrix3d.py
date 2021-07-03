@@ -1269,6 +1269,9 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
         # Add together
         ZtZmat = ZtZmat + ZtZterm
 
+  t2 = time.time()
+  print('checkpoint 1: ', t2-t1)
+
   # Get the indices for the factors 
   Ik = fac_indices2D(k, nlevels, nraneffs)
 
@@ -1300,6 +1303,9 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
     # Work out the second term in TT'
     secondTerm = sumAijBijt3D(ZtZ[:,Ik,:] @ DinvIplusZtZD, ZtZ[:,Ik,:], pttn, pttn)
 
+  t3 = time.time()
+  print('checkpoint 2: ', t3-t2)
+
   # Obtain RkSum=sum (TkjTkj')
   RkSum = ZtZmat - secondTerm
 
@@ -1329,9 +1335,12 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
   # Obtain Sum Tu(Tu)'
   TuuTSum = np.einsum('i,ijk->ijk',1/sigma2,sumAijBijt3D(TuSig, TuSig, pttn, pttn))
 
+  t4 = time.time()
+  print('checkpoint 3: ', t4-t3)
+
   # Work out dldDk
   dldDk = 0.5*(forceSym3D(TuuTSum - RkSum))
-  dldDk2 = 0.5*(forceSym3D(TuuTSum - RkSum))
+  dldDk2 = np.array(dldDk)
 
   if reml==True:
 
@@ -1343,7 +1352,7 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
       bigTerm = 0.5*ZtinvVX @ invXtinvVX @ ZtinvVX.transpose((0,2,1))
 
-      t3 = time.time()
+      #t3 = time.time()
 
       # For each level j we need to add a term
       for j in np.arange(nlevels[k]):
@@ -1354,16 +1363,16 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
         # Running dldDk sum
         dldDk = dldDk + bigTerm[np.ix_(np.arange(v),Ikj,Ikj)]
 
-      t4 = time.time()
+      # t4 = time.time()
 
-      t5 = time.time()
+      # t5 = time.time()
       dldDk2 = dldDk2 + np.einsum('ijj->i',bigTerm)
-      t6 = time.time()
+      # t6 = time.time()
 
       print('check')
-      print(np.allclose(dldDk,dldDk2))
-      print(t4-t3)
-      print(t6-t5)
+      print(np.max(np.abs(dldDk-dldDk2)))
+      # print(t4-t3)
+      # print(t6-t5)
 
       # Should just be np sum of diag of big term
     
@@ -1419,10 +1428,12 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
         dldDk = dldDk + 0.5*Z_kjtinvVX @ invXtinvVX @ Z_kjtinvVX.transpose((0,2,1))
 
-  # time
-  t2 = time.time()
+  # 
 
-  print('get_dldDk3D time: ', t2-t1)
+  t5 = time.time()
+  print('checkpoint 5: ', t5-t4)
+
+  print('get_dldDk3D time: ', t5-t1)
 
   # Store it in the dictionary
   return(dldDk, ZtZmat)
