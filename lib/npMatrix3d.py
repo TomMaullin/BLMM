@@ -1347,7 +1347,7 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
       DinvIplusZtZDZtX = np.einsum('ij,ijk->ijk',DinvIplusZtZD, ZtX)
 
-      invXtinvVX = np.linalg.pinv(XtX - (ZtX.transpose((0,2,1)) @ DinvIplusZtZDZtX))
+      # USE SOLVE INSTEAD?
       ZtinvVX = ZtX - np.einsum('ij,ijk->ijk', ZtZ, DinvIplusZtZDZtX)
 
       # newt1 = time.time()
@@ -1357,7 +1357,21 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
       # For ease, label A=Z'V^{-1}X and B=Z'V^{-1}XD(I+Z'ZD)^{-1}Z'X 
       A = ZtinvVX
+
+      t1 = time.time()
+      invXtinvVX = np.linalg.pinv(XtX - (ZtX.transpose((0,2,1)) @ DinvIplusZtZDZtX))
       Bt = invXtinvVX @ ZtinvVX.transpose((0,2,1))
+      t2 = time.time()
+      print('pinv time: ', t2-t1)
+
+      t1 = time.time()
+      XtinvVX = XtX - (ZtX.transpose((0,2,1)) @ DinvIplusZtZDZtX)
+      Bt2 = np.linalg.lstsq(XtinvVX, ZtinvVX.transpose((0,2,1)))
+      t2 = time.time()
+      print('lstsq time: ', t2-t1)
+
+      print('check')
+      print(np.allclose(Bt,Bt2))
 
       # Peform vecm operation
       vecmAt = block2stacked3D(A.transpose((0,2,1)),[p,q0])

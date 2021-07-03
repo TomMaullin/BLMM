@@ -180,7 +180,7 @@ def main(ipath, vb):
     # practice). We allow slightly more for the one random factor model
     # since we do not construct any additional q by q matrices.
     if  r == 1:
-        nvb = MAXMEM/(10*(q**2))#MAXMEM/(10*4*(q**2))
+        nvb = MAXMEM/(10*4*(q**2))
     else:
         nvb = MAXMEM/(10*8*(q**2))
     
