@@ -1346,14 +1346,27 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
     if r == 1 and nraneffs[0]==1:
 
+      tmpt1 = time.time()
       invXtinvVX = np.linalg.pinv(XtX - ZtX.transpose((0,2,1)) @ np.einsum('ij,ijk->ijk',DinvIplusZtZD, ZtX))
-      
-      ZtinvVX = ZtX - np.einsum('ij,ijk->ijk', ZtZ, np.einsum('ij,ijk->ijk',DinvIplusZtZD, ZtX))
+      tmpt2 = time.time()
 
+      print('new marker 1: ', tmpt2-tmpt1)
+
+      tmpt1 = time.time()
+      ZtinvVX = ZtX - np.einsum('ij,ijk->ijk', ZtZ, np.einsum('ij,ijk->ijk',DinvIplusZtZD, ZtX))
+      tmpt2 = time.time()
+
+      print('new marker 2: ', tmpt2-tmpt1)
+
+      tmpt1 = time.time()
       bigTerm = 0.5*ZtinvVX @ invXtinvVX @ ZtinvVX.transpose((0,2,1))
+      tmpt2 = time.time()
+
+      print('new marker 3: ', tmpt2-tmpt1)
 
       #t3 = time.time()
 
+      tmpt1 = time.time()
       # For each level j we need to add a term
       for j in np.arange(nlevels[k]):
 
@@ -1362,15 +1375,20 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
         # Running dldDk sum
         dldDk = dldDk + bigTerm[np.ix_(np.arange(v),Ikj,Ikj)]
+      tmpt2 = time.time()
+
+      print('new marker 4: ', tmpt2-tmpt1)
 
       # t4 = time.time()
 
       # t5 = time.time()
+      print('bigTerm shape: ', bigTerm.shape)
       dldDk2 = dldDk2 + np.einsum('ijj->i',bigTerm)
       # t6 = time.time()
 
       print('check')
       print(np.max(np.abs(dldDk-dldDk2)))
+      print(np.mean(np.abs(dldDk-dldDk2)))
       # print(t4-t3)
       # print(t6-t5)
 
@@ -1431,7 +1449,7 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
   # 
 
   t5 = time.time()
-  print('checkpoint 5: ', t5-t4)
+  print('checkpoint 4: ', t5-t4)
 
   print('get_dldDk3D time: ', t5-t1)
 
