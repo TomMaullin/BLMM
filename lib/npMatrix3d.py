@@ -1402,7 +1402,7 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
       vecmBt = block2stacked3D(Bt,[p,q0])
 
-      dldDk2 = dldDk2 + vecmAt.transpose((0,2,1)) @ vecmBt
+      dldDk2 = dldDk2 + 0.5*vecmAt.transpose((0,2,1)) @ vecmBt
 
       newt2 = time.time()
 
