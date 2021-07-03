@@ -1360,13 +1360,13 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
       tmpt1 = time.time()
       bigTerm = 0.5*ZtinvVX @ invXtinvVX @ ZtinvVX.transpose((0,2,1))
-      tmpt2 = time.time()
+      # tmpt2 = time.time()
 
-      print('new marker 3: ', tmpt2-tmpt1)
+      # print('new marker 3: ', tmpt2-tmpt1)
 
-      #t3 = time.time()
+      # #t3 = time.time()
 
-      tmpt1 = time.time()
+      # tmpt1 = time.time()
       # For each level j we need to add a term
       for j in np.arange(nlevels[k]):
 
@@ -1382,11 +1382,40 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
       # t4 = time.time()
 
       # t5 = time.time()
-      print('bigTerm shape: ', bigTerm.shape)
-      dldDk2 = dldDk2 + np.einsum('ijj->i',bigTerm)
+      # print('bigTerm shape: ', bigTerm.shape)
+      # dldDk2 = dldDk2 + np.einsum('ijj->i',bigTerm)
       # t6 = time.time()
 
+
+      # ==================================================================
+      # WIP AREA
+
+      newt1 = time.time()
+
+      q0 = nraneffs[0]
+      p = ZtinvVX.shape[-1]
+
+      A = ZtinvVX
+      Bt = invXtinvVX @ ZtinvVX.transpose((0,2,1))
+
+      vecmAt = block2stacked2D(A.transpose((0,2,1)),[p,q0])
+
+      vecmBt = block2stacked2D(Bt,[p,q0])
+
+      dldDk2 = dldDk2 + vecmAt.transpose((0,2,1)) @ vecmBt
+
+      newt2 = time.time()
+
+      print('new time: ', newt2-newt1)
+
+      # ==================================================================
+
+
+
+
+
       print('check')
+      print(np.allclose(dldDk-dldDk2))
       print(np.max(np.abs(dldDk-dldDk2)))
       print(np.mean(np.abs(dldDk-dldDk2)))
       # print(t4-t3)
