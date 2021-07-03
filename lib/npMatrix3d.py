@@ -1387,6 +1387,9 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
       print('new marker 2: ', tmpt2-tmpt1)
 
+
+
+      tmpt1 = time.time()
       # Reshape appropriately
       DinvIplusZtZDZtX = DinvIplusZtZDZtX.reshape(sigma2.shape[0],q0*l0,p)
 
@@ -1395,6 +1398,11 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
       # Get (X'V^{-1}X)^{-1}
       invXtinvVX = np.linalg.pinv(XtinvVX)
+      tmpt2 = time.time()
+
+      print('new marker 3: ', tmpt2-tmpt1)
+
+      tmpt1 = time.time()
       
       # For each level j we need to add a term
       for j in np.arange(nlevels[k]):
@@ -1408,6 +1416,10 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
         Z_kjtinvVX = Z_kjtX - Z_kjtZ_kj @ DinvIplusZtZDZtX[:,Ikj,:]
 
         dldDk = dldDk + 0.5*Z_kjtinvVX @ invXtinvVX @ Z_kjtinvVX.transpose((0,2,1))
+
+      tmpt2 = time.time()
+
+      print('new marker 4: ', tmpt2-tmpt1)
 
       # Can probably do np sum of diag of big term in some way
 
