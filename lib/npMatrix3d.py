@@ -1365,10 +1365,13 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
       print('pinv time: ', t2-t1)
 
       t1 = time.time()
-      XtinvVX = XtX - (ZtX.transpose((0,2,1)) @ DinvIplusZtZDZtX)
-      Bt2 = np.linalg.lstsq(XtinvVX, ZtinvVX.transpose((0,2,1)))
+      try:  
+        invXtinvVX = np.linalg.inv(XtX - (ZtX.transpose((0,2,1)) @ DinvIplusZtZDZtX))
+      except:
+        invXtinvVX = np.linalg.pinv(XtX - (ZtX.transpose((0,2,1)) @ DinvIplusZtZDZtX))
+      Bt2 = invXtinvVX @ ZtinvVX.transpose((0,2,1))
       t2 = time.time()
-      print('lstsq time: ', t2-t1)
+      print('inv time: ', t2-t1)
 
       print('check')
       print(np.allclose(Bt,Bt2))
