@@ -1358,32 +1358,46 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
       # For ease, label A=Z'V^{-1}X and B=Z'V^{-1}XD(I+Z'ZD)^{-1}Z'X 
       A = ZtinvVX
 
-      t1 = time.time()
-      invXtinvVX = np.linalg.pinv(XtX - (ZtX.transpose((0,2,1)) @ DinvIplusZtZDZtX))
-      Bt = invXtinvVX @ ZtinvVX.transpose((0,2,1))
-      t2 = time.time()
-      print('pinv time: ', t2-t1)
+      # t1 = time.time()
 
-      t1 = time.time()
-
-      # This is incredibly faster if it can be inverted. In general, as everything
-      # has been enforced positive definite multiple times throughout the code, this step
-      # rarely activates the except clause.
-      if q > 5*p:
-        try:  
-          Bt2 = np.linalg.solve(XtX - (ZtX.transpose((0,2,1)) @ DinvIplusZtZDZtX), ZtinvVX.transpose((0,2,1)))
-        except:
-          invXtinvVX = np.linalg.pinv(XtX - (ZtX.transpose((0,2,1)) @ DinvIplusZtZDZtX))
-          Bt2 = invXtinvVX @ ZtinvVX.transpose((0,2,1))
-      else:
+      # In theory the matrix in this inversion should be positive definite*.
+      # -------------------------------------------------------------------
+      # *Why? 
+      #  Well the matrix is:
+      #
+      #       X'V^{-1}X = X'X - X'ZD(I+Z'ZD)^{-1}Z'X 
+      #        (By the dimension reduction formula)
+      #
+      # But V=I+ZDZ' and therefore for any vector a;
+      #
+      #        a'Va = a'a + (Z'a)'D(Z'a)
+      #
+      # Trivially a'a>0 and, as D is projected to be nnd at the end of each
+      # iteration, we have that (Z'a)'D(Z'a) >= 0. So a'Va > 0. Therefore,
+      # V must be pd and so must V^{-1}.
+      #
+      # Now, as we removed non-pd X'X during results, a'X'Xa = (Xa)'Xa > 0
+      # for any non-zero a. But this means that Xa cannot equal zero. So,
+      # as Xa is non-zero for any non-zero a and V^{-1} is pd, we have that:
+      # 
+      #         a'X'V^{-1}Xa = (Xa)'V^{-1}Xa > 0
+      # 
+      # for any non-zero a and therefore X'V^{-1}X is pd.
+      # -------------------------------------------------------------------
+      # That said, theory isn't practice, so we have a try-except clause 
+      # here just in case.
+      # -------------------------------------------------------------------
+      try:  
+        Bt2 = np.linalg.solve(XtX - (ZtX.transpose((0,2,1)) @ DinvIplusZtZDZtX), ZtinvVX.transpose((0,2,1)))
+      except:
         invXtinvVX = np.linalg.pinv(XtX - (ZtX.transpose((0,2,1)) @ DinvIplusZtZDZtX))
         Bt2 = invXtinvVX @ ZtinvVX.transpose((0,2,1))
 
-      t2 = time.time()
-      print('inv time: ', t2-t1)
+      # t2 = time.time()
+      # print('inv time: ', t2-t1)
 
-      print('check')
-      print(np.allclose(Bt,Bt2))
+      # print('check')
+      # print(np.allclose(Bt,Bt2))
 
       # Peform vecm operation
       vecmAt = block2stacked3D(A.transpose((0,2,1)),[p,q0])
