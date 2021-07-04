@@ -1365,11 +1365,20 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
       print('pinv time: ', t2-t1)
 
       t1 = time.time()
-      try:  
-        invXtinvVX = np.linalg.inv(XtX - (ZtX.transpose((0,2,1)) @ DinvIplusZtZDZtX))
-      except:
+
+      # This is incredibly faster if it can be inverted. In general, as everything
+      # has been enforced positive definite multiple times throughout the code, this step
+      # rarely activates the except clause.
+      if q > 5*p:
+        try:  
+          Bt2 = np.linalg.solve(XtX - (ZtX.transpose((0,2,1)) @ DinvIplusZtZDZtX), ZtinvVX.transpose((0,2,1)))
+        except:
+          invXtinvVX = np.linalg.pinv(XtX - (ZtX.transpose((0,2,1)) @ DinvIplusZtZDZtX))
+          Bt2 = invXtinvVX @ ZtinvVX.transpose((0,2,1))
+      else:
         invXtinvVX = np.linalg.pinv(XtX - (ZtX.transpose((0,2,1)) @ DinvIplusZtZDZtX))
-      Bt2 = invXtinvVX @ ZtinvVX.transpose((0,2,1))
+        Bt2 = invXtinvVX @ ZtinvVX.transpose((0,2,1))
+
       t2 = time.time()
       print('inv time: ', t2-t1)
 
