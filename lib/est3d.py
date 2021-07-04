@@ -1598,7 +1598,10 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         XtiVY = XtY - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtY
 
         # Calculate beta
+        t1 = time.time()
         beta = np.linalg.solve(XtiVX, XtiVY)
+        t2 = time.time()
+        print('beta update time: ', t2-t1)
 
         # Update sigma^2
         ete = ssr3D(YtX, YtY, XtX, beta)
@@ -1671,7 +1674,10 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             #-----------------------------------------------------------------------
             # Work out update amount
             #-----------------------------------------------------------------------
+            t1 = time.time()
             update_p = np.linalg.solve(forceSym3D(covdldDk1dDk2), mat2vec3D(dldDk))
+            t2 = time.time()
+            print('final update time: ', t2-t1)
             
             # Multiply by stepsize
             update_p = np.einsum('i,ijk->ijk',lam, update_p)
