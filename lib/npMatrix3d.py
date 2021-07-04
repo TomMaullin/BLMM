@@ -38,8 +38,8 @@ import time
 # ============================================================================
 def kron3D(A,B):
 
-  # # time
-  # t1 = time.time()
+  # time
+  t1 = time.time()
 
   i1,j,k = A.shape
   i2,l,m = B.shape
@@ -51,10 +51,10 @@ def kron3D(A,B):
   else:
     raise ValueError('Incompatible dimensions in kron3D.')
 
-  # # time
-  # t2 = time.time()
+  # time
+  t2 = time.time()
 
-  # print('kron3d time: ', t2-t1)
+  print('kron3d time: ', t2-t1)
 
   # Return
   return(tmp)
@@ -70,8 +70,8 @@ def kron3D(A,B):
 # ============================================================================
 def kron4D(A,B):
 
-  # # time
-  # t1 = time.time()
+  # time
+  t1 = time.time()
 
   i1,i3,j,k = A.shape
   i2,i4,l,m = B.shape
@@ -83,10 +83,10 @@ def kron4D(A,B):
   else:
     raise ValueError('Incompatible dimensions in kron3D.')
 
-  # # time
-  # t2 = time.time()
+  # time
+  t2 = time.time()
 
-  # print('kron4d time: ', t2-t1)
+  print('kron4d time: ', t2-t1)
 
   # Return
   return(tmp)
@@ -100,16 +100,16 @@ def kron4D(A,B):
 # ============================================================================
 def mat2vec3D(matrix):
 
-  # # time
-  # t1 = time.time()
+  # time
+  t1 = time.time()
   
   #Return vectorised matrix
   tmp=matrix.transpose(0,2,1).reshape(matrix.shape[0],matrix.shape[1]*matrix.shape[2],1)
 
-  # # time
-  # t2 = time.time()
+  # time
+  t2 = time.time()
 
-  # print('mat2vec3D time: ', t2-t1)
+  print('mat2vec3D time: ', t2-t1)
 
   # Return
   return(tmp)
@@ -124,8 +124,8 @@ def mat2vec3D(matrix):
 # ============================================================================
 def mat2vech3D(matrix):
   
-  # # time
-  # t1 = time.time()
+  # time
+  t1 = time.time()
 
   # Number of voxels, v
   v = matrix.shape[0]
@@ -146,10 +146,10 @@ def mat2vech3D(matrix):
   # Return vectorised half-matrix
   tmp=matrix[:,rowinds[perm],colinds[perm]].reshape((v,nc,1))
 
-  # # time
-  # t2 = time.time()
+  # time
+  t2 = time.time()
 
-  # print('mat2vech3D time: ', t2-t1)
+  print('mat2vech3D time: ', t2-t1)
   
   # Return
   return(tmp)
@@ -163,8 +163,8 @@ def mat2vech3D(matrix):
 # ============================================================================
 def vech2mat3D(vech):
 
-  # # time
-  # t1 = time.time()
+  # time
+  t1 = time.time()
   
   # Number of voxels
   v = vech.shape[0]
@@ -189,10 +189,10 @@ def vech2mat3D(vech):
   # Assign values to upper half
   matrix[:,colinds[perm],rowinds[perm]] = vech.reshape(vech.shape[0],vech.shape[1])
   
-  # # time
-  # t2 = time.time()
+  # time
+  t2 = time.time()
 
-  # print('vech2mat3D time: ', t2-t1)
+  print('vech2mat3D time: ', t2-t1)
 
   # Return vectorised half-matrix
   return(matrix)
@@ -206,16 +206,16 @@ def vech2mat3D(vech):
 # ============================================================================
 def vec2mat3D(vec):
 
-  # # time
-  # t1 = time.time()
+  # time
+  t1 = time.time()
   
   # Return matrix
   tmp=vec.reshape(vec.shape[0], np.int64(np.sqrt(vec.shape[1])),np.int64(np.sqrt(vec.shape[1]))).transpose(0,2,1)
 
-  # # time
-  # t2 = time.time()
+  # time
+  t2 = time.time()
 
-  # print('vec2mat3D time: ', t2-t1)
+  print('vec2mat3D time: ', t2-t1)
 
   return(tmp)
 
@@ -229,16 +229,16 @@ def vec2mat3D(vec):
 # UNKNOWN REASONS
 def forceSym3D(x):
 
-  # # time
-  # t1 = time.time()
+  # time
+  t1 = time.time()
   
   # Force it to be symmetric
   tmp=(x+x.transpose((0,2,1)))/2
 
-  # # time
-  # t2 = time.time()
+  # time
+  t2 = time.time()
 
-  # print('forceSym3D time: ', t2-t1)
+  print('forceSym3D time: ', t2-t1)
 
   return(tmp)
 
@@ -272,16 +272,16 @@ def forceSym3D(x):
 # ============================================================================
 def ssr3D(YtX, YtY, XtX, beta):
 
-  # # time
-  # t1 = time.time()
+  # time
+  t1 = time.time()
   
   # Return the sum of squared residuals
   tmp=YtY - 2*YtX @ beta + beta.transpose((0,2,1)) @ XtX @ beta
 
-  # # time
-  # t2 = time.time()
+  # time
+  t2 = time.time()
 
-  # print('ssr3D time: ', t2-t1)
+  print('ssr3D time: ', t2-t1)
 
   return(tmp)
 
@@ -294,8 +294,8 @@ def ssr3D(YtX, YtY, XtX, beta):
 # ============================================================================
 def getDfromDict3D(Ddict, nraneffs, nlevels):
 
-  # # time
-  # t1 = time.time()
+  # time
+  t1 = time.time()
   
   # Get number of voxels
   v = Ddict[0].shape[0]
@@ -325,10 +325,10 @@ def getDfromDict3D(Ddict, nraneffs, nlevels):
       D[:, inds[counter]:inds[counter+1], inds[counter]:inds[counter+1]] = Ddict[k]
       counter = counter + 1
   
-  # # time
-  # t2 = time.time()
+  # time
+  t2 = time.time()
 
-  # print('getDfromDict3D time: ', t2-t1)
+  print('getDfromDict3D time: ', t2-t1)
 
   return(D)
 
@@ -361,16 +361,16 @@ def getDfromDict3D(Ddict, nraneffs, nlevels):
 # ============================================================================
 def initBeta3D(XtX, XtY):
 
-  # # time
-  # t1 = time.time()
+  # time
+  t1 = time.time()
   
   # Get the beta estimator
   beta = np.linalg.solve(XtX,XtY)
   
-  # # time
-  # t2 = time.time()
+  # time
+  t2 = time.time()
 
-  # print('initBeta3D time: ', t2-t1)
+  print('initBeta3D time: ', t2-t1)
 
   # Return the result
   return(beta)
@@ -405,8 +405,8 @@ def initBeta3D(XtX, XtY):
 # ============================================================================
 def initSigma23D(ete, n):
 
-  # # time
-  # t1 = time.time()
+  # time
+  t1 = time.time()
 
   if hasattr(n, "ndim"):
 
@@ -416,10 +416,10 @@ def initSigma23D(ete, n):
 
   tmp=1/n*ete[:,0,0]
 
-  # # time
-  # t2 = time.time()
+  # time
+  t2 = time.time()
 
-  # print('initSigma23D time: ', t2-t1)
+  print('initSigma23D time: ', t2-t1)
 
   # Return the OLS estimate of sigma
   return(tmp)
@@ -470,8 +470,8 @@ def initSigma23D(ete, n):
 # ============================================================================
 def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict):
 
-  # # time
-  # t1 = time.time()
+  # time
+  t1 = time.time()
   
   # Number of voxels v
   v = Zte.shape[0]
@@ -595,10 +595,10 @@ def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict):
   # Work out the final term.
   Dkest = vech2mat3D(np.linalg.solve(infoMat, dupMatTdict[k] @ mat2vec3D(invSig2ZteetZminusZtZ)))
 
-  # # time
-  # t2 = time.time()
+  # time
+  t2 = time.time()
 
-  # print('Dkest time: ', t2-t1)
+  print('Dkest time: ', t2-t1)
   
   return(Dkest)
 
@@ -642,8 +642,8 @@ def initDk3D(k, ZtZ, Zte, sigma2, nlevels, nraneffs, dupMatTdict):
 # ============================================================================
 def makeDnnd3D(D):
 
-  # # time
-  # t1 = time.time()
+  # time
+  t1 = time.time()
   
   # Check if we have negative eigenvalues
   if not np.all(np.linalg.eigvals(D)>0):
@@ -664,10 +664,10 @@ def makeDnnd3D(D):
     # D is already non-negative in this case
     D_nnd = D
 
-  # # time
-  # t2 = time.time()
+  # time
+  t2 = time.time()
 
-  # print('D_nnd time: ', t2-t1)
+  print('D_nnd time: ', t2-t1)
     
   return(D_nnd)
 
@@ -724,8 +724,8 @@ def makeDnnd3D(D):
 # ============================================================================
 def llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D, Ddict, nlevels, nraneffs, reml=False, XtX=0, XtZ=0, ZtX=0):
 
-  # # time
-  # t1 = time.time()
+  # time
+  t1 = time.time()
 
   # Number of random effects and number of voxels
   r = len(nlevels)
@@ -851,10 +851,10 @@ def llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D, Ddict, nlevels, nraneffs, r
     
     llh = llh - 0.5*logdet[0]*logdet[1]
 
-  # # time
-  # t2 = time.time()
+  # time
+  t2 = time.time()
 
-  # print('llh3D time: ', t2-t1)
+  print('llh3D time: ', t2-t1)
 
   # Return result
   return(llh)
@@ -903,8 +903,8 @@ def llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D, Ddict, nlevels, nraneffs, r
 # ============================================================================
 def get_DinvIplusZtZD3D(Ddict, D, ZtZ, nlevels, nraneffs):
 
-  # # time
-  # t1 = time.time()
+  # time
+  t1 = time.time()
 
   # Work out how many factors we're looking at
   r = len(nlevels)
@@ -947,10 +947,10 @@ def get_DinvIplusZtZD3D(Ddict, D, ZtZ, nlevels, nraneffs):
 
     DinvIplusZtZD = forceSym3D(np.linalg.solve(np.eye(q) + D @ ZtZ, D))
 
-  # # time
-  # t2 = time.time()
+  # time
+  t2 = time.time()
 
-  # print('get_DinvIplusZtZD3D time: ', t2-t1)
+  print('get_DinvIplusZtZD3D time: ', t2-t1)
 
   return(DinvIplusZtZD)
 
@@ -993,8 +993,8 @@ def get_DinvIplusZtZD3D(Ddict, D, ZtZ, nlevels, nraneffs):
 # ============================================================================
 def get_dldB3D(sigma2, Xte, XtZ, DinvIplusZtZD, Zte, nraneffs):
 
-  # # time
-  # t1 = time.time()
+  # time
+  t1 = time.time()
 
   # Number of random factors
   r = len(nraneffs)
@@ -1035,10 +1035,10 @@ def get_dldB3D(sigma2, Xte, XtZ, DinvIplusZtZD, Zte, nraneffs):
     # Work out the derivative (Note: we leave everything as 3D for ease of future computation)
     deriv = np.einsum('i,ijk->ijk',1/sigma2, (Xte - (XtZ @ DinvIplusZtZD @ Zte)))
 
-  # # time
-  # t2 = time.time()
+  # time
+  t2 = time.time()
 
-  # print('get_dldB3D time: ', t2-t1)
+  print('get_dldB3D time: ', t2-t1)
 
   # Return the derivative
   return(deriv)
@@ -1084,8 +1084,8 @@ def get_dldB3D(sigma2, Xte, XtZ, DinvIplusZtZD, Zte, nraneffs):
 # ============================================================================
 def get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD, nraneffs, reml=False, p=0):
 
-  # # time
-  # t1 = time.time()
+  # time
+  t1 = time.time()
   
   # Make sure n is correct shape
   if hasattr(n, "ndim"):
@@ -1141,10 +1141,10 @@ def get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD, nraneffs, reml=False, p=
   else:
     deriv = -(n-p)/(2*sigma2) + np.einsum('i,ijk->ijk',1/(2*(sigma2**2)), etinvIplusZtDZe).reshape(sigma2.shape[0])
   
-  # # time
-  # t2 = time.time()
+  # time
+  t2 = time.time()
 
-  # print('get_dldsigma23D time: ', t2-t1)
+  print('get_dldsigma23D time: ', t2-t1)
 
   return(deriv)
 
@@ -1217,8 +1217,8 @@ def get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD, nraneffs, reml=False, p=
 # ============================================================================
 def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=None, reml=False, ZtX=None, XtX=None):
 
-  # # time
-  # t1 = time.time()
+  # time
+  t1 = time.time()
 
   # Number of voxels
   v = Zte.shape[0]
@@ -1269,8 +1269,8 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
         # Add together
         ZtZmat = ZtZmat + ZtZterm
 
-  # t2 = time.time()
-  # print('checkpoint 1: ', t2-t1)
+  t2 = time.time()
+  print('checkpoint 1: ', t2-t1)
 
   # Get the indices for the factors 
   Ik = fac_indices2D(k, nlevels, nraneffs)
@@ -1303,8 +1303,8 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
     # Work out the second term in TT'
     secondTerm = sumAijBijt3D(ZtZ[:,Ik,:] @ DinvIplusZtZD, ZtZ[:,Ik,:], pttn, pttn)
 
-  # t3 = time.time()
-  # print('checkpoint 2: ', t3-t2)
+  t3 = time.time()
+  print('checkpoint 2: ', t3-t2)
 
   # Obtain RkSum=sum (TkjTkj')
   RkSum = ZtZmat - secondTerm
@@ -1335,8 +1335,8 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
   # Obtain Sum Tu(Tu)'
   TuuTSum = np.einsum('i,ijk->ijk',1/sigma2,sumAijBijt3D(TuSig, TuSig, pttn, pttn))
 
-  # t4 = time.time()
-  # print('checkpoint 3: ', t4-t3)
+  t4 = time.time()
+  print('checkpoint 3: ', t4-t3)
 
   # Work out dldDk
   dldDk = 0.5*(forceSym3D(TuuTSum - RkSum))
@@ -1347,7 +1347,6 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
       DinvIplusZtZDZtX = np.einsum('ij,ijk->ijk',DinvIplusZtZD, ZtX)
 
-      # USE SOLVE INSTEAD?
       ZtinvVX = ZtX - np.einsum('ij,ijk->ijk', ZtZ, DinvIplusZtZDZtX)
 
       # newt1 = time.time()
@@ -1393,11 +1392,6 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
         invXtinvVX = np.linalg.pinv(XtX - (ZtX.transpose((0,2,1)) @ DinvIplusZtZDZtX))
         Bt2 = invXtinvVX @ ZtinvVX.transpose((0,2,1))
 
-      # t2 = time.time()
-      # print('inv time: ', t2-t1)
-
-      # print('check')
-      # print(np.allclose(Bt,Bt2))
 
       # Peform vecm operation
       vecmAt = block2stacked3D(A.transpose((0,2,1)),[p,q0])
@@ -1405,35 +1399,31 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
       # Update gradient
       dldDk = dldDk + 0.5*vecmAt.transpose((0,2,1)) @ vecmBt
-
-      # newt2 = time.time()
-
-      #print('new time: ', newt2-newt1)
     
     elif r == 1 and nraneffs[0] > 1:
 
 
-      #tmpt1 = time.time()
+      tmpt1 = time.time()
       # Reshape DinvIplusZtZD appropriately
       DinvIplusZtZDZtX = DinvIplusZtZD.transpose(0,2,1).reshape(sigma2.shape[0],l0,q0,q0)
-      #tmpt2 = time.time()
+      tmpt2 = time.time()
 
-      #print('new marker 1: ', tmpt2-tmpt1)
+      print('new marker 1: ', tmpt2-tmpt1)
 
 
-      #tmpt1 = time.time()
+      tmpt1 = time.time()
       # Number of fixed effects parameters, p
       p = XtX.shape[1]
 
       # Multiply by ZtX
       DinvIplusZtZDZtX = DinvIplusZtZDZtX @ ZtX.reshape(ZtX.shape[0],l0,q0,p)    
-      #tmpt2 = time.time()
+      tmpt2 = time.time()
 
-      #print('new marker 2: ', tmpt2-tmpt1)
+      print('new marker 2: ', tmpt2-tmpt1)
 
 
 
-      #tmpt1 = time.time()
+      tmpt1 = time.time()
       # Reshape appropriately
       DinvIplusZtZDZtX = DinvIplusZtZDZtX.reshape(sigma2.shape[0],q0*l0,p)
 
@@ -1442,11 +1432,11 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
       # Get (X'V^{-1}X)^{-1}
       invXtinvVX = np.linalg.pinv(XtinvVX)
-      #tmpt2 = time.time()
+      tmpt2 = time.time()
 
-      #print('new marker 3: ', tmpt2-tmpt1)
+      print('new marker 3: ', tmpt2-tmpt1)
 
-      #tmpt1 = time.time()
+      tmpt1 = time.time()
       
       # For each level j we need to add a term
       for j in np.arange(nlevels[k]):
@@ -1461,9 +1451,9 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
         dldDk = dldDk + 0.5*Z_kjtinvVX @ invXtinvVX @ Z_kjtinvVX.transpose((0,2,1))
 
-      #tmpt2 = time.time()
+      tmpt2 = time.time()
 
-      #print('new marker 4: ', tmpt2-tmpt1)
+      print('new marker 4: ', tmpt2-tmpt1)
 
       # Can probably do np sum of diag of big term in some way
 
@@ -1484,12 +1474,12 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
         dldDk = dldDk + 0.5*Z_kjtinvVX @ invXtinvVX @ Z_kjtinvVX.transpose((0,2,1))
 
-  # 
+  
 
-  # t5 = time.time()
-  # print('checkpoint 4: ', t5-t4)
+  t5 = time.time()
+  print('checkpoint 4: ', t5-t4)
 
-  # print('get_dldDk3D time: ', t5-t1)
+  print('get_dldDk3D time: ', t5-t1)
 
   # Store it in the dictionary
   return(dldDk, ZtZmat)
@@ -1607,7 +1597,7 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 def get_covdldbeta3D(XtZ, XtX, ZtZ, DinvIplusZtZD, sigma2, nraneffs):
 
   # time
-  #t1 = time.time()
+  t1 = time.time()
 
   # Number of random factors
   r = len(nraneffs)
@@ -1655,9 +1645,9 @@ def get_covdldbeta3D(XtZ, XtX, ZtZ, DinvIplusZtZD, sigma2, nraneffs):
     covderiv = np.einsum('i,ijk->ijk',1/sigma2,(XtX - forceSym3D(XtZ @ DinvIplusZtZD @ XtZ.transpose((0,2,1)))))
   
   # time
-  # t2 = time.time()
+  t2 = time.time()
 
-  # print('get_covdldbeta3D time: ', t2-t1)
+  print('get_covdldbeta3D time: ', t2-t1)
 
   # Return the covariance of the derivative
   return(covderiv)
@@ -1717,7 +1707,7 @@ def get_covdldbeta3D(XtZ, XtX, ZtZ, DinvIplusZtZD, sigma2, nraneffs):
 def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, vec=False, ZtZmat=None):
 
   # # time
-  # t1 = time.time()
+  t1 = time.time()
 
   # Number of voxels
   v = DinvIplusZtZD.shape[0]
@@ -1806,10 +1796,10 @@ def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupM
   else:
     covdldDdldsigma2 = np.einsum('i,ijk->ijk', 1/(2*sigma2), mat2vec3D(RkSum))
 
-  # # time
-  # t2 = time.time()
+  # time
+  t2 = time.time()
 
-  # print('get_covdldDkdsigma23D time: ', t2-t1)
+  print('get_covdldDkdsigma23D time: ', t2-t1)
 
   return(covdldDdldsigma2, ZtZmat)
 
@@ -1908,8 +1898,8 @@ def get_covdldDkdsigma23D(k, sigma2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupM
 # ============================================================================
 def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdict, perm=None, vec=False):
 
-  # # time
-  # t1 = time.time()
+  # time
+  t1 = time.time()
   
   # Get the indices for the factors 
   Ik1 = fac_indices2D(k1, nlevels, nraneffs)
@@ -1988,10 +1978,10 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
     else:
       covdldDk1dldk2 = 1/2 * RkRSum
 
-  # # time
-  # t2 = time.time()
+  # time
+  t2 = time.time()
 
-  # print('get_covdldDk1Dk23D time: ', t2-t1)
+  print('get_covdldDk1Dk23D time: ', t2-t1)
 
   # Return the result
   return(covdldDk1dldk2, perm)
@@ -2086,8 +2076,8 @@ def get_covdldDk1Dk23D(k1, k2, nlevels, nraneffs, ZtZ, DinvIplusZtZD, dupMatTdic
 # ============================================================================
 def getConvergedIndices(convergedBeforeIt, convergedDuringIt):
 
-  # # time
-  # t1 = time.time()
+  # time
+  t1 = time.time()
   
   # ==========================================================================
   # Global indices (i.e. relative to whole image)
@@ -2114,10 +2104,10 @@ def getConvergedIndices(convergedBeforeIt, convergedDuringIt):
   local_converged = np.arange(len(convergedDuringIt))[convergedDuringIt==1]
   local_notconverged = np.arange(len(convergedDuringIt))[convergedDuringIt==0]
 
-  # # time
-  # t2 = time.time()
+  # time
+  t2 = time.time()
 
-  # print('getConvergedIndices time: ', t2-t1)
+  print('getConvergedIndices time: ', t2-t1)
   
   return(indices_ConAfterIt, indices_notConAfterIt, indices_conDuringIt, local_converged, local_notconverged)
 
@@ -2160,8 +2150,8 @@ def getConvergedIndices(convergedBeforeIt, convergedDuringIt):
 # ============================================================================
 def block2stacked3D(A, pA):
 
-  # # time
-  # t1 = time.time()
+  # time
+  t1 = time.time()
 
   # Work out shape of A
   v = A.shape[0] # (Number of voxels)
@@ -2175,10 +2165,10 @@ def block2stacked3D(A, pA):
   # Change A to stacked form
   As = A.reshape((v,m1//n1,n1,m2//n2,n2)).transpose(0,1,3,2,4).reshape(v,m1*m2//n2,n2)
 
-  # # time
-  # t2 = time.time()
+  # time
+  t2 = time.time()
 
-  # print('block2stacked3D time: ', t2-t1)
+  print('block2stacked3D time: ', t2-t1)
 
   return(As)
 
@@ -2224,8 +2214,8 @@ def block2stacked3D(A, pA):
 # ============================================================================
 def mat2vecb3D(mat,p):
 
-  # # time
-  # t1 = time.time()
+  # time
+  t1 = time.time()
 
   # Change to stacked block format, if necessary
   if p[1]!=mat.shape[2]:
@@ -2242,10 +2232,10 @@ def mat2vecb3D(mat,p):
   # Convert to stacked vector format
   vecb = mat.reshape(v,m//n, n, k).transpose((0,2, 1, 3)).reshape(v,n, m*k//n).transpose((0,2,1)).reshape(v,m//n,n*k)
 
-  # # time
-  # t2 = time.time()
+  # time
+  t2 = time.time()
 
-  # print('mat2vecb3D time: ', t2-t1)
+  print('mat2vecb3D time: ', t2-t1)
 
   #Return vecb
   return(vecb)
@@ -2298,8 +2288,8 @@ def mat2vecb3D(mat,p):
 # ============================================================================
 def sumAijBijt3D(A, B, pA, pB):
 
-  # # time
-  # t1 = time.time()
+  # time
+  t1 = time.time()
   
   # Number of voxels (we allow v1 and v2 to be different to allow for the 
   # case that one of A and B is not spatially varying and hence had v=1)
@@ -2325,10 +2315,10 @@ def sumAijBijt3D(A, B, pA, pB):
   # Work out the sum
   S = A.transpose((0,2,1)).reshape((v1,mA,nA)).transpose((0,2,1)) @ B.transpose((0,2,1)).reshape((v2,mB,nB))
 
-  # # time
-  # t2 = time.time()
+  # time
+  t2 = time.time()
 
-  # print('sumAijBij3D time: ', t2-t1)
+  print('sumAijBij3D time: ', t2-t1)
 
   # Return result
   return(S)
@@ -2368,8 +2358,8 @@ def sumAijBijt3D(A, B, pA, pB):
 # ============================================================================
 def sumTTt_1fac1ran3D(ZtZ, DinvIplusZtZD, l0, q0):
 
-  # # time
-  # t1 = time.time()
+  # time
+  t1 = time.time()
 
   # Number of voxels, v
   v = DinvIplusZtZD.shape[0]
@@ -2384,10 +2374,10 @@ def sumTTt_1fac1ran3D(ZtZ, DinvIplusZtZD, l0, q0):
   sumTTt = np.zeros((v,q0,q0))
   np.einsum('ijj->ij', sumTTt)[...] = DiagVals
 
-  # # time
-  # t2 = time.time()
+  # time
+  t2 = time.time()
 
-  # print('sumTTt_1fac1ran3D time: ', t2-t1)
+  print('sumTTt_1fac1ran3D time: ', t2-t1)
 
   return(sumTTt)
 
@@ -2428,8 +2418,8 @@ def sumTTt_1fac1ran3D(ZtZ, DinvIplusZtZD, l0, q0):
 # -----------------------------------------------------------------------------
 def flattenZtZ(ZtZ, l0, q0):
 
-  # # time
-  # t1 = time.time()
+  # time
+  t1 = time.time()
 
   # Get q
   q = ZtZ.shape[-1]
@@ -2449,10 +2439,10 @@ def flattenZtZ(ZtZ, l0, q0):
     # Flatten ZtZ_sv
     ZtZ_flattened = np.sum(ZtZ.reshape(v,l0,q0,q),axis=1)
 
-  # # time
-  # t2 = time.time()
+  # time
+  t2 = time.time()
 
-  # print('flattenZtZ time: ', t2-t1)
+  print('flattenZtZ time: ', t2-t1)
 
   return(ZtZ_flattened)
 
@@ -2497,8 +2487,8 @@ def flattenZtZ(ZtZ, l0, q0):
 # ============================================================================
 def sumAijKronBij3D(A, B, pttn, perm=None):
 
-  # # time
-  # t1 = time.time()
+  # time
+  t1 = time.time()
 
   # Check dim A and B and pA and pB all same
   n1 = pttn[0]
@@ -2524,10 +2514,10 @@ def sumAijKronBij3D(A, B, pttn, perm=None):
   # Reshape to correct shape
   S = S_noreshape.reshape(v,n2**2,n1**2).transpose((0,2,1))
 
-  # # time
-  # t2 = time.time()
+  # time
+  t2 = time.time()
 
-  # print('sumAijKronBijt3D time: ', t2-t1)
+  print('sumAijKronBijt3D time: ', t2-t1)
 
   return(S,perm)
 
@@ -2564,8 +2554,8 @@ def sumAijKronBij3D(A, B, pttn, perm=None):
 # ============================================================================
 def get_resms3D(YtX, YtY, XtX, beta, n, p):
 
-    # # time
-    # t1 = time.time()
+    # time
+    t1 = time.time()
 
     ete = ssr3D(YtX, YtY, XtX, beta)
 
@@ -2577,10 +2567,10 @@ def get_resms3D(YtX, YtY, XtX, beta, n, p):
     
             n = n.reshape(ete.shape)
 
-    # # time
-    # t2 = time.time()
+    # time
+    t2 = time.time()
 
-    # print('get_resms3D time: ', t2-t1)
+    print('get_resms3D time: ', t2-t1)
 
     return(ete/(n-p))
 
@@ -2617,8 +2607,8 @@ def get_resms3D(YtX, YtY, XtX, beta, n, p):
 # ============================================================================
 def get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs):
 
-    # # time
-    # t1 = time.time()
+    # time
+    t1 = time.time()
 
     # Number of random factors r
     r = len(nraneffs)
@@ -2677,10 +2667,10 @@ def get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs):
     # Calculate sigma^2(X'V^{-1}X)^(-1)
     covB = np.einsum('i,ijk->ijk',sigma2,covB)
 
-    # # time
-    # t2 = time.time()
+    # time
+    t2 = time.time()
 
-    # print('get_covB3D time: ', t2-t1)
+    print('get_covB3D time: ', t2-t1)
 
     # Return result
     return(covB)
@@ -2721,8 +2711,8 @@ def get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs):
 # ============================================================================
 def get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs):
 
-    # # time
-    # t1 = time.time()
+    # time
+    t1 = time.time()
 
     # Reshape n if necessary
     if isinstance(sigma2,np.ndarray):
@@ -2735,10 +2725,10 @@ def get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs):
     # Work out var(LB) = L'(X'V^{-1}X)^{-1}L
     varLB = L @ get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs) @ L.transpose()
 
-    # # time
-    # t2 = time.time()
+    # time
+    t2 = time.time()
 
-    # print('get_varLB3D time: ', t2-t1)
+    print('get_varLB3D time: ', t2-t1)
 
     # Return result
     return(varLB)
@@ -2776,8 +2766,8 @@ def get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs):
 # ============================================================================
 def get_R23D(L, F, df):
 
-    # # time
-    # t1 = time.time()
+    # time
+    t1 = time.time()
 
     # Work out the rank of L
     rL = np.linalg.matrix_rank(L)
@@ -2785,10 +2775,10 @@ def get_R23D(L, F, df):
     # Convert F to R2
     R2 = (rL*F)/(rL*F + df)
     
-    # # time
-    # t2 = time.time()
+    # time
+    t2 = time.time()
 
-    # print('get_R23D time: ', t2-t1)
+    print('get_R23D time: ', t2-t1)
 
     # Return R2
     return(R2)
@@ -2834,8 +2824,8 @@ def get_R23D(L, F, df):
 # ============================================================================
 def get_T3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2, nraneffs):
 
-    # # time
-    # t1 = time.time()
+    # time
+    t1 = time.time()
 
     # Work out the rank of L
     rL = np.linalg.matrix_rank(L)
@@ -2849,10 +2839,10 @@ def get_T3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2, nraneffs):
     # Work out T
     T = LB/np.sqrt(varLB)
 
-    # # time
-    # t2 = time.time()
+    # time
+    t2 = time.time()
 
-    # print('get_T3D time: ', t2-t1)
+    print('get_T3D time: ', t2-t1)
 
     # Return T
     return(T)
@@ -2894,8 +2884,8 @@ def get_T3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2, nraneffs):
 # ============================================================================
 def get_F3D(L, XtX, XtZ, DinvIplusZtZD, betahat, sigma2, nraneffs):
 
-    # # time
-    # t1 = time.time()
+    # time
+    t1 = time.time()
 
     # Work out the rank of L
     rL = np.linalg.matrix_rank(L)
@@ -2909,10 +2899,10 @@ def get_F3D(L, XtX, XtZ, DinvIplusZtZD, betahat, sigma2, nraneffs):
     # Work out F
     F = LB.transpose(0,2,1) @ np.linalg.pinv(varLB) @ LB/rL
 
-    # # time
-    # t2 = time.time()
+    # time
+    t2 = time.time()
 
-    # print('get_F3D time: ', t2-t1)
+    print('get_F3D time: ', t2-t1)
 
     # Return T
     return(F)
@@ -2944,8 +2934,8 @@ def get_F3D(L, XtX, XtZ, DinvIplusZtZD, betahat, sigma2, nraneffs):
 # ============================================================================
 def T2P3D(T,df,minlog):
 
-    # # time
-    # t1 = time.time()
+    # time
+    t1 = time.time()
 
     # Initialize empty P
     P = np.zeros(np.shape(T))
@@ -2957,10 +2947,10 @@ def T2P3D(T,df,minlog):
     # Remove infs
     P[np.logical_and(np.isinf(P), P<0)]=minlog
 
-    # # time
-    # t2 = time.time()
+    # time
+    t2 = time.time()
 
-    # print('T2P3D time: ', t2-t1)
+    print('T2P3D time: ', t2-t1)
 
     return(P)
 
@@ -2993,8 +2983,8 @@ def T2P3D(T,df,minlog):
 # ============================================================================
 def F2P3D(F, L, df_denom, minlog):
     
-    # # time
-    # t1 = time.time()
+    # time
+    t1 = time.time()
 
     # Get the rank of L
     df_num = np.linalg.matrix_rank(L)
@@ -3005,10 +2995,10 @@ def F2P3D(F, L, df_denom, minlog):
     # Remove infs
     P[np.logical_and(np.isinf(P), P<0)]=minlog
 
-    # # time
-    # t2 = time.time()
+    # time
+    t2 = time.time()
 
-    # print('F2P3D time: ', t2-t1)
+    print('F2P3D time: ', t2-t1)
 
     return(P)
 
@@ -3064,8 +3054,8 @@ def F2P3D(F, L, df_denom, minlog):
 # ============================================================================
 def get_swdf_F3D(L, sigma2, XtX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nraneffs): 
 
-    # # time
-    # t1 = time.time()
+    # time
+    t1 = time.time()
 
     # Reshape sigma2 if necessary
     sigma2 = sigma2.reshape(sigma2.shape[0])
@@ -3099,10 +3089,10 @@ def get_swdf_F3D(L, sigma2, XtX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nrane
     # Work out final df
     df = 2*sum_swdf_adj/(sum_swdf_adj-rL)
 
-    # # time
-    # t2 = time.time()
+    # time
+    t2 = time.time()
 
-    # print('get_swdf_F3D time: ', t2-t1)
+    print('get_swdf_F3D time: ', t2-t1)
 
     # Return df
     return(df)
@@ -3159,8 +3149,8 @@ def get_swdf_F3D(L, sigma2, XtX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nrane
 # ============================================================================
 def get_swdf_T3D(L, sigma2, XtX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nraneffs): 
 
-    # # time
-    # t1 = time.time()
+    # time
+    t1 = time.time()
 
     # Reshape sigma2 if necessary
     sigma2 = sigma2.reshape(sigma2.shape[0])
@@ -3185,10 +3175,10 @@ def get_swdf_T3D(L, sigma2, XtX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nrane
     # Calculate df estimator
     df = 2*(S2**2)/(dS2.transpose(0,2,1) @ np.linalg.solve(InfoMat, dS2))
 
-    # # time
-    # t2 = time.time()
+    # time
+    t2 = time.time()
 
-    # print('get_swdf_T3D time: ', t2-t1)
+    print('get_swdf_T3D time: ', t2-t1)
 
     # Return df
     return(df)
@@ -3235,8 +3225,8 @@ def get_swdf_T3D(L, sigma2, XtX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nrane
 # ============================================================================
 def get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
 
-  # # time
-  # t1 = time.time()
+  # time
+  t1 = time.time()
 
   # Number of random effects, r
   r = len(nraneffs)
@@ -3392,10 +3382,10 @@ def get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
       # Add to dS2
       dS2[:,DerivInds[k]:DerivInds[k+1]] = dS2dvechDk.reshape(dS2[:,DerivInds[k]:DerivInds[k+1]].shape)
 
-  # # time
-  # t2 = time.time()
+  # time
+  t2 = time.time()
 
-  # print('get_dS23D time: ', t2-t1)
+  print('get_dS23D time: ', t2-t1)
 
   return(dS2)
 
@@ -3439,8 +3429,8 @@ def get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2):
 # ============================================================================
 def get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nraneffs, ZtZ):
 
-    # # time
-    # t1 = time.time()
+    # time
+    t1 = time.time()
 
     # Number of random effects, q
     q = np.sum(np.dot(nraneffs,nlevels))
@@ -3500,10 +3490,10 @@ def get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nraneffs, ZtZ):
             FisherInfoMat[np.ix_(np.arange(v), IndsDk2, IndsDk1)] = FisherInfoMat[np.ix_(np.arange(v), IndsDk1, IndsDk2)].transpose((0,2,1))
 
 
-    # # time
-    # t2 = time.time()
+    # time
+    t2 = time.time()
 
-    # print('get_InfoMat3D time: ', t2-t1)
+    print('get_InfoMat3D time: ', t2-t1)
 
     # Return result
     return(FisherInfoMat)
