@@ -1395,7 +1395,7 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
       # -------------------------------------------------------------------
 
       tmpt1 = time.time()
-      try:  
+      try:  #XtiVX = XtX - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtX
         invXtinvVX = np.linalg.inv(XtX - (ZtX.transpose((0,2,1)) @ DinvIplusZtZDZtX))
         Bt = invXtinvVX @ ZtinvVX.transpose((0,2,1))
       except:
@@ -1404,6 +1404,15 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
       tmpt2 = time.time()
       print('new marker 3 v3: ', tmpt2-tmpt1)
 
+      tmpt1 = time.time()
+      try:  #XtiVX = 
+        invXtinvVX = np.linalg.inv(XtX - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtX)
+        Bt = invXtinvVX @ ZtinvVX.transpose((0,2,1))
+      except:
+        invXtinvVX = np.linalg.pinv(XtX - (ZtX.transpose((0,2,1)) @ DinvIplusZtZDZtX))
+        Bt = invXtinvVX @ ZtinvVX.transpose((0,2,1))
+      tmpt2 = time.time()
+      print('new marker 3 v4: ', tmpt2-tmpt1)
 
       # Peform vecm operation
       tmpt1 = time.time()

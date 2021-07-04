@@ -1603,6 +1603,13 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         t2 = time.time()
         print('beta update time: ', t2-t1)
 
+        # Calculate beta
+        t1 = time.time()
+        iXtiVX = np.linalg.inv(XtX - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtX)
+        beta = iXtiVX @ XtiVY
+        t2 = time.time()
+        print('beta update time: ', t2-t1)
+
         # Update sigma^2
         ete = ssr3D(YtX, YtY, XtX, beta)
         Zte = ZtY - (ZtX @ beta)
