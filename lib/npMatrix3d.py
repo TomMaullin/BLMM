@@ -1345,9 +1345,16 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
     if r == 1 and nraneffs[0]==1:
 
+      tmpt1 = time.time()
       DinvIplusZtZDZtX = np.einsum('ij,ijk->ijk',DinvIplusZtZD, ZtX)
+      tmpt2 = time.time()
+      print('new marker 1: ', tmpt2-tmpt1)
 
+      tmpt1 = time.time()
       ZtinvVX = ZtX - np.einsum('ij,ijk->ijk', ZtZ, DinvIplusZtZDZtX)
+      tmpt2 = time.time()
+      print('new marker 2: ', tmpt2-tmpt1)
+
 
       # newt1 = time.time()
 
@@ -1386,19 +1393,34 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
       # That said, theory isn't practice, so we have a try-except clause 
       # here just in case.
       # -------------------------------------------------------------------
+      tmpt1 = time.time()
       try:  
         Bt2 = np.linalg.solve(XtX - (ZtX.transpose((0,2,1)) @ DinvIplusZtZDZtX), ZtinvVX.transpose((0,2,1)))
       except:
         invXtinvVX = np.linalg.pinv(XtX - (ZtX.transpose((0,2,1)) @ DinvIplusZtZDZtX))
         Bt2 = invXtinvVX @ ZtinvVX.transpose((0,2,1))
+      tmpt2 = time.time()
+      print('new marker 3: ', tmpt2-tmpt1)
 
 
       # Peform vecm operation
+      tmpt1 = time.time()
       vecmAt = block2stacked3D(A.transpose((0,2,1)),[p,q0])
+      tmpt2 = time.time()
+      print('new marker 4: ', tmpt2-tmpt1)
+
+      tmpt1 = time.time()
       vecmBt = block2stacked3D(Bt,[p,q0])
 
+      tmpt2 = time.time()
+      print('new marker 5: ', tmpt2-tmpt1)
+
+
+      tmpt1 = time.time()
       # Update gradient
       dldDk = dldDk + 0.5*vecmAt.transpose((0,2,1)) @ vecmBt
+      tmpt2 = time.time()
+      print('new marker 6: ', tmpt2-tmpt1)
     
     elif r == 1 and nraneffs[0] > 1:
 
