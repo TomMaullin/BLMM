@@ -1327,44 +1327,25 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
     if r == 1 and nraneffs[0]==1:
 
+      # Get Z'V^{-1}X
       ZtinvVX = ZtX - np.einsum('ij,ijk->ijk', ZtZ, np.einsum('ij,ijk->ijk',DinvIplusZtZD, ZtX))
 
-      # newt1 = time.time()
-
+      # Get q0 and p
       q0 = nraneffs[0]
       p = ZtinvVX.shape[-1]
 
-      # For ease, label A=Z'V^{-1}X and B=Z'V^{-1}XD(I+Z'ZD)^{-1}Z'X 
+      # For ease, label A=Z'V^{-1}X and B=(X'V^{-1}X)^{-1}Z'V^{-1}X 
       A = ZtinvVX
-
-      # t1 = time.time()
-
-      # tmpt1 = time.time()
       Bt = np.linalg.inv(XtiVX) @ ZtinvVX.transpose((0,2,1))
-      # tmpt2 = time.time()
-      # print('new marker 3 v3: ', tmpt2-tmpt1)
 
       # Peform vecm operation
-      # tmpt1 = time.time()
       vecmAt = block2stacked3D(A.transpose((0,2,1)),[p,q0])
-      # tmpt2 = time.time()
-      # print('new marker 4: ', tmpt2-tmpt1)
-
-      #tmpt1 = time.time()
       vecmBt = block2stacked3D(Bt,[p,q0])
 
-      # tmpt2 = time.time()
-      # print('new marker 5: ', tmpt2-tmpt1)
-
-
-      # tmpt1 = time.time()
       # Update gradient
       dldDk = dldDk + 0.5*vecmAt.transpose((0,2,1)) @ vecmBt
-      # tmpt2 = time.time()
-      # print('new marker 6: ', tmpt2-tmpt1)
     
     elif r == 1 and nraneffs[0] > 1:
-
 
       tmpt1 = time.time()
       # Reshape DinvIplusZtZD appropriately
