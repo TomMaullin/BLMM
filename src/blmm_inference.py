@@ -120,15 +120,46 @@ def main(inputs, nraneffs, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX
     # practical use in the high n setting)
     REML = True
 
+    # --------------------------------------------------------------------------
+    # Get XtiVX
+    # --------------------------------------------------------------------------
+    # This can be performed faster in the one factor, one random effect case by
+    # using only the diagonal elements of DinvIplusZtZD 
+    if r == 1 and nraneffs[0] == 1:
+
+        # Multiply by Z'X
+        DinvIplusZtZDZtX = np.einsum('ij,ijk->ijk', DinvIplusZtZD, ZtX)
+
+    # This can also be performed faster in the one factor, multiple random effect
+    # case by using only the diagonal blocks of DinvIplusZtZD 
+    elif r == 1 and nraneffs[0] > 1:
+
+        # Reshape DinvIplusZtZD appropriately
+        DinvIplusZtZDZtX = DinvIplusZtZD.transpose(0,2,1).reshape(v_iter,l0,q0,q0)
+
+        # Multiply by ZtX
+        DinvIplusZtZDZtX = DinvIplusZtZDZtX @ ZtX.reshape(ZtX.shape[0],l0,q0,p)    
+
+        # Reshape appropriately
+        DinvIplusZtZDZtX = DinvIplusZtZDZtX.reshape(v_iter,q0*l0,p)
+
+    else:
+
+        # Multiply by Z'X
+        DinvIplusZtZDZtX = DinvIplusZtZD @ ZtX
+
+    # Work out X'V^(-1)X and X'V^(-1)Y by dimension reduction formulae
+    XtiVX = XtX - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtX
+
     # ----------------------------------------------------------------------
     # Calculate log-likelihood
     # ---------------------------------------------------------------------- 
 
     # Output log likelihood
     if not REML:
-        llh = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD, D, Ddict, nlevels, nraneffs, REML, XtX, XtZ, ZtX) - (0.5*(n)*np.log(2*np.pi))
+        llh = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD, D, Ddict, nlevels, nraneffs, REML, XtX, XtiVX) - (0.5*(n)*np.log(2*np.pi))
     else:
-        llh = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD, D, Ddict, nlevels, nraneffs, REML, XtX, XtZ, ZtX) - (0.5*(n-p)*np.log(2*np.pi))
+        llh = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD, D, Ddict, nlevels, nraneffs, REML, XtX, XtiVX) - (0.5*(n-p)*np.log(2*np.pi))
         
     addBlockToNifti(os.path.join(OutDir, 'blmm_vox_llh.nii'), llh, inds,volInd=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
 
