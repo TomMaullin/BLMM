@@ -197,7 +197,7 @@ for (i in 1:nvox){
     llh[i,1] <- logLik(m, REML=TRUE)[1]
     
     # Run T statistic inference
-    Tresults<-lmerTest::contest1D(m, c(0,0,0,0,0,1),ddf=c("Satterthwaite"))
+    Tresults<-lmerTest::contest1D(m, c(1,0,0,0,0,0),ddf=c("Satterthwaite"))
     
     # Get the T statistic
     Tstat<-Tresults$`t value`
