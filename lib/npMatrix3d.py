@@ -1406,8 +1406,8 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
       tmpt1 = time.time()
       try:  #XtiVX = 
-        invXtinvVX = np.linalg.inv(XtX - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtX)
-        Bt2 = invXtinvVX @ ZtinvVX.transpose((0,2,1))
+        XtiVX = XtX - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtX
+        Bt2 = np.linalg.solve(XtiVX, ZtinvVX.transpose((0,2,1)))
       except:
         invXtinvVX = np.linalg.pinv(XtX - (ZtX.transpose((0,2,1)) @ DinvIplusZtZDZtX))
         Bt = invXtinvVX @ ZtinvVX.transpose((0,2,1))
