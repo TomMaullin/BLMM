@@ -1327,6 +1327,7 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
     if r == 1 and nraneffs[0]==1:
 
+      ZtinvVX = ZtX - np.einsum('ij,ijk->ijk', ZtZ, np.einsum('ij,ijk->ijk',DinvIplusZtZD, ZtX))
 
       # newt1 = time.time()
 
