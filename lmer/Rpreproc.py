@@ -183,6 +183,14 @@ def Rpreproc(OutDir,nvg,cv):
             # with zeros
             Y_concat[:,vox] = np.zeros(Y_concat[:,vox].shape)
 
+        # Threshold out the voxels which are underidentified (same
+        # practice as lmer)
+        if np.count_nonzero(Y_concat[:,vox], axis=0) <= q:
+
+            # If we don't have enough data lets replace that voxel 
+            # with zeros
+            Y_concat[:,vox] = np.zeros(Y_concat[:,vox].shape)
+
     # Write out Z in full to a csv file
     pd.DataFrame(Y_concat.reshape(n,v_current)).to_csv(os.path.join(OutDir,"data","Y_Rversion_" + str(cv) + ".csv"), header=None, index=None)
 

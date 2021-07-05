@@ -1347,6 +1347,7 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
     
     elif r == 1 and nraneffs[0] > 1:
 
+
       tmpt1 = time.time()
       # Reshape DinvIplusZtZD appropriately
       DinvIplusZtZDZtX = DinvIplusZtZD.transpose(0,2,1).reshape(sigma2.shape[0],l0,q0,q0)
@@ -1355,9 +1356,34 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
       print('new marker 1: ', tmpt2-tmpt1)
 
 
+      # # ---------------------------------------------------
+      # # Get X'V^(-1)X and Z'V^(-1)X
+      # # ---------------------------------------------------
+
+      # # Reshape Z'Z appropriately
+      # ZtZ = ZtZ.transpose(0,2,1).reshape(ZtZ.shape[0],l0,q0,q0)
+
+      # # Reshape DinvIplusZtZD appropriately
+      # DinvIplusZtZDZtX = DinvIplusZtZD.transpose(0,2,1).reshape(v,l0,q0,q0)
+
+      # # Multiply by ZtX
+      # DinvIplusZtZDZtX = DinvIplusZtZDZtX @ ZtX.reshape(ZtX.shape[0],l0,q0,p)    
+
+      # # Reshape Z'Z appropriately
+      # ZtZ = ZtZ.transpose(0,2,1).reshape(ZtZ.shape[0],l0,q0,q0)
+
+      # # Multiply by Z'Z
+      # ZtZDinvIplusZtZDZtX = DinvIplusZtZDZtX 
+
+      # # Reshape appropriately
+      # DinvIplusZtZDZtX = DinvIplusZtZDZtX.reshape(v,q0*l0,p)
+
+      # # XtiVX
+      # XtiVX = XtX - XtZ @ DinvIplusZtZDZtX
+
       tmpt1 = time.time()
       # Number of fixed effects parameters, p
-      p = XtX.shape[1]
+      p = XtiVX.shape[1]
 
       # Multiply by ZtX
       DinvIplusZtZDZtX = DinvIplusZtZDZtX @ ZtX.reshape(ZtX.shape[0],l0,q0,p)    
