@@ -136,13 +136,13 @@ def main(inputs, nraneffs, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX
     elif r == 1 and nraneffs[0] > 1:
 
         # Reshape DinvIplusZtZD appropriately
-        DinvIplusZtZDZtX = DinvIplusZtZD.transpose(0,2,1).reshape(v_iter,l0,q0,q0)
+        DinvIplusZtZDZtX = DinvIplusZtZD.transpose(0,2,1).reshape(v,l0,q0,q0)
 
         # Multiply by ZtX
         DinvIplusZtZDZtX = DinvIplusZtZDZtX @ ZtX.reshape(ZtX.shape[0],l0,q0,p)    
 
         # Reshape appropriately
-        DinvIplusZtZDZtX = DinvIplusZtZDZtX.reshape(v_iter,q0*l0,p)
+        DinvIplusZtZDZtX = DinvIplusZtZDZtX.reshape(v,q0*l0,p)
 
     else:
 
