@@ -1394,6 +1394,8 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
       # here just in case.
       # -------------------------------------------------------------------
 
+      print(ZtX.transpose((0,2,1)).shape, DinvIplusZtZDZtX.shape)
+
       tmpt1 = time.time()
       try:  #XtiVX = XtX - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtX
         invXtinvVX = np.linalg.inv(XtX - (ZtX.transpose((0,2,1)) @ DinvIplusZtZDZtX))

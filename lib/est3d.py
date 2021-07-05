@@ -1597,6 +1597,7 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         XtiVX = XtX - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtX
         XtiVY = XtY - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtY
 
+        print(ZtX.shape, DinvIplusZtZDZtX.transpose((0,2,1)).shape)
         # Calculate beta
         t1 = time.time()
         XtiVX = XtX - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtX
