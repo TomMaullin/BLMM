@@ -1599,6 +1599,7 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
 
         # Calculate beta
         t1 = time.time()
+        XtiVX = XtX - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtX
         beta = np.linalg.solve(XtiVX, XtiVY)
         t2 = time.time()
         print('beta update time: ', t2-t1)
