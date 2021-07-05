@@ -1350,18 +1350,18 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
       # tmpt2 = time.time()
       # print('new marker 4: ', tmpt2-tmpt1)
 
-      tmpt1 = time.time()
+      #tmpt1 = time.time()
       vecmBt = block2stacked3D(Bt,[p,q0])
 
-      tmpt2 = time.time()
-      print('new marker 5: ', tmpt2-tmpt1)
+      # tmpt2 = time.time()
+      # print('new marker 5: ', tmpt2-tmpt1)
 
 
-      tmpt1 = time.time()
+      # tmpt1 = time.time()
       # Update gradient
       dldDk = dldDk + 0.5*vecmAt.transpose((0,2,1)) @ vecmBt
-      tmpt2 = time.time()
-      print('new marker 6: ', tmpt2-tmpt1)
+      # tmpt2 = time.time()
+      # print('new marker 6: ', tmpt2-tmpt1)
     
     elif r == 1 and nraneffs[0] > 1:
 

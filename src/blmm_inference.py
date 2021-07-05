@@ -92,6 +92,7 @@ def main(inputs, nraneffs, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX
     q = np.sum(nraneffs*nlevels) # (Total number of random effects)
     qu = np.sum(nraneffs*(nraneffs+1)//2) # (Number of unique random effects)
     c = len(inputs['contrasts']) # (Number of contrasts)
+    r = len(nlevels) # (Number of levels)
 
     # Reshape n if necessary
     if isinstance(n,np.ndarray):
