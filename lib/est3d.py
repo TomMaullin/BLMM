@@ -1597,20 +1597,34 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         XtiVX = XtX - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtX
         XtiVY = XtY - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtY
 
-        print(ZtX.shape, DinvIplusZtZDZtX.transpose((0,2,1)).shape)
-        # Calculate beta
-        t1 = time.time()
-        XtiVX = XtX - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtX
-        beta = np.linalg.solve(XtiVX, XtiVY)
-        t2 = time.time()
-        print('beta update time: ', t2-t1)
 
-        # Calculate beta
-        t1 = time.time()
-        iXtiVX = np.linalg.inv(XtX - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtX)
-        beta = iXtiVX @ XtiVY
-        t2 = time.time()
-        print('beta update time: ', t2-t1)
+        # Calculate beta 
+        # -------------------------------------------------------------------
+        # In theory the matrix in this inversion should be positive definite*.
+        # -------------------------------------------------------------------
+        # *Why? 
+        #  Well the matrix is:
+        #
+        #       X'V^{-1}X = X'X - X'ZD(I+Z'ZD)^{-1}Z'X 
+        #        (By the dimension reduction formula)
+        #
+        # But V=I+ZDZ' and therefore for any vector a;
+        #
+        #        a'Va = a'a + (Z'a)'D(Z'a)
+        #
+        # Trivially a'a>0 and, as D is projected to be nnd at the end of each
+        # iteration, we have that (Z'a)'D(Z'a) >= 0. So a'Va > 0. Therefore,
+        # V must be pd and so must V^{-1}.
+        #
+        # Now, as we removed non-pd X'X during results, a'X'Xa = (Xa)'Xa > 0
+        # for any non-zero a. But this means that Xa cannot equal zero. So,
+        # as Xa is non-zero for any non-zero a and V^{-1} is pd, we have that:
+        # 
+        #         a'X'V^{-1}Xa = (Xa)'V^{-1}Xa > 0
+        # 
+        # for any non-zero a and therefore X'V^{-1}X is pd.
+        # -------------------------------------------------------------------
+        beta = np.linalg.solve(XtiVX, XtiVY)
 
         # Update sigma^2
         ete = ssr3D(YtX, YtY, XtX, beta)
@@ -1668,9 +1682,9 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             #-----------------------------------------------------------------------
             # Work out derivative
             if ZtZmatdict[k] is None:
-                dldDk,ZtZmatdict[k] = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=None, reml=reml, ZtX=ZtX, XtX=XtX)
+                dldDk,ZtZmatdict[k] = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=None, reml=reml, ZtX=ZtX, iXtiVX=iXtiVX)
             else:
-                dldDk,_ = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=ZtZmatdict[k], reml=reml, ZtX=ZtX, XtX=XtX)
+                dldDk,_ = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=ZtZmatdict[k], reml=reml, ZtX=ZtX, iXtiVX=iXtiVX)
         
             #-----------------------------------------------------------------------
             # Calculate covariance of derivative with respect to D_k
@@ -1683,10 +1697,7 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             #-----------------------------------------------------------------------
             # Work out update amount
             #-----------------------------------------------------------------------
-            t1 = time.time()
             update_p = np.linalg.solve(forceSym3D(covdldDk1dDk2), mat2vec3D(dldDk))
-            t2 = time.time()
-            print('final update time: ', t2-t1)
             
             # Multiply by stepsize
             update_p = np.einsum('i,ijk->ijk',lam, update_p)
@@ -1723,7 +1734,7 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # --------------------------------------------------------------------------
         # Update the step size and log likelihood
         # --------------------------------------------------------------------------
-        llhcurr = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D, Ddict, nlevels, nraneffs, reml, XtX, XtZ, ZtX)
+        llhcurr = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D, Ddict, nlevels, nraneffs, reml, XtX, XtiVX)
 
         lam[llhprev>llhcurr] = lam[llhprev>llhcurr]/2
         
