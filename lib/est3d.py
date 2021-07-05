@@ -1116,6 +1116,39 @@ def SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol,n,
         XtiVX = XtX - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtX
         XtiVY = XtY - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtY
 
+        # If in reml mode it is also useful to get ZtiVX at this point as 
+        # we need it for dldB but we have all the building blocks here
+        t1 = time.time()
+        if reml==True:
+
+            if r == 1 and nraneffs[0]==1:
+
+                # Get Z'V^{-1}X
+                ZtiVX = ZtX - np.einsum('ij,ijk->ijk', ZtZ, DinvIplusZtZDZtX)
+
+            elif r == 1 and nraneffs[0] > 1:
+
+                # Reshape DinvIplusZtZD appropriately
+                DinvIplusZtZDZtX = DinvIplusZtZD.transpose(0,2,1).reshape(v_iter,l0,q0,q0)
+
+                # Multiply by ZtZ and DinvIplusZtZDZtX
+                ZtZDinvIplusZtZDZtX = (ZtZ.reshape(ZtZ.shape[0],l0,q0,q0) @ DinvIplusZtZDZtX)
+                ZtZDinvIplusZtZDZtX = ZtZDinvIplusZtZDZtX.reshape(v_iter,q0*l0,p)
+
+                # Get Z'V^{-1}X
+                ZtiVX = ZtX - ZtZDinvIplusZtZDZtX
+
+                # delete unnecessary variable
+                del ZtZDinvIplusZtZDZtX
+
+            else:
+
+                # Get Z'V^{-1}X
+                ZtiVX = ZtX - ZtZ @ DinvIplusZtZDZtX
+
+        t2 = time.time()
+        print('ZtiVX time:', t2-t1)
+
         # Calculate beta
         beta = np.linalg.solve(XtiVX, XtiVY)
         
@@ -1682,9 +1715,9 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             #-----------------------------------------------------------------------
             # Work out derivative
             if ZtZmatdict[k] is None:
-                dldDk,ZtZmatdict[k] = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=None, reml=reml, ZtX=ZtX, XtiVX=XtiVX)
+                dldDk,ZtZmatdict[k] = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=None, reml=reml, ZtX=ZtX, XtiVX=XtiVX, ZtiVX=ZtiVX)
             else:
-                dldDk,_ = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=ZtZmatdict[k], reml=reml, ZtX=ZtX, XtiVX=XtiVX)
+                dldDk,_ = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=ZtZmatdict[k], reml=reml, ZtX=ZtX, XtiVX=XtiVX, ZtiVX=ZtiVX)
         
             #-----------------------------------------------------------------------
             # Calculate covariance of derivative with respect to D_k

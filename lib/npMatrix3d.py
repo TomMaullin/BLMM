@@ -1197,7 +1197,7 @@ def get_dldsigma23D(n, ete, Zte, sigma2, DinvIplusZtZD, nraneffs, reml=False, p=
 #             iteration.
 #
 # ============================================================================
-def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=None, reml=False, ZtX=None, XtiVX=None):
+def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=None, reml=False, ZtX=None, XtiVX=None, ZtiVX=None):
 
   # # time
   # t1 = time.time()
@@ -1323,6 +1323,8 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
   # Work out dldDk
   dldDk = 0.5*(forceSym3D(TuuTSum - RkSum))
 
+  dldDk2 = 0.5*(forceSym3D(TuuTSum - RkSum))
+
   if reml==True:
 
     if r == 1 and nraneffs[0]==1:
@@ -1347,6 +1349,15 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
     
     elif r == 1 and nraneffs[0] > 1:
 
+      # Get q0,l0 and p
+      q0 = nraneffs[0]
+      l0 = nlevels[0]
+      p = ZtinvVX.shape[-1]
+
+
+      # ---------------------------------------------------
+      # Get (X'V^(-1)X)^(-1)
+      # ---------------------------------------------------
 
       tmpt1 = time.time()
       # Reshape DinvIplusZtZD appropriately
@@ -1355,22 +1366,22 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
       print('new marker 1: ', tmpt2-tmpt1)
 
+      tmpt1 = time.time()
+      # Multiply by ZtX
+      DinvIplusZtZDZtX = DinvIplusZtZDZtX @ ZtX.reshape(ZtX.shape[0],l0,q0,p)    
+      tmpt2 = time.time()
 
-      # # ---------------------------------------------------
-      # # Get X'V^(-1)X and Z'V^(-1)X
-      # # ---------------------------------------------------
+      print('new marker 2: ', tmpt2-tmpt1)
 
-      # # Reshape Z'Z appropriately
-      # ZtZ = ZtZ.transpose(0,2,1).reshape(ZtZ.shape[0],l0,q0,q0)
+      tmpt1 = time.time()
+      # Reshape appropriately
+      DinvIplusZtZDZtX = DinvIplusZtZDZtX.reshape(sigma2.shape[0],q0*l0,p)
 
-      # # Reshape DinvIplusZtZD appropriately
-      # DinvIplusZtZDZtX = DinvIplusZtZD.transpose(0,2,1).reshape(v,l0,q0,q0)
+      tmpt2 = time.time()
 
-      # # Multiply by ZtX
-      # DinvIplusZtZDZtX = DinvIplusZtZDZtX @ ZtX.reshape(ZtX.shape[0],l0,q0,p)    
+      print('new marker 3: ', tmpt2-tmpt1)
 
-      # # Reshape Z'Z appropriately
-      # ZtZ = ZtZ.transpose(0,2,1).reshape(ZtZ.shape[0],l0,q0,q0)
+
 
       # # Multiply by Z'Z
       # ZtZDinvIplusZtZDZtX = DinvIplusZtZDZtX 
@@ -1381,31 +1392,17 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
       # # XtiVX
       # XtiVX = XtX - XtZ @ DinvIplusZtZDZtX
 
-      tmpt1 = time.time()
-      # Number of fixed effects parameters, p
-      p = XtiVX.shape[1]
 
-      # Multiply by ZtX
-      DinvIplusZtZDZtX = DinvIplusZtZDZtX @ ZtX.reshape(ZtX.shape[0],l0,q0,p)    
+      tmpt1 = time.time()
+      iXtiVX = np.linalg.inv(XtiVX)
       tmpt2 = time.time()
 
-      print('new marker 2: ', tmpt2-tmpt1)
-
-      iXtiVX = np.linalg.inv(XtiVX)
+      print('new marker 4: ', tmpt2-tmpt1)
 
 
-      tmpt1 = time.time()
-      # Reshape appropriately
-      DinvIplusZtZDZtX = DinvIplusZtZDZtX.reshape(sigma2.shape[0],q0*l0,p)
-
-      tmpt2 = time.time()
-
-      print('new marker 3: ', tmpt2-tmpt1)
 
       tmpt1 = time.time()
 
-      iXtiVX = np.linalg.inv(XtiVX)
-      
       # For each level j we need to add a term
       for j in np.arange(nlevels[k]):
 
@@ -1421,10 +1418,30 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
       tmpt2 = time.time()
 
-      print('new marker 4: ', tmpt2-tmpt1)
+      print('new marker 5: ', tmpt2-tmpt1)
+
+      # -----------------------------------------------------------------------
+      # New version
+      # -----------------------------------------------------------------------
+
+      tmpt1 = time.time()
+      # For ease, label A=Z'V^{-1}X and B=(X'V^{-1}X)^{-1}Z'V^{-1}X 
+      A = ZtinvVX
+      Bt = np.linalg.inv(XtiVX) @ ZtinvVX.transpose((0,2,1))
+
+      # Peform vecm operation
+      vecmAt = block2stacked3D(A.transpose((0,2,1)),[p,q0])
+      vecmBt = block2stacked3D(Bt,[p,q0])
+
+      # Update gradient
+      dldDk2 = dldDk2 + 0.5*vecmAt.transpose((0,2,1)) @ vecmBt
+      tmpt2 = time.time()
+
+      print('new time: ', tmpt2-tmpt1)
+      print('check: ', np.allclose(dldDk,dldDk2))
 
       # Can probably do np sum of diag of big term in some way
-      # MARKER: RECREATE Z'V^{-1}Y on line 1598 instead?
+      # MARKER: RECREATE Z'V^{-1}X on line 1598 instead?
 
     else:
 
