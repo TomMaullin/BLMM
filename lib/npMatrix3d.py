@@ -1330,15 +1330,15 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
     if r == 1 and nraneffs[0]==1:
 
       # Get Z'V^{-1}X
-      ZtinvVX = ZtX - np.einsum('ij,ijk->ijk', ZtZ, np.einsum('ij,ijk->ijk',DinvIplusZtZD, ZtX))
+      ZtiVX = ZtX - np.einsum('ij,ijk->ijk', ZtZ, np.einsum('ij,ijk->ijk',DinvIplusZtZD, ZtX))
 
       # Get q0 and p
       q0 = nraneffs[0]
-      p = ZtinvVX.shape[-1]
+      p = ZtiVX.shape[-1]
 
       # For ease, label A=Z'V^{-1}X and B=(X'V^{-1}X)^{-1}Z'V^{-1}X 
-      A = ZtinvVX
-      Bt = np.linalg.inv(XtiVX) @ ZtinvVX.transpose((0,2,1))
+      A = ZtiVX
+      Bt = np.linalg.inv(XtiVX) @ ZtiVX.transpose((0,2,1))
 
       # Peform vecm operation
       vecmAt = block2stacked3D(A.transpose((0,2,1)),[p,q0])
@@ -1352,7 +1352,7 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
       # Get q0,l0 and p
       q0 = nraneffs[0]
       l0 = nlevels[0]
-      p = ZtinvVX.shape[-1]
+      p = ZtiVX.shape[-1]
 
 
       # ---------------------------------------------------
@@ -1426,8 +1426,8 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
       tmpt1 = time.time()
       # For ease, label A=Z'V^{-1}X and B=(X'V^{-1}X)^{-1}Z'V^{-1}X 
-      A = ZtinvVX
-      Bt = np.linalg.inv(XtiVX) @ ZtinvVX.transpose((0,2,1))
+      A = ZtiVX
+      Bt = np.linalg.inv(XtiVX) @ ZtiVX.transpose((0,2,1))
 
       # Peform vecm operation
       vecmAt = block2stacked3D(A.transpose((0,2,1)),[p,q0])
