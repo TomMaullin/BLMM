@@ -1414,6 +1414,8 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
         Z_kjtinvVX = Z_kjtX - Z_kjtZ_kj @ DinvIplusZtZDZtX[:,Ikj,:]
 
+        print(np.allclose(Z_kjtinvVX,ZtiVX[:,Ikj,:]))
+
         dldDk = dldDk + 0.5*Z_kjtinvVX @ iXtiVX @ Z_kjtinvVX.transpose((0,2,1))
 
       tmpt2 = time.time()
