@@ -1395,7 +1395,7 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
       # XtiVX = XtX - XtZ @ DinvIplusZtZDZtX
 
 
-      tmpt1 = time.time()
+      #tmpt1 = time.time()
       iXtiVX = np.linalg.inv(XtiVX)
       tmpt2 = time.time()
 
@@ -1403,7 +1403,7 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
 
 
-      tmpt1 = time.time()
+      #tmpt1 = time.time()
 
       # For each level j we need to add a term
       for j in np.arange(nlevels[k]):
