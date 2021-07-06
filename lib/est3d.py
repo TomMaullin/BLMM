@@ -1588,6 +1588,8 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             # Reshape appropriately
             DinvIplusZtZDZtX = DinvIplusZtZDZtX.reshape(v_iter,q0*l0,p)
 
+            print('mark 1: ',DinvIplusZtZDZtX[:,0,1])
+
         else:
 
             # Multiply by Z'X

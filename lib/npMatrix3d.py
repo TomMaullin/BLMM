@@ -1380,6 +1380,8 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
       tmpt2 = time.time()
 
       print('new marker 3: ', tmpt2-tmpt1)
+      
+      print('mark 2: ',DinvIplusZtZDZtX[:,0,1])
 
 
 
