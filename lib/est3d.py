@@ -1620,6 +1620,9 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
                 # delete unnecessary variable
                 del ZtZDinvIplusZtZDZtX
 
+                # Reshape appropriately
+                DinvIplusZtZDZtX = DinvIplusZtZDZtX.reshape(v_iter,q0*l0,p)
+
             else:
 
                 # Get Z'V^{-1}X
