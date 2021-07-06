@@ -1362,26 +1362,26 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
       tmpt1 = time.time()
       # Reshape DinvIplusZtZD appropriately
       DinvIplusZtZDZtX = DinvIplusZtZD.transpose(0,2,1).reshape(sigma2.shape[0],l0,q0,q0)
-      tmpt2 = time.time()
+      #tmpt2 = time.time()
 
-      print('new marker 1: ', tmpt2-tmpt1)
+      #print('new marker 1: ', tmpt2-tmpt1)
 
-      tmpt1 = time.time()
+      #tmpt1 = time.time()
       # Multiply by ZtX
       DinvIplusZtZDZtX = DinvIplusZtZDZtX @ ZtX.reshape(ZtX.shape[0],l0,q0,p)    
-      tmpt2 = time.time()
+      #tmpt2 = time.time()
 
-      print('new marker 2: ', tmpt2-tmpt1)
+      #print('new marker 2: ', tmpt2-tmpt1)
 
-      tmpt1 = time.time()
+      #tmpt1 = time.time()
       # Reshape appropriately
       DinvIplusZtZDZtX = DinvIplusZtZDZtX.reshape(sigma2.shape[0],q0*l0,p)
 
-      tmpt2 = time.time()
+      #tmpt2 = time.time()
 
-      print('new marker 3: ', tmpt2-tmpt1)
+      #print('new marker 3: ', tmpt2-tmpt1)
       
-      print('mark 2: ',DinvIplusZtZDZtX[:,0,1])
+      #print('mark 2: ',DinvIplusZtZDZtX[:,0,1])
 
 
 
@@ -1397,9 +1397,9 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
       #tmpt1 = time.time()
       iXtiVX = np.linalg.inv(XtiVX)
-      tmpt2 = time.time()
+      #tmpt2 = time.time()
 
-      print('new marker 4: ', tmpt2-tmpt1)
+      #print('new marker 4: ', tmpt2-tmpt1)
 
 
 
@@ -1416,14 +1416,14 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
         Z_kjtinvVX = Z_kjtX - Z_kjtZ_kj @ DinvIplusZtZDZtX[:,Ikj,:]
 
-        print(np.allclose(Z_kjtinvVX,ZtiVX[:,Ikj,:]))
-        print('rgnois ', Z_kjtinvVX[:,0,1],ZtiVX[:,Ikj,:][:,0,1])
+        #print(np.allclose(Z_kjtinvVX,ZtiVX[:,Ikj,:]))
+        #print('rgnois ', Z_kjtinvVX[:,0,1],ZtiVX[:,Ikj,:][:,0,1])
 
         dldDk = dldDk + 0.5*Z_kjtinvVX @ iXtiVX @ Z_kjtinvVX.transpose((0,2,1))
 
       tmpt2 = time.time()
 
-      print('new marker 5: ', tmpt2-tmpt1)
+      print('old time: ', tmpt2-tmpt1)
 
       # -----------------------------------------------------------------------
       # New version
