@@ -1612,7 +1612,7 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
 
                 # Multiply by ZtZ and DinvIplusZtZDZtX
                 ZtZDinvIplusZtZDZtX = ZtZ.transpose(0,2,1).reshape(ZtZ.shape[0],l0,q0,q0) @ DinvIplusZtZDZtX
-                ZtZDinvIplusZtZDZtX = ZtZDinvIplusZtZDZtX.transpose(0,2,1).reshape(v_iter,q0*l0,p)
+                ZtZDinvIplusZtZDZtX = ZtZDinvIplusZtZDZtX.reshape(v_iter,q0*l0,p)
 
                 # Get Z'V^{-1}X
                 ZtiVX = ZtX - ZtZDinvIplusZtZDZtX
