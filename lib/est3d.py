@@ -1586,7 +1586,7 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             DinvIplusZtZDZtX = DinvIplusZtZDZtX @ ZtX.reshape(ZtX.shape[0],l0,q0,p)    
 
             # Reshape appropriately
-            DinvIplusZtZDZtX = DinvIplusZtZDZtX.reshape(v_iter,q0*l0,p)
+            #DinvIplusZtZDZtX = DinvIplusZtZDZtX.reshape(v_iter,q0*l0,p)
 
             print('mark 1: ',DinvIplusZtZDZtX[:,0,1])
 
@@ -1595,11 +1595,7 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             # Multiply by Z'X
             DinvIplusZtZDZtX = DinvIplusZtZD @ ZtX
 
-        # Work out X'V^(-1)X and X'V^(-1)Y by dimension reduction formulae
-        XtiVX = XtX - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtX
-        XtiVY = XtY - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtY
-
-        # If in reml mode it is also useful to get ZtiVX at this point as 
+        # If in reml mode it is useful to get ZtiVX at this point as 
         # we need it for dldB but we have all the building blocks here
         t1 = time.time()
         if reml==True:
@@ -1612,11 +1608,11 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             elif r == 1 and nraneffs[0] > 1:
 
                 # Reshape DinvIplusZtZD appropriately
-                DinvIplusZtZDZtX = DinvIplusZtZDZtX.transpose((0,2,1)).reshape(v_iter,l0,q0,p)
+                #DinvIplusZtZDZtX = DinvIplusZtZDZtX.transpose((0,2,1)).reshape(v_iter,l0,q0,p)
 
                 # Multiply by ZtZ and DinvIplusZtZDZtX
-                ZtZDinvIplusZtZDZtX = ZtZ.reshape(ZtZ.shape[0],l0,q0,q0) @ DinvIplusZtZDZtX
-                ZtZDinvIplusZtZDZtX = ZtZDinvIplusZtZDZtX.reshape(v_iter,q0*l0,p)
+                ZtZDinvIplusZtZDZtX = ZtZ.transpose(0,2,1).reshape(ZtZ.shape[0],l0,q0,q0) @ DinvIplusZtZDZtX
+                ZtZDinvIplusZtZDZtX = ZtZDinvIplusZtZDZtX.transpose(0,2,1).reshape(v_iter,q0*l0,p)
 
                 # Get Z'V^{-1}X
                 ZtiVX = ZtX - ZtZDinvIplusZtZDZtX
@@ -1632,6 +1628,10 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
 
         t2 = time.time()
         print('ZtiVX time:', t2-t1)
+
+        # Work out X'V^(-1)X and X'V^(-1)Y by dimension reduction formulae
+        XtiVX = XtX - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtX
+        XtiVY = XtY - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtY
 
         # Calculate beta 
         # -------------------------------------------------------------------
