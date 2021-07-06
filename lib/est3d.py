@@ -1588,7 +1588,7 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             # Reshape appropriately
             #DinvIplusZtZDZtX = DinvIplusZtZDZtX.reshape(v_iter,q0*l0,p)
 
-            print('mark 1: ',DinvIplusZtZDZtX[:,0,1])
+            # print('mark 1: ',DinvIplusZtZDZtX[:,0,1])
 
         else:
 
@@ -1597,7 +1597,7 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
 
         # If in reml mode it is useful to get ZtiVX at this point as 
         # we need it for dldB but we have all the building blocks here
-        t1 = time.time()
+        #t1 = time.time()
         if reml==True:
 
             if r == 1 and nraneffs[0]==1:
@@ -1620,17 +1620,16 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
                 # delete unnecessary variable
                 del ZtZDinvIplusZtZDZtX
 
-                # Reshape appropriately
-                DinvIplusZtZDZtX = DinvIplusZtZDZtX.reshape(v_iter,q0*l0,p)
-
             else:
 
                 # Get Z'V^{-1}X
                 ZtiVX = ZtX - ZtZ @ DinvIplusZtZDZtX
 
+        # Reshape appropriately
+        DinvIplusZtZDZtX = DinvIplusZtZDZtX.reshape(v_iter,q0*l0,p)
 
-        t2 = time.time()
-        print('ZtiVX time:', t2-t1)
+        # t2 = time.time()
+        # print('ZtiVX time:', t2-t1)
 
         # Work out X'V^(-1)X and X'V^(-1)Y by dimension reduction formulae
         XtiVX = XtX - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtX
