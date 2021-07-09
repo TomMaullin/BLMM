@@ -209,6 +209,9 @@ def main(ipath, vb):
         ix_r = np.argsort(np.argsort(R_inds))
         R_inds_am = np.sort(np.where(np.in1d(amInds,R_inds))[0])[ix_r]
 
+        # In relation to batch analysis mask
+        #R_inds_bam = np.sort(np.where(np.in1d(bamInds,R_inds))[0])[ix_r]
+
         # Get indices of the "inner" volume where all studies had information
         # present. I.e. the voxels (usually near the middle of the brain) where
         # every voxel has a reading for every study.
@@ -217,6 +220,9 @@ def main(ipath, vb):
         # Work out the 'inner' indices, in relation to the analysis mask
         ix_i = np.argsort(np.argsort(I_inds))
         I_inds_am = np.sort(np.where(np.in1d(amInds,I_inds))[0])[ix_i]
+
+        # In relation to batch analysis mask
+        #I_inds_bam = np.sort(np.where(np.in1d(bamInds,I_inds))[0])[ix_i]
 
         # ------------------------------------------------------------------------
         # Number of voxels in ring and inner
@@ -236,6 +242,7 @@ def main(ipath, vb):
         # --------------------------------------------------------------------------------
 
         # Ring X'Y, Y'Y, Z'Y
+        #XtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp",'XtY'+str(vb)+'.npy'), R_inds_bam).reshape([v_r, p, 1])
         XtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp",'XtY.npy'), R_inds_am).reshape([v_r, p, 1])
         YtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp",'YtY.npy'), R_inds_am).reshape([v_r, 1, 1])
         ZtY_r = readLinesFromNPY(os.path.join(OutDir,"tmp",'ZtY.npy'), R_inds_am).reshape([v_r, q, 1])
