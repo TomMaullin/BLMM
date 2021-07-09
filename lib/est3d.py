@@ -1613,6 +1613,9 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
                 # Get Z'V^{-1}X
                 ZtiVX = ZtX - ZtZDinvIplusZtZDZtX
 
+                # Reshape appropriately
+                DinvIplusZtZDZtX = DinvIplusZtZDZtX.reshape(v_iter,q0*l0,p)
+
                 # delete unnecessary variable
                 del ZtZDinvIplusZtZDZtX
 
@@ -1620,9 +1623,6 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
 
                 # Get Z'V^{-1}X
                 ZtiVX = ZtX - ZtZ @ DinvIplusZtZDZtX
-
-        # Reshape appropriately
-        DinvIplusZtZDZtX = DinvIplusZtZDZtX.reshape(v_iter,q0*l0,p)
 
         # Work out X'V^(-1)X and X'V^(-1)Y by dimension reduction formulae
         XtiVX = XtX - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtX

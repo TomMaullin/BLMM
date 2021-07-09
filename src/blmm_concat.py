@@ -208,7 +208,7 @@ def main(ipath):
             Mask[n_sv<amThresh]=0
 
     # Remove underidenifiable models (same practice as adopted by lmer)
-    # Mask[n_sv<=q]=0
+    Mask[n_sv<=q]=0
 
     # We remove anything with 1 degree of freedom (or less) by default.
     # 1 degree of freedom seems to cause broadcasting errors on a very
