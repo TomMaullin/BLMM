@@ -287,17 +287,11 @@ def main(*args):
     # we only need record the diagonal blocks of ZtZ
     elif r == 1 and nraneffs[0]>1:
 
-        print('here')
-        print(nlevels, nraneffs)
-        print('ZtZ shape: ', ZtZ.shape)
         # Cut Z'Z down to diagonal elements only.
         ZtZ = flattenZtZ(ZtZ, nlevels[0], nraneffs[0])
 
-        print('ZtZ shape: ', ZtZ.shape)
         # We reshape to n by q*q0 so that we can save as a csv.
         ZtZ = ZtZ.reshape([ZtZ.shape[0], ZtZ.shape[1]*ZtZ.shape[2]])
-
-        print('ZtZ shape: ', ZtZ.shape)
 
     else:
 
@@ -594,8 +588,6 @@ def memorySafeAtB(A,B,MAXMEM,prodStr,inputs):
     # Obtain number of voxel batches for parallelization.
     pnvb = pracNumVoxelBlocks(inputs)
 
-    print('pvnb: ', pnvb)
-
     # Get output directory
     OutDir = inputs['outdir']
 
@@ -614,9 +606,6 @@ def memorySafeAtB(A,B,MAXMEM,prodStr,inputs):
 
         # Number of voxels in this batch
         batch_v = len(batch_inds)
-
-        print('batch_v: ', batch_v)
-        print('voxBatch: ', voxBatch)
 
         # Check if file is in use
         fileLocked = True
@@ -642,21 +631,13 @@ def memorySafeAtB(A,B,MAXMEM,prodStr,inputs):
             # at any one given time.
             vPerBlock = MAXMEM/(10*8*pORq)
 
-            print('vPerBlock: ', vPerBlock)
-            print('batch_v//vPerBlock+1: ', batch_v//vPerBlock+1)
-
             # Work out the indices for each group of voxels for original matrix and
             # for in file
             voxelGroups_orig = np.array_split(batch_inds, batch_v//vPerBlock+1) # Indices from original matrix
             voxelGroups_file = np.array_split(np.arange(batch_v), batch_v//vPerBlock+1) # Indices we write to in file
 
-            print('str: ', prodStr)
-
             # Loop through each group of voxels saving A'B for those voxels
             for vb in range(int(batch_v//vPerBlock+1)):
-                print('shape 1: ', A.transpose(0,2,1).shape)
-                print('shape 2: ', B[voxelGroups_orig[vb],:,:].shape)
-                print('shape 3: ',len(voxelGroups_orig[vb]),pORq)
                 if A.shape[0]==1:
                     M[voxelGroups_file[vb],:]=(A.transpose(0,2,1) @ B[voxelGroups_orig[vb],:,:]).reshape(len(voxelGroups_orig[vb]),pORq)
                 else:
@@ -680,7 +661,6 @@ def memorySafeAtB(A,B,MAXMEM,prodStr,inputs):
             voxelGroups_orig = np.array_split(batch_inds, batch_v//vPerBlock+1) # Indices from original matrix
             voxelGroups_file = np.array_split(np.arange(batch_v), batch_v//vPerBlock+1) # Indices we write to in file
             
-            print('str: ', prodStr)
             # Loop through each group of voxels saving A'B for those voxels
             for vb in range(int(batch_v//vPerBlock+1)):
                 if A.shape[0]==1:
