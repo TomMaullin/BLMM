@@ -106,17 +106,19 @@ def main(*args):
     # Read in some data as a default nifti
     d0 = Y0.get_data()
 
+    # Get q
+    q = int(inputs["q"])
+
     # Get the maximum memory a NIFTI could take in storage. 
     NIFTImem = sys.getsizeof(np.zeros(d0.shape,dtype='uint64'))
 
     # Similar to blksize in SwE, we divide by 8 times the size of a nifti
     # to work out how many blocks we use.
-    blksize = int(np.floor(MAXMEM/8/NIFTImem/p));
+    blksize = int(np.floor(MAXMEM/NIFTImem/q));
 
     # Reduce X to X for this block.
     X = loadFile(inputs['X'])
     X = X[(blksize*(batchNo-1)):min((blksize*batchNo),len(Y_files))]
-    
 
     # Number of random effects factors.
     r = len(inputs['Z'])
@@ -267,7 +269,7 @@ def main(*args):
     # reshape to n by q*p so that we can save as a csv.
     ZtX = MZ.transpose(0,2,1) @ MX
     ZtX = ZtX.reshape([ZtX.shape[0], ZtX.shape[1]*ZtX.shape[2]])
-    
+
     # In a spatially varying design ZtZ has dimensions n by q by q. 
     ZtZ = MZ.transpose(0,2,1) @ MZ
 
@@ -285,17 +287,22 @@ def main(*args):
     # we only need record the diagonal blocks of ZtZ
     elif r == 1 and nraneffs[0]>1:
 
+        print('here')
+        print(nlevels, nraneffs)
+        print('ZtZ shape: ', ZtZ.shape)
         # Cut Z'Z down to diagonal elements only.
         ZtZ = flattenZtZ(ZtZ, nlevels[0], nraneffs[0])
 
+        print('ZtZ shape: ', ZtZ.shape)
         # We reshape to n by q*q0 so that we can save as a csv.
         ZtZ = ZtZ.reshape([ZtZ.shape[0], ZtZ.shape[1]*ZtZ.shape[2]])
+
+        print('ZtZ shape: ', ZtZ.shape)
 
     else:
 
         # We reshape to n by q^2 so that we can save as a csv.
         ZtZ = ZtZ.reshape([ZtZ.shape[0], ZtZ.shape[1]*ZtZ.shape[2]])
-
 
     # Record product matrices X'X, Y'Y, Z'X and Z'Z.
     np.save(os.path.join(OutDir,"tmp","XtX" + str(batchNo)), 
@@ -303,7 +310,7 @@ def main(*args):
     np.save(os.path.join(OutDir,"tmp","ZtX" + str(batchNo)), 
                ZtX) 
     np.save(os.path.join(OutDir,"tmp","ZtZ" + str(batchNo)), 
-               ZtZ) 
+               ZtZ)
 
     # Get map of number of observations at voxel.
     n_sv = nib.Nifti1Image(n_sv,
