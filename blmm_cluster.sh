@@ -113,35 +113,6 @@ else
 fi
 
 # -----------------------------------------------------------------------
-# Submit R parameter estimation jobs
-# -----------------------------------------------------------------------
-
-# Set batch index
-batchInd=0
-lmerParamID=''
-nr=1000
-
-while [ $batchInd -lt $nr ]
-do
-
-  # R parameter estimation job for group of voxels
-  fsl_sub -j $setupID -l $config_outdir/lmerlog/ \
-          -N lmerParamEst'_'$batchInd \
-          bash $BLMM_PATH/lmer/lmer_paramEst.sh $BLMM_PATH $config_outdir $nr $batchInd > /tmp/$$ && \
-          lmerParamID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$lmerParamID
-
-  if [ "$lmerParamID" == "" ] ; then
-    echo "Lmer parameter estimation job submission failed!"
-  fi
-
-  # Incrememnt batch index
-  batchInd=$(($batchInd + 1))
-
-done
-
-echo "Lmer parameter estimation jobs submitted!"
-
-# -----------------------------------------------------------------------
 # Submit Concatenation job
 # -----------------------------------------------------------------------
 fsl_sub -j $batchIDs -l $config_logdir -N concat bash $BLMM_PATH/scripts/cluster_blmm_concat.sh $inputs > /tmp/$$ && concatID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
@@ -191,21 +162,3 @@ else
   echo "Submitted: Cleanup job."
 fi
 echo "Analysis submission complete."
-
-
-# -----------------------------------------------------------------------
-# Cleanup timing
-# -----------------------------------------------------------------------
-
-fsl_sub -j $lmerParamID -l $config_outdir/lmerlog/ -N cleanup \
-        bash $BLMM_PATH/lmer/cleanup.sh $config_outdir > /tmp/$$ && \
-        cleanupID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
-
-if [ "$cleanupID" == "" ] ; then
-  echo "Clean up job submission failed!"
-else
-  echo "Submitted: Cleanup job."
-fi
-echo "Cleanup job submitted for lmer timing. Please use qstat to monitor progress."
-
-

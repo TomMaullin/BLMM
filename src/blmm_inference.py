@@ -124,7 +124,7 @@ def main(inputs, nraneffs, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX
     REML = True
 
     # --------------------------------------------------------------------------
-    # Get XtiVX
+    # Get XtiVX and ZtiVX
     # --------------------------------------------------------------------------
     # This can be performed faster in the one factor, one random effect case by
     # using only the diagonal elements of DinvIplusZtZD 
@@ -143,16 +143,46 @@ def main(inputs, nraneffs, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX
         # Multiply by ZtX
         DinvIplusZtZDZtX = DinvIplusZtZDZtX @ ZtX.reshape(ZtX.shape[0],l0,q0,p)    
 
-        # Reshape appropriately
-        DinvIplusZtZDZtX = DinvIplusZtZDZtX.reshape(v,q0*l0,p)
-
     else:
 
         # Multiply by Z'X
         DinvIplusZtZDZtX = DinvIplusZtZD @ ZtX
 
+
+    # It is useful to get ZtiVX at this point as we need it for dldS but we have all
+    # the building blocks here
+    if r == 1 and nraneffs[0]==1:
+
+        # Get Z'V^{-1}X
+        ZtiVX = ZtX - np.einsum('ij,ijk->ijk', ZtZ, DinvIplusZtZDZtX)
+
+    elif r == 1 and nraneffs[0] > 1:
+
+        # Reshape DinvIplusZtZD appropriately
+        #DinvIplusZtZDZtX = DinvIplusZtZDZtX.transpose((0,2,1)).reshape(v,l0,q0,p)
+
+        # Multiply by ZtZ and DinvIplusZtZDZtX
+        ZtZDinvIplusZtZDZtX = ZtZ.transpose(0,2,1).reshape(ZtZ.shape[0],l0,q0,q0) @ DinvIplusZtZDZtX
+        ZtZDinvIplusZtZDZtX = ZtZDinvIplusZtZDZtX.reshape(v,q0*l0,p)
+
+        # Get Z'V^{-1}X
+        ZtiVX = ZtX - ZtZDinvIplusZtZDZtX
+
+        # delete unnecessary variable
+        del ZtZDinvIplusZtZDZtX
+
+    else:
+
+        # Get Z'V^{-1}X
+        ZtiVX = ZtX - ZtZ @ DinvIplusZtZDZtX
+
+    # Reshape appropriately
+    DinvIplusZtZDZtX = DinvIplusZtZDZtX.reshape(v,q0*l0,p)
+
+
     # Work out X'V^(-1)X and X'V^(-1)Y by dimension reduction formulae
     XtiVX = XtX - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtX
+
 
     # ----------------------------------------------------------------------
     # Calculate log-likelihood
@@ -180,6 +210,7 @@ def main(inputs, nraneffs, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX
         if inputs["resms"]==1:    
             resms = get_resms3D(YtX, YtY, XtX, beta,n,p).reshape(v)
             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_resms.nii'), resms, inds,volInd=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
+        
 
     # ----------------------------------------------------------------------
     # Calculate beta covariance maps (Optionally output)
@@ -196,7 +227,7 @@ def main(inputs, nraneffs, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX
         dimCov = (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],p**2)
 
         # Work out cov(beta)
-        covB = get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs).reshape(v, p**2)
+        covB = get_covB3D(XtiVX, sigma2, nraneffs).reshape(v, p**2)
         addBlockToNifti(os.path.join(OutDir, 'blmm_vox_cov.nii'), covB, inds,volInd=None,dim=dimCov,aff=nifti.affine,hdr=nifti.header)
         del covB
 
@@ -250,15 +281,15 @@ def main(inputs, nraneffs, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX
             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_con.nii'), Lbeta, inds,volInd=current_nt,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
             # Work out s.e.(L\beta)
-            seLB = np.sqrt(get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs).reshape(v))
+            seLB = np.sqrt(get_varLB3D(L, XtiVX, sigma2, nraneffs).reshape(v))
             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conSE.nii'), seLB, inds,volInd=current_nt,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
             # Calculate sattherwaite estimate of the degrees of freedom of this statistic
-            swdfc = get_swdf_T3D(L, sigma2, XtX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nraneffs).reshape(v)
+            swdfc = get_swdf_T3D(L, sigma2, XtiVX, ZtiVX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nraneffs).reshape(v)
             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT_swedf.nii'), swdfc, inds,volInd=current_nt,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
             # Obtain and output T statistic
-            Tc = get_T3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2, nraneffs).reshape(v)
+            Tc = get_T3D(L, XtiVX, beta, sigma2, nraneffs).reshape(v)
             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conT.nii'), Tc, inds,volInd=current_nt,dim=dimT,aff=nifti.affine,hdr=nifti.header)
 
             # Obatin and output p-values
@@ -277,11 +308,11 @@ def main(inputs, nraneffs, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX
             dimF = (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],nf)
 
             # Calculate sattherthwaite degrees of freedom for the inner.
-            swdfc = get_swdf_F3D(L, sigma2, XtX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nraneffs).reshape(v)
+            swdfc = get_swdf_F3D(L, sigma2, XtiVX, ZtiVX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nraneffs).reshape(v)
             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conF_swedf.nii'), swdfc, inds,volInd=current_nf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
 
             # Calculate F statistic.
-            Fc=get_F3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2, nraneffs).reshape(v)
+            Fc=get_F3D(L, XtiVX, betahat, sigma2, nraneffs).reshape(v)
             addBlockToNifti(os.path.join(OutDir, 'blmm_vox_conF.nii'), Fc, inds,volInd=current_nf,dim=dimF,aff=nifti.affine,hdr=nifti.header)
 
             # Work out p for this contrast

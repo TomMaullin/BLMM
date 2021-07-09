@@ -2872,6 +2872,8 @@ def test_get_covB3D():
     nraneffs = np.array([1])
     nlevels = np.array([800])
     q = np.sum(nlevels*nraneffs)
+    q0 = nraneffs[0]
+    l0 = nlevels[0]
     v = 10
 
     # Generate test data
@@ -2926,8 +2928,23 @@ def test_get_covB3D():
     # Obtain D(I+Z'ZD)^(-1) diag
     DinvIplusZtZD_diag = get_DinvIplusZtZD3D(Ddict, None, ZtZ_diag, nlevels, nraneffs) 
 
+    # Get XtiVX and ZtiVX
+    # ----------------------------------------------------------------------
+
+    # Multiply by Z'X
+    DinvIplusZtZDZtX = np.einsum('ij,ijk->ijk', DinvIplusZtZD_diag, ZtX)
+
+    # Get Z'V^{-1}X
+    ZtiVX = ZtX - np.einsum('ij,ijk->ijk', ZtZ_diag, DinvIplusZtZDZtX)
+
+    # Reshape appropriately
+    DinvIplusZtZDZtX = DinvIplusZtZDZtX.reshape(v,q0*l0,p)
+
+    # Work out X'V^(-1)X and X'V^(-1)Y by dimension reduction formulae
+    XtiVX = XtX - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtX
+
     # Run F test
-    covB_test = get_covB3D(XtX, XtZ, DinvIplusZtZD_diag, sigma2, nraneffs)[testv,:]
+    covB_test = get_covB3D(XtiVX, sigma2, nraneffs)[testv,:]
 
     # Check if results are all close.
     testVal_tc1 = np.allclose(covB_test,covB_expected)
@@ -2940,6 +2957,8 @@ def test_get_covB3D():
     nraneffs = np.array([2])
     nlevels = np.array([300])
     q = np.sum(nlevels*nraneffs)
+    q0 = nraneffs[0]
+    l0 = nlevels[0]
     v = 10
 
     # Generate a random mass univariate linear mixed model.
@@ -2990,6 +3009,9 @@ def test_get_covB3D():
     IplusZDZt = np.eye(n) + Z @ D[testv,:,:] @ Z.transpose()
     invV = np.linalg.inv(IplusZDZt)
 
+    # X'V^(-1)X
+    XtiVX = X.transpose() @ np.linalg.inv(np.eye(n) + Z @ D @ Z.transpose()) @ X
+
     covB_expected = np.linalg.inv(X.transpose() @ invV @ X/sigma2[testv])
 
     # Using function
@@ -2999,7 +3021,7 @@ def test_get_covB3D():
     DinvIplusZtZD = get_DinvIplusZtZD3D(Ddict, None, ZtZ_flattened, nlevels, nraneffs) 
 
     # Run F test
-    covB_test = get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs)[testv,:]
+    covB_test = get_covB3D(XtiVX, sigma2, nraneffs)[testv,:]
 
     # Check if results are all close.
     testVal_tc2 = np.allclose(covB_test,covB_expected)
@@ -3013,6 +3035,8 @@ def test_get_covB3D():
     n = Y.shape[1]
     q = np.sum(nlevels*nraneffs)
     p = X.shape[1]
+    q0 = nraneffs[0]
+    l0 = nlevels[0]
 
     # Generate product matrices
     XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, XtX_sv, XtY_sv, XtZ_sv, YtX_sv, YtZ_sv, ZtX_sv, ZtY_sv, ZtZ_sv = prodMats3D(Y,Z,X,Z_sv,X_sv)
@@ -3037,6 +3061,9 @@ def test_get_covB3D():
     IplusZDZt = np.eye(n) + Z @ D[testv,:,:] @ Z.transpose()
     invV = np.linalg.inv(IplusZDZt)
 
+    # X'V^(-1)X
+    XtiVX = X.transpose() @ np.linalg.inv(np.eye(n) + Z @ D @ Z.transpose()) @ X
+
     covB_expected = np.linalg.inv(X.transpose() @ invV @ X/sigma2[testv])
 
     # Using function
@@ -3046,7 +3073,7 @@ def test_get_covB3D():
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
 
     # Run F test
-    covB_test = get_covB3D(XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs)[testv,:]
+    covB_test = get_covB3D(XtiVX, sigma2, nraneffs)[testv,:]
 
     # Check if results are all close.
     testVal_tc3 = np.allclose(covB_test,covB_expected)
@@ -3141,8 +3168,11 @@ def test_get_varLB3D():
     # Obtain D(I+Z'ZD)^(-1) diag
     DinvIplusZtZD_diag = get_DinvIplusZtZD3D(Ddict, None, ZtZ_diag, nlevels, nraneffs) 
 
+    # X'V^(-1)X
+    XtiVX = X.transpose() @ np.linalg.inv(np.eye(n) + Z @ D @ Z.transpose()) @ X
+
     # Run F test
-    varLB_test = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD_diag, sigma2, nraneffs)[testv,:]
+    varLB_test = get_varLB3D(L, XtiVX, sigma2, nraneffs)[testv,:]
 
     # Check if results are all close.
     testVal_tc1 = np.allclose(varLB_test,varLB_expected)
@@ -3196,8 +3226,11 @@ def test_get_varLB3D():
     # Obtain D(I+Z'ZD)^(-1)
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
 
+    # X'V^(-1)X
+    XtiVX = X.transpose() @ np.linalg.inv(np.eye(n) + Z @ D @ Z.transpose()) @ X
+
     # Run F test
-    varLB_test = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs)[testv,:]
+    varLB_test = get_varLB3D(L, XtiVX, sigma2, nraneffs)[testv,:]
 
     # Check if results are all close.
     testVal_tc2 = np.allclose(varLB_test,varLB_expected)
@@ -3246,8 +3279,11 @@ def test_get_varLB3D():
     # Obtain D(I+Z'ZD)^(-1)
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
 
+    # X'V^(-1)X
+    XtiVX = X.transpose() @ np.linalg.inv(np.eye(n) + Z @ D @ Z.transpose()) @ X
+
     # Run F test
-    varLB_test = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs)[testv,:]
+    varLB_test = get_varLB3D(L, XtiVX, sigma2, nraneffs)[testv,:]
 
     # Check if results are all close.
     testVal_tc3 = np.allclose(varLB_test,varLB_expected)
@@ -3329,24 +3365,11 @@ def test_get_T3D():
     # Get diagonal ZtZ
     ZtZ_diag = np.einsum('ijj->ij', ZtZ)
 
-    # Work out the indices in D where a new block Dk appears
-    Dinds = np.cumsum(nlevels*nraneffs)
-    Dinds = np.insert(Dinds,0,0)
-
-    # New empty D dict
-    Ddict = dict()
-
-    # Work out Dk for each factor, factor k 
-    for k in np.arange(nlevels.shape[0]):
-
-        # Add Dk to the dict
-        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
-
-    # Obtain D(I+Z'ZD)^(-1) diag
-    DinvIplusZtZD_diag = get_DinvIplusZtZD3D(Ddict, None, ZtZ_diag, nlevels, nraneffs) 
+    # X'V^(-1)X
+    XtiVX = X.transpose() @ np.linalg.inv(np.eye(n) + Z @ D @ Z.transpose()) @ X
 
     # Run F test
-    T_test = get_T3D(L, XtX, XtZ, DinvIplusZtZD_diag, beta, sigma2, nraneffs)[testv,:]
+    T_test = get_T3D(L, XtiVX, beta, sigma2, nraneffs)[testv,:]
 
     # Check if results are all close.
     testVal_tc1 = np.allclose(T_test,T_expected)
@@ -3403,8 +3426,11 @@ def test_get_T3D():
     # Obtain D(I+Z'ZD)^(-1)
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
 
+    # X'V^(-1)X
+    XtiVX = X.transpose() @ np.linalg.inv(np.eye(n) + Z @ D @ Z.transpose()) @ X
+
     # Run F test
-    T_test = get_T3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2, nraneffs)[testv,:]
+    T_test = get_T3D(L, XtiVX, beta, sigma2, nraneffs)[testv,:]
 
     # Check if results are all close.
     testVal_tc2 = np.allclose(T_test,T_expected)
@@ -3456,8 +3482,11 @@ def test_get_T3D():
     # Obtain D(I+Z'ZD)^(-1)
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
 
+    # X'V^(-1)X
+    XtiVX = X.transpose() @ np.linalg.inv(np.eye(n) + Z @ D @ Z.transpose()) @ X
+
     # Run F test
-    T_test = get_T3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2, nraneffs)[testv,:]
+    T_test = get_T3D(L, XtiVX, beta, sigma2, nraneffs)[testv,:]
 
     # Check if results are all close.
     testVal_tc3 = np.allclose(T_test,T_expected)
@@ -3555,8 +3584,11 @@ def test_get_F3D():
     # Obtain D(I+Z'ZD)^(-1) diag
     DinvIplusZtZD_diag = get_DinvIplusZtZD3D(Ddict, None, ZtZ_diag, nlevels, nraneffs) 
 
+    # X'V^(-1)X
+    XtiVX = X.transpose() @ np.linalg.inv(np.eye(n) + Z @ D @ Z.transpose()) @ X
+
     # Run F test
-    F_test = get_F3D(L, XtX, XtZ, DinvIplusZtZD_diag, beta, sigma2, nraneffs)[testv,:]
+    F_test = get_F3D(L, XtiVX, beta, sigma2, nraneffs)[testv,:]
 
     # Check if results are all close.
     testVal_tc1 = np.allclose(F_test,F_expected)
@@ -3613,8 +3645,11 @@ def test_get_F3D():
     # Obtain D(I+Z'ZD)^(-1)
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
 
+    # X'V^(-1)X
+    XtiVX = X.transpose() @ np.linalg.inv(np.eye(n) + Z @ D @ Z.transpose()) @ X
+
     # Run F test
-    F_test = get_F3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2, nraneffs)[testv,:]
+    F_test = get_F3D(L, XtiVX, beta, sigma2, nraneffs)[testv,:]
 
     # Check if results are all close.
     testVal_tc2 = np.allclose(F_test,F_expected)
@@ -3666,8 +3701,11 @@ def test_get_F3D():
     # Obtain D(I+Z'ZD)^(-1)
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
 
+    # X'V^(-1)X
+    XtiVX = X.transpose() @ np.linalg.inv(np.eye(n) + Z @ D @ Z.transpose()) @ X
+
     # Run F test
-    F_test = get_F3D(L, XtX, XtZ, DinvIplusZtZD, beta, sigma2, nraneffs)[testv,:]
+    F_test = get_F3D(L, XtiVX, beta, sigma2, nraneffs)[testv,:]
 
     # Check if results are all close.
     testVal_tc3 = np.allclose(F_test,F_expected)
@@ -3901,11 +3939,17 @@ def test_get_swdf_T3D():
     # Obtain D(I+Z'ZD)^(-1) diag
     DinvIplusZtZD_diag = get_DinvIplusZtZD3D(Ddict, None, ZtZ_diag, nlevels, nraneffs) 
 
+    # X'V^(-1)X
+    XtiVX = X.transpose() @ np.linalg.inv(np.eye(n) + Z @ D @ Z.transpose()) @ X
+
+    # X'V^(-1)X
+    ZtiVX = Z.transpose() @ np.linalg.inv(np.eye(n) + Z @ D @ Z.transpose()) @ X
+
     # Get S^2 (= Var(L\beta))
-    S2 = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD_diag, sigma2, nraneffs)[testv,:,:]
+    S2 = get_varLB3D(L, XtiVX, sigma2, nraneffs)[testv,:,:]
     
     # Get derivative of S^2
-    dS2 = get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ_diag, DinvIplusZtZD_diag, sigma2)[testv,:,:]
+    dS2 = get_dS23D(nraneffs, nlevels, L, XtiVX, ZtiVX, sigma2)[testv,:,:]
 
     # Get Fisher information matrix
     InfoMat = get_InfoMat3D(DinvIplusZtZD_diag, sigma2, n, nlevels, nraneffs, ZtZ_diag)[testv,:,:]
@@ -3914,7 +3958,7 @@ def test_get_swdf_T3D():
     swdf_expected = 2*(S2**2)/(dS2.transpose() @ np.linalg.inv(InfoMat) @ dS2)
 
     # Calculate using function
-    swdf_test = get_swdf_T3D(L, sigma2, XtX, XtZ, ZtX, ZtZ_diag, DinvIplusZtZD_diag, n, nlevels, nraneffs)[testv,:,:]
+    swdf_test = get_swdf_T3D(L, sigma2, XtiVX, ZtiVX, XtZ, ZtX, ZtZ_diag, DinvIplusZtZD_diag, n, nlevels, nraneffs)[testv,:,:]
 
     # Check if results are all close.
     testVal_tc1 = np.allclose(swdf_test,swdf_expected)
@@ -3927,6 +3971,8 @@ def test_get_swdf_T3D():
     nraneffs = np.array([2])
     nlevels = np.array([300])
     q = np.sum(nlevels*nraneffs)
+    q0 = nraneffs[0]
+    l0 = nlevels[0]
     v = 10
 
     # Generate a random mass univariate linear mixed model.
@@ -3944,14 +3990,36 @@ def test_get_swdf_T3D():
     L = np.random.binomial(1,0.5,size=(1,p))
     L[0,0]=1
 
+    # Use function to get flattened matrices
+    ZtZ = flattenZtZ(ZtZ, l0, q0)
+
+    # Work out the indices in D where a new block Dk appears
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+
+    # New empty D dict
+    Ddict = dict()
+
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+
     # Get D(I+Z'ZD)^(-1)
-    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+    DinvIplusZtZD = get_DinvIplusZtZD3D(Ddict, D, ZtZ, nlevels, nraneffs)
+
+    # X'V^(-1)X
+    XtiVX = X.transpose() @ np.linalg.inv(np.eye(n) + Z @ D @ Z.transpose()) @ X
+
+    # X'V^(-1)X
+    ZtiVX = Z.transpose() @ np.linalg.inv(np.eye(n) + Z @ D @ Z.transpose()) @ X
 
     # Get S^2 (= Var(L\beta))
-    S2 = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs)[testv,:,:]
+    S2 = get_varLB3D(L, XtiVX, sigma2, nraneffs)[testv,:,:]
     
     # Get derivative of S^2
-    dS2 = get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2)[testv,:,:]
+    dS2 = get_dS23D(nraneffs, nlevels, L, XtiVX, ZtiVX, sigma2)[testv,:,:]
 
     # Get Fisher information matrix
     InfoMat = get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nraneffs, ZtZ)[testv,:,:]
@@ -3960,7 +4028,7 @@ def test_get_swdf_T3D():
     swdf_expected = 2*(S2**2)/(dS2.transpose() @ np.linalg.inv(InfoMat) @ dS2)
 
     # Calculate using function
-    swdf_test = get_swdf_T3D(L, sigma2, XtX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nraneffs)[testv,:,:]
+    swdf_test = get_swdf_T3D(L, sigma2, XtiVX, ZtiVX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nraneffs)[testv,:,:]
 
     # Check if results are all close.
     testVal_tc2 = np.allclose(swdf_test,swdf_expected)
@@ -3988,11 +4056,17 @@ def test_get_swdf_T3D():
     # Get D(I+Z'ZD)^(-1)
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
 
+    # X'V^(-1)X
+    XtiVX = X.transpose() @ np.linalg.inv(np.eye(n) + Z @ D @ Z.transpose()) @ X
+
+    # X'V^(-1)X
+    ZtiVX = Z.transpose() @ np.linalg.inv(np.eye(n) + Z @ D @ Z.transpose()) @ X
+
     # Get S^2 (= Var(L\beta))
-    S2 = get_varLB3D(L, XtX, XtZ, DinvIplusZtZD, sigma2, nraneffs)[testv,:,:]
+    S2 = get_varLB3D(L, XtiVX, sigma2, nraneffs)[testv,:,:]
     
     # Get derivative of S^2
-    dS2 = get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2)[testv,:,:]
+    dS2 = get_dS23D(nraneffs, nlevels, L, XtiVX, ZtiVX, sigma2)[testv,:,:]
 
     # Get Fisher information matrix
     InfoMat = get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nraneffs, ZtZ)[testv,:,:]
@@ -4001,7 +4075,7 @@ def test_get_swdf_T3D():
     swdf_expected = 2*(S2**2)/(dS2.transpose() @ np.linalg.inv(InfoMat) @ dS2)
 
     # Calculate using function
-    swdf_test = get_swdf_T3D(L, sigma2, XtX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nraneffs)[testv,:,:]
+    swdf_test = get_swdf_T3D(L, sigma2, XtiVX, ZtiVX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nraneffs)[testv,:,:]
 
     # Check if results are all close.
     testVal_tc3 = np.allclose(swdf_test,swdf_expected)
@@ -4086,6 +4160,12 @@ def test_get_swdf_F3D():
     # L is rL in rank
     rL = np.linalg.matrix_rank(L)
 
+    # X'V^(-1)X
+    XtiVX = X.transpose() @ np.linalg.inv(np.eye(n) + Z @ D @ Z.transpose()) @ X
+
+    # X'V^(-1)X
+    ZtiVX = Z.transpose() @ np.linalg.inv(np.eye(n) + Z @ D @ Z.transpose()) @ X
+
     # Initialize empty sum.
     sum_swdf_adj = 0
 
@@ -4093,7 +4173,7 @@ def test_get_swdf_F3D():
     for i in np.arange(rL):
 
         # Work out the swdf for each row of L
-        swdf_row = get_swdf_T3D(L[i:(i+1),:], sigma2, XtX, XtZ, ZtX, ZtZ_diag, DinvIplusZtZD_diag, n, nlevels, nraneffs)[testv,:,:]
+        swdf_row = get_swdf_T3D(L[i:(i+1),:], sigma2, XtiVX, ZtiVX, XtZ, ZtX, ZtZ_diag, DinvIplusZtZD_diag, n, nlevels, nraneffs)[testv,:,:]
 
         # Work out adjusted df = df/(df-2)
         swdf_adj = swdf_row/(swdf_row-2)
@@ -4105,7 +4185,7 @@ def test_get_swdf_F3D():
     swdf_expected = 2*sum_swdf_adj/(sum_swdf_adj-rL)
 
     # Function version 
-    swdf_test = get_swdf_F3D(L, sigma2, XtX, XtZ, ZtX, ZtZ_diag, DinvIplusZtZD_diag, n, nlevels, nraneffs)[testv]
+    swdf_test = get_swdf_F3D(L, sigma2, XtiVX, ZtiVX, XtZ, ZtX, ZtZ_diag, DinvIplusZtZD_diag, n, nlevels, nraneffs)[testv]
 
     # Check if results are all close.
     testVal_tc1 = np.allclose(swdf_test,swdf_expected)
@@ -4131,8 +4211,28 @@ def test_get_swdf_F3D():
     # Choose random voxel to check worked correctly
     testv = np.random.randint(0,v)
 
-    # Obtain D(I+Z'ZD)^(-1)
-    DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
+    # Shorthand q0 and l0
+    q0 = nraneffs[0]
+    l0 = nlevels[0]
+
+    # Flattened ZtZ
+    ZtZ_flattened = flattenZtZ(ZtZ, l0, q0)
+
+    # Work out the indices in D where a new block Dk appears
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+
+    # New empty D dict
+    Ddict = dict()
+
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+
+    # Test result (nsv)
+    DinvIplusZtZD_flattened = get_DinvIplusZtZD3D(Ddict, D, ZtZ_flattened, nlevels, nraneffs) 
 
     # Test contrast vector
     L = np.random.binomial(1,0.5,size=(1,p))
@@ -4141,6 +4241,12 @@ def test_get_swdf_F3D():
     # L is rL in rank
     rL = np.linalg.matrix_rank(L)
 
+    # X'V^(-1)X
+    XtiVX = X.transpose() @ np.linalg.inv(np.eye(n) + Z @ D @ Z.transpose()) @ X
+
+    # X'V^(-1)X
+    ZtiVX = Z.transpose() @ np.linalg.inv(np.eye(n) + Z @ D @ Z.transpose()) @ X
+
     # Initialize empty sum.
     sum_swdf_adj = 0
 
@@ -4148,7 +4254,7 @@ def test_get_swdf_F3D():
     for i in np.arange(rL):
 
         # Work out the swdf for each row of L
-        swdf_row = get_swdf_T3D(L[i:(i+1),:], sigma2, XtX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nraneffs)[testv,:,:]
+        swdf_row = get_swdf_T3D(L[i:(i+1),:], sigma2,  XtiVX, ZtiVX, XtZ, ZtX, ZtZ_flattened, DinvIplusZtZD_flattened, n, nlevels, nraneffs)[testv,:,:]
 
         # Work out adjusted df = df/(df-2)
         swdf_adj = swdf_row/(swdf_row-2)
@@ -4160,7 +4266,7 @@ def test_get_swdf_F3D():
     swdf_expected = 2*sum_swdf_adj/(sum_swdf_adj-rL)
 
     # Function version 
-    swdf_test = get_swdf_F3D(L, sigma2, XtX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nraneffs)[testv]
+    swdf_test = get_swdf_F3D(L, sigma2, XtiVX, ZtiVX, XtZ, ZtX, ZtZ_flattened, DinvIplusZtZD_flattened, n, nlevels, nraneffs)[testv]
 
     # Check if results are all close.
     testVal_tc2 = np.allclose(swdf_test,swdf_expected)
@@ -4191,6 +4297,12 @@ def test_get_swdf_F3D():
     # L is rL in rank
     rL = np.linalg.matrix_rank(L)
 
+    # X'V^(-1)X
+    XtiVX = X.transpose() @ np.linalg.inv(np.eye(n) + Z @ D @ Z.transpose()) @ X
+
+    # X'V^(-1)X
+    ZtiVX = Z.transpose() @ np.linalg.inv(np.eye(n) + Z @ D @ Z.transpose()) @ X
+
     # Initialize empty sum.
     sum_swdf_adj = 0
 
@@ -4198,7 +4310,7 @@ def test_get_swdf_F3D():
     for i in np.arange(rL):
 
         # Work out the swdf for each row of L
-        swdf_row = get_swdf_T3D(L[i:(i+1),:], sigma2, XtX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nraneffs)[testv,:,:]
+        swdf_row = get_swdf_T3D(L[i:(i+1),:], sigma2, XtiVX, ZtiVX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nraneffs)[testv,:,:]
 
         # Work out adjusted df = df/(df-2)
         swdf_adj = swdf_row/(swdf_row-2)
@@ -4210,7 +4322,7 @@ def test_get_swdf_F3D():
     swdf_expected = 2*sum_swdf_adj/(sum_swdf_adj-rL)
 
     # Function version 
-    swdf_test = get_swdf_F3D(L, sigma2, XtX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nraneffs)[testv]
+    swdf_test = get_swdf_F3D(L, sigma2, XtiVX, ZtiVX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nlevels, nraneffs)[testv]
 
     # Check if results are all close.
     testVal_tc3 = np.allclose(swdf_test,swdf_expected)
@@ -4269,8 +4381,11 @@ def test_get_dS23D():
     IplusZDZt = np.eye(n) + Z @ D[testv,:,:] @ Z.transpose()
     invV = np.linalg.inv(IplusZDZt)
 
-    # Calculate X'V^{-1}X
-    XtiVX = X.transpose() @ invV @ X 
+    # X'V^(-1)X
+    XtiVX = X.transpose() @ np.linalg.inv(np.eye(n) + Z @ D @ Z.transpose()) @ X
+
+    # X'V^(-1)X
+    ZtiVX = Z.transpose() @ np.linalg.inv(np.eye(n) + Z @ D @ Z.transpose()) @ X
 
     # New empty array for differentiating S^2 wrt (sigma2, vech(D1),...vech(Dr)).
     dS2_expected = np.zeros((1+np.int32(np.sum(nraneffs*(nraneffs+1)/2)),1))
@@ -4281,7 +4396,7 @@ def test_get_dS23D():
     DerivInds = np.insert(DerivInds,0,1)
 
     # Work of derivative wrt to sigma^2
-    dS2dsigma2 = L @ np.linalg.inv(XtiVX) @ L.transpose()
+    dS2dsigma2 = L @ np.linalg.inv(XtiVX[testv,:,:]) @ L.transpose()
 
     # Add to dS2
     dS2_expected[0:1] = dS2dsigma2.reshape(dS2_expected[0:1].shape)
@@ -4305,7 +4420,7 @@ def test_get_dS23D():
 
             # Work out the term to put into the kronecker product
             # K = Z_(k,j)'V^{-1}X(X'V^{-1})^{-1}L'
-            K = ZkjtiVX @ np.linalg.inv(XtiVX) @ L.transpose()
+            K = ZkjtiVX @ np.linalg.inv(XtiVX[testv,:,:]) @ L.transpose()
             
             # Sum terms
             dS2dvechDk = dS2dvechDk + dupMat2D(nraneffs[k]).toarray().transpose() @ mat2vec2D(np.kron(K,K.transpose()))
@@ -4336,7 +4451,7 @@ def test_get_dS23D():
     DinvIplusZtZD_diag = get_DinvIplusZtZD3D(Ddict, None, ZtZ_diag, nlevels, nraneffs) 
 
     # Obtain result from function
-    dS2_test = get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ_diag, DinvIplusZtZD_diag, sigma2)[testv,:,:]
+    dS2_test = get_dS23D(nraneffs, nlevels, L, XtiVX, ZtiVX, sigma2)[testv,:,:]
 
     # Check if results are all close.
     testVal_tc1 = np.allclose(dS2_test,dS2_expected)
@@ -4372,7 +4487,10 @@ def test_get_dS23D():
     invV = np.linalg.inv(IplusZDZt)
 
     # Calculate X'V^{-1}X
-    XtiVX = X.transpose() @ invV @ X 
+    XtiVX = X.transpose() @ np.linalg.inv(np.eye(n) + Z @ D @ Z.transpose()) @ X
+
+    # Calculate Z'V^{-1}X
+    ZtiVX = Z.transpose() @ np.linalg.inv(np.eye(n) + Z @ D @ Z.transpose()) @ X
 
     # New empty array for differentiating S^2 wrt (sigma2, vech(D1),...vech(Dr)).
     dS2_expected = np.zeros((1+np.int32(np.sum(nraneffs*(nraneffs+1)/2)),1))
@@ -4383,7 +4501,7 @@ def test_get_dS23D():
     DerivInds = np.insert(DerivInds,0,1)
 
     # Work of derivative wrt to sigma^2
-    dS2dsigma2 = L @ np.linalg.inv(XtiVX) @ L.transpose()
+    dS2dsigma2 = L @ np.linalg.inv(XtiVX[testv,:,:]) @ L.transpose()
 
     # Add to dS2
     dS2_expected[0:1] = dS2dsigma2.reshape(dS2_expected[0:1].shape)
@@ -4407,7 +4525,7 @@ def test_get_dS23D():
 
             # Work out the term to put into the kronecker product
             # K = Z_(k,j)'V^{-1}X(X'V^{-1})^{-1}L'
-            K = ZkjtiVX @ np.linalg.inv(XtiVX) @ L.transpose()
+            K = ZkjtiVX @ np.linalg.inv(XtiVX[testv,:,:]) @ L.transpose()
             
             # Sum terms
             dS2dvechDk = dS2dvechDk + dupMat2D(nraneffs[k]).toarray().transpose() @ mat2vec2D(np.kron(K,K.transpose()))
@@ -4442,7 +4560,7 @@ def test_get_dS23D():
     DinvIplusZtZD_flattened = get_DinvIplusZtZD3D(Ddict, D, ZtZ_flattened, nlevels, nraneffs) 
 
     # Obtain result from function
-    dS2_test = get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ_flattened, DinvIplusZtZD_flattened, sigma2)[testv,:,:]
+    dS2_test = get_dS23D(nraneffs, nlevels, L, XtiVX, ZtiVX, sigma2)[testv,:,:]
 
     # Check if results are all close.
     testVal_tc2 = np.allclose(dS2_test,dS2_expected)
@@ -4472,8 +4590,12 @@ def test_get_dS23D():
     IplusZDZt = np.eye(n) + Z @ D[testv,:,:] @ Z.transpose()
     invV = np.linalg.inv(IplusZDZt)
 
+
     # Calculate X'V^{-1}X
-    XtiVX = X.transpose() @ invV @ X 
+    XtiVX = X.transpose() @ np.linalg.inv(np.eye(n) + Z @ D @ Z.transpose()) @ X
+
+    # Calculate Z'V^{-1}X
+    ZtiVX = Z.transpose() @ np.linalg.inv(np.eye(n) + Z @ D @ Z.transpose()) @ X
 
     # New empty array for differentiating S^2 wrt (sigma2, vech(D1),...vech(Dr)).
     dS2_expected = np.zeros((1+np.int32(np.sum(nraneffs*(nraneffs+1)/2)),1))
@@ -4484,7 +4606,7 @@ def test_get_dS23D():
     DerivInds = np.insert(DerivInds,0,1)
 
     # Work of derivative wrt to sigma^2
-    dS2dsigma2 = L @ np.linalg.inv(XtiVX) @ L.transpose()
+    dS2dsigma2 = L @ np.linalg.inv(XtiVX[testv,:,:]) @ L.transpose()
 
     # Add to dS2
     dS2_expected[0:1] = dS2dsigma2.reshape(dS2_expected[0:1].shape)
@@ -4508,7 +4630,7 @@ def test_get_dS23D():
 
             # Work out the term to put into the kronecker product
             # K = Z_(k,j)'V^{-1}X(X'V^{-1})^{-1}L'
-            K = ZkjtiVX @ np.linalg.inv(XtiVX) @ L.transpose()
+            K = ZkjtiVX @ np.linalg.inv(XtiVX[testv,:,:]) @ L.transpose()
             
             # Sum terms
             dS2dvechDk = dS2dvechDk + dupMat2D(nraneffs[k]).toarray().transpose() @ mat2vec2D(np.kron(K,K.transpose()))
@@ -4523,7 +4645,7 @@ def test_get_dS23D():
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
 
     # Obtain result from function
-    dS2_test = get_dS23D(nraneffs, nlevels, L, XtX, XtZ, ZtZ, DinvIplusZtZD, sigma2)[testv,:,:]
+    dS2_test = get_dS23D(nraneffs, nlevels, L, XtiVX, ZtiVX, sigma2)[testv,:,:]
 
     # Check if results are all close.
     testVal_tc3 = np.allclose(dS2_test,dS2_expected)
@@ -4677,6 +4799,29 @@ def test_get_InfoMat3D():
     # Obtain D(I+Z'ZD)^(-1)
     DinvIplusZtZD = D @ np.linalg.inv(np.eye(q) + ZtZ @ D)
 
+    # Shorthand q0 and l0
+    q0 = nraneffs[0]
+    l0 = nlevels[0]
+
+    # Flattened ZtZ
+    ZtZ_flattened = flattenZtZ(ZtZ, l0, q0)
+
+    # Work out the indices in D where a new block Dk appears
+    Dinds = np.cumsum(nlevels*nraneffs)
+    Dinds = np.insert(Dinds,0,0)
+
+    # New empty D dict
+    Ddict = dict()
+
+    # Work out Dk for each factor, factor k 
+    for k in np.arange(nlevels.shape[0]):
+
+        # Add Dk to the dict
+        Ddict[k] = D[:,Dinds[k]:(Dinds[k]+nraneffs[k]),Dinds[k]:(Dinds[k]+nraneffs[k])]
+
+    # Obtain D(I+Z'ZD)^(-1) diag
+    DinvIplusZtZD_flattened = get_DinvIplusZtZD3D(Ddict, None, ZtZ_flattened, nlevels, nraneffs) 
+
     # Duplication matrices
     # ------------------------------------------------------------------------------
     dupMatTdict = dict()
@@ -4727,7 +4872,7 @@ def test_get_InfoMat3D():
             FI_expected[np.ix_(IndsDk1, IndsDk2)] = covdldDk1dDk2
             FI_expected[np.ix_(IndsDk2, IndsDk1)] = FI_expected[np.ix_(IndsDk1, IndsDk2)].transpose()
 
-    FI_test = get_InfoMat3D(DinvIplusZtZD, sigma2, n, nlevels, nraneffs, ZtZ)[testv,:,:]
+    FI_test = get_InfoMat3D(DinvIplusZtZD_flattened, sigma2, n, nlevels, nraneffs, ZtZ_flattened)[testv,:,:]
 
     # Check if results are all close.
     testVal_tc2 = np.allclose(FI_test,FI_expected)
