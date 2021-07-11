@@ -86,279 +86,279 @@ def cleanup(OutDir,simNo):
     # Add to files 
     addLineToCSV(fname_n, n_line)
 
-    # # -----------------------------------------------------------------------
-    # # MAE and MRD for beta maps
-    # # -----------------------------------------------------------------------
+    # -----------------------------------------------------------------------
+    # MAE and MRD for beta maps
+    # -----------------------------------------------------------------------
 
-    # # Get BLMM beta
-    # beta_blmm = nib.load(os.path.join(simDir, 'BLMM', 'blmm_vox_beta.nii')).get_data()
+    # Get BLMM beta
+    beta_blmm = nib.load(os.path.join(simDir, 'BLMM', 'blmm_vox_beta.nii')).get_data()
 
-    # # Get lmer beta
-    # beta_lmer = nib.load(os.path.join(simDir, 'lmer', 'lmer_vox_beta.nii')).get_data()
+    # Get lmer beta
+    beta_lmer = nib.load(os.path.join(simDir, 'lmer', 'lmer_vox_beta.nii')).get_data()
 
-    # # Remove zero values (spatially varying)
-    # beta_blmm_sv = beta_blmm[(beta_lmer!=0) & loc_sv]
-    # beta_lmer_sv = beta_lmer[(beta_lmer!=0) & loc_sv]
+    # Remove zero values (spatially varying)
+    beta_blmm_sv = beta_blmm[(beta_lmer!=0) & loc_sv]
+    beta_lmer_sv = beta_lmer[(beta_lmer!=0) & loc_sv]
 
-    # # Remove zero values (non spatially varying)
-    # beta_blmm_nsv = beta_blmm[(beta_lmer!=0) & loc_nsv]
-    # beta_lmer_nsv = beta_lmer[(beta_lmer!=0) & loc_nsv]
+    # Remove zero values (non spatially varying)
+    beta_blmm_nsv = beta_blmm[(beta_lmer!=0) & loc_nsv]
+    beta_lmer_nsv = beta_lmer[(beta_lmer!=0) & loc_nsv]
 
-    # # Remove zero values (both)
-    # beta_blmm = beta_blmm[beta_lmer!=0]
-    # beta_lmer = beta_lmer[beta_lmer!=0]
+    # Remove zero values (both)
+    beta_blmm = beta_blmm[beta_lmer!=0]
+    beta_lmer = beta_lmer[beta_lmer!=0]
 
-    # # Get MAE
-    # MAE_beta = np.mean(np.abs(beta_blmm-beta_lmer))
-    # MAE_beta_sv = np.mean(np.abs(beta_blmm_sv-beta_lmer_sv))
-    # MAE_beta_nsv = np.mean(np.abs(beta_blmm_nsv-beta_lmer_nsv))
+    # Get MAE
+    MAE_beta = np.mean(np.abs(beta_blmm-beta_lmer))
+    MAE_beta_sv = np.mean(np.abs(beta_blmm_sv-beta_lmer_sv))
+    MAE_beta_nsv = np.mean(np.abs(beta_blmm_nsv-beta_lmer_nsv))
 
-    # # Get MRD
-    # MRD_beta = np.mean(2*np.abs((beta_blmm-beta_lmer)/(beta_blmm+beta_lmer)))
-    # MRD_beta_sv = np.mean(2*np.abs((beta_blmm_sv-beta_lmer_sv)/(beta_blmm_sv+beta_lmer_sv)))
-    # MRD_beta_nsv = np.mean(2*np.abs((beta_blmm_nsv-beta_lmer_nsv)/(beta_blmm_nsv+beta_lmer_nsv)))
+    # Get MRD
+    MRD_beta = np.mean(2*np.abs((beta_blmm-beta_lmer)/(beta_blmm+beta_lmer)))
+    MRD_beta_sv = np.mean(2*np.abs((beta_blmm_sv-beta_lmer_sv)/(beta_blmm_sv+beta_lmer_sv)))
+    MRD_beta_nsv = np.mean(2*np.abs((beta_blmm_nsv-beta_lmer_nsv)/(beta_blmm_nsv+beta_lmer_nsv)))
 
-    # # Make line to add to csv for MAE
-    # MAE_beta_line = np.array([[simNo, MAE_beta, MAE_beta_sv, MAE_beta_nsv]])
+    # Make line to add to csv for MAE
+    MAE_beta_line = np.array([[simNo, MAE_beta, MAE_beta_sv, MAE_beta_nsv]])
 
-    # # Make line to add to csv for MRD
-    # MRD_beta_line = np.array([[simNo, MRD_beta, MRD_beta_sv, MRD_beta_nsv]])
+    # Make line to add to csv for MRD
+    MRD_beta_line = np.array([[simNo, MRD_beta, MRD_beta_sv, MRD_beta_nsv]])
 
-    # # MAE beta file name
-    # fname_MAE = os.path.join(resDir, 'MAE_beta.csv')
+    # MAE beta file name
+    fname_MAE = os.path.join(resDir, 'MAE_beta.csv')
 
-    # # MRD beta file name
-    # fname_MRD = os.path.join(resDir, 'MRD_beta.csv')
+    # MRD beta file name
+    fname_MRD = os.path.join(resDir, 'MRD_beta.csv')
 
-    # # Add to files 
-    # addLineToCSV(fname_MAE, MAE_beta_line)
-    # addLineToCSV(fname_MRD, MRD_beta_line)
+    # Add to files 
+    addLineToCSV(fname_MAE, MAE_beta_line)
+    addLineToCSV(fname_MRD, MRD_beta_line)
 
-    # # Cleanup
-    # del beta_lmer, beta_blmm, MAE_beta, MRD_beta, MAE_beta_line, MRD_beta_line
+    # Cleanup
+    del beta_lmer, beta_blmm, MAE_beta, MRD_beta, MAE_beta_line, MRD_beta_line
 
-    # # -----------------------------------------------------------------------
-    # # MAE and MRD for sigma2 maps
-    # # -----------------------------------------------------------------------
+    # -----------------------------------------------------------------------
+    # MAE and MRD for sigma2 maps
+    # -----------------------------------------------------------------------
 
-    # # Get BLMM sigma2
-    # sigma2_blmm = nib.load(os.path.join(simDir, 'BLMM', 'blmm_vox_sigma2.nii')).get_data()
+    # Get BLMM sigma2
+    sigma2_blmm = nib.load(os.path.join(simDir, 'BLMM', 'blmm_vox_sigma2.nii')).get_data()
 
-    # # Get lmer sigma2
-    # sigma2_lmer = nib.load(os.path.join(simDir, 'lmer', 'lmer_vox_sigma2.nii')).get_data()
+    # Get lmer sigma2
+    sigma2_lmer = nib.load(os.path.join(simDir, 'lmer', 'lmer_vox_sigma2.nii')).get_data()
 
-    # # Remove zero values (spatially varying)
-    # sigma2_blmm_sv = sigma2_blmm[(sigma2_lmer!=0) & loc_sv]
-    # sigma2_lmer_sv = sigma2_lmer[(sigma2_lmer!=0) & loc_sv]
+    # Remove zero values (spatially varying)
+    sigma2_blmm_sv = sigma2_blmm[(sigma2_lmer!=0) & loc_sv]
+    sigma2_lmer_sv = sigma2_lmer[(sigma2_lmer!=0) & loc_sv]
 
-    # # Remove zero values (non spatially varying)
-    # sigma2_blmm_nsv = sigma2_blmm[(sigma2_lmer!=0) & loc_nsv]
-    # sigma2_lmer_nsv = sigma2_lmer[(sigma2_lmer!=0) & loc_nsv]
+    # Remove zero values (non spatially varying)
+    sigma2_blmm_nsv = sigma2_blmm[(sigma2_lmer!=0) & loc_nsv]
+    sigma2_lmer_nsv = sigma2_lmer[(sigma2_lmer!=0) & loc_nsv]
 
-    # # Remove zero values
-    # sigma2_blmm = sigma2_blmm[sigma2_lmer!=0]
-    # sigma2_lmer = sigma2_lmer[sigma2_lmer!=0]
+    # Remove zero values
+    sigma2_blmm = sigma2_blmm[sigma2_lmer!=0]
+    sigma2_lmer = sigma2_lmer[sigma2_lmer!=0]
 
-    # # Get MAE
-    # MAE_sigma2 = np.mean(np.abs(sigma2_blmm-sigma2_lmer))
-    # MAE_sigma2_sv = np.mean(np.abs(sigma2_blmm_sv-sigma2_lmer_sv))
-    # MAE_sigma2_nsv = np.mean(np.abs(sigma2_blmm_nsv-sigma2_lmer_nsv))
+    # Get MAE
+    MAE_sigma2 = np.mean(np.abs(sigma2_blmm-sigma2_lmer))
+    MAE_sigma2_sv = np.mean(np.abs(sigma2_blmm_sv-sigma2_lmer_sv))
+    MAE_sigma2_nsv = np.mean(np.abs(sigma2_blmm_nsv-sigma2_lmer_nsv))
 
-    # # Get MRD
-    # MRD_sigma2 = np.mean(2*np.abs((sigma2_blmm-sigma2_lmer)/(sigma2_blmm+sigma2_lmer)))
-    # MRD_sigma2_sv = np.mean(2*np.abs((sigma2_blmm_sv-sigma2_lmer_sv)/(sigma2_blmm_sv+sigma2_lmer_sv)))
-    # MRD_sigma2_nsv = np.mean(2*np.abs((sigma2_blmm_nsv-sigma2_lmer_nsv)/(sigma2_blmm_nsv+sigma2_lmer_nsv)))
+    # Get MRD
+    MRD_sigma2 = np.mean(2*np.abs((sigma2_blmm-sigma2_lmer)/(sigma2_blmm+sigma2_lmer)))
+    MRD_sigma2_sv = np.mean(2*np.abs((sigma2_blmm_sv-sigma2_lmer_sv)/(sigma2_blmm_sv+sigma2_lmer_sv)))
+    MRD_sigma2_nsv = np.mean(2*np.abs((sigma2_blmm_nsv-sigma2_lmer_nsv)/(sigma2_blmm_nsv+sigma2_lmer_nsv)))
 
-    # # Make line to add to csv for MAE
-    # MAE_sigma2_line = np.array([[simNo, MAE_sigma2, MAE_sigma2_sv, MAE_sigma2_nsv]])
+    # Make line to add to csv for MAE
+    MAE_sigma2_line = np.array([[simNo, MAE_sigma2, MAE_sigma2_sv, MAE_sigma2_nsv]])
 
-    # # Make line to add to csv for MRD
-    # MRD_sigma2_line = np.array([[simNo, MRD_sigma2, MRD_sigma2_sv, MRD_sigma2_nsv]])
+    # Make line to add to csv for MRD
+    MRD_sigma2_line = np.array([[simNo, MRD_sigma2, MRD_sigma2_sv, MRD_sigma2_nsv]])
 
-    # # MAE sigma2 file name
-    # fname_MAE = os.path.join(resDir, 'MAE_sigma2.csv')
+    # MAE sigma2 file name
+    fname_MAE = os.path.join(resDir, 'MAE_sigma2.csv')
 
-    # # MRD sigma2 file name
-    # fname_MRD = os.path.join(resDir, 'MRD_sigma2.csv')
+    # MRD sigma2 file name
+    fname_MRD = os.path.join(resDir, 'MRD_sigma2.csv')
 
-    # # Add to files 
-    # addLineToCSV(fname_MAE, MAE_sigma2_line)
-    # addLineToCSV(fname_MRD, MRD_sigma2_line)
+    # Add to files 
+    addLineToCSV(fname_MAE, MAE_sigma2_line)
+    addLineToCSV(fname_MRD, MRD_sigma2_line)
 
-    # # Cleanup
-    # del sigma2_lmer, sigma2_blmm, MAE_sigma2, MRD_sigma2, MAE_sigma2_line, MRD_sigma2_line
+    # Cleanup
+    del sigma2_lmer, sigma2_blmm, MAE_sigma2, MRD_sigma2, MAE_sigma2_line, MRD_sigma2_line
 
-    # # -----------------------------------------------------------------------
-    # # MAE and MRD for vechD maps
-    # # -----------------------------------------------------------------------
+    # -----------------------------------------------------------------------
+    # MAE and MRD for vechD maps
+    # -----------------------------------------------------------------------
 
-    # # Get BLMM vechD
-    # vechD_blmm = nib.load(os.path.join(simDir, 'BLMM', 'blmm_vox_D.nii')).get_data()
+    # Get BLMM vechD
+    vechD_blmm = nib.load(os.path.join(simDir, 'BLMM', 'blmm_vox_D.nii')).get_data()
 
-    # # Get lmer vechD
-    # vechD_lmer = nib.load(os.path.join(simDir, 'lmer', 'lmer_vox_D.nii')).get_data()
+    # Get lmer vechD
+    vechD_lmer = nib.load(os.path.join(simDir, 'lmer', 'lmer_vox_D.nii')).get_data()
 
-    # # Remove zero values (Spatially varying)
-    # vechD_blmm_sv = vechD_blmm[(vechD_lmer!=0) & loc_sv]
-    # vechD_lmer_sv = vechD_lmer[(vechD_lmer!=0) & loc_sv]
+    # Remove zero values (Spatially varying)
+    vechD_blmm_sv = vechD_blmm[(vechD_lmer!=0) & loc_sv]
+    vechD_lmer_sv = vechD_lmer[(vechD_lmer!=0) & loc_sv]
 
-    # # Remove zero values (Non spatially varying)
-    # vechD_blmm_nsv = vechD_blmm[(vechD_lmer!=0) & loc_nsv]
-    # vechD_lmer_nsv = vechD_lmer[(vechD_lmer!=0) & loc_nsv]
+    # Remove zero values (Non spatially varying)
+    vechD_blmm_nsv = vechD_blmm[(vechD_lmer!=0) & loc_nsv]
+    vechD_lmer_nsv = vechD_lmer[(vechD_lmer!=0) & loc_nsv]
 
-    # # Remove zero values
-    # vechD_blmm = vechD_blmm[vechD_lmer!=0]
-    # vechD_lmer = vechD_lmer[vechD_lmer!=0]
+    # Remove zero values
+    vechD_blmm = vechD_blmm[vechD_lmer!=0]
+    vechD_lmer = vechD_lmer[vechD_lmer!=0]
 
-    # # Get MAE
-    # MAE_vechD = np.mean(np.abs(vechD_blmm-vechD_lmer))
-    # MAE_vechD_sv = np.mean(np.abs(vechD_blmm_sv-vechD_lmer_sv))
-    # MAE_vechD_nsv = np.mean(np.abs(vechD_blmm_nsv-vechD_lmer_nsv))
+    # Get MAE
+    MAE_vechD = np.mean(np.abs(vechD_blmm-vechD_lmer))
+    MAE_vechD_sv = np.mean(np.abs(vechD_blmm_sv-vechD_lmer_sv))
+    MAE_vechD_nsv = np.mean(np.abs(vechD_blmm_nsv-vechD_lmer_nsv))
 
-    # # Get MRD
-    # MRD_vechD = np.mean(2*np.abs((vechD_blmm-vechD_lmer)/(vechD_blmm+vechD_lmer)))
-    # MRD_vechD_sv = np.mean(2*np.abs((vechD_blmm_sv-vechD_lmer_sv)/(vechD_blmm_sv+vechD_lmer_sv)))
-    # MRD_vechD_nsv = np.mean(2*np.abs((vechD_blmm_nsv-vechD_lmer_nsv)/(vechD_blmm_nsv+vechD_lmer_nsv)))
+    # Get MRD
+    MRD_vechD = np.mean(2*np.abs((vechD_blmm-vechD_lmer)/(vechD_blmm+vechD_lmer)))
+    MRD_vechD_sv = np.mean(2*np.abs((vechD_blmm_sv-vechD_lmer_sv)/(vechD_blmm_sv+vechD_lmer_sv)))
+    MRD_vechD_nsv = np.mean(2*np.abs((vechD_blmm_nsv-vechD_lmer_nsv)/(vechD_blmm_nsv+vechD_lmer_nsv)))
 
-    # # Make line to add to csv for MAE
-    # MAE_vechD_line = np.array([[simNo, MAE_vechD, MAE_vechD_sv, MAE_vechD_nsv]])
+    # Make line to add to csv for MAE
+    MAE_vechD_line = np.array([[simNo, MAE_vechD, MAE_vechD_sv, MAE_vechD_nsv]])
 
-    # # Make line to add to csv for MRD
-    # MRD_vechD_line = np.array([[simNo, MRD_vechD, MRD_vechD_sv, MRD_vechD_nsv]])
+    # Make line to add to csv for MRD
+    MRD_vechD_line = np.array([[simNo, MRD_vechD, MRD_vechD_sv, MRD_vechD_nsv]])
 
-    # # MAE vechD file name
-    # fname_MAE = os.path.join(resDir, 'MAE_vechD.csv')
+    # MAE vechD file name
+    fname_MAE = os.path.join(resDir, 'MAE_vechD.csv')
 
-    # # MRD vechD file name
-    # fname_MRD = os.path.join(resDir, 'MRD_vechD.csv')
+    # MRD vechD file name
+    fname_MRD = os.path.join(resDir, 'MRD_vechD.csv')
 
-    # # Add to files 
-    # addLineToCSV(fname_MAE, MAE_vechD_line)
-    # addLineToCSV(fname_MRD, MRD_vechD_line)
+    # Add to files 
+    addLineToCSV(fname_MAE, MAE_vechD_line)
+    addLineToCSV(fname_MRD, MRD_vechD_line)
 
-    # # Cleanup
-    # del vechD_lmer, vechD_blmm, MAE_vechD, MRD_vechD, MAE_vechD_line, MRD_vechD_line
+    # Cleanup
+    del vechD_lmer, vechD_blmm, MAE_vechD, MRD_vechD, MAE_vechD_line, MRD_vechD_line
 
-    # # -----------------------------------------------------------------------
-    # # Log-likelihood difference
-    # # -----------------------------------------------------------------------
+    # -----------------------------------------------------------------------
+    # Log-likelihood difference
+    # -----------------------------------------------------------------------
 
-    # # Get BLMM llh
-    # llh_blmm = nib.load(os.path.join(simDir, 'BLMM', 'blmm_vox_llh.nii')).get_data()
+    # Get BLMM llh
+    llh_blmm = nib.load(os.path.join(simDir, 'BLMM', 'blmm_vox_llh.nii')).get_data()
 
-    # # Get lmer llh
-    # llh_lmer = nib.load(os.path.join(simDir, 'lmer', 'lmer_vox_llh.nii')).get_data()
+    # Get lmer llh
+    llh_lmer = nib.load(os.path.join(simDir, 'lmer', 'lmer_vox_llh.nii')).get_data()
 
-    # # Remove zero values (spatially varying)
-    # llh_blmm_sv = llh_blmm[(llh_lmer!=0) & loc_sv]
-    # llh_lmer_sv = llh_lmer[(llh_lmer!=0) & loc_sv]
+    # Remove zero values (spatially varying)
+    llh_blmm_sv = llh_blmm[(llh_lmer!=0) & loc_sv]
+    llh_lmer_sv = llh_lmer[(llh_lmer!=0) & loc_sv]
 
-    # # Remove zero values (non spatially varying)
-    # llh_blmm_nsv = llh_blmm[(llh_lmer!=0) & loc_nsv]
-    # llh_lmer_nsv = llh_lmer[(llh_lmer!=0) & loc_nsv]
+    # Remove zero values (non spatially varying)
+    llh_blmm_nsv = llh_blmm[(llh_lmer!=0) & loc_nsv]
+    llh_lmer_nsv = llh_lmer[(llh_lmer!=0) & loc_nsv]
 
-    # # Remove zero values
-    # llh_blmm = llh_blmm[llh_lmer!=0]
-    # llh_lmer = llh_lmer[llh_lmer!=0]
+    # Remove zero values
+    llh_blmm = llh_blmm[llh_lmer!=0]
+    llh_lmer = llh_lmer[llh_lmer!=0]
 
-    # # Get maximum absolute difference
-    # MAD_llh = np.mean(np.abs(llh_blmm-llh_lmer))
-    # MAD_llh_sv = np.mean(np.abs(llh_blmm_sv-llh_lmer_sv))
-    # MAD_llh_nsv = np.mean(np.abs(llh_blmm_nsv-llh_lmer_nsv))
+    # Get maximum absolute difference
+    MAD_llh = np.mean(np.abs(llh_blmm-llh_lmer))
+    MAD_llh_sv = np.mean(np.abs(llh_blmm_sv-llh_lmer_sv))
+    MAD_llh_nsv = np.mean(np.abs(llh_blmm_nsv-llh_lmer_nsv))
 
-    # # Make line to add to csv for MAD
-    # MAD_llh_line = np.array([[simNo, MAD_llh, MAD_llh_sv, MAD_llh_nsv]])
+    # Make line to add to csv for MAD
+    MAD_llh_line = np.array([[simNo, MAD_llh, MAD_llh_sv, MAD_llh_nsv]])
 
-    # # MAD llh file name
-    # fname_MAD = os.path.join(resDir, 'MAD_llh.csv')
+    # MAD llh file name
+    fname_MAD = os.path.join(resDir, 'MAD_llh.csv')
 
-    # # Add to files 
-    # addLineToCSV(fname_MAD, MAD_llh_line)
+    # Add to files 
+    addLineToCSV(fname_MAD, MAD_llh_line)
 
-    # # Cleanup
-    # del llh_lmer, llh_blmm, MAD_llh, MAD_llh_line
+    # Cleanup
+    del llh_lmer, llh_blmm, MAD_llh, MAD_llh_line
 
     
-    # # -----------------------------------------------------------------------
-    # # Times
-    # # -----------------------------------------------------------------------
+    # -----------------------------------------------------------------------
+    # Times
+    # -----------------------------------------------------------------------
 
-    # # Get BLMM times
-    # times_blmm = nib.load(os.path.join(simDir, 'BLMM', 'blmm_vox_times.nii')).get_data()
+    # Get BLMM times
+    times_blmm = nib.load(os.path.join(simDir, 'BLMM', 'blmm_vox_times.nii')).get_data()
 
-    # # Get lmer times
-    # times_lmer = nib.load(os.path.join(simDir, 'lmer', 'lmer_vox_times.nii')).get_data()
+    # Get lmer times
+    times_lmer = nib.load(os.path.join(simDir, 'lmer', 'lmer_vox_times.nii')).get_data()
 
-    # # Remove zero values
-    # times_blmm_sv = times_blmm[(times_lmer!=0) & loc_sv]
-    # times_lmer_sv = times_lmer[(times_lmer!=0) & loc_sv]
+    # Remove zero values
+    times_blmm_sv = times_blmm[(times_lmer!=0) & loc_sv]
+    times_lmer_sv = times_lmer[(times_lmer!=0) & loc_sv]
 
-    # # Remove zero values
-    # times_blmm_nsv = times_blmm[(times_lmer!=0) & loc_nsv]
-    # times_lmer_nsv = times_lmer[(times_lmer!=0) & loc_nsv]
+    # Remove zero values
+    times_blmm_nsv = times_blmm[(times_lmer!=0) & loc_nsv]
+    times_lmer_nsv = times_lmer[(times_lmer!=0) & loc_nsv]
 
-    # # Remove zero values
-    # times_blmm = times_blmm[times_lmer!=0]
-    # times_lmer = times_lmer[times_lmer!=0]
+    # Remove zero values
+    times_blmm = times_blmm[times_lmer!=0]
+    times_lmer = times_lmer[times_lmer!=0]
 
-    # # Get mean difference
-    # MD_times_sv = np.mean(times_lmer_sv-times_blmm_sv)
-    # MD_times_nsv = np.mean(times_lmer_nsv-times_blmm_nsv)
-    # MD_times = np.mean(times_lmer-times_blmm)
+    # Get mean difference
+    MD_times_sv = np.mean(times_lmer_sv-times_blmm_sv)
+    MD_times_nsv = np.mean(times_lmer_nsv-times_blmm_nsv)
+    MD_times = np.mean(times_lmer-times_blmm)
 
-    # # Get total difference
-    # TD_times_sv = np.sum(times_lmer_sv-times_blmm_sv)
-    # TD_times_nsv = np.sum(times_lmer_nsv-times_blmm_nsv)
-    # TD_times = np.sum(times_lmer-times_blmm)
+    # Get total difference
+    TD_times_sv = np.sum(times_lmer_sv-times_blmm_sv)
+    TD_times_nsv = np.sum(times_lmer_nsv-times_blmm_nsv)
+    TD_times = np.sum(times_lmer-times_blmm)
 
-    # # Get total lmer
-    # lmer_times_sv = np.sum(times_lmer_sv)
-    # lmer_times_nsv = np.sum(times_lmer_nsv)
-    # lmer_times = np.sum(times_lmer)
+    # Get total lmer
+    lmer_times_sv = np.sum(times_lmer_sv)
+    lmer_times_nsv = np.sum(times_lmer_nsv)
+    lmer_times = np.sum(times_lmer)
 
-    # # Get total blmm
-    # blmm_times_sv = np.sum(times_blmm_sv)
-    # blmm_times_nsv = np.sum(times_blmm_nsv)
-    # blmm_times = np.sum(times_blmm)
+    # Get total blmm
+    blmm_times_sv = np.sum(times_blmm_sv)
+    blmm_times_nsv = np.sum(times_blmm_nsv)
+    blmm_times = np.sum(times_blmm)
 
-    # # Make line to add to csv for MD
-    # MD_times_line = np.array([[simNo, MD_times, MD_times_sv, MD_times_nsv]])
+    # Make line to add to csv for MD
+    MD_times_line = np.array([[simNo, MD_times, MD_times_sv, MD_times_nsv]])
 
-    # # Make line to add to csv for TD
-    # TD_times_line = np.array([[simNo, TD_times, TD_times_sv, TD_times_nsv]])
+    # Make line to add to csv for TD
+    TD_times_line = np.array([[simNo, TD_times, TD_times_sv, TD_times_nsv]])
 
-    # # Make line to add to csv for lmer
-    # lmer_times_line = np.array([[simNo, lmer_times, lmer_times_sv, lmer_times_nsv]])
+    # Make line to add to csv for lmer
+    lmer_times_line = np.array([[simNo, lmer_times, lmer_times_sv, lmer_times_nsv]])
 
-    # # Make line to add to csv for blmm
-    # blmm_times_line = np.array([[simNo, blmm_times, blmm_times_sv, blmm_times_nsv]])
+    # Make line to add to csv for blmm
+    blmm_times_line = np.array([[simNo, blmm_times, blmm_times_sv, blmm_times_nsv]])
 
-    # # MD times file name
-    # fname_MD = os.path.join(resDir, 'MD_times.csv')
+    # MD times file name
+    fname_MD = os.path.join(resDir, 'MD_times.csv')
 
-    # # TD times file name
-    # fname_TD = os.path.join(resDir, 'TD_times.csv')
+    # TD times file name
+    fname_TD = os.path.join(resDir, 'TD_times.csv')
 
-    # # lmer times file name
-    # fname_lmer = os.path.join(resDir, 'lmer_times.csv')
+    # lmer times file name
+    fname_lmer = os.path.join(resDir, 'lmer_times.csv')
 
-    # # blmm times file name
-    # fname_blmm = os.path.join(resDir, 'blmm_times.csv')
+    # blmm times file name
+    fname_blmm = os.path.join(resDir, 'blmm_times.csv')
 
-    # # Add to files 
-    # addLineToCSV(fname_MD, MD_times_line)
+    # Add to files 
+    addLineToCSV(fname_MD, MD_times_line)
 
-    # # Add to files 
-    # addLineToCSV(fname_TD, TD_times_line)
+    # Add to files 
+    addLineToCSV(fname_TD, TD_times_line)
 
-    # # Add to files 
-    # addLineToCSV(fname_lmer, lmer_times_line)
+    # Add to files 
+    addLineToCSV(fname_lmer, lmer_times_line)
 
-    # # Add to files 
-    # addLineToCSV(fname_blmm, blmm_times_line)
+    # Add to files 
+    addLineToCSV(fname_blmm, blmm_times_line)
 
-    # # Cleanup
-    # del times_lmer, times_blmm, MD_times, MD_times_line, TD_times, TD_times_line
+    # Cleanup
+    del times_lmer, times_blmm, MD_times, MD_times_line, TD_times, TD_times_line
 
 
     # -----------------------------------------------------------------------
@@ -373,14 +373,14 @@ def cleanup(OutDir,simNo):
     # Un-"log"
     p = 10**(-logp)
 
-    # # Load logp map
-    # logp_lmer = nib.load(os.path.join(simDir, 'lmer', 'lmer_vox_conTlp.nii')).get_data()
+    # Load logp map
+    logp_lmer = nib.load(os.path.join(simDir, 'lmer', 'lmer_vox_conTlp.nii')).get_data()
 
-    # # Remove zeros
-    # logp_lmer = logp_lmer[logp_lmer!=0]
+    # Remove zeros
+    logp_lmer = logp_lmer[logp_lmer!=0]
 
-    # # Un-"log"
-    # p_lmer = 10**(-logp_lmer)
+    # Un-"log"
+    p_lmer = 10**(-logp_lmer)
 
     # Get bin counts
     counts,_,_=plt.hist(p, bins=100, label='hist')
@@ -394,17 +394,17 @@ def cleanup(OutDir,simNo):
     # Add to files 
     addLineToCSV(fname_pval, pval_line)
 
-    # # Get bin counts
-    # counts_lmer,_,_=plt.hist(p_lmer, bins=100, label='hist')
+    # Get bin counts
+    counts_lmer,_,_=plt.hist(p_lmer, bins=100, label='hist')
 
-    # # Make line to add to csv for bin counts
-    # pval_lmer_line = np.concatenate((np.array([[simNo]]),np.array([counts_lmer])),axis=1)
+    # Make line to add to csv for bin counts
+    pval_lmer_line = np.concatenate((np.array([[simNo]]),np.array([counts_lmer])),axis=1)
 
-    # # pval file name
-    # fname_pval_lmer = os.path.join(resDir, 'pval_lmer_counts.csv')
+    # pval file name
+    fname_pval_lmer = os.path.join(resDir, 'pval_lmer_counts.csv')
 
-    # # Add to files 
-    # addLineToCSV(fname_pval_lmer, pval_lmer_line)
+    # Add to files 
+    addLineToCSV(fname_pval_lmer, pval_lmer_line)
 
     # Convert to one tailed
     p_ot = np.zeros(p.shape)
@@ -412,11 +412,11 @@ def cleanup(OutDir,simNo):
     p_ot[p>0.5] = 2*(1-p[p>0.5])
     p = p_ot
 
-    # # Convert to one tailed
-    # p_lmer_ot = np.zeros(p_lmer.shape)
-    # p_lmer_ot[p_lmer<0.5] = 2*p_lmer[p_lmer<0.5]
-    # p_lmer_ot[p_lmer>0.5] = 2*(1-p_lmer[p_lmer>0.5])
-    # p_lmer = p_lmer_ot
+    # Convert to one tailed
+    p_lmer_ot = np.zeros(p_lmer.shape)
+    p_lmer_ot[p_lmer<0.5] = 2*p_lmer[p_lmer<0.5]
+    p_lmer_ot[p_lmer>0.5] = 2*(1-p_lmer[p_lmer>0.5])
+    p_lmer = p_lmer_ot
 
     # Perform bonferroni
     fwep_bonferroni_95 = multitest.multipletests(p,alpha=0.05,method='bonferroni')[0]
@@ -448,7 +448,7 @@ def cleanup(OutDir,simNo):
     addLineToCSV(fname_fwe, fwe_line)
 
     # Cleanup
-    #del p, logp, counts, fname_pval, pval_line, p_lmer, logp_lmer, counts_lmer, fname_pval_lmer, pval_lmer_line, fname_fwe, fwe_line
+    del p, logp, counts, fname_pval, pval_line, p_lmer, logp_lmer, counts_lmer, fname_pval_lmer, pval_lmer_line, fname_fwe, fwe_line
 
     # -----------------------------------------------------------------------
     # Cleanup finished!

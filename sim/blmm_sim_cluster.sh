@@ -66,35 +66,35 @@ do
   # -----------------------------------------------------------------------
   bash ./blmm_cluster.sh $SIM_PATH/sim$simInd/inputs.yml
 
-  # # -----------------------------------------------------------------------
-  # # Submit R parameter estimation job
-  # # -----------------------------------------------------------------------
+  # -----------------------------------------------------------------------
+  # Submit R parameter estimation job
+  # -----------------------------------------------------------------------
 
-  # # Set batch index
-  # batchInd=0
-  # lmerParamID=''
+  # Set batch index
+  batchInd=0
+  lmerParamID=''
 
-  # while [ $batchInd -lt $nb ]
-  # do
+  while [ $batchInd -lt $nb ]
+  do
 
-  #   # R parameter estimation job for group of voxels
-  #   fsl_sub -j $dataGenID -l $SIM_PATH/sim$simInd/simlog/ \
-  #           -N lmerParamEst$simInd'_'$batchInd \
-  #           bash $SIM_PATH/lmer_paramEst.sh $SIM_PATH $simInd $nb $batchInd $desInd > /tmp/$$ && \
-  #           lmerParamID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$lmerParamID
+    # R parameter estimation job for group of voxels
+    fsl_sub -j $dataGenID -l $SIM_PATH/sim$simInd/simlog/ \
+            -N lmerParamEst$simInd'_'$batchInd \
+            bash $SIM_PATH/lmer_paramEst.sh $SIM_PATH $simInd $nb $batchInd $desInd > /tmp/$$ && \
+            lmerParamID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$),$lmerParamID
 
-  #   i=$(($i + 1))
+    i=$(($i + 1))
 
-  #   if [ "$lmerParamID" == "" ] ; then
-  #     echo "Lmer parameter estimation job submission failed!"
-  #   fi
+    if [ "$lmerParamID" == "" ] ; then
+      echo "Lmer parameter estimation job submission failed!"
+    fi
 
-  #   # Incrememnt batch index
-  #   batchInd=$(($batchInd + 1))
+    # Incrememnt batch index
+    batchInd=$(($batchInd + 1))
 
-  # done
+  done
   
-  # echo "Lmer parameter estimation jobs submitted!"
+  echo "Lmer parameter estimation jobs submitted!"
 
   # -----------------------------------------------------------------------
   # Check if BLMM has reached the concatenation stage (so we can delete
@@ -169,8 +169,8 @@ do
 
   # Remove simulation log and inputs file (there will now be a copy of this
   # in the BLMM folder anyway)
-  #rm -rf $SIM_PATH/sim$simInd/simlog/
-  rm -rf $SIM_PATH/sim$simInd/inputs.yml
+  rm -rf $SIM_PATH/sim$simInd/
+  # rm -rf $SIM_PATH/sim$simInd/inputs.yml
 
   echo "Simulation "$simInd" ran."
 
