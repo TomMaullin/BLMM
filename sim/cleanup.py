@@ -360,7 +360,6 @@ def cleanup(OutDir,simNo):
     # Cleanup
     del times_lmer, times_blmm, MD_times, MD_times_line, TD_times, TD_times_line
 
-
     # -----------------------------------------------------------------------
     # P values 
     # -----------------------------------------------------------------------
@@ -419,27 +418,21 @@ def cleanup(OutDir,simNo):
     p_lmer = p_lmer_ot
 
     # Perform bonferroni
-    fwep_bonferroni_95 = multitest.multipletests(p,alpha=0.05,method='bonferroni')[0]
-    fwep_bonferroni_90 = multitest.multipletests(p,alpha=0.10,method='bonferroni')[0]
-    fwep_bonferroni_80 = multitest.multipletests(p,alpha=0.20,method='bonferroni')[0]
+    fwep_bonferroni = multitest.multipletests(p,alpha=0.05,method='bonferroni')[0]
 
     # Get number of false positives
-    fwep_bonferroni_95 = np.sum(fwep_bonferroni_95)
-    fwep_bonferroni_90 = np.sum(fwep_bonferroni_90)
-    fwep_bonferroni_80 = np.sum(fwep_bonferroni_80)
+    fwep_bonferroni = np.sum(fwep_bonferroni)
 
-    # # Perform bonferroni
-    # fwep_lmer_bonferroni = multitest.multipletests(p_lmer,alpha=0.05,method='bonferroni')[0]
+    # Perform bonferroni
+    fwep_lmer_bonferroni = multitest.multipletests(p_lmer,alpha=0.05,method='bonferroni')[0]
 
-    # # Get number of false positives
-    # fwep_lmer_bonferroni = np.sum(fwep_lmer_bonferroni)
+    # Get number of false positives
+    fwep_lmer_bonferroni = np.sum(fwep_lmer_bonferroni)
 
     # Make line to add to csv for fwe
     fwe_line = np.concatenate((np.array([[simNo]]),
-                               np.array([[fwep_bonferroni_95]]),
-                               np.array([[fwep_bonferroni_90]]),
-                               np.array([[fwep_bonferroni_80]])),axis=1)
-                               #np.array([[fwep_lmer_bonferroni]])),axis=1)
+                               np.array([[fwep_bonferroni]]),
+                               np.array([[fwep_lmer_bonferroni]])),axis=1)
 
     # pval file name
     fname_fwe = os.path.join(resDir, 'pval_fwe.csv')
