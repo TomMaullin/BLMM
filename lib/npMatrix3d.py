@@ -1209,7 +1209,7 @@ def get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=No
 
         Z_kjtinvVX = Z_kjtX - Z_kjtZ @ DinvIplusZtZD @ ZtX
 
-        dldDk = dldDk + 0.5*Z_kjtinvVX @ XtiVX @ Z_kjtinvVX.transpose((0,2,1))
+        dldDk = dldDk + 0.5*Z_kjtinvVX @ np.linalg.inv(XtiVX) @ Z_kjtinvVX.transpose((0,2,1))
 
   # Store it in the dictionary
   return(dldDk, ZtZmat)
