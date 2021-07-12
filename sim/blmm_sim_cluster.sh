@@ -134,8 +134,7 @@ do
   # Cleanup simulation
   # -----------------------------------------------------------------------
 
-  # fsl_sub -j $lmerParamID -l $SIM_PATH/sim$simInd/simlog/ -N cleanup$simInd \
-  fsl_sub -l $SIM_PATH/sim$simInd/simlog/ -N cleanup$simInd \
+  fsl_sub -j $lmerParamID -l $SIM_PATH/sim$simInd/simlog/ -N cleanup$simInd \
           bash $SIM_PATH/cleanup.sh $SIM_PATH $simInd > /tmp/$$ && \
           cleanupID=$(awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}' /tmp/$$)
     
