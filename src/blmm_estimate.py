@@ -4,6 +4,7 @@ import warnings as w
 w.simplefilter(action = 'ignore', category = FutureWarning)
 import numpy as np
 import os
+import time
 np.set_printoptions(threshold=np.nan)
 from scipy import stats
 from lib.npMatrix3d import *
@@ -119,6 +120,11 @@ def main(inputs, inds, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, n, nlevels, 
     # Parameter estimation
     # ----------------------------------------------------------------------  
 
+    # Record the time used for parameter estimation
+    if 'time' in inputs:
+        if inputs['time']:
+            t1 = time.time()
+            
     if 'maxnit' in inputs:
         maxnit = int(inputs['maxnit'])
     else:
@@ -135,6 +141,14 @@ def main(inputs, inds, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, n, nlevels, 
 
     if method=='pFS': 
         paramVec = pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n)
+
+    # Record the time used for parameter estimation
+    if 'time' in inputs:
+        if inputs['time']:
+            t2 = time.time()
+
+            # Output an "average estimation time nifti"
+            addBlockToNifti(os.path.join(OutDir, 'blmm_vox_times.nii'), np.ones((v,1))*(t2-t1)/v, inds,volInd=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
 
     # ----------------------------------------------------------------------
     # Parameter outputting
