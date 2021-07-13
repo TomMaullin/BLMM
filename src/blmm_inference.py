@@ -168,6 +168,9 @@ def main(inputs, nraneffs, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX
         # Get Z'V^{-1}X
         ZtiVX = ZtX - ZtZDinvIplusZtZDZtX
 
+        # Reshape appropriately
+        DinvIplusZtZDZtX = DinvIplusZtZDZtX.reshape(v,q0*l0,p)
+
         # delete unnecessary variable
         del ZtZDinvIplusZtZDZtX
 
@@ -175,9 +178,6 @@ def main(inputs, nraneffs, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX
 
         # Get Z'V^{-1}X
         ZtiVX = ZtX - ZtZ @ DinvIplusZtZDZtX
-
-    # Reshape appropriately
-    DinvIplusZtZDZtX = DinvIplusZtZDZtX.reshape(v,q0*l0,p)
 
 
     # Work out X'V^(-1)X and X'V^(-1)Y by dimension reduction formulae
