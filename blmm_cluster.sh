@@ -52,7 +52,6 @@ if [ "$config_logdir" == "" ] ; then
   config_logdir='log/'
 fi
 
-
 # -----------------------------------------------------------------------
 # Submit setup job
 # -----------------------------------------------------------------------
@@ -162,4 +161,4 @@ if [ "$cleanupID" == "" ] ; then
 else
   echo "Submitted: Cleanup job."
 fi
-echo "Analysis submission complete. Please use qstat to monitor progress."
+echo "Analysis submission complete."

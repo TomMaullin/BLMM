@@ -1586,18 +1586,74 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             DinvIplusZtZDZtX = DinvIplusZtZDZtX @ ZtX.reshape(ZtX.shape[0],l0,q0,p)    
 
             # Reshape appropriately
-            DinvIplusZtZDZtX = DinvIplusZtZDZtX.reshape(v_iter,q0*l0,p)
+            #DinvIplusZtZDZtX = DinvIplusZtZDZtX.reshape(v_iter,q0*l0,p)
+
+            # print('mark 1: ',DinvIplusZtZDZtX[:,0,1])
 
         else:
 
             # Multiply by Z'X
             DinvIplusZtZDZtX = DinvIplusZtZD @ ZtX
 
+        # If in reml mode it is useful to get ZtiVX at this point as 
+        # we need it for dldB but we have all the building blocks here
+        if reml==True:
+
+            if r == 1 and nraneffs[0]==1:
+
+                # Get Z'V^{-1}X
+                ZtiVX = ZtX - np.einsum('ij,ijk->ijk', ZtZ, DinvIplusZtZDZtX)
+
+            elif r == 1 and nraneffs[0] > 1:
+
+                # Multiply by ZtZ and DinvIplusZtZDZtX
+                ZtZDinvIplusZtZDZtX = ZtZ.transpose(0,2,1).reshape(ZtZ.shape[0],l0,q0,q0) @ DinvIplusZtZDZtX
+                ZtZDinvIplusZtZDZtX = ZtZDinvIplusZtZDZtX.reshape(v_iter,q0*l0,p)
+
+                # Get Z'V^{-1}X
+                ZtiVX = ZtX - ZtZDinvIplusZtZDZtX
+
+                # Reshape appropriately
+                DinvIplusZtZDZtX = DinvIplusZtZDZtX.reshape(v_iter,q0*l0,p)
+
+                # delete unnecessary variable
+                del ZtZDinvIplusZtZDZtX
+
+            else:
+
+                # Get Z'V^{-1}X
+                ZtiVX = ZtX - ZtZ @ DinvIplusZtZDZtX
+
         # Work out X'V^(-1)X and X'V^(-1)Y by dimension reduction formulae
         XtiVX = XtX - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtX
         XtiVY = XtY - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtY
 
-        # Calculate beta
+        # Calculate beta 
+        # -------------------------------------------------------------------
+        # In theory the matrix in this inversion should be positive definite*.
+        # -------------------------------------------------------------------
+        # *Why? 
+        #  Well the matrix is:
+        #
+        #       X'V^{-1}X = X'X - X'ZD(I+Z'ZD)^{-1}Z'X 
+        #        (By the dimension reduction formula)
+        #
+        # But V=I+ZDZ' and therefore for any vector a;
+        #
+        #        a'Va = a'a + (Z'a)'D(Z'a)
+        #
+        # Trivially a'a>0 and, as D is projected to be nnd at the end of each
+        # iteration, we have that (Z'a)'D(Z'a) >= 0. So a'Va > 0. Therefore,
+        # V must be pd and so must V^{-1}.
+        #
+        # Now, as we removed non-pd X'X during results, a'X'Xa = (Xa)'Xa > 0
+        # for any non-zero a. But this means that Xa cannot equal zero. So,
+        # as Xa is non-zero for any non-zero a and V^{-1} is pd, we have that:
+        # 
+        #         a'X'V^{-1}Xa = (Xa)'V^{-1}Xa > 0
+        # 
+        # for any non-zero a and therefore X'V^{-1}X is pd.
+        # -------------------------------------------------------------------
         beta = np.linalg.solve(XtiVX, XtiVY)
 
         # Update sigma^2
@@ -1656,9 +1712,9 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             #-----------------------------------------------------------------------
             # Work out derivative
             if ZtZmatdict[k] is None:
-                dldDk,ZtZmatdict[k] = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=None, reml=reml, ZtX=ZtX, XtX=XtX)
+                dldDk,ZtZmatdict[k] = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=None, reml=reml, ZtX=ZtX, XtiVX=XtiVX, ZtiVX=ZtiVX)
             else:
-                dldDk,_ = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=ZtZmatdict[k], reml=reml, ZtX=ZtX, XtX=XtX)
+                dldDk,_ = get_dldDk3D(k, nlevels, nraneffs, ZtZ, Zte, sigma2, DinvIplusZtZD, ZtZmat=ZtZmatdict[k], reml=reml, ZtX=ZtX, XtiVX=XtiVX, ZtiVX=ZtiVX)
         
             #-----------------------------------------------------------------------
             # Calculate covariance of derivative with respect to D_k
@@ -1708,7 +1764,7 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
         # --------------------------------------------------------------------------
         # Update the step size and log likelihood
         # --------------------------------------------------------------------------
-        llhcurr = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D, Ddict, nlevels, nraneffs, reml, XtX, XtZ, ZtX)
+        llhcurr = llh3D(n, ZtZ, Zte, ete, sigma2, DinvIplusZtZD,D, Ddict, nlevels, nraneffs, reml, XtX, XtiVX)
 
         lam[llhprev>llhcurr] = lam[llhprev>llhcurr]/2
         
