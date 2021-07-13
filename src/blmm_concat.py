@@ -10,7 +10,6 @@ import os
 import glob
 import shutil
 import yaml
-import time
 np.set_printoptions(threshold=np.nan)
 from lib.npMatrix3d import *
 from lib.npMatrix2d import *
@@ -207,6 +206,9 @@ def main(ipath):
 
             # Mask based on threshold.
             Mask[n_sv<amThresh]=0
+
+    # Remove underidenifiable models (same practice as adopted by lmer)
+    Mask[n_sv<=q]=0
 
     # We remove anything with 1 degree of freedom (or less) by default.
     # 1 degree of freedom seems to cause broadcasting errors on a very

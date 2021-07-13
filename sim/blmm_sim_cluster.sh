@@ -168,8 +168,8 @@ do
 
   # Remove simulation log and inputs file (there will now be a copy of this
   # in the BLMM folder anyway)
-  #rm -rf $SIM_PATH/sim$simInd/simlog/
-  rm -rf $SIM_PATH/sim$simInd/inputs.yml
+  rm -rf $SIM_PATH/sim$simInd/
+  # rm -rf $SIM_PATH/sim$simInd/inputs.yml
 
   echo "Simulation "$simInd" ran."
 

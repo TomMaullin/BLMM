@@ -360,7 +360,6 @@ def cleanup(OutDir,simNo):
     # Cleanup
     del times_lmer, times_blmm, MD_times, MD_times_line, TD_times, TD_times_line
 
-
     # -----------------------------------------------------------------------
     # P values 
     # -----------------------------------------------------------------------

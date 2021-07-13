@@ -44,7 +44,8 @@ from lib.fileio import loadFile, str2vec, pracNumVoxelBlocks, get_amInds, addBlo
 #                 to users (as we are yet to see a design that really needs it), it is
 #                 very useful when developing code to be able to run small chunks of 
 #                 the brain instead of the whole thing. For this reason it has been 
-#                 left in here.
+#                 left in here. However, it is not maintained, so may need some
+#                 tweaking to use.
 #
 # ====================================================================================
 def main(*args):
@@ -336,6 +337,14 @@ def main(*args):
             # Output number of voxel batches to a text file
             with open(os.path.join(OutDir, "nvb.txt"), 'w') as f:
                 print(int(nvb), file=f)
+
+    # --------------------------------------------------------------------------------
+    # lmer directories.
+    # --------------------------------------------------------------------------------
+
+    # If directory doesn't exist, make it
+    if not os.path.exists(os.path.join(OutDir,"data")):
+        os.mkdir(os.path.join(OutDir,"data"))
 
 
     # Reset warnings

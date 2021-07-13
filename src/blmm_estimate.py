@@ -119,14 +119,18 @@ def main(inputs, inds, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, n, nlevels, 
     # ----------------------------------------------------------------------
     # Parameter estimation
     # ----------------------------------------------------------------------  
-
     # If running simulations we record the time used for parameter estimation
     if 'sim' in inputs:
         if inputs['sim']:
             t1 = time.time()
 
+    if 'maxnit' in inputs:
+        maxnit = int(inputs['maxnit'])
+    else:
+        maxnit = 10000
+
     if method=='pSFS': # Recommended, default method
-        paramVec = pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=REML)
+        paramVec = pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n, reml=REML, maxnit=maxnit)
     
     if method=='FS': 
         paramVec = FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n)
@@ -136,6 +140,7 @@ def main(inputs, inds, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, n, nlevels, 
 
     if method=='pFS': 
         paramVec = pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, n)
+
 
     # If running simulations we record the time used for parameter estimation
     if 'sim' in inputs:

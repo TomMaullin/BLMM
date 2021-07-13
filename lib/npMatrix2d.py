@@ -790,7 +790,7 @@ def ssr2D(YtX, YtY, XtX, beta):
 #
 # ============================================================================
 def fac_indices2D(k, nlevels, nraneffs):
-  
+
   # Get indices for all factors
   allInds = np.concatenate((np.array([0]),np.cumsum(nlevels*nraneffs)))
 
@@ -799,8 +799,8 @@ def fac_indices2D(k, nlevels, nraneffs):
 
   # Work out the last index
   end = allInds[k+1]
-
-  return(np.arange(start,end))
+  
+  return(np.arange(start, end))
 
 # ============================================================================
 #
@@ -835,7 +835,7 @@ def fac_indices2D(k, nlevels, nraneffs):
 #
 # ============================================================================
 def faclev_indices2D(k, j, nlevels, nraneffs):
-  
+
   # Work out the starting point of the indices
   start = np.concatenate((np.array([0]), np.cumsum(nlevels*nraneffs)))[k] + nraneffs[k]*j
   

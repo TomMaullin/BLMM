@@ -56,6 +56,7 @@ The following fields are optional:
  - `tol`: Tolerance for convergence for the parameter estimation. Estimates will be output once the log-likelihood changes by less than `tol` from iteration to iteration. The default value is `1e-6`. 
  - `voxelBatching`: (Recommended for large designs). If set to `1`, the parameter estimation and inference steps of the analysis will be performed on seperate groups (batches) of voxels concurrently/in parallel. By default this is set to `0`. This setting is purely for computation speed purposes.
  - `maxnvb`: (Only used when `voxelBatching` is set to `1`). The maximum number of voxel batches/concurrent jobs allowed for estimation and inference. By default this is set to `60`. For large designs, this prevents the code from trying to submit thousands of jobs, should it decide this would be the quickest way to perform computation. This setting is purely for computation speed purposes.
+ - `maxnit`: The maximum number of iterations each voxel is allowed for parameter estimation. By default this is set to `10000` iterations. If the iteration limit is reached a warning is thrown in the log files.
  - `resms`: If set to `1`, the `blmm_vox_resms` volume is output, if set to `0`, the `blmm_vox_resms` volume is not output.
 
  
@@ -119,9 +120,6 @@ analysis_mask: /path/to/data/MNI152_T1_2mm_brain_mask.nii.gz
 
 ### Running the Analysis
 
-
-#### Running an analysis in parallel
-
 To run an analysis in parallel, log into the cluster you wish to run it on and ensure that `fsl` and `fsl_sub` are loaded in the environment. On the `rescomp` cluster this can be done like so:
 
 ```
@@ -171,6 +169,23 @@ The maps are given the same ordering as the inputs. For example, in `blmm_vox_co
 \*\* The `D` estimates are ordered as `vech(D1)`,...,`vech(Dr)` where `Dk` is the Random effects covariance matrix for the `k`th random factor, `r` is the total number of random factors in the design and `vech` represents ["half-vectorisation"](https://en.wikipedia.org/wiki/Vectorization_(mathematics)#Half-vectorization).
 \*\*\* This is optional and may differ from the estimate of `sigma2`, which accounts for the random effects variance.
 
+### Model Comparison
+
+`BLMM-py` also offers model comparison for nested single-factor models via Likelihood Ratio Tests under a `50:50` chi^2 mixture distribtuion assumption (c.f. Linear Mixed Models for Longitudinal Data. 2000. Verbeke, G. & Molenberghs, G. Chapter 6 Section 3.). To compare the output of two single-factor models in `BLMM-py` (or the output of a single-factor model from `BLMM-py` with the output of a corresponding linear model run using [`BLM-py`](https://github.com/TomMaullin/BLM)) run the following command:
+
+```
+bash ./blmm_compare.sh /path/to/the/results/of/the/smaller/model/ /path/to/the/results/of/the/larger/model/ /path/to/output/directory/
+```
+
+Below is a full list of NIFTI files output after a BLMM likelihood ratio comparison test.
+
+| Filename  | Description  |
+|---|---|
+| `blmm_vox_mask` | This is the analysis mask (this will be the intersection of the masks from each analysis). |
+| `blmm_vox_Chi2.nii` | This is the map of the Likelihood Ratio Statistic. |
+| `blmm_vox_Chi2lp.nii` | This is the map of -log10 of the uncorrected P values for the likelihood ratio test. |
+
+
 ## Developer Notes
 
 ### Testing
@@ -203,7 +218,7 @@ Throughout the code, the following notation is universal.
 
 The following subscripts are also common throughout the code:
 
- - `_sv`: Spatially varying. `a_sv` means we have a value of `a` for every voxel we are considers, or rather, `a` "varies" across space.
+ - `_sv`: Spatially varying. `a_sv` means we have a value of `a` for every voxel we are considering, or rather, `a` "varies" across space.
  - `_i`: "Inner" voxels. This refers to the set of voxels which do not have missingness caused by mask variability in their designs. Typically, these make up the vast majority of the brain and tend not to lie near the edge of the brain, hence "inner".
  - `_r`: "Ring" voxels. This refers to the set of voxels which have missingness caused by mask variability in their designs. Special care must be taken with these voxels as `X` and `Z` are not the same across this set. Typically, these make up a small minority of the brain and tend to lie near the edge of the brain; they look like a "ring" around the edge of the brain.
  - `2D`: A function or file with this suffix will contain code designed to work analysis only on one voxel. As `X`,`Y` and `Z` are all 2 dimensional, all arrays considered for one voxel are 2D, hence the suffix.
@@ -218,6 +233,7 @@ The repository contains 4 main folders, plus 3 files at the head of the reposito
  - `README.md`: This file.
  - `blmm_config.yml`: The file the user must enter their design into.
  - `blmm_cluster.sh`: The shell scipt used to run blmm (see previous).
+ - `blmm_compare.sh`: The shell scipt used to run blmm likelihood ratio tests (see previous).
  - `lib`: Helper functions:
    - `npMatrix2d.py`: Helper functions for 2d numpy array operations.
    - `npMatrix3d.py`: Helper functions for 3d numpy array operations.
@@ -234,6 +250,7 @@ The repository contains 4 main folders, plus 3 files at the head of the reposito
    - `blmm_estimate`: Estimates the parameters beta, sigma^2 and D.
    - `blmm_inference`: Performs statistical inference on parameters and outputs results.
    - `blmm_cleanup`: Removes any leftover files from the analysis.
+   - `blmm_compare`: Performs likelihood ratio tests comparing the results of multiple analyses.
  - `test`: Test functions:
    - `Functional`: (WIP) Adapted from sister project `BLM`. Dummy analyses to check the changes to the code haven't affected the output.
    - `Unit`: Unit tests for individual parts of the code:
