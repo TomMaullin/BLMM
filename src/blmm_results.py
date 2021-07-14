@@ -194,10 +194,6 @@ def main(ipath, vb):
     # turn.
     for cv in range(nvg):
 
-        if cv != 0:
-            old_stdout = sys.stdout # backup current stdout
-            sys.stdout = open(os.devnull, "w")
-
         # Current group of voxels
         bamInds_cv = voxelGroups[cv]
 
@@ -382,10 +378,6 @@ def main(ipath, vb):
 
             # Run inference
             blmm_inference.main(inputs, nraneffs, nlevels, I_inds, beta_i, D_i, sigma2_i, n, XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i)
-
-
-        if cv != 0:
-            sys.stdout = old_stdout 
 
     w.resetwarnings()
 
