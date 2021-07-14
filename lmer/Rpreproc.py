@@ -135,6 +135,34 @@ def Rpreproc(OutDir,nvg,cv):
         # Else set to None
         M_a = None
 
+    # --------------------------------------------------------------------------------
+    # Get q 
+    # --------------------------------------------------------------------------------
+    # Random factor variables.
+    rfxmats = inputs['Z']
+
+    # Number of random effects
+    r = len(rfxmats)
+
+    # Number of random effects for each factor, q
+    nraneffs = []
+
+    # Number of levels for each factor, l
+    nlevels = []
+
+    for k in range(r):
+
+        rfxdes = loadFile(rfxmats[k]['f' + str(k+1)]['design'])
+        rfxfac = loadFile(rfxmats[k]['f' + str(k+1)]['factor'])
+
+        nraneffs = nraneffs + [rfxdes.shape[1]]
+        nlevels = nlevels + [len(np.unique(rfxfac))]
+
+    # Get number of random effects
+    nraneffs = np.array(nraneffs)
+    nlevels = np.array(nlevels)
+    q = np.sum(nraneffs*nlevels)
+    
     # -------------------------------------------------------------------------------------------------
     # Read in Y and apply masking
     # -------------------------------------------------------------------------------------------------
