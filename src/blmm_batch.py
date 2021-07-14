@@ -114,7 +114,7 @@ def main(*args):
 
     # Similar to blksize in SwE, we divide by 8 times the size of a nifti
     # to work out how many blocks we use.
-    blksize = int(np.floor(MAXMEM/NIFTImem/q));
+    blksize = int(np.floor(MAXMEM/8/NIFTImem/p))
 
     # Reduce X to X for this block.
     X = loadFile(inputs['X'])
@@ -638,6 +638,7 @@ def memorySafeAtB(A,B,MAXMEM,prodStr,inputs):
 
             # Loop through each group of voxels saving A'B for those voxels
             for vb in range(int(batch_v//vPerBlock+1)):
+
                 if A.shape[0]==1:
                     M[voxelGroups_file[vb],:]=(A.transpose(0,2,1) @ B[voxelGroups_orig[vb],:,:]).reshape(len(voxelGroups_orig[vb]),pORq)
                 else:
