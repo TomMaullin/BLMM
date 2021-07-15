@@ -430,6 +430,34 @@ def Rpreproc(OutDir,simNo,dim,nvg,cv):
     # Number of voxels currently (should be ~1000)
     v_current = len(inds_cv)
 
+    # --------------------------------------------------------------------------------
+    # Get q 
+    # --------------------------------------------------------------------------------
+    # Random factor variables.
+    rfxmats = inputs['Z']
+
+    # Number of random effects
+    r = len(rfxmats)
+
+    # Number of random effects for each factor, q
+    nraneffs = []
+
+    # Number of levels for each factor, l
+    nlevels = []
+
+    for k in range(r):
+
+        rfxdes = loadFile(rfxmats[k]['f' + str(k+1)]['design'])
+        rfxfac = loadFile(rfxmats[k]['f' + str(k+1)]['factor'])
+
+        nraneffs = nraneffs + [rfxdes.shape[1]]
+        nlevels = nlevels + [len(np.unique(rfxfac))]
+
+    # Get number of random effects
+    nraneffs = np.array(nraneffs)
+    nlevels = np.array(nlevels)
+    q = np.sum(nraneffs*nlevels)
+
     # Loop through each subject reading in Y and reducing to just the voxels 
     # needed
     for i in np.arange(n):
@@ -454,6 +482,14 @@ def Rpreproc(OutDir,simNo,dim,nvg,cv):
 
         # Threshold out the voxels which have too much missingness
         if np.count_nonzero(Y_concat[:,vox], axis=0)/n < rmThresh:
+
+            # If we don't have enough data lets replace that voxel 
+            # with zeros
+            Y_concat[:,vox] = np.zeros(Y_concat[:,vox].shape)
+
+        # Threshold out the voxels which are underidentified (same
+        # practice as lmer)
+        if np.count_nonzero(Y_concat[:,vox], axis=0) <= q:
 
             # If we don't have enough data lets replace that voxel 
             # with zeros
