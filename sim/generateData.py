@@ -353,9 +353,12 @@ def generate_data(n,dim,OutDir,simNo,desInd):
         f.write("      statType: T " + os.linesep)
 
         # Voxel-wise batching for speedup - not necessary - but
-        # convinient
+        # convenient
         f.write("voxelBatching: 1" + os.linesep)
         f.write("MAXMEM: 2**34" + os.linesep)
+
+        # Safe mode
+        f.write("safeMode: 1" + os.linesep)
 
         # Log directory and simulation mode (backdoor options)
         f.write("sim: 1" + os.linesep)
@@ -488,13 +491,17 @@ def Rpreproc(OutDir,simNo,dim,nvg,cv):
             # with zeros
             Y_concat[:,vox] = np.zeros(Y_concat[:,vox].shape)
 
-        # Threshold out the voxels which are underidentified (same
-        # practice as lmer)
-        if np.count_nonzero(Y_concat[:,vox], axis=0) <= q:
 
-            # If we don't have enough data lets replace that voxel 
-            # with zeros
-            Y_concat[:,vox] = np.zeros(Y_concat[:,vox].shape)
+        # Check if we are in safe mode (we usually will be)
+        if inputs['safeMode']==1:
+
+            # Threshold out the voxels which are underidentified (same
+            # practice as lmer)
+            if np.count_nonzero(Y_concat[:,vox], axis=0) <= q:
+
+                # If we don't have enough data lets replace that voxel 
+                # with zeros
+                Y_concat[:,vox] = np.zeros(Y_concat[:,vox].shape)
 
     # Write out Z in full to a csv file
     pd.DataFrame(Y_concat.reshape(n,v_current)).to_csv(os.path.join(simDir,"data","Y_Rversion_" + str(cv) + ".csv"), header=None, index=None)

@@ -207,8 +207,11 @@ def main(ipath):
             # Mask based on threshold.
             Mask[n_sv<amThresh]=0
 
-    # Remove underidenifiable models (same practice as adopted by lmer)
-    Mask[n_sv<=q]=0
+    # Check if we are in safe mode (we usually will be)
+    if inputs['safeMode']==1:
+        
+        # Remove underidenifiable models (same practice as adopted by lmer)
+        Mask[n_sv<=q]=0
 
     # We remove anything with 1 degree of freedom (or less) by default.
     # 1 degree of freedom seems to cause broadcasting errors on a very
