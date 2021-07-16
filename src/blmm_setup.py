@@ -233,6 +233,13 @@ def main(*args):
     # Save q (useful to have around)
     inputs["q"] = str(q)
 
+    # --------------------------------------------------------------------------------
+    # Safe mode
+    # --------------------------------------------------------------------------------
+    # Check if we are in safe mode.
+    if 'safeMode' not in inputs:
+        inputs['safeMode']=1
+        
     # Update inputs
     with open(ipath, 'w') as outfile:
         yaml.dump(inputs, outfile, default_flow_style=False)
@@ -266,13 +273,6 @@ def main(*args):
     # Output number of batches to a text file
     with open(os.path.join(OutDir, "nb.txt"), 'w') as f:
         print(int(np.ceil(len(Y_files)/int(blksize))), file=f)
-    
-    # --------------------------------------------------------------------------------
-    # Safe mode
-    # --------------------------------------------------------------------------------
-    # Check if we are in safe mode.
-    if 'safeMode' not in inputs:
-        inputs['safeMode']=1
 
     # Check if we are protecting disk quota as well.
     if 'diskMem' in inputs:
