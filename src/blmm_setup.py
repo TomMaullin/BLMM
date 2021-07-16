@@ -266,6 +266,13 @@ def main(*args):
     with open(os.path.join(OutDir, "nb.txt"), 'w') as f:
         print(int(np.ceil(len(Y_files)/int(blksize))), file=f)
     
+    # --------------------------------------------------------------------------------
+    # Safe mode
+    # --------------------------------------------------------------------------------
+    # Check if we are in safe mode.
+    if 'safeMode' not in inputs:
+        inputs['safeMode']=1
+
     # Check if we are protecting disk quota as well.
     if 'diskMem' in inputs:
 
