@@ -1,7 +1,7 @@
 name: unit-tests
 on: [push]
 jobs:
-  check-bats-version:
+  unit-tests:
     runs-on: ubuntu-latest
     strategy:
       matrix:
