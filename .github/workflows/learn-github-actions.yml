@@ -1,12 +1,26 @@
-name: learn-github-actions
+name: unit-tests
 on: [push]
 jobs:
   check-bats-version:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.6", "3.7", "3.8", "3.9"]
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
         with:
-          node-version: '14'
-      - run: npm install -g bats
-      - run: bats -v
+          python-version: ${{ matrix.python-version }}
+      - name: Install BLMM
+        run: |
+          python -m pip install --upgrade pip
+          pip install https://github.com/TomMaullin/BLMM.git
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Test Kron3D
+        run: |
+          python -c 'from test.Unit.npMatrix3d_tests import *; test_kron3D()'
