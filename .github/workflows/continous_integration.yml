@@ -5,6 +5,10 @@ on: [push,pull_request]
 jobs:
   unittest:
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8, 3.9]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
