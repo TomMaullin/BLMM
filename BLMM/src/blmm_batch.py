@@ -3,7 +3,7 @@ import warnings as w
 # output.
 w.simplefilter(action = 'ignore', category = FutureWarning)
 import numpy as np
-from numpy.BLMM.lib.format import open_memmap
+from numpy.lib.format import open_memmap
 import subprocess
 import warnings
 import resource
