@@ -14,10 +14,10 @@ np.set_printoptions(threshold=sys.maxsize)
 # Add lib to the python path.
 sys.path.insert(1, os.path.join(sys.argv[0],'..','..','..','lib'))
 from genTestDat import genTestData2D, prodMats2D
-from BLMM.libest2d import *
-from BLMM.libnpMatrix2d import *
-from BLMM.libcvxMatrix2d import *
-from BLMM.libPeLS import PeLS2D, PeLS2D_getSigma2, PeLS2D_getBeta, PeLS2D_getD
+from BLMM.lib.est2d import *
+from BLMM.lib.npMatrix2d import *
+from BLMM.lib.cvxMatrix2d import *
+from BLMM.lib.PeLS import PeLS2D, PeLS2D_getSigma2, PeLS2D_getBeta, PeLS2D_getD
 
 # ==================================================================================
 #

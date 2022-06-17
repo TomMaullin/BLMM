@@ -6,9 +6,9 @@ np.set_printoptions(threshold=sys.maxsize)
 
 # Add lib to the python path.
 sys.path.insert(1, os.path.join(sys.argv[0],'..','..','..','lib'))
-from BLMM.libnpMatrix2d import mat2vech2D
-from BLMM.libest2d import *
-from BLMM.libest3d import *
+from BLMM.lib.npMatrix2d import mat2vech2D
+from BLMM.lib.est2d import *
+from BLMM.lib.est3d import *
 from genTestDat import genTestData3D, prodMats3D
 
 # =============================================================================

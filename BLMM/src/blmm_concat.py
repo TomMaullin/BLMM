@@ -3,7 +3,7 @@ import warnings as w
 # be ignored for now.
 w.simplefilter(action = 'ignore', category = FutureWarning)
 import numpy as np
-from numpy.BLMM.libformat import open_memmap
+from numpy.BLMM.lib.format import open_memmap
 import nibabel as nib
 import sys
 import os
@@ -11,9 +11,9 @@ import glob
 import shutil
 import yaml
 np.set_printoptions(threshold=np.nan)
-from BLMM.libnpMatrix3d import *
-from BLMM.libnpMatrix2d import *
-from BLMM.libfileio import *
+from BLMM.lib.npMatrix3d import *
+from BLMM.lib.npMatrix2d import *
+from BLMM.lib.fileio import *
 import src.blmm_inference as blmm_inference
 import src.blmm_estimate as blmm_estimate
 

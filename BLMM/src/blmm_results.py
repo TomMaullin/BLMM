@@ -11,9 +11,9 @@ import shutil
 import yaml
 import time
 np.set_printoptions(threshold=np.nan)
-from BLMM.libnpMatrix3d import *
-from BLMM.libnpMatrix2d import *
-from BLMM.libfileio import *
+from BLMM.lib.npMatrix3d import *
+from BLMM.lib.npMatrix2d import *
+from BLMM.lib.fileio import *
 import src.blmm_inference as blmm_inference
 import src.blmm_estimate as blmm_estimate
 

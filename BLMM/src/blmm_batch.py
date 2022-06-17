@@ -3,7 +3,7 @@ import warnings as w
 # output.
 w.simplefilter(action = 'ignore', category = FutureWarning)
 import numpy as np
-from numpy.BLMM.libformat import open_memmap
+from numpy.BLMM.lib.format import open_memmap
 import subprocess
 import warnings
 import resource
@@ -13,10 +13,10 @@ import os
 import shutil
 import yaml
 np.set_printoptions(threshold=np.nan)
-from BLMM.libfileio import *
+from BLMM.lib.fileio import *
 import scipy.sparse
 import pandas as pd
-from BLMM.libnpMatrix3d import flattenZtZ
+from BLMM.lib.npMatrix3d import flattenZtZ
 
 # ====================================================================================
 #
