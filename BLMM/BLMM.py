@@ -1,5 +1,4 @@
 import sys
-import BLMM.lib
 import BLMM
 
 
