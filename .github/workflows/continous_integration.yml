@@ -3,7 +3,7 @@ name: unittest
 on: [push,pull_request]
 
 jobs:
-  unnittest:
+  unittest:
     runs-on: ubuntu-latest
     strategy:
       matrix:
