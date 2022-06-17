@@ -13,7 +13,7 @@ np.set_printoptions(threshold=sys.maxsize)
 # Add lib to the python path.
 sys.path.insert(1, os.path.join(sys.argv[0],'..','..','..','lib'))
 from BLMM.lib.npMatrix2d import *
-from genTestDat import prodMats2D, genTestData2D
+from BLMM.test.Unit.genTestDat import prodMats2D, genTestData2D
 
 # =============================================================================
 # This file contains all unit tests for the functions given in the 

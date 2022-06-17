@@ -18,7 +18,7 @@ np.set_printoptions(threshold=sys.maxsize)
 sys.path.insert(1, os.path.join(sys.argv[0],'..','..','..','lib'))
 from BLMM.lib.npMatrix2d import *
 from BLMM.lib.npMatrix3d import *
-from genTestDat import prodMats3D, genTestData3D
+from BLMM.test.Unit.genTestDat import prodMats3D, genTestData3D
 # =============================================================================
 # This file contains all unit tests for the functions given in the npMatrix3D.py
 # file.
