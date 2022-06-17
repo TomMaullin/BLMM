@@ -11,11 +11,11 @@ import glob
 import shutil
 import yaml
 np.set_printoptions(threshold=np.nan)
-from lib.npMatrix3d import *
-from lib.npMatrix2d import *
-from lib.fileio import *
-import src.blmm_inference as blmm_inference
-import src.blmm_estimate as blmm_estimate
+from BLMM.lib.npMatrix3d import *
+from BLMM.lib.npMatrix2d import *
+from BLMM.lib.fileio import *
+import BLMM.src.blmm_inference as blmm_inference
+import BLMM.src.blmm_estimate as blmm_estimate
 
 # ====================================================================================
 #

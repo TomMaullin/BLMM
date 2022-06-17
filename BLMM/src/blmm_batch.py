@@ -13,10 +13,10 @@ import os
 import shutil
 import yaml
 np.set_printoptions(threshold=np.nan)
-from lib.fileio import *
+from BLMM.lib.fileio import *
 import scipy.sparse
 import pandas as pd
-from lib.npMatrix3d import flattenZtZ
+from BLMM.lib.npMatrix3d import flattenZtZ
 
 # ====================================================================================
 #

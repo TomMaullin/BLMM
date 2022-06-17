@@ -1,8 +1,8 @@
 import os
 import numpy as np
 import scipy
-from lib.npMatrix3d import *
-from lib.npMatrix2d import *
+from BLMM.lib.npMatrix3d import *
+from BLMM.lib.npMatrix2d import *
 
 # ============================================================================
 #

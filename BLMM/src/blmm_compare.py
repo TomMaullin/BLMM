@@ -11,8 +11,8 @@ import yaml
 from scipy import stats
 from statsmodels.stats import multitest
 np.set_printoptions(threshold=np.nan)
-from lib.npMatrix3d import *
-from lib.fileio import *
+from BLMM.lib.npMatrix3d import *
+from BLMM.lib.fileio import *
 
 
 # ====================================================================================
