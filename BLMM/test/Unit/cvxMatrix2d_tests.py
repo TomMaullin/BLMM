@@ -8,7 +8,7 @@ np.set_printoptions(threshold=sys.maxsize)
 
 # Add lib to the python path.
 sys.path.insert(1, os.path.join(sys.argv[0],'..','..','..','lib'))
-from lib.cvxMatrix2d import *
+from BLMM.libcvxMatrix2d import *
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #

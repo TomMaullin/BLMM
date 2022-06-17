@@ -7,10 +7,10 @@ import os
 import time
 np.set_printoptions(threshold=np.nan)
 from scipy import stats
-from lib.npMatrix3d import *
-from lib.npMatrix2d import *
-from lib.fileio import *
-from lib.est3d import *
+from BLMM.libnpMatrix3d import *
+from BLMM.libnpMatrix2d import *
+from BLMM.libfileio import *
+from BLMM.libest3d import *
 
 
 # ====================================================================================

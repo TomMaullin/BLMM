@@ -1,8 +1,8 @@
 import numpy as np
 import scipy.sparse
 from scipy import stats
-from lib.npMatrix2d import faclev_indices2D, fac_indices2D, permOfIkKkI2D, dupMat2D
-from lib.fileio import loadFile
+from BLMM.libnpMatrix2d import faclev_indices2D, fac_indices2D, permOfIkKkI2D, dupMat2D
+from BLMM.libfileio import loadFile
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #

@@ -8,7 +8,7 @@ import os
 import glob
 import shutil
 import yaml
-from lib.fileio import loadFile, str2vec, pracNumVoxelBlocks, get_amInds, addBlockToNifti
+from BLMM.libfileio import loadFile, str2vec, pracNumVoxelBlocks, get_amInds, addBlockToNifti
 
 # ====================================================================================
 #

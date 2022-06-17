@@ -5,8 +5,8 @@ from scipy.optimize import root
 from scipy.optimize import minimize
 import scipy.sparse
 import os
-from lib.npMatrix2d import *
-from lib.cvxMatrix2d import *
+from BLMM.libnpMatrix2d import *
+from BLMM.libcvxMatrix2d import *
 
 def PeLS2D(theta, ZtX, ZtY, XtX, ZtZ, XtY, YtX, YtZ, XtZ, YtY, n, P, I, tinds, rinds, cinds):
 
