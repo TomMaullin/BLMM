@@ -19,7 +19,7 @@ jobs:
           architecture: x64
 
       - name: Install BLMM
-        run: pip install -e .[tests] && apt-get update && apt-get make 
+        run: pip install -e .[tests] && sudo apt-get update && sudo apt-get make 
 
       - name: Run Test
         run: Makefile lint
