@@ -3,7 +3,7 @@ name: lintin
 on: [push,pull_request]
 
 jobs:
-  unittest:
+  lint:
     runs-on: ubuntu-latest
 
     strategy:
@@ -19,8 +19,7 @@ jobs:
           architecture: x64
 
       - name: Install BLMM
-        run: pip install -e .[tests]    
-        run: apt-get update && apt-get make 
+        run: pip install -e .[tests] && apt-get update && apt-get make 
 
       - name: Run Test
         run: Makefile lint
