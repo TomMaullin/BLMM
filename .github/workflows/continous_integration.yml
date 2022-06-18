@@ -53,23 +53,26 @@ jobs:
       matrix:
         python-version: [3.6, 3.7, 3.8, 3.9]
     steps:
-    - name: Setup
-      run: |
-        mkdir /home/testdir |
-        cd /home/testdir |
-        conda create -n testenv python=${{ matrix.python-version }} |
-        source activate testenv |
-        conda install git pip |
-        pip install git+git://github.com/TomMaullin/BLMM.git
-    - name: Generate Data
-      run: |
-        bash ./test/Integration/generateData.sh /home/data 1 1
-    - name: Run Test
-      run: |
-        pytest BLMM/test/Integration/*
-    - name: Cleanup
-      run: |
-        cd .. |
-        rm /home/testdir
+      - name: Setup
+        run: |
+          mkdir /home/testdir 
+          cd /home/testdir 
+          conda create -n testenv python=${{ matrix.python-version }} 
+          source activate testenv 
+          conda install git pip 
+          pip install git+git://github.com/TomMaullin/BLMM.git
+
+      - name: Generate Data
+        run: |
+          bash ./test/Integration/generateData.sh /home/data 1 1
+
+      - name: Run Test
+        run: |
+          pytest BLMM/BLMM/test/Integration/*
+
+      - name: Cleanup
+        run: |
+          cd .. 
+          rm /home/testdir
         source deactivate
         conda env remove -n testenv
