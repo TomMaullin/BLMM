@@ -789,7 +789,7 @@ def test_pSFS3D():
     print('         3D:    ', paramVec3D_sv.transpose())
     print('         2D:    ', paramVec2D_sv.transpose())
     print('      Computation time: ', t2-t1)
-    print('      Absolute difference: ', np.mean(np.abs(paramVec3D_sv-paramVec2D_sv)))
+    print('      Absolute difference: ', np.allclose(paramVec2D_sv, paramVec3D_sv, rtol=1e-03))
 
 
     # Non-spatially varying 3D
@@ -878,7 +878,7 @@ def test_pSFS3D():
     print('         3D:    ', paramVec3D_sv.transpose())
     print('         2D:    ', paramVec2D_sv.transpose())
     print('      Computation time: ', t2-t1)
-    print('      Absolute difference: ', np.mean(np.abs(paramVec3D_sv-paramVec2D_sv)))
+    print('      Absolute difference: ', np.allclose(paramVec2D_sv, paramVec3D_sv, rtol=1e-03))
 
     # Non-spatially varying 3D
     t1 = time.time()
@@ -952,7 +952,7 @@ def test_pSFS3D():
     print('         3D:    ', paramVec3D_sv.transpose())
     print('         2D:    ', paramVec2D_sv.transpose())
     print('      Computation time: ', t2-t1)
-    print('      Absolute difference: ', np.mean(np.abs(paramVec3D_sv-paramVec2D_sv)))
+    print('      Absolute difference: ', np.allclose(paramVec2D_sv, paramVec3D_sv, rtol=1e-03))
 
     # Non-spatially varying 3D
     t1 = time.time()
