@@ -59,7 +59,6 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup-conda
         run: |
-          mkdir $GITHUB_WORKSPACE 
           cd $GITHUB_WORKSPACE 
           conda create -n testenv python=${{ matrix.python-version }} 
           source activate testenv 
@@ -78,7 +77,5 @@ jobs:
 
       - name: cleanup
         run: |
-          cd .. 
-          rm /home/testdir
           conda deactivate
           conda env remove -n testenv 
