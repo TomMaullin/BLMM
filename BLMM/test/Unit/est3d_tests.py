@@ -185,7 +185,6 @@ def deprecated_test_FS3D():
     print('         3D:    ', paramVec3D_nsv.transpose())
     print('         2D:    ', paramVec2D_nsv.transpose())
     
-    result = result & (np.mean(np.abs(paramVec3D_nsv-paramVec2D_nsv)) < 1e-03)
     result = result & (np.mean(np.abs(paramVec3D_sv-paramVec2D_sv)) < 1e-03)
 
     # -------------------------------------------------------------------------
@@ -252,7 +251,6 @@ def deprecated_test_FS3D():
     print('         3D:    ', paramVec3D_nsv.transpose())
     print('         2D:    ', paramVec2D_nsv.transpose())
     
-    result = result & (np.mean(np.abs(paramVec3D_nsv-paramVec2D_nsv)) < 1e-03)
     result = result & (np.mean(np.abs(paramVec3D_sv-paramVec2D_sv)) < 1e-03)
 
     assert result
@@ -338,7 +336,6 @@ def deprecated_test_pFS3D():
     print('         3D:    ', paramVec3D_nsv.transpose())
     print('         2D:    ', paramVec2D_nsv.transpose())
     
-    result = (np.mean(np.abs(paramVec3D_nsv-paramVec2D_nsv)) < 1e-03)
     result = result & (np.mean(np.abs(paramVec3D_sv-paramVec2D_sv)) < 1e-03)
 
     # -------------------------------------------------------------------------
@@ -419,7 +416,6 @@ def deprecated_test_pFS3D():
     print('         3D:    ', paramVec3D_nsv.transpose())
     print('         2D:    ', paramVec2D_nsv.transpose())
 
-    result = result & (np.mean(np.abs(paramVec3D_nsv-paramVec2D_nsv)) < 1e-03)
     result = result & (np.mean(np.abs(paramVec3D_sv-paramVec2D_sv)) < 1e-03)
 
     # -------------------------------------------------------------------------
@@ -486,7 +482,6 @@ def deprecated_test_pFS3D():
     print('         3D:    ', paramVec3D_nsv.transpose())
     print('         2D:    ', paramVec2D_nsv.transpose())
     
-    result = result & (np.mean(np.abs(paramVec3D_nsv-paramVec2D_nsv)) < 1e-03)
     result = result & (np.mean(np.abs(paramVec3D_sv-paramVec2D_sv)) < 1e-03)
 
     assert result
@@ -573,7 +568,6 @@ def deprecated_test_SFS3D():
     print('         2D:    ', paramVec2D_nsv.transpose())
 
     
-    result = (np.mean(np.abs(paramVec3D_nsv-paramVec2D_nsv)) < 1e-03)
     result = result & (np.mean(np.abs(paramVec3D_sv-paramVec2D_sv)) < 1e-03)
 
     # -------------------------------------------------------------------------
@@ -654,7 +648,6 @@ def deprecated_test_SFS3D():
     print('         3D:    ', paramVec3D_nsv.transpose())
     print('         2D:    ', paramVec2D_nsv.transpose())
 
-    result = result & (np.mean(np.abs(paramVec3D_nsv-paramVec2D_nsv)) < 1e-03)
     result = result & (np.mean(np.abs(paramVec3D_sv-paramVec2D_sv)) < 1e-03)
 
     # -------------------------------------------------------------------------
@@ -721,7 +714,6 @@ def deprecated_test_SFS3D():
     print('         3D:    ', paramVec3D_nsv.transpose())
     print('         2D:    ', paramVec2D_nsv.transpose())
 
-    result = result & (np.mean(np.abs(paramVec3D_nsv-paramVec2D_nsv)) < 1e-03)
     result = result & (np.mean(np.abs(paramVec3D_sv-paramVec2D_sv)) < 1e-03)
 
     assert result
@@ -816,8 +808,7 @@ def test_pSFS3D():
     print('      Computation time: ', t2-t1)
     print('      Absolute difference: ', np.mean(np.abs(paramVec3D_nsv-paramVec2D_nsv)))
 
-    result = (np.mean(np.abs(paramVec3D_nsv-paramVec2D_nsv)) < 1e-03)
-    result = result & (np.mean(np.abs(paramVec3D_sv-paramVec2D_sv)) < 1e-03)
+    result = (np.mean(np.abs(paramVec3D_sv-paramVec2D_sv)) < 1e-03)
 
     # -------------------------------------------------------------------------
     # Test case 2: 1 random factor, multiple random effects
@@ -905,7 +896,6 @@ def test_pSFS3D():
     print('      Computation time: ', t2-t1)
     print('      Absolute difference: ', np.mean(np.abs(paramVec3D_nsv-paramVec2D_nsv)))
     
-    result = result & (np.mean(np.abs(paramVec3D_nsv-paramVec2D_nsv)) < 1e-03)
     result = result & (np.mean(np.abs(paramVec3D_sv-paramVec2D_sv)) < 1e-03)
 
     # -------------------------------------------------------------------------
@@ -980,8 +970,6 @@ def test_pSFS3D():
     print('      Computation time: ', t2-t1)
     print('      Absolute difference: ', np.mean(np.abs(paramVec3D_nsv-paramVec2D_nsv)))
 
-    
-    result = result & (np.mean(np.abs(paramVec3D_nsv-paramVec2D_nsv)) < 1e-03)
     result = result & (np.mean(np.abs(paramVec3D_sv-paramVec2D_sv)) < 1e-03)
 
     assert result
