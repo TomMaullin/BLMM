@@ -56,6 +56,7 @@ jobs:
       matrix:
         python-version: [3.9]
     steps:
+      - uses: actions/checkout@v3
       - name: setup-conda
         run: |
           mkdir $GITHUB_WORKSPACE 
@@ -63,9 +64,8 @@ jobs:
           conda create -n testenv python=${{ matrix.python-version }} 
           source activate testenv 
 
-      - uses: actions/checkout@v3
-      - name: checkout-repo
-          cd $GITHUB_WORKSPACE
+      - name: install-repo
+        run: |
           pip install -e .[all]
 
       - name: generate-data
