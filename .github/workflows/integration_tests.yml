@@ -1,4 +1,4 @@
-name: unittest
+name: integrationtest
 
 on: [push,pull_request]
 
