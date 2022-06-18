@@ -60,6 +60,7 @@ jobs:
       - name: setup-conda
         run: |
           cd $GITHUB_WORKSPACE 
+          mkdir data
           conda create -n testenv python=${{ matrix.python-version }} 
           source activate testenv 
 
@@ -69,7 +70,7 @@ jobs:
 
       - name: generate-data
         run: |
-          bash BLMM/test/Integration/generateData.sh /home/testdir 1 1
+          bash BLMM/test/Integration/generateData.sh $GITHUB_WORKSPACE/data 1 1
 
       - name: Run Test
         run: |
