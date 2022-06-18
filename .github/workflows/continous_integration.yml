@@ -51,7 +51,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        python-version: [3.9]
     steps:
       - name: Setup
         run: |
@@ -61,14 +61,15 @@ jobs:
           source activate testenv 
           conda install git pip 
           pip install git+https://github.com/TomMaullin/BLMM.git
+          cd BLMM
 
       - name: Generate Data
         run: |
-          bash ./test/Integration/generateData.sh /home/data 1 1
+          bash BLMM/test/Integration/generateData.sh /home/data 1 1
 
       - name: Run Test
         run: |
-          pytest BLMM/BLMM/test/Integration/*
+          pytest BLMM/test/Integration/*
 
       - name: Cleanup
         run: |
