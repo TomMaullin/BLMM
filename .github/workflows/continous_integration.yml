@@ -74,7 +74,7 @@ jobs:
 
       - name: Run Test
         run: |
-          pytest BLMM/test/Integration/*
+          pytest BLMM/test/Integration/*.py
 
       - name: cleanup
         run: |
