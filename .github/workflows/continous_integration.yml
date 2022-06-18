@@ -45,7 +45,7 @@ jobs:
       - name: Run Test
         run: make lint
 
-   integrationtest:
+  integrationtest:
     runs-on: self-hosted
 
     strategy:
