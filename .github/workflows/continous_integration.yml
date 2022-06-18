@@ -76,4 +76,4 @@ jobs:
           cd .. 
           rm /home/testdir
           conda deactivate
-          conda env remove -n testenv
+          conda env remove -n testenv 
