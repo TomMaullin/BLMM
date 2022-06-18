@@ -104,6 +104,9 @@ def test_FS3D():
     print('         3D:    ', paramVec3D_nsv.transpose())
     print('         2D:    ', paramVec2D_nsv.transpose())
 
+    result = np.allclose(paramVec3D_nsv, paramVec2D_nsv, atol=1e-08)
+    result = result & np.allclose(paramVec3D_sv, paramVec2D_sv, atol=1e-08)
+
     # -------------------------------------------------------------------------
     # Test case 2: 1 random factor, multiple random effects
     # -------------------------------------------------------------------------
@@ -181,6 +184,9 @@ def test_FS3D():
     print('         ')
     print('         3D:    ', paramVec3D_nsv.transpose())
     print('         2D:    ', paramVec2D_nsv.transpose())
+    
+    result = result & np.allclose(paramVec3D_nsv, paramVec2D_nsv, atol=1e-08)
+    result = result & np.allclose(paramVec3D_sv, paramVec2D_sv, atol=1e-08)
 
     # -------------------------------------------------------------------------
     # Test case 3: multiple random factors, multiple random effects
@@ -245,6 +251,11 @@ def test_FS3D():
     print('         ')
     print('         3D:    ', paramVec3D_nsv.transpose())
     print('         2D:    ', paramVec2D_nsv.transpose())
+    
+    result = result & np.allclose(paramVec3D_nsv, paramVec2D_nsv, atol=1e-08)
+    result = result & np.allclose(paramVec3D_sv, paramVec2D_sv, atol=1e-08)
+
+    assert result
 
 # =============================================================================
 #
@@ -326,6 +337,9 @@ def test_pFS3D():
     print('         ')
     print('         3D:    ', paramVec3D_nsv.transpose())
     print('         2D:    ', paramVec2D_nsv.transpose())
+    
+    result = np.allclose(paramVec3D_nsv, paramVec2D_nsv, atol=1e-08)
+    result = result & np.allclose(paramVec3D_sv, paramVec2D_sv, atol=1e-08)
 
     # -------------------------------------------------------------------------
     # Test case 2: 1 random factor, multiple random effects
@@ -405,6 +419,9 @@ def test_pFS3D():
     print('         3D:    ', paramVec3D_nsv.transpose())
     print('         2D:    ', paramVec2D_nsv.transpose())
 
+    result = result & np.allclose(paramVec3D_nsv, paramVec2D_nsv, atol=1e-08)
+    result = result & np.allclose(paramVec3D_sv, paramVec2D_sv, atol=1e-08)
+
     # -------------------------------------------------------------------------
     # Test case 3: multiple random factors, multiple random effects
     # -------------------------------------------------------------------------
@@ -468,6 +485,11 @@ def test_pFS3D():
     print('         ')
     print('         3D:    ', paramVec3D_nsv.transpose())
     print('         2D:    ', paramVec2D_nsv.transpose())
+    
+    result = result & np.allclose(paramVec3D_nsv, paramVec2D_nsv, atol=1e-08)
+    result = result & np.allclose(paramVec3D_sv, paramVec2D_sv, atol=1e-08)
+
+    assert result
 
 # =============================================================================
 #
@@ -550,6 +572,10 @@ def test_SFS3D():
     print('         3D:    ', paramVec3D_nsv.transpose())
     print('         2D:    ', paramVec2D_nsv.transpose())
 
+    
+    result = np.allclose(paramVec3D_nsv, paramVec2D_nsv, atol=1e-08)
+    result = result & np.allclose(paramVec3D_sv, paramVec2D_sv, atol=1e-08)
+
     # -------------------------------------------------------------------------
     # Test case 2: 1 random factor, multiple random effects
     # -------------------------------------------------------------------------
@@ -628,6 +654,9 @@ def test_SFS3D():
     print('         3D:    ', paramVec3D_nsv.transpose())
     print('         2D:    ', paramVec2D_nsv.transpose())
 
+    result = result & np.allclose(paramVec3D_nsv, paramVec2D_nsv, atol=1e-08)
+    result = result & np.allclose(paramVec3D_sv, paramVec2D_sv, atol=1e-08)
+
     # -------------------------------------------------------------------------
     # Test case 3: multiple random factors, multiple random effects
     # -------------------------------------------------------------------------
@@ -691,6 +720,11 @@ def test_SFS3D():
     print('         ')
     print('         3D:    ', paramVec3D_nsv.transpose())
     print('         2D:    ', paramVec2D_nsv.transpose())
+
+    result = result & np.allclose(paramVec3D_nsv, paramVec2D_nsv, atol=1e-08)
+    result = result & np.allclose(paramVec3D_sv, paramVec2D_sv, atol=1e-08)
+
+    assert result
 
 # =============================================================================
 #
@@ -780,6 +814,9 @@ def test_pSFS3D():
     print('         2D:    ', paramVec2D_nsv.transpose())
     print('      Computation time: ', t2-t1)
 
+    result = np.allclose(paramVec3D_nsv, paramVec2D_nsv, atol=1e-08)
+    result = result & np.allclose(paramVec3D_sv, paramVec2D_sv, atol=1e-08)
+
     # -------------------------------------------------------------------------
     # Test case 2: 1 random factor, multiple random effects
     # -------------------------------------------------------------------------
@@ -863,6 +900,9 @@ def test_pSFS3D():
     print('         3D:    ', paramVec3D_nsv.transpose())
     print('         2D:    ', paramVec2D_nsv.transpose())
     print('      Computation time: ', t2-t1)
+    
+    result = result & np.allclose(paramVec3D_nsv, paramVec2D_nsv, atol=1e-08)
+    result = result & np.allclose(paramVec3D_sv, paramVec2D_sv, atol=1e-08)
 
     # -------------------------------------------------------------------------
     # Test case 3: multiple random factors, multiple random effects
@@ -934,6 +974,11 @@ def test_pSFS3D():
     print('         2D:    ', paramVec2D_nsv.transpose())
     print('      Computation time: ', t2-t1)
 
+    
+    result = result & np.allclose(paramVec3D_nsv, paramVec2D_nsv, atol=1e-08)
+    result = result & np.allclose(paramVec3D_sv, paramVec2D_sv, atol=1e-08)
+
+    assert result
 
 # =============================================================================
 #
