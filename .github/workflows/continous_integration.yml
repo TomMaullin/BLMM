@@ -53,19 +53,24 @@ jobs:
       matrix:
         python-version: [3.9]
     steps:
-      - name: Setup
+
+      GITHUB_WORKSPACE=/home/testdir
+
+      - name: Setup Conda
         run: |
-          mkdir /home/testdir 
-          cd /home/testdir 
+          mkdir $GITHUB_WORKSPACE 
+          cd $GITHUB_WORKSPACE 
           conda create -n testenv python=${{ matrix.python-version }} 
           source activate testenv 
-          conda install git pip 
-          pip install git+https://github.com/TomMaullin/BLMM.git
-          cd BLMM
+
+      - uses: actions/checkout@v3
+      - name: Checkout repo
+          cd $GITHUB_WORKSPACE
+          pip install -e .[all]
 
       - name: Generate Data
         run: |
-          bash BLMM/test/Integration/generateData.sh /home/data 1 1
+          bash BLMM/test/Integration/generateData.sh /home/testdir 1 1
 
       - name: Run Test
         run: |
