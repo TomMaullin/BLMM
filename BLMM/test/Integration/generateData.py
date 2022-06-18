@@ -12,7 +12,7 @@ import glob
 import shutil
 import yaml
 from scipy import ndimage
-from lib.fileio import *
+from BLMM.lib.fileio import *
 import time
 import pandas as pd
 
