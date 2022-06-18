@@ -1595,34 +1595,32 @@ def pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, tol, 
             # Multiply by Z'X
             DinvIplusZtZDZtX = DinvIplusZtZD @ ZtX
 
-        # If in reml mode it is useful to get ZtiVX at this point as 
-        # we need it for dldB but we have all the building blocks here
-        if reml==True:
+        # It is useful to get ZtiVX at this point as we need it for dldB and dldDk but
+        # we have all the building blocks here
+        if r == 1 and nraneffs[0]==1:
 
-            if r == 1 and nraneffs[0]==1:
+            # Get Z'V^{-1}X
+            ZtiVX = ZtX - np.einsum('ij,ijk->ijk', ZtZ, DinvIplusZtZDZtX)
 
-                # Get Z'V^{-1}X
-                ZtiVX = ZtX - np.einsum('ij,ijk->ijk', ZtZ, DinvIplusZtZDZtX)
+        elif r == 1 and nraneffs[0] > 1:
 
-            elif r == 1 and nraneffs[0] > 1:
+            # Multiply by ZtZ and DinvIplusZtZDZtX
+            ZtZDinvIplusZtZDZtX = ZtZ.transpose(0,2,1).reshape(ZtZ.shape[0],l0,q0,q0) @ DinvIplusZtZDZtX
+            ZtZDinvIplusZtZDZtX = ZtZDinvIplusZtZDZtX.reshape(v_iter,q0*l0,p)
 
-                # Multiply by ZtZ and DinvIplusZtZDZtX
-                ZtZDinvIplusZtZDZtX = ZtZ.transpose(0,2,1).reshape(ZtZ.shape[0],l0,q0,q0) @ DinvIplusZtZDZtX
-                ZtZDinvIplusZtZDZtX = ZtZDinvIplusZtZDZtX.reshape(v_iter,q0*l0,p)
+            # Get Z'V^{-1}X
+            ZtiVX = ZtX - ZtZDinvIplusZtZDZtX
 
-                # Get Z'V^{-1}X
-                ZtiVX = ZtX - ZtZDinvIplusZtZDZtX
+            # Reshape appropriately
+            DinvIplusZtZDZtX = DinvIplusZtZDZtX.reshape(v_iter,q0*l0,p)
 
-                # Reshape appropriately
-                DinvIplusZtZDZtX = DinvIplusZtZDZtX.reshape(v_iter,q0*l0,p)
+            # delete unnecessary variable
+            del ZtZDinvIplusZtZDZtX
 
-                # delete unnecessary variable
-                del ZtZDinvIplusZtZDZtX
+        else:
 
-            else:
-
-                # Get Z'V^{-1}X
-                ZtiVX = ZtX - ZtZ @ DinvIplusZtZDZtX
+            # Get Z'V^{-1}X
+            ZtiVX = ZtX - ZtZ @ DinvIplusZtZDZtX
 
         # Work out X'V^(-1)X and X'V^(-1)Y by dimension reduction formulae
         XtiVX = XtX - DinvIplusZtZDZtX.transpose((0,2,1)) @ ZtX
