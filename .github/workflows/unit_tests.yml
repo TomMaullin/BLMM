@@ -55,11 +55,11 @@ jobs:
     steps:
     - name: Setup
       run: |
-        mkdir /home/testdir |
-        cd /home/testdir |
-        conda create -n testenv python=${{ matrix.python-version }} |
-        source activate testenv |
-        conda install git pip |
+        mkdir /home/testdir 
+        cd /home/testdir 
+        conda create -n testenv python=${{ matrix.python-version }} 
+        source activate testenv 
+        conda install git pip 
         pip install git+git://github.com/TomMaullin/BLMM.git
     - name: Generate Data
       run: |
@@ -69,7 +69,7 @@ jobs:
         pytest BLMM/test/Integration/*
     - name: Cleanup
       run: |
-        cd .. |
+        cd .. 
         rm /home/testdir
         source deactivate
         conda env remove -n testenv
