@@ -1,9 +1,9 @@
 name: unittest
 
+on: [push,pull_request]
+
 env:
   GITHUB_WORKSPACE: /home/testdir
-
-on: [push,pull_request]
 
 jobs:
   unittest:
