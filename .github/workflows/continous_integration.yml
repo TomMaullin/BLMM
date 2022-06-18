@@ -1,5 +1,8 @@
 name: unittest
 
+env:
+  GITHUB_WORKSPACE: /home/testdir
+
 on: [push,pull_request]
 
 jobs:
@@ -53,10 +56,7 @@ jobs:
       matrix:
         python-version: [3.9]
     steps:
-
-      GITHUB_WORKSPACE=/home/testdir
-
-      - name: Setup Conda
+      - name: setup-conda
         run: |
           mkdir $GITHUB_WORKSPACE 
           cd $GITHUB_WORKSPACE 
@@ -64,11 +64,11 @@ jobs:
           source activate testenv 
 
       - uses: actions/checkout@v3
-      - name: Checkout repo
+      - name: checkout-repo
           cd $GITHUB_WORKSPACE
           pip install -e .[all]
 
-      - name: Generate Data
+      - name: generate-data
         run: |
           bash BLMM/test/Integration/generateData.sh /home/testdir 1 1
 
@@ -76,7 +76,7 @@ jobs:
         run: |
           pytest BLMM/test/Integration/*
 
-      - name: Cleanup
+      - name: cleanup
         run: |
           cd .. 
           rm /home/testdir
