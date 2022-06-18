@@ -29,7 +29,7 @@ from BLMM.test.Unit.genTestDat import genTestData3D, prodMats3D
 # random test data and testing against it's 2D counterpart from est2d.py.
 #
 # =============================================================================
-def test_FS3D():
+def deprecated_test_FS3D():
 
     # -------------------------------------------------------------------------
     # Test case 1: 1 random factor, 1 random effect
@@ -263,7 +263,7 @@ def test_FS3D():
 # random test data and testing against it's 2D counterpart from est2d.py.
 #
 # =============================================================================
-def test_pFS3D():
+def deprecated_test_pFS3D():
 
     # -------------------------------------------------------------------------
     # Test case 1: 1 random factor, 1 random effect
@@ -497,7 +497,7 @@ def test_pFS3D():
 # random test data and testing against it's 2D counterpart from est2d.py.
 #
 # =============================================================================
-def test_SFS3D():
+def deprecated_test_SFS3D():
 
     # -------------------------------------------------------------------------
     # Test case 1: 1 random factor, 1 random effect
