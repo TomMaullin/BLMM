@@ -797,6 +797,7 @@ def test_pSFS3D():
     print('         3D:    ', paramVec3D_sv.transpose())
     print('         2D:    ', paramVec2D_sv.transpose())
     print('      Computation time: ', t2-t1)
+    print('      Absolute difference: ', np.mean(np.abs(paramVec3D_sv-paramVec2D_sv)))
 
 
     # Non-spatially varying 3D
@@ -813,6 +814,7 @@ def test_pSFS3D():
     print('         3D:    ', paramVec3D_nsv.transpose())
     print('         2D:    ', paramVec2D_nsv.transpose())
     print('      Computation time: ', t2-t1)
+    print('      Absolute difference: ', np.mean(np.abs(paramVec3D_nsv-paramVec2D_nsv)))
 
     result = (np.mean(np.abs(paramVec3D_nsv-paramVec2D_nsv)) < 1e-03)
     result = result & (np.mean(np.abs(paramVec3D_sv-paramVec2D_sv)) < 1e-03)
@@ -885,6 +887,7 @@ def test_pSFS3D():
     print('         3D:    ', paramVec3D_sv.transpose())
     print('         2D:    ', paramVec2D_sv.transpose())
     print('      Computation time: ', t2-t1)
+    print('      Absolute difference: ', np.mean(np.abs(paramVec3D_sv-paramVec2D_sv)))
 
     # Non-spatially varying 3D
     t1 = time.time()
@@ -900,6 +903,7 @@ def test_pSFS3D():
     print('         3D:    ', paramVec3D_nsv.transpose())
     print('         2D:    ', paramVec2D_nsv.transpose())
     print('      Computation time: ', t2-t1)
+    print('      Absolute difference: ', np.mean(np.abs(paramVec3D_nsv-paramVec2D_nsv)))
     
     result = result & (np.mean(np.abs(paramVec3D_nsv-paramVec2D_nsv)) < 1e-03)
     result = result & (np.mean(np.abs(paramVec3D_sv-paramVec2D_sv)) < 1e-03)
@@ -958,6 +962,7 @@ def test_pSFS3D():
     print('         3D:    ', paramVec3D_sv.transpose())
     print('         2D:    ', paramVec2D_sv.transpose())
     print('      Computation time: ', t2-t1)
+    print('      Absolute difference: ', np.mean(np.abs(paramVec3D_sv-paramVec2D_sv)))
 
     # Non-spatially varying 3D
     t1 = time.time()
@@ -973,6 +978,7 @@ def test_pSFS3D():
     print('         3D:    ', paramVec3D_nsv.transpose())
     print('         2D:    ', paramVec2D_nsv.transpose())
     print('      Computation time: ', t2-t1)
+    print('      Absolute difference: ', np.mean(np.abs(paramVec3D_nsv-paramVec2D_nsv)))
 
     
     result = result & (np.mean(np.abs(paramVec3D_nsv-paramVec2D_nsv)) < 1e-03)
