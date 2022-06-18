@@ -60,7 +60,7 @@ jobs:
           conda create -n testenv python=${{ matrix.python-version }} 
           source activate testenv 
           conda install git pip 
-          pip install git+git://github.com/TomMaullin/BLMM.git
+          pip install git+https://github.com/TomMaullin/BLMM.git
 
       - name: Generate Data
         run: |
@@ -74,5 +74,5 @@ jobs:
         run: |
           cd .. 
           rm /home/testdir
-          source deactivate
+          conda deactivate
           conda env remove -n testenv
