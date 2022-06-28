@@ -31,7 +31,7 @@ from BLMM.lib.PeLS import PeLS2D, PeLS2D_getSigma2, PeLS2D_getBeta, PeLS2D_getD
 # Author: Tom Maullin (06/04/2020)
 #
 # ==================================================================================
-def test2D():
+def deprecated_test2D():
 
     #===============================================================================
     # Setup

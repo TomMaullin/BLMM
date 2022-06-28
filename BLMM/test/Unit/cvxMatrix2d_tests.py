@@ -33,7 +33,7 @@ from BLMM.lib.cvxMatrix2d import *
 # the function against a predefined example.
 #
 # =============================================================================
-def test_mapping2D():
+def deprecated_test_mapping2D():
 
     # Theta values to put in the array
     theta = np.array([1,2,3,4])
@@ -83,7 +83,7 @@ def test_mapping2D():
 # properties.
 #
 # =============================================================================
-def test_sparse_chol2D():
+def deprecated_test_sparse_chol2D():
 
     # We need to set the cholmod options to 2
     cholmod.options['supernodal']=2
@@ -138,7 +138,7 @@ def test_sparse_chol2D():
 # checking the function against a predefined example.
 #
 # =============================================================================
-def test_get_mapping2D():
+def deprecated_test_get_mapping2D():
 
     # Example nlevels and nraneffs
     nlevels = np.array([3,3])

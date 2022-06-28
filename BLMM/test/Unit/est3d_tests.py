@@ -29,7 +29,7 @@ from BLMM.test.Unit.genTestDat import genTestData3D, prodMats3D
 # random test data and testing against it's 2D counterpart from est2d.py.
 #
 # =============================================================================
-def test_FS3D():
+def deprecated_test_FS3D():
 
     # -------------------------------------------------------------------------
     # Test case 1: 1 random factor, 1 random effect
@@ -75,10 +75,10 @@ def test_FS3D():
     # Estimates
     # ------------------------------------------------------------------------------------
     # Spatially varying 3D
-    paramVec3D_sv = FS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_diag_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-6,n_sv)[testv,:,:]
+    paramVec3D_sv = FS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_diag_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-8,n_sv)[testv,:,:]
 
     # Spatially varying 2D
-    paramVec2D_sv = FS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n_sv[testv])[0]
+    paramVec2D_sv = FS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-8,n_sv[testv])[0]
 
 
     print('==============================================================')
@@ -93,16 +93,19 @@ def test_FS3D():
     print('         2D:    ', paramVec2D_sv.transpose())
 
     # Non-spatially varying 3D
-    paramVec3D_nsv = FS3D(XtX, XtY, ZtX, ZtY, ZtZ_diag, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6,n)[testv,:,:]
+    paramVec3D_nsv = FS3D(XtX, XtY, ZtX, ZtY, ZtZ_diag, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-8,n)[testv,:,:]
 
     # Non-spatially varying 2D
-    paramVec2D_nsv = FS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n)[0]
+    paramVec2D_nsv = FS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-8,n)[0]
 
     print('--------------------------------------------------------------')
     print('      Results (Non Spatially Varying): ')
     print('         ')
     print('         3D:    ', paramVec3D_nsv.transpose())
     print('         2D:    ', paramVec2D_nsv.transpose())
+
+    result = (np.mean(np.abs(paramVec3D_nsv-paramVec2D_nsv)) < 1e-01)
+    result = result & (np.mean(np.abs(paramVec3D_sv-paramVec2D_sv)) < 1e-01)
 
     # -------------------------------------------------------------------------
     # Test case 2: 1 random factor, multiple random effects
@@ -153,10 +156,10 @@ def test_FS3D():
     # Estimates
     # ------------------------------------------------------------------------------------
     # Spatially varying 3D
-    paramVec3D_sv = FS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_sv_flattened, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-6,n_sv)[testv,:,:]
+    paramVec3D_sv = FS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_sv_flattened, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-8,n_sv)[testv,:,:]
 
     # Spatially varying 2D
-    paramVec2D_sv = FS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n_sv[testv])[0]
+    paramVec2D_sv = FS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-8,n_sv[testv])[0]
 
 
     print('==============================================================')
@@ -171,16 +174,18 @@ def test_FS3D():
     print('         2D:    ', paramVec2D_sv.transpose())
 
     # Non-spatially varying 3D
-    paramVec3D_nsv = FS3D(XtX, XtY, ZtX, ZtY, ZtZ_flattened, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6,n)[testv,:,:]
+    paramVec3D_nsv = FS3D(XtX, XtY, ZtX, ZtY, ZtZ_flattened, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-8,n)[testv,:,:]
 
     # Non-spatially varying 2D
-    paramVec2D_nsv = FS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n)[0]
+    paramVec2D_nsv = FS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-8,n)[0]
 
     print('--------------------------------------------------------------')
     print('      Results (Non Spatially Varying): ')
     print('         ')
     print('         3D:    ', paramVec3D_nsv.transpose())
     print('         2D:    ', paramVec2D_nsv.transpose())
+    
+    result = result & (np.mean(np.abs(paramVec3D_sv-paramVec2D_sv)) < 1e-01)
 
     # -------------------------------------------------------------------------
     # Test case 3: multiple random factors, multiple random effects
@@ -217,10 +222,10 @@ def test_FS3D():
     # Estimates
     # ------------------------------------------------------------------------------------
     # Spatially varying 3D
-    paramVec3D_sv = FS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-6,n_sv)[testv,:,:]
+    paramVec3D_sv = FS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-8,n_sv)[testv,:,:]
 
     # Spatially varying 2D
-    paramVec2D_sv = FS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n_sv[testv])[0]
+    paramVec2D_sv = FS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-8,n_sv[testv])[0]
 
 
     print('==============================================================')
@@ -235,16 +240,20 @@ def test_FS3D():
     print('         2D:    ', paramVec2D_sv.transpose())
 
     # Non-spatially varying 3D
-    paramVec3D_nsv = FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6,n)[testv,:,:]
+    paramVec3D_nsv = FS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-8,n)[testv,:,:]
 
     # Non-spatially varying 2D
-    paramVec2D_nsv = FS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n)[0]
+    paramVec2D_nsv = FS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-8,n)[0]
 
     print('--------------------------------------------------------------')
     print('      Results (Non Spatially Varying): ')
     print('         ')
     print('         3D:    ', paramVec3D_nsv.transpose())
     print('         2D:    ', paramVec2D_nsv.transpose())
+    
+    result = result & (np.mean(np.abs(paramVec3D_sv-paramVec2D_sv)) < 1e-01)
+
+    assert result
 
 # =============================================================================
 #
@@ -252,7 +261,7 @@ def test_FS3D():
 # random test data and testing against it's 2D counterpart from est2d.py.
 #
 # =============================================================================
-def test_pFS3D():
+def deprecated_test_pFS3D():
 
     # -------------------------------------------------------------------------
     # Test case 1: 1 random factor, 1 random effect
@@ -298,10 +307,10 @@ def test_pFS3D():
     # Estimates
     # ------------------------------------------------------------------------------------
     # Spatially varying 3D
-    paramVec3D_sv = pFS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_diag_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-6,n_sv)[testv,:,:]
+    paramVec3D_sv = pFS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_diag_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-8,n_sv)[testv,:,:]
 
     # Spatially varying 2D
-    paramVec2D_sv = pFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n_sv[testv])[0]
+    paramVec2D_sv = pFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-8,n_sv[testv])[0]
 
 
     print('==============================================================')
@@ -316,16 +325,18 @@ def test_pFS3D():
     print('         2D:    ', paramVec2D_sv.transpose())
 
     # Non-spatially varying 3D
-    paramVec3D_nsv = pFS3D(XtX, XtY, ZtX, ZtY, ZtZ_diag, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6,n)[testv,:,:]
+    paramVec3D_nsv = pFS3D(XtX, XtY, ZtX, ZtY, ZtZ_diag, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-8,n)[testv,:,:]
 
     # Non-spatially varying 2D
-    paramVec2D_nsv = pFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n)[0]
+    paramVec2D_nsv = pFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-8,n)[0]
 
     print('--------------------------------------------------------------')
     print('      Results (Non Spatially Varying): ')
     print('         ')
     print('         3D:    ', paramVec3D_nsv.transpose())
     print('         2D:    ', paramVec2D_nsv.transpose())
+    
+    result = result & (np.mean(np.abs(paramVec3D_sv-paramVec2D_sv)) < 1e-01)
 
     # -------------------------------------------------------------------------
     # Test case 2: 1 random factor, multiple random effects
@@ -376,10 +387,10 @@ def test_pFS3D():
     # Estimates
     # ------------------------------------------------------------------------------------
     # Spatially varying 3D
-    paramVec3D_sv = pFS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_sv_flattened, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-6,n_sv)[testv,:,:]
+    paramVec3D_sv = pFS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_sv_flattened, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-8,n_sv)[testv,:,:]
 
     # Spatially varying 2D
-    paramVec2D_sv = pFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n_sv[testv])[0]
+    paramVec2D_sv = pFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-8,n_sv[testv])[0]
 
 
     print('==============================================================')
@@ -394,16 +405,18 @@ def test_pFS3D():
     print('         2D:    ', paramVec2D_sv.transpose())
 
     # Non-spatially varying 3D
-    paramVec3D_nsv = pFS3D(XtX, XtY, ZtX, ZtY, ZtZ_flattened, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6,n)[testv,:,:]
+    paramVec3D_nsv = pFS3D(XtX, XtY, ZtX, ZtY, ZtZ_flattened, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-8,n)[testv,:,:]
 
     # Non-spatially varying 2D
-    paramVec2D_nsv = pFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n)[0]
+    paramVec2D_nsv = pFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-8,n)[0]
 
     print('--------------------------------------------------------------')
     print('      Results (Non Spatially Varying): ')
     print('         ')
     print('         3D:    ', paramVec3D_nsv.transpose())
     print('         2D:    ', paramVec2D_nsv.transpose())
+
+    result = result & (np.mean(np.abs(paramVec3D_sv-paramVec2D_sv)) < 1e-01)
 
     # -------------------------------------------------------------------------
     # Test case 3: multiple random factors, multiple random effects
@@ -440,10 +453,10 @@ def test_pFS3D():
     # Estimates
     # ------------------------------------------------------------------------------------
     # Spatially varying 3D
-    paramVec3D_sv = pFS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-6,n_sv)[testv,:,:]
+    paramVec3D_sv = pFS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-8,n_sv)[testv,:,:]
 
     # Spatially varying 2D
-    paramVec2D_sv = pFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n_sv[testv])[0]
+    paramVec2D_sv = pFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-8,n_sv[testv])[0]
 
 
     print('==============================================================')
@@ -458,16 +471,20 @@ def test_pFS3D():
     print('         2D:    ', paramVec2D_sv.transpose())
 
     # Non-spatially varying 3D
-    paramVec3D_nsv = pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6,n)[testv,:,:]
+    paramVec3D_nsv = pFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-8,n)[testv,:,:]
 
     # Non-spatially varying 2D
-    paramVec2D_nsv = pFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n)[0]
+    paramVec2D_nsv = pFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-8,n)[0]
 
     print('--------------------------------------------------------------')
     print('      Results (Non Spatially Varying): ')
     print('         ')
     print('         3D:    ', paramVec3D_nsv.transpose())
     print('         2D:    ', paramVec2D_nsv.transpose())
+    
+    result = result & (np.mean(np.abs(paramVec3D_sv-paramVec2D_sv)) < 1e-01)
+
+    assert result
 
 # =============================================================================
 #
@@ -475,7 +492,7 @@ def test_pFS3D():
 # random test data and testing against it's 2D counterpart from est2d.py.
 #
 # =============================================================================
-def test_SFS3D():
+def deprecated_test_SFS3D():
 
     # -------------------------------------------------------------------------
     # Test case 1: 1 random factor, 1 random effect
@@ -521,10 +538,10 @@ def test_SFS3D():
     # Estimates
     # ------------------------------------------------------------------------------------
     # Spatially varying 3D
-    paramVec3D_sv = SFS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_diag_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-6,n_sv)[testv,:,:]
+    paramVec3D_sv = SFS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_diag_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-8,n_sv)[testv,:,:]
 
     # Spatially varying 2D
-    paramVec2D_sv = SFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n_sv[testv])[0]
+    paramVec2D_sv = SFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-8,n_sv[testv])[0]
 
 
     print('==============================================================')
@@ -539,16 +556,19 @@ def test_SFS3D():
     print('         2D:    ', paramVec2D_sv.transpose())
 
     # Non-spatially varying 3D
-    paramVec3D_nsv = SFS3D(XtX, XtY, ZtX, ZtY, ZtZ_diag, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6,n)[testv,:,:]
+    paramVec3D_nsv = SFS3D(XtX, XtY, ZtX, ZtY, ZtZ_diag, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-8,n)[testv,:,:]
 
     # Non-spatially varying 2D
-    paramVec2D_nsv = SFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n)[0]
+    paramVec2D_nsv = SFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-8,n)[0]
 
     print('--------------------------------------------------------------')
     print('      Results (Non Spatially Varying): ')
     print('         ')
     print('         3D:    ', paramVec3D_nsv.transpose())
     print('         2D:    ', paramVec2D_nsv.transpose())
+
+    
+    result = result & (np.mean(np.abs(paramVec3D_sv-paramVec2D_sv)) < 1e-01)
 
     # -------------------------------------------------------------------------
     # Test case 2: 1 random factor, multiple random effects
@@ -599,10 +619,10 @@ def test_SFS3D():
     # Estimates
     # ------------------------------------------------------------------------------------
     # Spatially varying 3D
-    paramVec3D_sv = SFS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_sv_flattened, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-6,n_sv)[testv,:,:]
+    paramVec3D_sv = SFS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_sv_flattened, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-8,n_sv)[testv,:,:]
 
     # Spatially varying 2D
-    paramVec2D_sv = SFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n_sv[testv])[0]
+    paramVec2D_sv = SFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-8,n_sv[testv])[0]
 
 
     print('==============================================================')
@@ -617,16 +637,18 @@ def test_SFS3D():
     print('         2D:    ', paramVec2D_sv.transpose())
 
     # Non-spatially varying 3D
-    paramVec3D_nsv = SFS3D(XtX, XtY, ZtX, ZtY, ZtZ_flattened, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6,n)[testv,:,:]
+    paramVec3D_nsv = SFS3D(XtX, XtY, ZtX, ZtY, ZtZ_flattened, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-8,n)[testv,:,:]
 
     # Non-spatially varying 2D
-    paramVec2D_nsv = SFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n)[0]
+    paramVec2D_nsv = SFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-8,n)[0]
 
     print('--------------------------------------------------------------')
     print('      Results (Non Spatially Varying): ')
     print('         ')
     print('         3D:    ', paramVec3D_nsv.transpose())
     print('         2D:    ', paramVec2D_nsv.transpose())
+
+    result = result & (np.mean(np.abs(paramVec3D_sv-paramVec2D_sv)) < 1e-01)
 
     # -------------------------------------------------------------------------
     # Test case 3: multiple random factors, multiple random effects
@@ -663,10 +685,10 @@ def test_SFS3D():
     # Estimates
     # ------------------------------------------------------------------------------------
     # Spatially varying 3D
-    paramVec3D_sv = SFS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-6,n_sv)[testv,:,:]
+    paramVec3D_sv = SFS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-8,n_sv)[testv,:,:]
 
     # Spatially varying 2D
-    paramVec2D_sv = SFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n_sv[testv])[0]
+    paramVec2D_sv = SFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-8,n_sv[testv])[0]
 
 
     print('==============================================================')
@@ -681,16 +703,20 @@ def test_SFS3D():
     print('         2D:    ', paramVec2D_sv.transpose())
 
     # Non-spatially varying 3D
-    paramVec3D_nsv = SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6,n)[testv,:,:]
+    paramVec3D_nsv = SFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-8,n)[testv,:,:]
 
     # Non-spatially varying 2D
-    paramVec2D_nsv = SFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n)[0]
+    paramVec2D_nsv = SFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-8,n)[0]
 
     print('--------------------------------------------------------------')
     print('      Results (Non Spatially Varying): ')
     print('         ')
     print('         3D:    ', paramVec3D_nsv.transpose())
     print('         2D:    ', paramVec2D_nsv.transpose())
+
+    result = result & (np.mean(np.abs(paramVec3D_sv-paramVec2D_sv)) < 1e-01)
+
+    assert result
 
 # =============================================================================
 #
@@ -745,11 +771,11 @@ def test_pSFS3D():
     # ------------------------------------------------------------------------------------
     # Spatially varying 3D
     t1 = time.time()
-    paramVec3D_sv = pSFS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_diag_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-6,n_sv)[testv,:,:]
+    paramVec3D_sv = pSFS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_diag_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-8,n_sv)[testv,:,:]
     t2 = time.time()
 
     # Spatially varying 2D
-    paramVec2D_sv = pSFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n_sv[testv])[0]
+    paramVec2D_sv = pSFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-8,n_sv[testv])[0]
 
 
     print('==============================================================')
@@ -763,15 +789,16 @@ def test_pSFS3D():
     print('         3D:    ', paramVec3D_sv.transpose())
     print('         2D:    ', paramVec2D_sv.transpose())
     print('      Computation time: ', t2-t1)
+    print('      Absolute difference: ', np.allclose(paramVec2D_sv, paramVec3D_sv, rtol=1e-01))
 
 
     # Non-spatially varying 3D
     t1 = time.time()
-    paramVec3D_nsv = pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ_diag, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6,n)[testv,:,:]
+    paramVec3D_nsv = pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ_diag, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-8,n)[testv,:,:]
     t2 = time.time()
 
     # Non-spatially varying 2D
-    paramVec2D_nsv = pSFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n)[0]
+    paramVec2D_nsv = pSFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-8,n)[0]
 
     print('--------------------------------------------------------------')
     print('      Results (Non Spatially Varying): ')
@@ -779,6 +806,9 @@ def test_pSFS3D():
     print('         3D:    ', paramVec3D_nsv.transpose())
     print('         2D:    ', paramVec2D_nsv.transpose())
     print('      Computation time: ', t2-t1)
+    print('      Absolute difference: ', np.mean(np.abs(paramVec3D_nsv-paramVec2D_nsv)))
+
+    result = (np.mean(np.abs(paramVec3D_sv-paramVec2D_sv)) < 1e-01)
 
     # -------------------------------------------------------------------------
     # Test case 2: 1 random factor, multiple random effects
@@ -830,11 +860,11 @@ def test_pSFS3D():
     # ------------------------------------------------------------------------------------
     # Spatially varying 3D
     t1 = time.time()
-    paramVec3D_sv = pSFS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_sv_flattened, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-6,n_sv)[testv,:,:]
+    paramVec3D_sv = pSFS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_sv_flattened, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-8,n_sv)[testv,:,:]
     t2 = time.time()
 
     # Spatially varying 2D
-    paramVec2D_sv = pSFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n_sv[testv])[0]
+    paramVec2D_sv = pSFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-8,n_sv[testv])[0]
 
 
     print('==============================================================')
@@ -848,14 +878,15 @@ def test_pSFS3D():
     print('         3D:    ', paramVec3D_sv.transpose())
     print('         2D:    ', paramVec2D_sv.transpose())
     print('      Computation time: ', t2-t1)
+    print('      Absolute difference: ', np.allclose(paramVec2D_sv, paramVec3D_sv, rtol=1e-01))
 
     # Non-spatially varying 3D
     t1 = time.time()
-    paramVec3D_nsv = pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ_flattened, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6,n)[testv,:,:]
+    paramVec3D_nsv = pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ_flattened, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-8,n)[testv,:,:]
     t2 = time.time()
 
     # Non-spatially varying 2D
-    paramVec2D_nsv = pSFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n)[0]
+    paramVec2D_nsv = pSFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-8,n)[0]
 
     print('--------------------------------------------------------------')
     print('      Results (Non Spatially Varying): ')
@@ -863,6 +894,9 @@ def test_pSFS3D():
     print('         3D:    ', paramVec3D_nsv.transpose())
     print('         2D:    ', paramVec2D_nsv.transpose())
     print('      Computation time: ', t2-t1)
+    print('      Absolute difference: ', np.mean(np.abs(paramVec3D_nsv-paramVec2D_nsv)))
+    
+    result = result & (np.mean(np.abs(paramVec3D_sv-paramVec2D_sv)) < 1e-01)
 
     # -------------------------------------------------------------------------
     # Test case 3: multiple random factors, multiple random effects
@@ -900,11 +934,11 @@ def test_pSFS3D():
     # ------------------------------------------------------------------------------------
     # Spatially varying 3D
     t1 = time.time()
-    paramVec3D_sv = pSFS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-6,n_sv)[testv,:,:]
+    paramVec3D_sv = pSFS3D(XtX_sv, XtY_sv, ZtX_sv, ZtY_sv, ZtZ_sv, XtZ_sv, YtZ_sv, YtY, YtX_sv, nlevels, nraneffs, 1e-8,n_sv)[testv,:,:]
     t2 = time.time()
 
     # Spatially varying 2D
-    paramVec2D_sv = pSFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n_sv[testv])[0]
+    paramVec2D_sv = pSFS2D(XtX_sv[testv,:,:], XtY_sv[testv,:,:], ZtX_sv[testv,:,:], ZtY_sv[testv,:,:], ZtZ_sv[testv,:,:], XtZ_sv[testv,:,:], YtZ_sv[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-8,n_sv[testv])[0]
 
 
     print('==============================================================')
@@ -918,14 +952,15 @@ def test_pSFS3D():
     print('         3D:    ', paramVec3D_sv.transpose())
     print('         2D:    ', paramVec2D_sv.transpose())
     print('      Computation time: ', t2-t1)
+    print('      Absolute difference: ', np.allclose(paramVec2D_sv, paramVec3D_sv, rtol=1e-01))
 
     # Non-spatially varying 3D
     t1 = time.time()
-    paramVec3D_nsv = pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-6,n)[testv,:,:]
+    paramVec3D_nsv = pSFS3D(XtX, XtY, ZtX, ZtY, ZtZ, XtZ, YtZ, YtY, YtX, nlevels, nraneffs, 1e-8,n)[testv,:,:]
     t2 = time.time()
 
     # Non-spatially varying 2D
-    paramVec2D_nsv = pSFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-6,n)[0]
+    paramVec2D_nsv = pSFS2D(XtX[0,:,:], XtY[testv,:,:], ZtX[0,:,:], ZtY[testv,:,:], ZtZ[0,:,:], XtZ[0,:,:], YtZ[testv,:,:], YtY[testv,:,:], YtX_sv[testv,:,:], nlevels, nraneffs, 1e-8,n)[0]
 
     print('--------------------------------------------------------------')
     print('      Results (Non Spatially Varying): ')
@@ -933,7 +968,11 @@ def test_pSFS3D():
     print('         3D:    ', paramVec3D_nsv.transpose())
     print('         2D:    ', paramVec2D_nsv.transpose())
     print('      Computation time: ', t2-t1)
+    print('      Absolute difference: ', np.mean(np.abs(paramVec3D_nsv-paramVec2D_nsv)))
 
+    result = result & (np.mean(np.abs(paramVec3D_sv-paramVec2D_sv)) < 1e-01)
+
+    assert result
 
 # =============================================================================
 #
