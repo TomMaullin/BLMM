@@ -37,6 +37,7 @@ import BLMM.src.blmm_estimate as blmm_estimate
 #          (k-1)^th block of voxels. If `vb` is set to k<0, we know that the code is
 #          being run in serial and inference and estimation should be performed for 
 #          all voxels.
+#  - `n_b`: number of batches
 #
 # ------------------------------------------------------------------------------------
 # Developer notes:
@@ -58,7 +59,7 @@ import BLMM.src.blmm_estimate as blmm_estimate
 #       per voxel). 
 #
 # ====================================================================================
-def main(ipath, vb):
+def main(ipath, vb,n_b):
 
     # --------------------------------------------------------------------------------
     # Check inputs
@@ -80,10 +81,6 @@ def main(ipath, vb):
     # Read basic inputs
     # --------------------------------------------------------------------------------
     OutDir = inputs['outdir']
-
-    # Work out number of batchs
-    with open(os.path.join(OutDir,'nb.txt')) as f:
-        n_b = int(f.readline())
 
     # Random factor variables.
     rfxmats = inputs['Z']
