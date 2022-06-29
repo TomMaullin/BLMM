@@ -5,8 +5,8 @@ w.simplefilter(action = 'ignore', category = FutureWarning)
 import numpy as np
 import os
 import time
-np.set_printoptions(threshold=np.nan)
-from scipy import stats
+import sys
+np.set_printoptions(threshold=sys.maxsize)
 from BLMM.lib.npMatrix3d import *
 from BLMM.lib.npMatrix2d import *
 from BLMM.lib.fileio import *

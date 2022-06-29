@@ -4,7 +4,8 @@ import warnings as w
 w.simplefilter(action = 'ignore', category = FutureWarning)
 import numpy as np
 import os
-np.set_printoptions(threshold=np.nan)
+import sys
+np.set_printoptions(threshold=sys.maxsize)
 from BLMM.lib.npMatrix3d import *
 from BLMM.lib.fileio import *
 

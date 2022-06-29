@@ -10,7 +10,7 @@ import glob
 import shutil
 import yaml
 import time
-np.set_printoptions(threshold=np.nan)
+np.set_printoptions(threshold=sys.maxsize)
 from BLMM.lib.npMatrix3d import *
 from BLMM.lib.npMatrix2d import *
 from BLMM.lib.fileio import *
