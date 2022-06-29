@@ -12,7 +12,7 @@ import sys
 import os
 import shutil
 import yaml
-np.set_printoptions(threshold=np.nan)
+np.set_printoptions(threshold=sys.maxsize)
 from BLMM.lib.fileio import *
 import scipy.sparse
 import pandas as pd
@@ -96,7 +96,7 @@ def main(*args):
         for line in a.readlines():
 
             Y_files.append(line.replace('\n', ''))
-
+    
     # Load in one nifti to check NIFTI size
     try:
         Y0 = loadFile(Y_files[0])
