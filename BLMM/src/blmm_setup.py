@@ -270,10 +270,6 @@ def main(*args):
             if np.linalg.matrix_rank(cvec)<cvec.shape[0]:
                 raise ValueError('F contrast: \n' + str(cvec) + '\n is not of correct rank.')
 
-    # Output number of batches to a text file
-    with open(os.path.join(OutDir, "nb.txt"), 'w') as f:
-        print(int(np.ceil(len(Y_files)/int(blksize))), file=f)
-
     # Check if we are protecting disk quota as well.
     if 'diskMem' in inputs:
 
@@ -334,18 +330,6 @@ def main(*args):
             with open(ipath, 'w') as outfile:
                 yaml.dump(inputs, outfile, default_flow_style=False)
 
-    # If in voxel batching mode, save the number of voxel batches we need
-    if 'voxelBatching' in inputs:
-
-        if inputs['voxelBatching']:
-
-            # Obtain number of voxel blocks for parallelization.
-            nvb = pracNumVoxelBlocks(inputs)
-
-            # Output number of voxel batches to a text file
-            with open(os.path.join(OutDir, "nvb.txt"), 'w') as f:
-                print(int(nvb), file=f)
-
     # --------------------------------------------------------------------------------
     # lmer directories.
     # --------------------------------------------------------------------------------
@@ -354,9 +338,22 @@ def main(*args):
     if not os.path.exists(os.path.join(OutDir,"data")):
         os.mkdir(os.path.join(OutDir,"data"))
 
+    # If in voxel batching mode, save the number of voxel batches we need
+    if 'voxelBatching' in inputs:
+
+        if inputs['voxelBatching']:
+
+            # Obtain number of voxel blocks for parallelization.
+            nvb = pracNumVoxelBlocks(inputs)
+            # Reset warnings
+            w.resetwarnings()
+            return int(np.ceil(len(Y_files)/int(blksize))), int(nvb)
+            
 
     # Reset warnings
     w.resetwarnings()
+    # nb now is returned
+    return int(np.ceil(len(Y_files)/int(blksize))), 0
 
 if __name__ == "__main__":
     main()
