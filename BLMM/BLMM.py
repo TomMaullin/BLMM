@@ -5,7 +5,7 @@ from dask import config
 from dask_jobqueue import SGECluster
 from dask.distributed import Client, as_completed
 from dask.distributed import performance_report
-from BLMM.src import blmm_setup
+from BLMM.src import blmm_setup, blmm_batch
 
 
 def _main(argv=None):
@@ -33,8 +33,18 @@ def _main(argv=None):
     cluster = SGECluster() # assumees dask configuration file
     client = Client(cluster)
     cluster.scale(numNodes)
-    future_0 = client.submit(blmm_setup, inputs_yml, retnb, pure=False)
+    # blmm_setup gives back the number of batches
+    future_0 = client.submit(blmm_setup.main, inputs_yml, pure=False)
     nb = future_0.result()
+    # let's distribute batch jobs
+    batch_future = []
+    for job in range(nb):
+        blmm_batch.main(0,inputs_yml)
+        # fut = client.submit(blmm_batch.main,job,inputs_yml)
+        batch_future.append(fut)
+    batch_resutls = client.gather(batch_future)
+    breakpoint()
+    # 
 
 if __name__ == "__main__":
     _main(sys.argv[1:])
