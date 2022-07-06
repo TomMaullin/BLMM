@@ -10,7 +10,7 @@ import os
 import glob
 import shutil
 import yaml
-np.set_printoptions(threshold=np.nan)
+np.set_printoptions(threshold=sys.maxsize)
 from BLMM.lib.npMatrix3d import *
 from BLMM.lib.npMatrix2d import *
 from BLMM.lib.fileio import *
@@ -60,7 +60,7 @@ import BLMM.src.blmm_estimate as blmm_estimate
 #       per voxel). 
 #
 # ====================================================================================
-def main(ipath):
+def concat(ipath):
 
     # --------------------------------------------------------------------------------
     # Check inputs

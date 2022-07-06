@@ -12,7 +12,7 @@ import sys
 import os
 import shutil
 import yaml
-np.set_printoptions(threshold=np.nan)
+np.set_printoptions(threshold=sys.maxsize)
 from BLMM.lib.fileio import *
 import scipy.sparse
 import pandas as pd
@@ -51,7 +51,7 @@ from BLMM.lib.npMatrix3d import flattenZtZ
 #                           assumed to contain the inputs.
 #
 # ====================================================================================
-def main(*args):
+def batch(*args):
 
     # Change to blm directory
     os.chdir(os.path.dirname(os.path.realpath(__file__)))    

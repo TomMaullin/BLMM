@@ -10,7 +10,7 @@ import shutil
 import yaml
 from scipy import stats
 from statsmodels.stats import multitest
-np.set_printoptions(threshold=np.nan)
+np.set_printoptions(threshold=sys.maxsize)
 from BLMM.lib.npMatrix3d import *
 from BLMM.lib.fileio import *
 
@@ -36,7 +36,7 @@ from BLMM.lib.fileio import *
 # - `OutDir`: Output directory.
 #
 # ====================================================================================
-def main(blmmDir1, blmmDir2, OutDir):
+def compare(blmmDir1, blmmDir2, OutDir):
 
     # --------------------------------------------------------------------------------
     # Load in basic inputs

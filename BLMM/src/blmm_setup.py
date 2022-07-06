@@ -48,7 +48,7 @@ from BLMM.lib.fileio import loadFile, str2vec, pracNumVoxelBlocks, get_amInds, a
 #                 tweaking to use.
 #
 # ====================================================================================
-def main(*args):
+def setup(*args):
 
     # Change to blmm directory
     pwd = os.getcwd()
@@ -354,9 +354,12 @@ def main(*args):
     if not os.path.exists(os.path.join(OutDir,"data")):
         os.mkdir(os.path.join(OutDir,"data"))
 
-
     # Reset warnings
     w.resetwarnings()
+    
+    # Return nb
+    return(int(np.ceil(len(Y_files)/int(blksize))))
+        
 
 if __name__ == "__main__":
     main()

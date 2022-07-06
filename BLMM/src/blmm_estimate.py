@@ -5,7 +5,8 @@ w.simplefilter(action = 'ignore', category = FutureWarning)
 import numpy as np
 import os
 import time
-np.set_printoptions(threshold=np.nan)
+import sys
+np.set_printoptions(threshold=sys.maxsize)
 from scipy import stats
 from BLMM.lib.npMatrix3d import *
 from BLMM.lib.npMatrix2d import *
@@ -70,7 +71,7 @@ from BLMM.lib.est3d import *
 # - `D`: The random effects covariance matrix estimate for each voxel.
 #
 # ====================================================================================
-def main(inputs, inds, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, n, nlevels, nraneffs):
+def estimate(inputs, inds, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, n, nlevels, nraneffs):
 
     # ----------------------------------------------------------------------
     #  Read in one input nifti to get size, affines, etc.

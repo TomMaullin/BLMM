@@ -10,12 +10,12 @@ import glob
 import shutil
 import yaml
 import time
-np.set_printoptions(threshold=np.nan)
+np.set_printoptions(threshold=sys.maxsize)
 from BLMM.lib.npMatrix3d import *
 from BLMM.lib.npMatrix2d import *
 from BLMM.lib.fileio import *
-import src.blmm_inference as blmm_inference
-import src.blmm_estimate as blmm_estimate
+from BLMM.src.blmm_inference import inference as blmm_inference
+from BLMM.src.blmm_estimate import estimate as blmm_estimate
 
 # ====================================================================================
 #
@@ -58,7 +58,7 @@ import src.blmm_estimate as blmm_estimate
 #       per voxel). 
 #
 # ====================================================================================
-def main(ipath, vb):
+def results(ipath, vb):
 
     # --------------------------------------------------------------------------------
     # Check inputs
