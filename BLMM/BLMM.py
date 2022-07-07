@@ -134,7 +134,7 @@ def _main(argv=None):
     
     # Submit the setup job and retun the result
     future_s = client.submit(setup, inputs_yml, pure=False)
-    nb = future_s.result()
+    nb, nvb = future_s.result()
 
     # Delete the future object (NOTE: This is important! If you don't delete this dask
     # tries to rerun it every time you call the result function again, e.g. after each
@@ -196,11 +196,6 @@ def _main(argv=None):
         
     # If we are voxel batching, split the analysis into chunks and run in parallel.
     else:
-
-        # Work out the number of voxel batches (this should have been output by the 
-        # setup job)
-        with open(os.path.join(OutDir,'nvb.txt')) as f:
-            nvb = int(f.readline())
 
         # Empty futures list
         futures = []

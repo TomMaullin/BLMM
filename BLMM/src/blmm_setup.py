@@ -335,17 +335,11 @@ def setup(*args):
                 yaml.dump(inputs, outfile, default_flow_style=False)
 
     # If in voxel batching mode, save the number of voxel batches we need
-    if 'voxelBatching' in inputs:
-
-        if inputs['voxelBatching']:
-
-            # Obtain number of voxel blocks for parallelization.
-            nvb = pracNumVoxelBlocks(inputs)
-
-            # Output number of voxel batches to a text file
-            with open(os.path.join(OutDir, "nvb.txt"), 'w') as f:
-                print(int(nvb), file=f)
-
+    if 'voxelBatching' in inputs and inputs['voxelBatching']:
+        # Obtain number of voxel blocks for parallelization.
+        nvb = pracNumVoxelBlocks(inputs)
+    else:
+        nvb = None
     # --------------------------------------------------------------------------------
     # lmer directories.
     # --------------------------------------------------------------------------------
@@ -358,7 +352,7 @@ def setup(*args):
     w.resetwarnings()
     
     # Return nb
-    return(int(np.ceil(len(Y_files)/int(blksize))))
+    return int(np.ceil(len(Y_files)/int(blksize))), nvb
         
 
 if __name__ == "__main__":
