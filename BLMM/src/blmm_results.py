@@ -502,6 +502,3 @@ def readAndSumUniqueAtB(AtBstr, OutDir, vinds, n_b, sv):
         AtB = AtB + AtB_batch
 
     return(AtB)
-
-if __name__ == "__main__":
-    main()

@@ -676,6 +676,3 @@ def memorySafeAtB(A,B,MAXMEM,prodStr,inputs):
         # file
         os.remove(filename + ".lock")
         os.close(f)
-
-if __name__ == "__main__":
-    main()

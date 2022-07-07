@@ -309,7 +309,3 @@ def concat(ipath):
     del df, dfmap
 
     w.resetwarnings()
-
-
-if __name__ == "__main__":
-    main()

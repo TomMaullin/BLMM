@@ -353,7 +353,3 @@ def setup(*args):
     
     # Return nb
     return int(np.ceil(len(Y_files)/int(blksize))), nvb
-        
-
-if __name__ == "__main__":
-    main()
