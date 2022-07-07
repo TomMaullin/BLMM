@@ -7,6 +7,11 @@ from dask import config
 from dask_jobqueue import SLURMCluster
 from dask.distributed import Client, as_completed
 from dask.distributed import performance_report
+from BLMM.src.blmm_setup import setup
+from BLMM.src.blmm_batch import batch
+from BLMM.src.blmm_cleanup import cleanup
+from BLMM.src.blmm_concat import concat
+from BLMM.src.blmm_results  import results
 
 
 def _main(argv=None):
