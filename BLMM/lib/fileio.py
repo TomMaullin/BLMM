@@ -3,6 +3,9 @@ import time
 import pandas as pd
 import nibabel as nib
 import numpy as np
+import yaml
+from dask.distributed import Client
+import warnings
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
@@ -517,3 +520,91 @@ def pracNumVoxelBlocks(inputs):
 
   # Return number of voxel blocks
   return(nvb)
+
+def cluster_detection(clustertype,maxmem):
+        # --------------------------------------------------------------------------------
+        # Set up cluster
+        # --------------------------------------------------------------------------------
+    with open(os.path.join(os.path.expanduser("~"), ".config/dask/jobqueue.yaml"), "r") as stream:
+        data = yaml.load(stream, Loader=yaml.FullLoader)
+    if maxmem < 21474836480:
+        maxmem = 21474836480
+    if data is None:
+        raise ValueError('Please add a cluster congfiguration file in your ~/.config/dask/jobqueue.yml'
+                         ' We do not take care of dask setup so please ask your IT department for help')
+    else:
+
+        if clustertype is None:
+            if len(data["jobqueue"]) > 2:
+                raise ValueError("You have 2 cluster congfigurations in your ~/.config/dask/jobqueue.yml."
+                                 "Please specify 'clusterType' in the inputs yaml.")
+            # Check if we are using a HTCondor cluster
+            else:
+                clustertype = data["jobqueue"].keys(0)
+            
+        if clustertype.lower() == 'htcondor':
+            # Load the HTCondor Cluster
+            from dask_jobqueue import HTCondorCluster
+            cluster = HTCondorCluster(memory=maxmem)
+
+        # Check if we are using an LSF cluster
+        elif clustertype.lower() == 'lsf':
+
+            # Load the LSF Cluster
+            from dask_jobqueue import LSFCluster
+            cluster = LSFCluster(memory=maxmem)
+
+        # Check if we are using a Moab cluster
+        elif clustertype.lower() == 'moab':
+
+            # Load the Moab Cluster
+            from dask_jobqueue import MoabCluster
+            cluster = MoabCluster(memory=maxmem)
+
+        # Check if we are using a OAR cluster
+        elif clustertype.lower() == 'oar':
+
+            # Load the OAR Cluster
+            from dask_jobqueue import OARCluster
+            cluster = OARCluster(memory=maxmem)
+
+        # Check if we are using a PBS cluster
+        elif clustertype.lower() == 'pbs':
+
+            # Load the PBS Cluster
+            from dask_jobqueue import PBSCluster
+            cluster = PBSCluster(memory=maxmem)
+
+        # Check if we are using an SGE cluster
+        elif clustertype.lower() == 'sge':
+
+            # Load the SGE Cluster
+            from dask_jobqueue import SGECluster
+            cluster = SGECluster(memory=maxmem)
+
+        # Check if we are using a SLURM cluster
+        elif clustertype.lower() == 'slurm':
+
+            # Load the SLURM Cluster
+            from dask_jobqueue import SLURMCluster
+            cluster = SLURMCluster(memory=maxmem)
+
+        # Check if we are using a local cluster
+        elif clustertype.lower() == 'local':
+
+            # Load the Local Cluster
+            from dask.distributed import LocalCluster
+            cluster = LocalCluster()
+
+        # Raise a value error if none of the above
+        else:
+            raise ValueError('The cluster type, ' + clustertype + ', is not recognized.')
+        
+        # --------------------------------------------------------------------------------
+        # Connect to client
+        # --------------------------------------------------------------------------------
+
+        # Connect to cluster
+        client = Client(cluster)
+        warnings.warn("In order to check processes look at " + client.dashboard_link)
+        return client, cluster

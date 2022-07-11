@@ -3,10 +3,8 @@ import sys
 import shutil
 import yaml
 import numpy as np
-from dask import config
-from dask_jobqueue import SLURMCluster
-from dask.distributed import Client, as_completed
-from dask.distributed import performance_report
+from dask.distributed import wait
+from BLMM.lib.fileio import  cluster_detection
 from BLMM.src.blmm_setup import setup
 from BLMM.src.blmm_batch import batch
 from BLMM.src.blmm_cleanup import cleanup
@@ -14,7 +12,7 @@ from BLMM.src.blmm_concat import concat
 from BLMM.src.blmm_results  import results
 
 
-def _main(argv=None):
+def _main(argv=sys.argv[1:]):
     
     
     # --------------------------------------------------------------------------------
@@ -48,82 +46,8 @@ def _main(argv=None):
         voxelBatching = inputs['voxelBatching']
     else:
         voxelBatching = 0
-    
-    # --------------------------------------------------------------------------------
-    # Set up cluster
-    # --------------------------------------------------------------------------------
-    if 'clusterType' in inputs:
-
-        # Check if we are using a HTCondor cluster
-        if inputs['clusterType'].lower() == 'htcondor':
-
-            # Load the HTCondor Cluster
-            from dask_jobqueue import HTCondorCluster
-            cluster = HTCondorCluster()
-
-        # Check if we are using an LSF cluster
-        elif inputs['clusterType'].lower() == 'lsf':
-
-            # Load the LSF Cluster
-            from dask_jobqueue import LSFCluster
-            cluster = LSFCluster()
-
-        # Check if we are using a Moab cluster
-        elif inputs['clusterType'].lower() == 'moab':
-
-            # Load the Moab Cluster
-            from dask_jobqueue import MoabCluster
-            cluster = MoabCluster()
-
-        # Check if we are using a OAR cluster
-        elif inputs['clusterType'].lower() == 'oar':
-
-            # Load the OAR Cluster
-            from dask_jobqueue import OARCluster
-            cluster = OARCluster()
-
-        # Check if we are using a PBS cluster
-        elif inputs['clusterType'].lower() == 'pbs':
-
-            # Load the PBS Cluster
-            from dask_jobqueue import PBSCluster
-            cluster = PBSCluster()
-
-        # Check if we are using an SGE cluster
-        elif inputs['clusterType'].lower() == 'sge':
-
-            # Load the SGE Cluster
-            from dask_jobqueue import SGECluster
-            cluster = SGECluster()
-
-        # Check if we are using a SLURM cluster
-        elif inputs['clusterType'].lower() == 'slurm':
-
-            # Load the SLURM Cluster
-            from dask_jobqueue import SLURMCluster
-            cluster = SLURMCluster()
-
-        # Check if we are using a local cluster
-        elif inputs['clusterType'].lower() == 'local':
-
-            # Load the Local Cluster
-            from dask.distributed import LocalCluster
-            cluster = LocalCluster()
-
-        # Raise a value error if none of the above
-        else:
-            raise ValueError('The cluster type, ' + inputs['clusterType'] + ', is not recognized.')
-
-    else:
-        # Raise a value error if the cluster type was not specified
-        raise ValueError('Please specify "clusterType" in the inputs yaml.')
-    
-    # --------------------------------------------------------------------------------
-    # Connect to client
-    # --------------------------------------------------------------------------------
-    
-    # Connect to cluster
-    client = Client(cluster)   
+    maxmem = eval(inputs['MAXMEM'])
+    client, cluster = cluster_detection(inputs["clusterType"] , maxmem)
 
     # --------------------------------------------------------------------------------
     # Run Setup
@@ -131,7 +55,6 @@ def _main(argv=None):
     
     # Ask for a node for setup
     cluster.scale(1)
-    
     # Submit the setup job and retun the result
     future_s = client.submit(setup, inputs_yml, pure=False)
     nb, nvb = future_s.result()
@@ -146,11 +69,13 @@ def _main(argv=None):
     # --------------------------------------------------------------------------------
     
     # Ask for a node for setup
-    cluster.scale(numNodes)
-
+    # Make sure we don't use more nodes than necesary 
+    if numNodes > nb+1 or numNodes > nvb+1:
+        cluster.scale(min([nb, nvb]) )
+    else:
+        cluster.scale(numNodes)
     # Empty futures list
     futures = []
-
     # Submit jobs
     for i in np.arange(1,nb+1):
 
@@ -160,15 +85,11 @@ def _main(argv=None):
         # Append to list 
         futures.append(future_b)
 
-    # Completed jobs
-    completed = as_completed(futures)
+    # wait for results 
+        wait(futures)
 
-    # Wait for results
-    for i in completed:
-        i.result()
-
-    # Delete the future objects (NOTE: see above comment in setup section).
-    del i, completed, futures, future_b
+        # Delete the future objects (NOTE: see above comment in setup section).
+        del i, futures, future_b
     
     # --------------------------------------------------------------------------------
     # Run Concatenation Job
@@ -184,7 +105,6 @@ def _main(argv=None):
     # --------------------------------------------------------------------------------
     # Run Results Jobs
     # --------------------------------------------------------------------------------
-    
     # If we aren't voxel batching run the entire analysis in one serial job.
     if not voxelBatching:
     
@@ -210,22 +130,15 @@ def _main(argv=None):
             futures.append(future_r)
 
         # Completed jobs
-        completed = as_completed(futures)
-
-        # Wait for results
-        for i in completed:
-            i.result()
+        wait(futures)
 
         # Delete the future objects (NOTE: see above comment in setup section).
-        del i, completed, futures, future_r
-    
+        del i, futures, future_r
+
     # --------------------------------------------------------------------------------
     # Run Cleanup Job
     # --------------------------------------------------------------------------------
     future_cl = client.submit(cleanup, inputs_yml, pure=False)
     future_cl.result()
-    
-if __name__ == "__main__":
-    _main(sys.argv[1:])
 
 
