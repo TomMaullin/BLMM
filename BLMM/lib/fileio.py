@@ -606,5 +606,5 @@ def cluster_detection(clustertype,maxmem):
 
         # Connect to cluster
         client = Client(cluster)
-        warnings.warn("In order to check processes look at " + client.dashboard_link)
+        
         return client, cluster
