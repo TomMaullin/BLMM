@@ -86,11 +86,11 @@ def _main(argv=sys.argv[1:]):
         futures.append(future_b)
 
     # wait for results 
-        completed = as_completed(futures)
-        for i in completed:
-            i.result()
-        # Delete the future objects (NOTE: see above comment in setup section).
-        del i, futures, future_b, completed
+    completed = as_completed(futures)
+    for i in completed:
+        i.result()
+    # Delete the future objects (NOTE: see above comment in setup section).
+    del i, futures, future_b, completed
     
     # --------------------------------------------------------------------------------
     # Run Concatenation Job
@@ -135,7 +135,7 @@ def _main(argv=sys.argv[1:]):
         for i in completed:
             i.result()
         # Delete the future objects (NOTE: see above comment in setup section).
-        del i, futures, future_r, completed
+    del i, futures, future_r, completed
 
     # --------------------------------------------------------------------------------
     # Run Cleanup Job
