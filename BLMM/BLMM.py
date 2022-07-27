@@ -3,7 +3,7 @@ import sys
 import shutil
 import yaml
 import numpy as np
-from dask.distributed import wait
+from dask.distributed import as_completed
 from BLMM.lib.fileio import  cluster_detection
 from BLMM.src.blmm_setup import setup
 from BLMM.src.blmm_batch import batch
@@ -86,10 +86,10 @@ def _main(argv=sys.argv[1:]):
         futures.append(future_b)
 
     # wait for results 
-        wait(futures)
+        completed = as_completed(futures)
 
         # Delete the future objects (NOTE: see above comment in setup section).
-        del i, futures, future_b
+        del i, futures, future_b, completed
     
     # --------------------------------------------------------------------------------
     # Run Concatenation Job
@@ -130,10 +130,10 @@ def _main(argv=sys.argv[1:]):
             futures.append(future_r)
 
         # Completed jobs
-        wait(futures)
+        completed = as_completed(futures)
 
         # Delete the future objects (NOTE: see above comment in setup section).
-        del i, futures, future_r
+        del i, futures, future_r, completed
 
     # --------------------------------------------------------------------------------
     # Run Cleanup Job
