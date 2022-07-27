@@ -87,7 +87,8 @@ def _main(argv=sys.argv[1:]):
 
     # wait for results 
         completed = as_completed(futures)
-
+        for i in completed:
+            i.result()
         # Delete the future objects (NOTE: see above comment in setup section).
         del i, futures, future_b, completed
     
@@ -131,7 +132,8 @@ def _main(argv=sys.argv[1:]):
 
         # Completed jobs
         completed = as_completed(futures)
-
+        for i in completed:
+            i.result()
         # Delete the future objects (NOTE: see above comment in setup section).
         del i, futures, future_r, completed
 
