@@ -3,6 +3,7 @@ import sys
 import shutil
 import yaml
 import numpy as np
+import warnings
 from dask.distributed import as_completed
 from BLMM.lib.fileio import  cluster_detection
 from BLMM.src.blmm_setup import setup
@@ -46,9 +47,20 @@ def _main(argv=sys.argv[1:]):
         voxelBatching = inputs['voxelBatching']
     else:
         voxelBatching = 0
-    maxmem = eval(inputs['MAXMEM'])
-    client, cluster = cluster_detection(inputs["clusterType"] , maxmem)
-
+    client, cluster, nodemem = cluster_detection(inputs["clusterType"])
+    if "MAXMEM" in inputs:
+        maxmem = eval(inputs['MAXMEM'])
+    else:
+        maxmem = 2 ** 32
+    maxmem_bytes= maxmem / 8
+   # nodemem is always in bytes that's we have to do the conversion refer to  
+    if maxmem_bytes > nodemem:
+        warnings.warn("MAXMEM parameter is bigger than nodemem this may cause dask workers to crash. "
+                      "Either increase the memory parameter in your jobqueue.yaml file  or "
+                      "decrease the MAXMEM requested")
+        inputs["MAXMEM"] = str(nodemem*8)
+        with open(inputs_yml, 'w') as stream:
+             _ = yaml.dump(inputs,stream)
     # --------------------------------------------------------------------------------
     # Run Setup
     # --------------------------------------------------------------------------------
