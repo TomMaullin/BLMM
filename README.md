@@ -12,7 +12,7 @@ pandas
 subprocess
 ```
 
-(This code may work with older versions of numpy and nibabel but caution is advised as these versions have not been tested. Despite being built specifically for use on Sun Grid Engine (SGE) clusters, SGE-specific code in BLMM is isolated in `blmm_cluster.sh` and may be adapted for use on any HPC scheduler by replacing the relevant calls to `fsl_sub` with equivalent cluster-specific commands).
+(This code may work with older versions of numpy and nibabel but caution is advised as these versions have not been tested. Despite being built specifically for use on Sun Grid Engine (SGE) clusters, SGE-specific code in BLMM is isolated in `blmm_cluster.sh` and may be adapted for use on any HPC scheduler by replacing all calls to `fsl_sub` with the equivalent cluster-specific commands).
 
 If running `BLMM-py` on a cluster, `fsl_sub` must also be configured correctly.
 
