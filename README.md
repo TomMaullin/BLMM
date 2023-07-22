@@ -2,19 +2,19 @@
 This repository contains the code for Big Linear Mixed Models for Neuroimaging cluster and local usage.
 
 ## Requirements
-To use the BLMM-py code, `fsl 5.0.10` or greater must be installed and `fslpython` must be configured correctly. Alternatively the following python packages must be installed:
+To use the BLM-py code, please clone this repository to your cluster. 
 
 ```
-numpy>=1.14.0
-nibabel>=2.2.1
-yaml
-pandas
-subprocess
+git clone https://github.com/TomMaullin/BLM.git
 ```
 
-(This code may work with older versions of numpy and nibabel but caution is advised as these versions have not been tested).
+Then pip install the requirements:
 
-If running `BLMM-py` on a cluster, `fsl_sub` must also be configured correctly.
+```
+pip install -r requirements.txt
+```
+
+If running `BLMM-py` tests on a cluster, `fsl_sub` must also be configured correctly.
 
 ## Usage
 To run `BLMM-py` first specify your design using `blmm_config.yml` and then run your analysis by following the below guidelines.
