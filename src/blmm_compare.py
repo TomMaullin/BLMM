@@ -10,7 +10,7 @@ import shutil
 import yaml
 from scipy import stats
 from statsmodels.stats import multitest
-np.set_printoptions(threshold=np.nan)
+np.set_printoptions(threshold=sys.maxsize)
 from lib.npMatrix3d import *
 from lib.fileio import *
 
@@ -36,7 +36,7 @@ from lib.fileio import *
 # - `OutDir`: Output directory.
 #
 # ====================================================================================
-def main(blmmDir1, blmmDir2, OutDir):
+def compare(blmmDir1, blmmDir2, OutDir):
 
     # --------------------------------------------------------------------------------
     # Load in basic inputs
@@ -286,8 +286,8 @@ def main(blmmDir1, blmmDir2, OutDir):
     # --------------------------------------------------------------------------------
 
     # Load masks
-    mask1 = nib.load(os.path.join(blmmDir1, 'blm_vox_mask.nii')).get_data()>0
-    mask2 = nib.load(os.path.join(blmmDir2, 'blmm_vox_mask.nii')).get_data()>0
+    mask1 = nib.load(os.path.join(blmmDir1, 'blm_vox_mask.nii')).get_fdata()>0
+    mask2 = nib.load(os.path.join(blmmDir2, 'blmm_vox_mask.nii')).get_fdata()>0
 
     # Combine masks
     mask = mask1*mask2
@@ -300,8 +300,8 @@ def main(blmmDir1, blmmDir2, OutDir):
     # --------------------------------------------------------------------------------
 
     # Load log likelihoods
-    llh1 = nib.load(os.path.join(blmmDir1, 'blm_vox_llh.nii')).get_data()
-    llh2 = nib.load(os.path.join(blmmDir2, 'blmm_vox_llh.nii')).get_data()
+    llh1 = nib.load(os.path.join(blmmDir1, 'blm_vox_llh.nii')).get_fdata()
+    llh2 = nib.load(os.path.join(blmmDir2, 'blmm_vox_llh.nii')).get_fdata()
 
     # X^2 statistic
     Chi2 = np.maximum(-2*(llh1-llh2),0)

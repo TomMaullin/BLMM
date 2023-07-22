@@ -12,7 +12,7 @@ import sys
 import os
 import shutil
 import yaml
-np.set_printoptions(threshold=np.nan)
+np.set_printoptions(threshold=sys.maxsize)
 from lib.fileio import *
 import scipy.sparse
 import pandas as pd
@@ -51,7 +51,7 @@ from lib.npMatrix3d import flattenZtZ
 #                           assumed to contain the inputs.
 #
 # ====================================================================================
-def main(*args):
+def batch(*args):
 
     # Change to blm directory
     os.chdir(os.path.dirname(os.path.realpath(__file__)))    
@@ -104,7 +104,7 @@ def main(*args):
         raise ValueError('The NIFTI "' + Y_files[0] + '"does not exist')
 
     # Read in some data as a default nifti
-    d0 = Y0.get_data()
+    d0 = Y0.get_fdata()
 
     # Get q
     q = int(inputs["q"])
@@ -222,7 +222,7 @@ def main(*args):
 
         # Load the file and check it's shape is 3d (as oppose to 4d with a 4th dimension
         # of 1)
-        M_a = loadFile(inputs['analysis_mask']).get_data()
+        M_a = loadFile(inputs['analysis_mask']).get_fdata()
         M_a = M_a.reshape((M_a.shape[0],M_a.shape[1],M_a.shape[2]))
 
     else:
@@ -344,7 +344,7 @@ def main(*args):
 def verifyInput(Y_files, M_files, Y0):
 
     # Obtain information about zero-th observation
-    d0 = Y0.get_data()
+    d0 = Y0.get_fdata()
     Y0aff = Y0.affine
 
     # Initial checks for NIFTI compatability for Y.
@@ -474,7 +474,7 @@ def obtainY(Y_files, M_files, M_t, M_a):
 
     # Load in one nifti to check NIFTI size
     Y0 = loadFile(Y_files[0])
-    d = Y0.get_data()
+    d = Y0.get_fdata()
     
     # Get number of voxels.
     v = np.prod(d.shape)
@@ -496,13 +496,13 @@ def obtainY(Y_files, M_files, M_t, M_a):
         if M_files:
         
             # Apply mask
-            M_indiv = loadFile(M_files[i]).get_data()
+            M_indiv = loadFile(M_files[i]).get_fdata()
             d = np.multiply(
-                Y_indiv.get_data(),
+                Y_indiv.get_fdata(),
                 M_indiv)
         else: 
             #Just load in Y
-            d = Y_indiv.get_data()
+            d = Y_indiv.get_fdata()
 
         # If theres an initial threshold for the data apply it.
         if M_t is not None:

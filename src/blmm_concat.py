@@ -10,7 +10,7 @@ import os
 import glob
 import shutil
 import yaml
-np.set_printoptions(threshold=np.nan)
+np.set_printoptions(threshold=sys.maxsize)
 from lib.npMatrix3d import *
 from lib.npMatrix2d import *
 from lib.fileio import *
@@ -60,7 +60,7 @@ import src.blmm_estimate as blmm_estimate
 #       per voxel). 
 #
 # ====================================================================================
-def main(ipath):
+def concat(ipath):
 
     # --------------------------------------------------------------------------------
     # Check inputs
@@ -132,7 +132,7 @@ def main(ipath):
 
     # Read in n (spatially varying)
     nmapb  = loadFile(os.path.join(OutDir,"tmp", "blmm_vox_n_batch1.nii"))
-    n_sv = nmapb.get_data()# Read in uniqueness Mask file
+    n_sv = nmapb.get_fdata()# Read in uniqueness Mask file
 
     # Remove file we just read
     os.remove(os.path.join(OutDir,"tmp", "blmm_vox_n_batch1.nii"))
@@ -142,7 +142,7 @@ def main(ipath):
         
         # Obtain the full nmap.
         n_sv = n_sv + loadFile(os.path.join(OutDir,"tmp", 
-            "blmm_vox_n_batch" + str(batchNo) + ".nii")).get_data()
+            "blmm_vox_n_batch" + str(batchNo) + ".nii")).get_fdata()
 
         # Remove file we just read
         os.remove(os.path.join(OutDir,"tmp", "blmm_vox_n_batch" + str(batchNo) + ".nii"))
@@ -223,7 +223,7 @@ def main(ipath):
         amask_path = inputs["analysis_mask"]
         
         # Read in the mask nifti.
-        amask = loadFile(amask_path).get_data().reshape([v,1])
+        amask = loadFile(amask_path).get_fdata().reshape([v,1])
 
     else:
 
