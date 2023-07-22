@@ -2,10 +2,10 @@
 This repository contains the code for Big Linear Mixed Models for Neuroimaging cluster and local usage.
 
 ## Requirements
-To use the BLM-py code, please clone this repository to your cluster. 
+To use the BLMM code, please clone this repository to your cluster. 
 
 ```
-git clone https://github.com/TomMaullin/BLM.git
+git clone https://github.com/TomMaullin/BLMM.git
 ```
 
 Then pip install the requirements:
@@ -14,7 +14,39 @@ Then pip install the requirements:
 pip install -r requirements.txt
 ```
 
-If running `BLMM-py` tests on a cluster, `fsl_sub` must also be configured correctly.
+Finally, you must set up your `dask-jobqueue` configuration file, which is likely located at `~/.config/dask/jobqueue.yaml`. This will require you to provide some details about your HPC system. See [here](https://jobqueue.dask.org/en/latest/configuration-setup.html#managing-configuration-files) for further detail. For instance, if you are using rescomp your `jobqueue.yaml` file may look something like this:
+
+```
+jobqueue:
+  slurm:
+    name: dask-worker
+
+    # Dask worker options
+    cores: 1                 # Total number of cores per job
+    memory: "100GB"                # Total amount of memory per job
+    processes: 1                # Number of Python processes per job
+
+    interface: ib0             # Network interface to use like eth0 or ib0
+    death-timeout: 60           # Number of seconds to wait if a worker can not find a scheduler
+    local-directory: "/path/of/your/choosing/"       # Location of fast local storage like /scratch or $TMPDIR
+    log-directory: "/path/of/your/choosing/"
+    silence_logs: True
+
+    # SLURM resource manager options
+    shebang: "#!/usr/bin/bash"
+    queue: short
+    project: null
+    walltime: '01:00:00'
+    job-cpu: null
+    job-mem: null
+    log-directory: null
+
+    # Scheduler options
+    scheduler-options: {'dashboard_address': ':46405'}
+```
+
+
+If running the `BLMM` tests on a cluster, `fsl_sub` must also be configured correctly.
 
 ## Usage
 To run `BLMM-py` first specify your design using `blmm_config.yml` and then run your analysis by following the below guidelines.
@@ -121,24 +153,20 @@ analysis_mask: /path/to/data/MNI152_T1_2mm_brain_mask.nii.gz
 
 ### Running the Analysis
 
-To run an analysis in parallel, log into the cluster you wish to run it on and ensure that `fsl` and `fsl_sub` are loaded in the environment. On the `rescomp` cluster this can be done like so:
+
+On your HPC system, ensure you are in the `BLMM` directory and once you are happy with the analysis you have specified in `blmm_config.yml`, run the following command:
 
 ```
-module add fsl
-module add fsl_sub
+python blmm_cluster.py
 ```
 
-Ensure you are in the `BLMM-py` directory and once you are happy with the analysis you have specified in `blmm_config.yml`, run the following command:
+You can watch your analysis progress either by using `qstat` or `squeue` (depending on your system), or by using the interactive dask console. To do so, in a seperate terminal, tunnel into your HPC as follows:
 
 ```
-bash ./blmm_cluster.sh
+ssh -L <local port>:localhost:<remote port> username@hpc_address
 ```
 
-After running this you will see text printed to the commandline telling you the analysis is being set up and the jobs are being submitted. For large analyses or small cluster this may take a minute or two as several jobs may be submitted to the cluster. Once you can access the command line again, you can use `qstat` to see the jobs which have been submitted. You will typically see jobs of the following form:
-
- - `setup`: This will be working out the number of batches/blocks the analysis needs to be split into.
- - `batch*`: There may be several jobs with names of this format. These are the "chunks" the analysis has been split into. These are run in parallel to one another and typically don't take very long.
- - `results`: This code is combining the output of each batch to obtain statistical analyses. This will run once all `batch*` jobs have been completed. Please note this code has been streamlined for large numbers of observations/input images but not large number of parameters; therefore this job may take some time for large numbers of parameters.
+where the local port is the port you want to view on your local machine and the remote port is the dask dashboard adress (for instance, if you are on rescomp and you used the above `jobqueue.yaml`, `<remote port>` is `46405`). On your local machine, in a browser you can now go to `http://localhost:<local port>/` to watch the analysis run.
 
 ### Analysis Output
 
