@@ -48,7 +48,7 @@ from lib.fileio import loadFile, str2vec, pracNumVoxelBlocks, get_amInds, addBlo
 #                 tweaking to use.
 #
 # ====================================================================================
-def main(*args):
+def setup(*args):
 
     # Change to blmm directory
     pwd = os.getcwd()
@@ -290,7 +290,7 @@ def main(*args):
                     amask_path = inputs["analysis_mask"]
                     
                     # Read in the mask nifti.
-                    amask = loadFile(amask_path).get_data().reshape([v,1])
+                    amask = loadFile(amask_path).get_fdata().reshape([v,1])
 
                 else:
 
@@ -354,9 +354,11 @@ def main(*args):
     if not os.path.exists(os.path.join(OutDir,"data")):
         os.mkdir(os.path.join(OutDir,"data"))
 
-
     # Reset warnings
     w.resetwarnings()
+    
+    # Return nb
+    return(int(np.ceil(len(Y_files)/int(blksize))))
 
 if __name__ == "__main__":
     main()

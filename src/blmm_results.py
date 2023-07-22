@@ -10,12 +10,12 @@ import glob
 import shutil
 import yaml
 import time
-np.set_printoptions(threshold=np.nan)
+np.set_printoptions(threshold=sys.maxsize)
 from lib.npMatrix3d import *
 from lib.npMatrix2d import *
 from lib.fileio import *
-import src.blmm_inference as blmm_inference
-import src.blmm_estimate as blmm_estimate
+from src.blmm_inference import inference
+from src.blmm_estimate import estimate
 
 # ====================================================================================
 #
@@ -58,7 +58,7 @@ import src.blmm_estimate as blmm_estimate
 #       per voxel). 
 #
 # ====================================================================================
-def main(ipath, vb):
+def results(ipath, vb):
 
     # --------------------------------------------------------------------------------
     # Check inputs
@@ -133,7 +133,7 @@ def main(ipath, vb):
     # --------------------------------------------------------------------------------
 
     # load n_sv
-    n_sv = loadFile(os.path.join(OutDir,'blmm_vox_n.nii')).get_data().reshape([v,1])
+    n_sv = loadFile(os.path.join(OutDir,'blmm_vox_n.nii')).get_fdata().reshape([v,1])
 
     # Get ns.
     X = loadFile(inputs['X'])
@@ -144,14 +144,14 @@ def main(ipath, vb):
     # --------------------------------------------------------------------------------
         
     # Read in the mask nifti.
-    Mask = loadFile(os.path.join(OutDir,'blmm_vox_mask.nii')).get_data().reshape([v,1])
+    Mask = loadFile(os.path.join(OutDir,'blmm_vox_mask.nii')).get_fdata().reshape([v,1])
 
     if 'analysis_mask' in inputs:
 
         amask_path = inputs["analysis_mask"]
         
         # Read in the mask nifti.
-        amask = loadFile(amask_path).get_data().reshape([v,1])
+        amask = loadFile(amask_path).get_fdata().reshape([v,1])
 
     else:
 
@@ -361,10 +361,10 @@ def main(ipath, vb):
             XtZ_r = ZtX_r.transpose(0,2,1)
 
             # Run parameter estimation
-            beta_r, sigma2_r, D_r = blmm_estimate.main(inputs, R_inds, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r, n_sv_r, nlevels, nraneffs)
+            beta_r, sigma2_r, D_r = estimate(inputs, R_inds, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r, n_sv_r, nlevels, nraneffs)
 
             # Run inference
-            blmm_inference.main(inputs, nraneffs, nlevels, R_inds, beta_r, D_r, sigma2_r, n_sv_r, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r)
+            inference(inputs, nraneffs, nlevels, R_inds, beta_r, D_r, sigma2_r, n_sv_r, XtX_r, XtY_r, XtZ_r, YtX_r, YtY_r, YtZ_r, ZtX_r, ZtY_r, ZtZ_r)
 
         if v_i:
 
@@ -374,10 +374,10 @@ def main(ipath, vb):
             XtZ_i = ZtX_i.transpose(0,2,1)
 
             # Run parameter estimation
-            beta_i, sigma2_i, D_i = blmm_estimate.main(inputs, I_inds,  XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i, n, nlevels, nraneffs)
+            beta_i, sigma2_i, D_i = estimate(inputs, I_inds,  XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i, n, nlevels, nraneffs)
 
             # Run inference
-            blmm_inference.main(inputs, nraneffs, nlevels, I_inds, beta_i, D_i, sigma2_i, n, XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i)
+            inference(inputs, nraneffs, nlevels, I_inds, beta_i, D_i, sigma2_i, n, XtX_i, XtY_i, XtZ_i, YtX_i, YtY_i, YtZ_i, ZtX_i, ZtY_i, ZtZ_i)
 
     w.resetwarnings()
 
@@ -424,7 +424,7 @@ def readAndSumUniqueAtB(AtBstr, OutDir, vinds, n_b, sv):
 
     # Work out the uniqueness mask for the spatially varying designs
     uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
-        "blmm_vox_uniqueM_batch1.nii")).get_data()
+        "blmm_vox_uniqueM_batch1.nii")).get_fdata()
 
     v = np.prod(uniquenessMask.shape)
     vcurrent = np.prod(vinds.shape)
@@ -467,7 +467,7 @@ def readAndSumUniqueAtB(AtBstr, OutDir, vinds, n_b, sv):
 
         # Read in uniqueness Mask file
         uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
-            "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii")).get_data().reshape(v)
+            "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii")).get_fdata().reshape(v)
 
         maxM = np.int32(np.amax(uniquenessMask))
 

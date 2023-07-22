@@ -4,7 +4,8 @@ import warnings as w
 w.simplefilter(action = 'ignore', category = FutureWarning)
 import numpy as np
 import os
-np.set_printoptions(threshold=np.nan)
+import sys
+np.set_printoptions(threshold=sys.maxsize)
 from lib.npMatrix3d import *
 from lib.fileio import *
 
@@ -58,7 +59,7 @@ from lib.fileio import *
 #         varying). 
 #
 # ====================================================================================
-def main(inputs, nraneffs, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ):
+def inference(inputs, nraneffs, nlevels, inds, beta, D, sigma2, n, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ):
 
     # ----------------------------------------------------------------------
     #  Read in one input nifti to get size, affines, etc.
