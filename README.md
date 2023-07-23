@@ -2,16 +2,10 @@
 This repository contains the code for Big Linear Mixed Models for Neuroimaging cluster and local usage.
 
 ## Requirements
-To use the BLMM code, please clone this repository to your cluster. 
+To use the BLMM code, please pip install like so:
 
 ```
-git clone https://github.com/TomMaullin/BLMM.git
-```
-
-Then pip install the requirements:
-
-```
-pip install -r requirements.txt
+pip install pyblmm
 ```
 
 Finally, you must set up your `dask-jobqueue` configuration file, which is likely located at `~/.config/dask/jobqueue.yaml`. This will require you to provide some details about your HPC system. See [here](https://jobqueue.dask.org/en/latest/configuration-setup.html#managing-configuration-files) for further detail. For instance, if you are using rescomp your `jobqueue.yaml` file may look something like this:
@@ -154,10 +148,10 @@ analysis_mask: /path/to/data/MNI152_T1_2mm_brain_mask.nii.gz
 ### Running the Analysis
 
 
-On your HPC system, ensure you are in the `BLMM` directory and once you are happy with the analysis you have specified in `blmm_config.yml`, run the following command:
+BLMM can be run from the terminal as follows:
 
 ```
-python blmm_cluster.py
+blmm <name_of_your_yaml_file>.yml
 ```
 
 You can watch your analysis progress either by using `qstat` or `squeue` (depending on your system), or by using the interactive dask console. To do so, in a seperate terminal, tunnel into your HPC as follows:
