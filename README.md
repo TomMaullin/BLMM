@@ -1,4 +1,4 @@
-# pyblmm
+# Pyblmm
 This repository contains the code for Big Linear Mixed Models for Neuroimaging cluster and local usage.
 
 ## Requirements
