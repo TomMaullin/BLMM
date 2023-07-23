@@ -1,8 +1,8 @@
-# BLMM-py
+# pyblmm
 This repository contains the code for Big Linear Mixed Models for Neuroimaging cluster and local usage.
 
 ## Requirements
-To use the BLMM code, please pip install like so:
+To use the pyblmm code, please pip install like so:
 
 ```
 pip install pyblmm
