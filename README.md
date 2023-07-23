@@ -194,6 +194,8 @@ The maps are given the same ordering as the inputs. For example, in `blmm_vox_co
 
 ### Model Comparison
 
+**Note:** The code described in this section is currently not supported. Please contact Tom Maullin for further information.
+
 `BLMM-py` also offers model comparison for nested single-factor models via Likelihood Ratio Tests under a `50:50` chi^2 mixture distribtuion assumption (c.f. Linear Mixed Models for Longitudinal Data. 2000. Verbeke, G. & Molenberghs, G. Chapter 6 Section 3.). To compare the output of two single-factor models in `BLMM-py` (or the output of a single-factor model from `BLMM-py` with the output of a corresponding linear model run using [`BLM-py`](https://github.com/TomMaullin/BLM)) run the following command:
 
 ```
@@ -252,35 +254,35 @@ When the user has specified 1 random factor and 1 random effect only, the matric
 ### Structure of the repository
 
 The repository contains 4 main folders, plus 3 files at the head of the repository. These are:
+- `README.md`: This file.
+- `blmm_config.yml`: A file template for the user to enter their design into.
+- `blmm`: The BLMM package
+  - `blmm_cluster.py`: The python script used to run blmm.
+  - `blmm_compare.sh`: The shell script used to run blmm likelihood ratio tests (see previous).
+  - `src`: Helper functions:
+    - `npMatrix2d.py`: Helper functions for 2d numpy array operations.
+    - `npMatrix3d.py`: Helper functions for 3d numpy array operations.
+    - `cvxMatrix2d.py`: Helper functions for 2d cvxopt matrix operations (used only by `PeLS`).
+    - `PeLS.py`: Code for the PeLS method (only for benchmarking, currently unavailable in BLMM).
+    - `fileio.py`: Miscellaneous functions for handling files.
+    - `est2d.py`: Parameter estimation methods for inference on one voxel.
+    - `est3d.py`: Parameter estimation methods for inference on multiple voxels.
+  - `lib`: The main stages of the blmm pipeline:
+    - `blmm_setup`: Formats inputs and works out the number of batches needed.
+    - `blmm_batch`: Calculates the product matrices for individual batches of images.
+    - `blmm_concat`: Sums the product matrices across batches, to obtain the product matrices for the overall model. 
+    - `blmm_results`: Separate voxels into "Inner" and "Ring" and then calls to `blmm_estimate` and `blmm_inference`.
+    - `blmm_estimate`: Estimates the parameters beta, sigma^2 and D.
+    - `blmm_inference`: Performs statistical inference on parameters and outputs results.
+    - `blmm_cleanup`: Removes any leftover files from the analysis.
+    - `blmm_compare`: Performs likelihood ratio tests comparing the results of multiple analyses.
+  - `scripts`: Bash scripts which run each individual stage of the BLMM pipeline.
+- `test`: Test functions:
+  - `Unit`: Unit tests for individual parts of the code:
+    - `genTestDat.py`: Functions to generate test datasets and product matrices.
+    - `npMatrix2d_tests.py`: Unit tests for all functions in `npMatrix2d.py`.
+    - `npMatrix3d_tests.py`: Unit tests for all functions in `npMatrix3d.py`.
+    - `cvxMatrix2d_tests.py`: Unit tests for all functions in `cvxMatrix2d.py`.
+    - `est2d_tests.py`: A function for comparing results of all methods in `est2d.py`, as well as `PeLS.py`.
+    - `est3d_tests.py`: Functions for comparing results of all methods in `est3d.py`.
 
- - `README.md`: This file.
- - `blmm_config.yml`: The file the user must enter their design into.
- - `blmm_cluster.sh`: The shell scipt used to run blmm (see previous).
- - `blmm_compare.sh`: The shell scipt used to run blmm likelihood ratio tests (see previous).
- - `lib`: Helper functions:
-   - `npMatrix2d.py`: Helper functions for 2d numpy array operations.
-   - `npMatrix3d.py`: Helper functions for 3d numpy array operations.
-   - `cvxMatrix2d.py`: Helper functions for 2d cvxopt matrix operations (used only by `PeLS`).
-   - `PeLS.py`: Code for the PeLS method (only for benchmarking, currently unavailable in BLMM).
-   - `fileio.py`: Miscellenous functions for handling files.
-   - `est2d.py`: Parameter estimation methods for inference on one voxel.
-   - `est3d.py`: Parameter estimation methods for inference on multiple voxels.
- - `src`: The main stages of the blmm pipeline:
-   - `blmm_setup`: Formats inputs and works out the number of batches needed.
-   - `blmm_batch`: Calculates the product matrices for individual batches of images.
-   - `blmm_concat`: Sums the product matrices across batches, to obtain the product matrices for the overall model. 
-   - `blmm_results`: Seperate voxels into "Inner" and "Ring" and then calls to `blmm_estimate` and `blmm_inference`.
-   - `blmm_estimate`: Estimates the parameters beta, sigma^2 and D.
-   - `blmm_inference`: Performs statistical inference on parameters and outputs results.
-   - `blmm_cleanup`: Removes any leftover files from the analysis.
-   - `blmm_compare`: Performs likelihood ratio tests comparing the results of multiple analyses.
- - `test`: Test functions:
-   - `Functional`: (WIP) Adapted from sister project `BLM`. Dummy analyses to check the changes to the code haven't affected the output.
-   - `Unit`: Unit tests for individual parts of the code:
-     - `genTestDat.py`: Functions to generate test datasets and product matrices.
-     - `npMatrix2d_tests.py`: Unit tests for all functions in `npMatrix2d.py`.
-     - `npMatrix3d_tests.py`: Unit tests for all functions in `npMatrix3d.py`.
-     - `cvxMatrix2d_tests.py`: Unit tests for all functions in `cvxMatrix2d.py`.
-     - `est2d_tests.py`: A function for comparing results of all methods in `est2d.py`, as well as `PeLS.py`.
-     - `est3d_tests.py`: Functions for comparing results of all methods in `est3d.py`.
- - `scipts`: Bash scripts which run each individual stage of the BLMM pipeline.
