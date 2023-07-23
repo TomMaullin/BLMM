@@ -2,13 +2,13 @@ import numpy as np
 import sys
 import os
 import cvxopt
-from cvxopt import cholmod, umfpack, amd, matrix, spmatrix, lapack
+from cvxopt import cholmod
 
 np.set_printoptions(threshold=sys.maxsize)
 
 # Add lib to the python path.
 sys.path.insert(1, os.path.join(sys.argv[0],'..','..','..','lib'))
-from lib.cvxMatrix2d import *
+from blmm.src.cvxMatrix2d import *
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
