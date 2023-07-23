@@ -13,4 +13,7 @@ test/Unit/__pycache__/*
 test/Functional/__pycache__/*
 sim/Python/__pycache__/*
 blm_config.yml
-
+blmm/__pycache__/
+blmm/lib/__pycache__/
+blmm/src/__pycache__/
+pyblmm.egg-info/

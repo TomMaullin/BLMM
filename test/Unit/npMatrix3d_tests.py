@@ -1,15 +1,6 @@
 import os
 import sys
 import numpy as np
-import cvxopt
-import pandas as pd
-import os
-import time
-import scipy.sparse
-import scipy.sparse.linalg
-import sys
-import nibabel as nib
-import nilearn
 from scipy import stats
 
 np.set_printoptions(threshold=sys.maxsize)
