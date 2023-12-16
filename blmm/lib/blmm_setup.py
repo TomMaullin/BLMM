@@ -8,7 +8,7 @@ import os
 import glob
 import shutil
 import yaml
-from blmm.src.fileio import loadFile, str2vec, pracNumVoxelBlocks, get_amInds, addBlockToNifti
+from blmm.src.fileio import loadFile, str2vec, pracNumVoxelBlocks, get_amInds, addBlockToMmap
 
 # ====================================================================================
 #
@@ -126,60 +126,11 @@ def setup(*args):
     else:
         MAXMEM = 2**32
 
-    # Output directory
-    OutDir = inputs['outdir']
-
-    # --------------------------------------------------------------------------------
-    # Remove any files from the previous runs
-    #
-    # Note: This is important as if we are outputting blocks to files we want to be
-    # sure none of the previous results are lingering around anywhere.
-    # --------------------------------------------------------------------------------
-
-    # We don't do it if we are in diskMem mode though, as in this mode we run several
-    # smaller analyses instead of one large one in order to preserve disk memory.
-    if 'diskMem' not in inputs:
-
-        files = ['blmm_vox_n.nii', 'blmm_vox_mask.nii', 'blmm_vox_edf.nii', 'blmm_vox_beta.nii',
-                 'blmm_vox_llh.nii', 'blmm_vox_sigma2.nii', 'blmm_vox_D.nii', 'blmm_vox_resms.nii',
-                 'blmm_vox_cov.nii', 'blmm_vox_conT_swedf.nii', 'blmm_vox_conT.nii', 'blmm_vox_conTlp.nii',
-                 'blmm_vox_conSE.nii', 'blmm_vox_con.nii', 'blmm_vox_conF.nii', 'blmm_vox_conF_swedf.nii',
-                 'blmm_vox_conFlp.nii', 'blmm_vox_conR2.nii']
-
-    else:
-
-        # Check if this is the first run of the disk memory code
-        if inputs['diskMem']==1 and not glob.glob(os.path.join(OutDir, 'blmm_vox_memmask*.nii')):
-
-            files = ['blmm_vox_n.nii', 'blmm_vox_mask.nii', 'blmm_vox_edf.nii', 'blmm_vox_beta.nii',
-                     'blmm_vox_llh.nii', 'blmm_vox_sigma2.nii', 'blmm_vox_D.nii', 'blmm_vox_resms.nii',
-                     'blmm_vox_cov.nii', 'blmm_vox_conT_swedf.nii', 'blmm_vox_conT.nii', 'blmm_vox_conTlp.nii',
-                     'blmm_vox_conSE.nii', 'blmm_vox_con.nii', 'blmm_vox_conF.nii', 'blmm_vox_conF_swedf.nii',
-                     'blmm_vox_conFlp.nii', 'blmm_vox_conR2.nii']
-
-        else:
-
-            files = []
-
-
-    for file in files:
-        if os.path.exists(os.path.join(OutDir, file)):
-            os.remove(os.path.join(OutDir, file))
-
-    if os.path.exists(os.path.join(OutDir, 'tmp')):  
-        shutil.rmtree(os.path.join(OutDir, 'tmp'))
-
     # Get number of parameters
     L1 = str2vec(inputs['contrasts'][0]['c' + str(1)]['vector'])
     L1 = np.array(L1)
     p = L1.shape[0]
     del L1
-
-    # Make output directory and tmp
-    if not os.path.isdir(OutDir):
-        os.mkdir(OutDir)
-    if not os.path.isdir(os.path.join(OutDir, "tmp")):
-        os.mkdir(os.path.join(OutDir, "tmp"))
 
     # Read in the Y_files (make sure to remove new line characters)
     with open(inputs['Y_files']) as a:
@@ -190,18 +141,72 @@ def setup(*args):
 
             Y_files.append(line.replace('\n', ''))
 
-    # Load in one nifti to check NIFTI size
+    # Load in one volume to check volume size
     try:
         Y0 = loadFile(Y_files[0])
     except Exception as error:
-        raise ValueError('The NIFTI "' + Y_files[0] + '"does not exist')
+        raise ValueError('The image "' + Y_files[0] + '"does not exist')
 
-    # Get an estimate of the maximum memory a NIFTI could take in storage.
-    NIFTImem = sys.getsizeof(np.zeros(Y0.shape,dtype='uint64'))
+    # Get an estimate of the maximum memory an image could take in storage.
+    mem_vol = sys.getsizeof(np.zeros(Y0.shape,dtype='uint64'))
 
-    if NIFTImem > MAXMEM:
-        raise ValueError('The NIFTI "' + Y_files[0] + '"is too large')
+    if mem_vol > MAXMEM:
+        raise ValueError('The image "' + Y_files[0] + '"is too large')
 
+    # --------------------------------------------------------------------------------
+    # Remove any files from the previous runs
+    #
+    # Note: This is important as if we are outputting blocks to files we want to be
+    # sure none of the previous results are lingering around anywhere.
+    # --------------------------------------------------------------------------------
+
+    # Output directory
+    OutDir = inputs['outdir']
+    
+    # Remove old tmp folder if it exists
+    if os.path.exists(os.path.join(OutDir, 'tmp')):  
+        shutil.rmtree(os.path.join(OutDir, 'tmp'))
+
+    # Make new output directory and tmp
+    if not os.path.isdir(OutDir):
+        os.mkdir(OutDir)
+    if not os.path.isdir(os.path.join(OutDir, "tmp")):
+        os.mkdir(os.path.join(OutDir, "tmp"))
+    
+    
+    # Get the file extension (type of image we are looking at
+    vol_ext = os.path.splitext(Y_files[0])[1]
+
+    # We don't do it if we are in diskMem mode though, as in this mode we run several
+    # smaller analyses instead of one large one in order to preserve disk memory.
+    if 'diskMem' not in inputs:
+
+        files = ['blmm_vox_n', 'blmm_vox_mask', 'blmm_vox_edf', 'blmm_vox_beta',
+                 'blmm_vox_llh', 'blmm_vox_sigma2', 'blmm_vox_D', 'blmm_vox_resms',
+                 'blmm_vox_cov', 'blmm_vox_conT_swedf', 'blmm_vox_conT', 'blmm_vox_conTlp',
+                 'blmm_vox_conSE', 'blmm_vox_con', 'blmm_vox_conF', 'blmm_vox_conF_swedf',
+                 'blmm_vox_conFlp', 'blmm_vox_conR2']
+
+    else:
+
+        # Check if this is the first run of the disk memory code
+        if inputs['diskMem']==1 and not glob.glob(os.path.join(OutDir, 'blmm_vox_memmask*.dat')):
+
+            files = ['blmm_vox_n', 'blmm_vox_mask', 'blmm_vox_edf', 'blmm_vox_beta',
+                     'blmm_vox_llh', 'blmm_vox_sigma2', 'blmm_vox_D', 'blmm_vox_resms',
+                     'blmm_vox_cov', 'blmm_vox_conT_swedf', 'blmm_vox_conT', 'blmm_vox_conTlp',
+                     'blmm_vox_conSE', 'blmm_vox_con', 'blmm_vox_conF', 'blmm_vox_conF_swedf',
+                     'blmm_vox_conFlp', 'blmm_vox_conR2']
+
+        else:
+
+            files = []
+
+
+    for file in files:
+        if os.path.exists(os.path.join(OutDir, file + vol_ext)):
+            os.remove(os.path.join(OutDir, file + vol_ext))
+        
     # --------------------------------------------------------------------------------
     # Get q and v
     # --------------------------------------------------------------------------------
@@ -245,13 +250,13 @@ def setup(*args):
         yaml.dump(inputs, outfile, default_flow_style=False)
 
     # Get v
-    NIFTIsize = Y0.shape
-    v = int(np.prod(NIFTIsize))
+    dim_vol = Y0.shape
+    v = int(np.prod(dim_vol))
 
-    # Similar to blksize in SwE, we divide by 8 times the size of a nifti
+    # Similar to blksize in SwE, we divide by 8 times the size of an image
     # to work out how many blocks we use. We also divide though everything
     # by the number of parameters in the analysis.
-    blksize = int(np.floor(MAXMEM/8/NIFTImem/p))
+    blksize = int(np.floor(MAXMEM/8/mem_vol/p))
   
     if blksize == 0:
         raise ValueError('Blocksize too small.')
@@ -280,7 +285,7 @@ def setup(*args):
         if inputs['diskMem']==1:
 
             # Check if this is the first run of the disk memory code
-            if not glob.glob(os.path.join(OutDir, 'blmm_vox_memmask*.nii')):
+            if not glob.glob(os.path.join(OutDir, 'blmm_vox_memmask*.dat')):
 
                 # --------------------------------------------------------------------------------
                 # Read Mask 
@@ -289,8 +294,8 @@ def setup(*args):
 
                     amask_path = inputs["analysis_mask"]
                     
-                    # Read in the mask nifti.
-                    amask = loadFile(amask_path).get_fdata().reshape([v,1])
+                    # Read in the mask.
+                    amask = loadFile(amask_path).reshape([v,1])
 
                 else:
 
@@ -319,7 +324,10 @@ def setup(*args):
                 for cv in range(nvg):
 
                     # Save the masks for each block
-                    addBlockToNifti(os.path.join(OutDir, 'blmm_vox_memmask'+str(cv+1)+'.nii'), np.ones(len(voxelGroups[cv])), voxelGroups[cv],volInd=0,dim=NIFTIsize,aff=Y0.affine,hdr=Y0.header)
+                    addBlockToMmap(os.path.join(OutDir, 'blmm_vox_memmask'+str(cv+1)+'.dat'), 
+                                   np.ones(len(voxelGroups[cv])), 
+                                   voxelGroups[cv],
+                                   volInd=0,dim_vol=dim_vol)
 
             # --------------------------------------------------------------------------------
             # Set the analysis mask to the first one that comes up with ls, run that and then
@@ -327,7 +335,7 @@ def setup(*args):
             # --------------------------------------------------------------------------------
 
             # Get the analysis masks
-            memmaskFiles = glob.glob(os.path.join(OutDir, 'blmm_vox_memmask*.nii'))
+            memmaskFiles = glob.glob(os.path.join(OutDir, 'blmm_vox_memmask*.dat'))
 
             # Set the analysis mask for this analysis 
             inputs['analysis_mask'] = memmaskFiles[0]
@@ -345,14 +353,6 @@ def setup(*args):
             # Output number of voxel batches to a text file
             with open(os.path.join(OutDir, "nvb.txt"), 'w') as f:
                 print(int(nvb), file=f)
-
-    # --------------------------------------------------------------------------------
-    # lmer directories.
-    # --------------------------------------------------------------------------------
-
-    # If directory doesn't exist, make it
-    if not os.path.exists(os.path.join(OutDir,"data")):
-        os.mkdir(os.path.join(OutDir,"data"))
 
     # Reset warnings
     w.resetwarnings()

@@ -19,7 +19,7 @@ from blmm.src.est3d import *
 # sigma2 and D are estimated from the product matrices. By default the estimation 
 # method is set to pSFS (which has been observed to be the quickest), but all 3D 
 # Fisher Scoring methods have been included as options for completeness. The parameter
-# estimates are also output as NIFTI images here.
+# estimates are also output as images here.
 #
 # ------------------------------------------------------------------------------------
 #
@@ -73,14 +73,14 @@ from blmm.src.est3d import *
 def estimate(inputs, inds, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, n, nlevels, nraneffs):
 
     # ----------------------------------------------------------------------
-    #  Read in one input nifti to get size, affines, etc.
+    #  Read in one input volume to get size, affines, etc.
     # ----------------------------------------------------------------------
     with open(inputs['Y_files']) as a:
-        nifti_path = a.readline().replace('\n', '')
-        nifti = loadFile(nifti_path)
+        vol_path = a.readline().replace('\n', '')
+        vol = loadFile(vol_path)
 
-    # Work out the dimensions of the NIFTI images
-    NIFTIsize = nifti.shape
+    # Work out the dimensions of the images
+    dim_vol = vol.shape
 
 
     # ----------------------------------------------------------------------
@@ -147,34 +147,36 @@ def estimate(inputs, inds, XtX, XtY, XtZ, YtX, YtY, YtZ, ZtX, ZtY, ZtZ, n, nleve
         if inputs['sim']:
             t2 = time.time()
 
-            # Output an "average estimation time nifti"
-            addBlockToNifti(os.path.join(OutDir, 'blmm_vox_times.nii'), np.ones((v,1))*(t2-t1)/v, inds,volInd=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
+            # Output an "average estimation time volume"
+            addBlockToMmap(os.path.join(OutDir, 'blmm_vox_times.dat'), 
+                           np.ones((v,1))*(t2-t1)/v, inds,
+                           volInd=0,dim_vol=dim_vol)
 
     # ----------------------------------------------------------------------
     # Parameter outputting
-    # ----------------------------------------------------------------------    
-
-    # Dimension of beta volume
-    dimBeta = (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],p)
-
-    # Dimension of D volume
-    dimD = (NIFTIsize[0],NIFTIsize[1],NIFTIsize[2],qu)
+    # ----------------------------------------------------------------------  
 
     # Get the indices in the paramvector corresponding to D matrices
     IndsDk = np.int32(np.cumsum(nraneffs*(nraneffs+1)//2) + p + 1)
     IndsDk = np.insert(IndsDk,0,p+1)
-
+    
     # Output beta estimate
     beta = paramVec[:, 0:p]
-    addBlockToNifti(os.path.join(OutDir, 'blmm_vox_beta.nii'), beta, inds,volInd=None,dim=dimBeta,aff=nifti.affine,hdr=nifti.header)        
+    addBlockToMmap(os.path.join(OutDir, 'blmm_vox_beta.dat'), 
+                   beta, inds,
+                   volInd=None,dim_vol=dim_vol,n_vol=p)         
     
     # Output sigma2 estimate
     sigma2 = paramVec[:,p:(p+1),:]
-    addBlockToNifti(os.path.join(OutDir, 'blmm_vox_sigma2.nii'), sigma2, inds,volInd=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
-
+    addBlockToMmap(os.path.join(OutDir, 'blmm_vox_sigma2.dat'), 
+                   sigma2, inds,
+                   volInd=0,dim_vol=dim_vol)
+    
     # Output unique D elements (i.e. [vech(D_1),...vech(D_r)])
     vechD = paramVec[:,(p+1):,:].reshape((v,qu))
-    addBlockToNifti(os.path.join(OutDir, 'blmm_vox_D.nii'), vechD, inds,volInd=None,dim=dimD,aff=nifti.affine,hdr=nifti.header) 
+    addBlockToMmap(os.path.join(OutDir, 'blmm_vox_D.dat'), 
+                   vechD, inds,
+                   volInd=None,dim_vol=dim_vol,n_vol=qu) 
 
     # Reconstruct D
     Ddict = dict()

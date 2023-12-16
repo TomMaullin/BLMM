@@ -39,13 +39,13 @@ def compare(blmmDir1, blmmDir2, OutDir):
     # Load in basic inputs
     # --------------------------------------------------------------------------------
 
-    # A NIFTI for reference
-    NIFTI = nib.load(os.path.join(blmmDir1, 'blm_vox_mask.nii'))
+    # A volume for reference
+    vol = nib.load(os.path.join(blmmDir1, 'blm_vox_mask.nii'))
 
-    # NIFTI features
-    dim = (*NIFTI.shape,1)
-    aff = NIFTI.affine
-    hdr = NIFTI.header
+    # Volume features
+    dim = (*vol.shape,1)
+    aff = vol.affine
+    hdr = vol.header
 
     # Inputs for first directory.
     with open(os.path.join(blmmDir1, 'inputs.yml'), 'r') as stream:
@@ -286,11 +286,17 @@ def compare(blmmDir1, blmmDir2, OutDir):
     mask1 = nib.load(os.path.join(blmmDir1, 'blm_vox_mask.nii')).get_fdata()>0
     mask2 = nib.load(os.path.join(blmmDir2, 'blmm_vox_mask.nii')).get_fdata()>0
 
+    # Get volume size
+    dim_vol = mask1.shape
+
     # Combine masks
     mask = mask1*mask2
 
     # Save mask
-    addBlockToNifti(os.path.join(OutDir, "blmm_vox_mask.nii"), mask.reshape(np.prod(mask.shape)),np.arange(np.prod(mask.shape)), volInd=0,dim=dim,aff=aff,hdr=hdr)
+    addBlockToMmap(os.path.join(OutDir, "blmm_vox_mask.dat"), 
+                   mask.reshape(np.prod(mask.shape)),
+                   np.arange(np.prod(mask.shape)), 
+                   volInd=0,dim_vol=dim_vol)
 
     # --------------------------------------------------------------------------------
     # Create and save Chi^2 image
@@ -304,7 +310,10 @@ def compare(blmmDir1, blmmDir2, OutDir):
     Chi2 = np.maximum(-2*(llh1-llh2),0)
 
     # Save X^2 statistic
-    addBlockToNifti(os.path.join(OutDir, "blmm_vox_Chi2.nii"), Chi2.reshape(np.prod(Chi2.shape)),np.arange(np.prod(Chi2.shape)), volInd=0,dim=dim,aff=aff,hdr=hdr)
+    addBlockToMmap(os.path.join(OutDir, "blmm_vox_Chi2.dat"), 
+                   Chi2.reshape(np.prod(Chi2.shape)),
+                   np.arange(np.prod(Chi2.shape)), 
+                   volInd=0,dim_vol=dim_vol)
     
     # --------------------------------------------------------------------------------
     # Create P-value image
@@ -347,11 +356,14 @@ def compare(blmmDir1, blmmDir2, OutDir):
     p[np.logical_and(np.isinf(p), p<0)]=minlog
 
     # Make a p value volume (1 to 0)
-    pvol = np.zeros(NIFTI.shape)
+    pvol = np.zeros(vol.shape)
     pvol[mask]=p.reshape(pvol[mask].shape)
 
     # Save X^2 p-values
-    addBlockToNifti(os.path.join(OutDir, "blmm_vox_Chi2lp.nii"), pvol.reshape(np.prod(pvol.shape)),np.arange(np.prod(pvol.shape)), volInd=0,dim=dim,aff=aff,hdr=hdr)
+    addBlockToMmap(os.path.join(OutDir, "blmm_vox_Chi2lp.dat"), 
+                   pvol.reshape(np.prod(pvol.shape)),
+                   np.arange(np.prod(pvol.shape)), 
+                   volInd=0,dim_vol=dim_vol)
 
 
     # TODO OPTIONAL AICS?

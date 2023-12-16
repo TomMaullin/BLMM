@@ -115,13 +115,13 @@ def results(ipath, vb):
     p = L1.shape[0]
     del L1
     
-    # Read in the nifti size and work out number of voxels.
+    # Read in the volume size and work out number of voxels.
     with open(inputs['Y_files']) as a:
-        nifti_path = a.readline().replace('\n', '')
-        nifti = loadFile(nifti_path)
+        vol_path = a.readline().replace('\n', '')
+        vol = loadFile(vol_path)
 
-    NIFTIsize = nifti.shape
-    v = int(np.prod(NIFTIsize))
+    dim_vol = vol.shape
+    v = int(np.prod(dim_vol))
 
     # --------------------------------------------------------------------------------
     # Get n (number of observations) and n_sv (spatially varying number of
@@ -129,7 +129,7 @@ def results(ipath, vb):
     # --------------------------------------------------------------------------------
 
     # load n_sv
-    n_sv = loadFile(os.path.join(OutDir,'blmm_vox_n.nii')).get_fdata().reshape([v,1])
+    n_sv = loadFile(os.path.join(OutDir,'blmm_vox_n.dat'), dtype=np.int32).reshape([v,1])
 
     # Get ns.
     X = loadFile(inputs['X'])
@@ -139,15 +139,15 @@ def results(ipath, vb):
     # Read Mask 
     # --------------------------------------------------------------------------------
         
-    # Read in the mask nifti.
-    Mask = loadFile(os.path.join(OutDir,'blmm_vox_mask.nii')).get_fdata().reshape([v,1])
+    # Read in the mask volume.
+    Mask = loadFile(os.path.join(OutDir,'blmm_vox_mask.dat'), dtype=np.int32).reshape([v,1])
 
     if 'analysis_mask' in inputs:
 
         amask_path = inputs["analysis_mask"]
         
-        # Read in the mask nifti.
-        amask = loadFile(amask_path).get_fdata().reshape([v,1])
+        # Read in the mask volume.
+        amask = loadFile(amask_path).reshape([v,1])
 
     else:
 
@@ -170,18 +170,34 @@ def results(ipath, vb):
     # ------------------------------------------------------------------------
     # Split the voxels into computable groups
     # ------------------------------------------------------------------------
+    
+    # This is the minimum number of voxels to consider at any given time; if 
+    # this ended up below the default there would be little point in running
+    # the analysis with broadcasting.
+    if 'minnvb' in inputs:
+        minnvb = int(inputs["minnvb"])
+    else:
+        minnvb = 10
 
     # Work out the number of voxels we can actually compute at a time.
     # (This is really just a rule of thumb guess but works reasonably in
     # practice). We allow slightly more for the one random factor model
     # since we do not construct any additional q by q matrices.
     if  r == 1:
-        nvb = MAXMEM/(10*4*(q**2))
+        nvb = MAXMEM/(10*8*q)
     else:
         nvb = MAXMEM/(10*8*(q**2))
+        
+    # Work out the maximum of minnvb and nvb
+    nvb = np.maximum(nvb,minnvb)
     
     # Work out number of groups we have to split indices into.
     nvg = int(len(bamInds)//nvb+1)
+    
+    # MARKER 
+    with open('tmp.txt', 'w') as f:
+        # Use the print function with the 'file' argument
+        print(len(bamInds), nvg, nvb, vb, pnvb, np.array_split(bamInds, nvg), file=f)
 
     # Split voxels we want to look at into groups we can compute
     voxelGroups = np.array_split(bamInds, nvg)
@@ -287,10 +303,19 @@ def results(ipath, vb):
             # If we have low rank indices remove them from our working variables
             if v_lowrank:
 
-                # Remove low rank designs from the existing NIFTI files
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_mask.nii'), np.zeros(v_lowrank), R_inds[lowrank_inds],volInd=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_edf.nii'), np.zeros(v_lowrank), R_inds[lowrank_inds],volInd=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
-                addBlockToNifti(os.path.join(OutDir, 'blmm_vox_n.nii'), np.zeros(v_lowrank), R_inds[lowrank_inds],volInd=0,dim=NIFTIsize,aff=nifti.affine,hdr=nifti.header)
+                # Remove low rank designs from the existing volumes
+                addBlockToMmap(os.path.join(OutDir, 'blmm_vox_mask.dat'),
+                               np.zeros(v_lowrank), 
+                               R_inds[lowrank_inds],
+                               volInd=0,dim_vol=dim_vol)
+                addBlockToMmap(os.path.join(OutDir, 'blmm_vox_edf.dat'),
+                               np.zeros(v_lowrank), 
+                               R_inds[lowrank_inds],
+                               volInd=0,dim_vol=dim_vol)
+                addBlockToMmap(os.path.join(OutDir, 'blmm_vox_n.dat'),
+                               np.zeros(v_lowrank), 
+                               R_inds[lowrank_inds],
+                               volInd=0,dim_vol=dim_vol)
             
                 # Remove from R_inds
                 R_inds = R_inds[fullrank_inds]
@@ -419,13 +444,13 @@ def results(ipath, vb):
 def readAndSumUniqueAtB(AtBstr, OutDir, vinds, n_b, sv):
 
     # Work out the uniqueness mask for the spatially varying designs
-    uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
-        "blmm_vox_uniqueM_batch1.nii")).get_fdata()
+    uniquenessMask = loadFile(os.path.join(OutDir,"tmp", "blmm_vox_uniqueM_batch1.dat"), 
+                              dtype=np.int32)
 
     v = np.prod(uniquenessMask.shape)
     vcurrent = np.prod(vinds.shape)
 
-    uniquenessMask=uniquenessMask.reshape(v)
+    uniquenessMask = uniquenessMask.reshape(v)
 
     # Work out how many unique matrices there were
     maxM = np.int32(np.amax(uniquenessMask))
@@ -463,7 +488,7 @@ def readAndSumUniqueAtB(AtBstr, OutDir, vinds, n_b, sv):
 
         # Read in uniqueness Mask file
         uniquenessMask = loadFile(os.path.join(OutDir,"tmp", 
-            "blmm_vox_uniqueM_batch" + str(batchNo) + ".nii")).get_fdata().reshape(v)
+            "blmm_vox_uniqueM_batch" + str(batchNo) + ".dat"), dtype=np.int32).reshape(v)
 
         maxM = np.int32(np.amax(uniquenessMask))
 
@@ -479,7 +504,7 @@ def readAndSumUniqueAtB(AtBstr, OutDir, vinds, n_b, sv):
         AtB_batch_unique = np.load(
             os.path.join(OutDir,"tmp",AtBstr + str(batchNo) + ".npy"))
 
-        # Make zeros for whole nifti ZtZ, XtX, ZtX etc
+        # Make zeros for whole volume ZtZ, XtX, ZtX etc
         if sv:
             AtB_batch = np.zeros((vcurrent, AtB_batch_unique.shape[1]))
 

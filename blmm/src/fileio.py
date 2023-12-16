@@ -23,10 +23,10 @@ import numpy as np
 #                csv, tsv, txt, dat, nii, nii.gz, img, img.gz 
 #
 # ============================================================================
-def loadFile(filepath):
+def loadFile(filepath,dtype=np.float32):
 
-    # If the file is text data in the form of csv, tsv, txt or dat
-    if filepath.lower().endswith(('.csv', '.tsv', '.txt', '.dat')):
+    # If the file is text data in the form of csv, tsv, txt 
+    if filepath.lower().endswith(('.csv', '.tsv', '.txt')):
 
         data = pd.io.parsers.read_csv(filepath, header=None).values
 
@@ -102,6 +102,18 @@ def loadFile(filepath):
                 data = pd.io.parsers.read_csv(
                         filepath,usecols=range(1,data.shape[1])).values
 
+    # If the file is memorymapped dat
+    elif filepath.lower().endswith(('.dat')):
+        
+        # Load memmap
+        memmap = np.memmap(filepath, dtype=dtype, mode='r')
+        
+        # Copy the memmap
+        data = np.array(memmap)
+        
+        # Delete the memmap
+        del memmap
+        
     # If the file is a brain image in the form of nii, nii.gz, img or img.gz
     else:
         # If the file exists load it.
@@ -119,6 +131,9 @@ def loadFile(filepath):
                     data = nib.load(os.path.join(filepath, '.img'))
             except:
                 raise ValueError('Input file not found: ' + str(filepath))
+        
+        # Return data
+        data = data.get_fdata()
 
     return data
 
@@ -146,6 +161,166 @@ def str2vec(c):
     return(eval(cf))
 
 
+
+
+# ============================================================================
+#
+# The below function adds a block of voxels to a pre-existing memory map file
+# or creates a new memory map of specified dimensions if not.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes the following inputs:
+#
+# ----------------------------------------------------------------------------
+#
+# - `fname`: An absolute path to the mmap file.
+# - `block`: The block of values to write to the mmap.
+# - `blockInds`: The indices representing the coordinates `block` should be 
+#                written to in the mmap within a volume. If we are writing to 
+#                multiple volumes, we write to each volume at the same
+#                coordinates.
+# - `dim_vol`: Dimensions of a single volume.
+# - `n_vol` (optional): Number of volumes present.
+# - `volInd` (optional): Which volume to write to.
+# - `dtype` (optional): Data type of output, by default float32
+#
+# ============================================================================
+def addBlockToMmap(fname, block, blockInds,dim_vol,n_vol=1,volInd=None,dtype=np.float32):
+    
+    # Check if file is in use
+    fileLocked = True
+    while fileLocked:
+        try:
+            # Create lock file, so other jobs know we are writing to this file
+            f = os.open(fname + ".lock", os.O_CREAT|os.O_EXCL|os.O_RDWR)
+            fileLocked = False
+        except FileExistsError:
+            fileLocked = True
+
+    # Check if we have multiple volumes
+    have_multi_vols = (n_vol > 1)
+    
+    # Check if we are writing to multiple volumes
+    write_multi_vols = (have_multi_vols & (volInd is None))
+    
+    # Double check if the dimensions are a tuple or a numpy array
+    if isinstance(dim_vol, np.ndarray):
+        
+        # Flatten the array and convert to a tuple
+        dim_vol = tuple(np.ndarray.flatten(dim_vol)) 
+        
+    elif isinstance(dim_vol, list):
+        
+        # Convert to tuple for consistency
+        dim_vol = tuple(dim_vol)
+    
+    # Get the expected dimensions
+    if not have_multi_vols:
+        
+        # The correct image dimensions should just be the dimensions of a single
+        # volume
+        correct_dim = dim_vol 
+        
+    else:
+        
+        # The correct image dimensions should be the dimensions of a single
+        # volume alongside the number of volumes
+        correct_dim = dim_vol + (n_vol,)
+    
+    # Load the file if it exists already
+    if os.path.isfile(fname):
+
+        # Load the existing memory map
+        memmap = np.memmap(fname, dtype=dtype, mode='r+', shape=correct_dim)
+        
+    else:
+            
+        # Create a new memory-mapped file with correct dimensions
+        memmap = np.memmap(fname, dtype=dtype, mode='w+', shape=correct_dim)
+    
+    # Get the shape of the memory map
+    file_dim = tuple(memmap.shape)
+                
+    # Check if the data matches the expected dimensions
+    if file_dim != correct_dim:
+        
+        # Raise an error
+        raise ValueError('This code expected the file to be of size ' + 
+                         str(correct_dim) + 
+                         ' (' + str(np.prod(np.array(dim_vol))) + 
+                         ' voxels/vertices for each of ' + str(n_vol) +
+                         ' volumes. ' + 'However, the file has size ' +
+                          str(file_dim) + '.')
+        
+    # Check if we have the correct amount of data
+    if write_multi_vols:
+        
+        # We need data for all volumes
+        if len(blockInds)*n_vol!=block.size:
+        
+            # Raise an error
+            raise ValueError('This code expected a data of size ' + 
+                             str(len(blockInds)*n_vol) + 
+                             ' (' + str(len(blockInds)) + ' voxels/vertices' +
+                             ' for each of ' + str(n_vol) + ' volumes. ' +
+                             'However, you passed it data of size ' + 
+                             str(len(block)) + '.')
+            
+    # Check for single vol        
+    else:
+        
+        # We need data for all volumes
+        if len(blockInds)!=block.size:
+        
+            # Raise an error
+            raise ValueError('This code expected a data of size ' + 
+                             str(len(blockInds)*n_vol) + 
+                             ' (' + str(len(blockInds)) + ' voxels/vertices' +
+                             ' for each of ' + str(n_vol) + ' volumes. ' +
+                             'However, you passed it data of size ' + 
+                             str(len(block)) + '.')
+        
+    # Reshape blockInds for consistency
+    blockInds = blockInds.reshape(blockInds.size)
+    
+    # Work out the unflattened blockInds
+    blockInds = np.unravel_index(blockInds, dim_vol)
+    
+    # If we are writing to a single volume
+    if not write_multi_vols:
+
+        # If we have multiple volumes, but are only writing to one volume
+        # we need to add an extra index indicationg which volume we are
+        # writing to
+        if have_multi_vols:
+            
+            # Add the 4th dimension index to each location
+            blockInds = blockInds + (np.full(len(blockInds[0]), volInd),)
+            
+    # If we are writing data to every volume 
+    else:
+        
+        # We now have to repeat the indices we are writing to once for every
+        # volume and then add an extra index indicating which volume we wish 
+        # to write each data point to.
+        block_inds = tuple(np.repeat(blockInds[i], n_vol) for i in range(len(blockInds))) + \
+                     (np.tile(np.arange(n_vol), len(blockInds[0])),)
+
+    # Add to memmap
+    memmap[blockInds] = block.reshape(memmap[blockInds].shape)
+    
+    # Flush the result
+    memmap.flush()
+
+    # Sync changes and close the file
+    del memmap
+
+    # Release the file lock
+    os.remove(fname + ".lock")
+    os.close(f)
+
+                        
 # ============================================================================
 #
 # The below function adds a block of voxels to a pre-existing NIFTI or creates
@@ -444,11 +619,10 @@ def numVoxelBlocks(inputs):
   # Read in analysis mask (if present)
   if 'analysis_mask' in inputs:
     am = loadFile(inputs['analysis_mask'])
-    am = am.get_fdata()
   else:
 
     # --------------------------------------------------------------
-    # Get one Y volume to make full Nifti mask
+    # Get one Y volume to make full mask
     # --------------------------------------------------------------
 
     # Y volumes
@@ -460,11 +634,11 @@ def numVoxelBlocks(inputs):
 
         Y_files.append(line.replace('\n', ''))  
 
-    # Load in one nifti to check NIFTI size
+    # Load in one image to check image size
     try:
       Y0 = loadFile(Y_files[0])
     except Exception as error:
-      raise ValueError('The NIFTI "' + Y_files[0] + '"does not exist')
+      raise ValueError('The image "' + Y_files[0] + '"does not exist')
 
     # Get mask of ones
     am = np.ones(Y0.shape)

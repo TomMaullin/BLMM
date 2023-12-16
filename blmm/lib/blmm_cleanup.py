@@ -55,10 +55,10 @@ def cleanup(ipath):
 
         if inputs['diskMem']==1:
 
-            # If we are then this means we have only run one part of the nifti
+            # If we are then this means we have only run one part of the image
             # during this run. Check which part it was and delete that so it
             # isn't run next time.
-            memmaskFiles = glob.glob(os.path.join(OutDir, 'blmm_vox_memmask*.nii'))
+            memmaskFiles = glob.glob(os.path.join(OutDir, 'blmm_vox_memmask*.dat'))
             os.remove(memmaskFiles[0])
 
 
