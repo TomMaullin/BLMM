@@ -174,6 +174,7 @@ Below is a full list of NIFTI files output after a BLMM analysis.
 | `blmm_vox_beta`  | These are the beta (fixed effects parameter) estimates.  |
 | `blmm_vox_sigma2`  | These are the sigma2 (fixed effects variance) estimates.  |
 | `blmm_vox_D`  | These are the D (random effects variance) estimates\*\*. |
+| `blmm_vox_llh` | These are the log likelihood values. |
 | `blmm_vox_con`  | These are the contrasts multiplied by the estimate of beta (this is the same as `COPE` in FSL).  |
 | `blmm_vox_cov`  | These are the between-beta covariance estimates.  |
 | `blmm_vox_conSE` | These are the standard error of the contrasts multiplied by beta (only available for T contrasts). |
