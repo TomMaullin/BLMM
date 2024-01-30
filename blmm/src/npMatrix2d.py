@@ -2301,3 +2301,75 @@ def get_InfoMat2D(DinvIplusZtZD, sigma2, n, nlevels, nraneffs, ZtZ):
 
   # Return result
   return(FisherInfoMat)
+
+
+# ============================================================================
+#
+# The below function calculates the missingness pattern we expect to see in 
+# the Z'Z matrix for a design with given levels and factors.
+#
+# ----------------------------------------------------------------------------
+#
+# This function takes in the following inputs:
+#
+# ----------------------------------------------------------------------------
+# - `nlevels`: A vector containing the number of levels for each factor, e.g.
+#              `nlevels=[3,4]` would mean the first factor has 3 levels and
+#              the second factor has 4 levels.
+# - `nraneffs`: A vector containing the number of random effects for each
+#               factor, e.g. `nraneffs=[2,1]` would mean the first factor has
+#               random effects and the second factor has 1 random effect.
+# ----------------------------------------------------------------------------
+#
+# And gives the following output:
+#
+# ----------------------------------------------------------------------------
+#
+# - `ZtZ_indices`: A boolean matrix representing the expected missingness 
+#                  pattern in ZtZ
+#
+# ============================================================================
+def get_ZtZ_indices(nraneffs, nlevels):
+
+    # Compute r and q
+    r = len(nraneffs)
+    q = np.sum(nlevels*nraneffs)
+
+    # Initialise empty array for ZtZ indices
+    ZtZ_indices = np.zeros((q,q),dtype='bool')
+
+    # The top left index of the block we are considering
+    tl_index = 0
+
+    # Loop through random factors
+    for i in np.arange(r):
+
+        # Loop through levels adding blocks
+        for j in np.arange(nlevels[i]):
+
+            # Add a block of ones of size nraneffs[0] by nraneffs[0]
+            ZtZ_indices[tl_index:(tl_index + nraneffs[i]),
+                        tl_index:(tl_index + nraneffs[i])] = 1
+
+            # Update tl_index 
+            tl_index = tl_index + nraneffs[i]
+
+    # Get indices for blocks
+    block_indices = np.cumsum(nlevels*nraneffs)
+    block_indices = np.insert(block_indices, 0, 0)
+
+    # Loop through pairs of indices
+    for i in np.arange(r):
+        for j in np.arange(r):
+            print(i,j)
+            # If i and j are not equal, fill their cross-block
+            # with ones
+            if i != j:
+
+                # Assign ones
+                ZtZ_indices[block_indices[i]:block_indices[i+1],
+                            block_indices[j]:block_indices[j+1]] = 1
+                
+    # Return the result
+    return(ZtZ_indices)
+

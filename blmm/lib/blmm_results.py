@@ -12,6 +12,7 @@ from blmm.src.npMatrix2d import *
 from blmm.src.fileio import *
 from blmm.lib.blmm_inference import inference
 from blmm.lib.blmm_estimate import estimate
+import time
 
 # ====================================================================================
 #
@@ -170,14 +171,6 @@ def results(ipath, vb):
     # ------------------------------------------------------------------------
     # Split the voxels into computable groups
     # ------------------------------------------------------------------------
-    
-    # This is the minimum number of voxels to consider at any given time; if 
-    # this ended up below the default there would be little point in running
-    # the analysis with broadcasting.
-    if 'minnvb' in inputs:
-        minnvb = int(inputs["minnvb"])
-    else:
-        minnvb = 10
 
     # Work out the number of voxels we can actually compute at a time.
     # (This is really just a rule of thumb guess but works reasonably in
@@ -186,18 +179,10 @@ def results(ipath, vb):
     if  r == 1:
         nvb = MAXMEM/(10*8*q)
     else:
-        nvb = MAXMEM/(10*8*(q**2))
-        
-    # Work out the maximum of minnvb and nvb
-    nvb = np.maximum(nvb,minnvb)
+        nvb = MAXMEM/(8*(q**2))
     
     # Work out number of groups we have to split indices into.
     nvg = int(len(bamInds)//nvb+1)
-    
-    # MARKER 
-    with open('tmp.txt', 'w') as f:
-        # Use the print function with the 'file' argument
-        print(len(bamInds), nvg, nvb, vb, pnvb, np.array_split(bamInds, nvg), file=f)
 
     # Split voxels we want to look at into groups we can compute
     voxelGroups = np.array_split(bamInds, nvg)
@@ -284,8 +269,27 @@ def results(ipath, vb):
                 ZtZ_r = readAndSumUniqueAtB('ZtZ', OutDir, R_inds, n_b, True).reshape([v_r, nraneffs[0], q])
 
             else:
+                
+                # Read in ZtZ
+                ZtZ_r_tmp = readAndSumUniqueAtB('ZtZ', OutDir, R_inds, n_b, True)
+                
+                # Initialize array to store ZtZ
+                ZtZ_r = np.zeros((v_r, q**2))
+                
+                # We need to get the indices representing the potential
+                # sparsity in ZtZ
+                ZtZ_inds = get_ZtZ_indices(nraneffs, nlevels).flatten()
 
-                ZtZ_r = readAndSumUniqueAtB('ZtZ', OutDir, R_inds, n_b, True).reshape([v_r, q, q])
+                # Recreate Z'Z
+                ZtZ_r[:, ZtZ_inds] = ZtZ_r_tmp.reshape(ZtZ_r[:, ZtZ_inds].shape)
+                
+                # Reshape
+                ZtZ_r = ZtZ_r.reshape([v_r, q, q])
+                
+                # Delete tempory ZtZ
+                del ZtZ_r_tmp
+                
+                
             ZtX_r = readAndSumUniqueAtB('ZtX', OutDir, R_inds, n_b, True).reshape([v_r, q, p])
             XtX_r = readAndSumUniqueAtB('XtX', OutDir, R_inds, n_b, True).reshape([v_r, p, p])
 
@@ -351,7 +355,25 @@ def results(ipath, vb):
                 ZtZ_i = readAndSumUniqueAtB('ZtZ', OutDir, I_inds, n_b, False).reshape([1, nraneffs[0], q])
 
             else:
-                ZtZ_i = readAndSumUniqueAtB('ZtZ', OutDir, I_inds, n_b, False).reshape([1, q, q])
+                
+                # Read in ZtZ
+                ZtZ_i_tmp = readAndSumUniqueAtB('ZtZ', OutDir, I_inds, n_b, False)
+                
+                # Initialize array to store ZtZ
+                ZtZ_i = np.zeros((1, q**2))
+                
+                # We need to get the indices representing the potential
+                # sparsity in ZtZ
+                ZtZ_inds = get_ZtZ_indices(nraneffs, nlevels).flatten()
+
+                # Recreate Z'Z
+                ZtZ_i[:, ZtZ_inds] = ZtZ_i_tmp.reshape(ZtZ_i[:, ZtZ_inds].shape)
+                
+                # Reshape
+                ZtZ_i = ZtZ_i.reshape([1, q, q])
+                
+                # Delete tempory ZtZ
+                del ZtZ_i_tmp
 
             # Inner Z'X, X'X
             ZtX_i = readAndSumUniqueAtB('ZtX', OutDir, I_inds, n_b, False).reshape([1, q, p])
@@ -463,7 +485,7 @@ def readAndSumUniqueAtB(AtBstr, OutDir, vinds, n_b, sv):
         uniquenessMask = uniquenessMask[vinds[0]] 
 
 
-    # read in XtX
+    # read in AtB
     AtB_batch_unique = np.load(
         os.path.join(OutDir,"tmp",AtBstr+"1.npy"))
 
@@ -521,7 +543,7 @@ def readAndSumUniqueAtB(AtBstr, OutDir, vinds, n_b, sv):
 
         # Add to running total
         AtB = AtB + AtB_batch
-
+        
     return(AtB)
 
 if __name__ == "__main__":

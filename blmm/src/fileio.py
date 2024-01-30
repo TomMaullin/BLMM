@@ -1,4 +1,5 @@
 import os
+import glob
 import pandas as pd
 import nibabel as nib
 import numpy as np
@@ -690,3 +691,114 @@ def pracNumVoxelBlocks(inputs):
 
   # Return number of voxel blocks
   return(nvb)
+
+
+# ============================================================================
+#
+# Finds the file with the given filename in the specified directory and
+# returns its extension. Throws an error if more than one file with the same
+# name is found or if no such file is found.
+#
+# ----------------------------------------------------------------------------
+#
+#  - `directory` (str): The directory to search in.
+#  - `filename` (str): The name of the file to find.
+#
+# ----------------------------------------------------------------------------
+#
+#  - str: The file extension of the found file.
+#
+# ============================================================================
+def get_ext(directory, filename):
+    
+    # Get all filenames we could be referring to
+    matches = glob.glob(os.path.join(directory, filename + '*'))
+
+    if len(matches) > 1:
+        raise ValueError("More than one file named " +  + " found. It is ambiguous which one to consider.")
+    elif len(matches) == 0:
+        raise FileNotFoundError("Cannot find the file.")
+
+    return os.path.splitext(matches[0])[1]
+
+
+# ============================================================================
+#
+# This function converts the output of a BLMM analysis from .dat files back to
+# their original filetype. At present, only nifti is supported. However, this
+# code is designed with future gifti/cifti support in mind. 
+#
+# ----------------------------------------------------------------------------
+#
+# This code takes as inputs:
+#
+#  - dirname: The directory containing the BLMM files to convert.
+#  - inputs: The inputs object for a BLMM analysis
+#
+# ============================================================================
+def convert_dat_to_ext(dirname, inputs):
+    
+    # List of float32 files
+    files_float32 = ['blmm_vox_beta', 'blmm_vox_llh', 'blmm_vox_sigma2', 
+                     'blmm_vox_D', 'blmm_vox_resms', 'blmm_vox_cov', 
+                     'blmm_vox_conT_swedf', 'blmm_vox_conT', 'blmm_vox_conTlp',
+                     'blmm_vox_conSE', 'blmm_vox_con', 'blmm_vox_conF', 
+                     'blmm_vox_conF_swedf', 'blmm_vox_conFlp', 'blmm_vox_conR2']
+    
+    # List of int32 files
+    files_int32 = ['blmm_vox_n', 'blmm_vox_mask', 'blmm_vox_edf']
+
+    # Find all dat files
+    dat_files = glob.glob(os.path.join(directory, '*.dat'))
+    
+    # Read in a single input volume
+    with open(inputs['Y_files']) as a:
+        
+        # Read the first line only
+        vol_fname = a.readline().strip()
+    
+        # Get file extension
+        _, ext = os.path.splitext(vol_fname)
+    
+    # Check if the extension is nifti
+    if ext=='.nii' or ext=='.nii.gz':
+        
+        # Load a single volume
+        vol = nib.load(vol_fname)
+        
+        # Get volume dimensions
+        vol_dim = vol.shape
+        
+        # Get the affine and header
+        aff = vol.affine
+        hdr = vol.header
+        
+        # Loop through each dat file
+        for file in dat_files:
+            
+            # Check if we have this file.
+            if file + '.dat' in files_float32:
+                
+                # Read in dat file
+                data = loadFile(os.path.join(dirname, file + '.dat'), dtype=np.float32)
+                
+            elif file + '.dat' in files_int32: 
+                
+                # Read in dat file
+                data = loadFile(os.path.join(dirname, file + '.dat'), dtype=np.int32)
+
+            # Get filename needed to save to nifti
+            nii_fname = os.path.join(dirname, file + '.nii')
+
+            # Get the dimensions we need
+            dim = vol_dim + (data.size//vol.size,)
+
+            # Indices for data
+            indices = np.arange(vol.size)
+
+            # Output data to nifti
+            addBlockToNifti(nii_fname, data, indices,dim=dim,aff=aff,hdr=hdr)
+            
+            # Remove dat file
+            os.remove(os.path.join(dirname, file + '.dat'))
+

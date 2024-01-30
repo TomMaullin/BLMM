@@ -40,13 +40,17 @@ def cleanup(ipath):
     # Read Output directory, work out number of batches
     # --------------------------------------------------------------------------------
     OutDir = inputs['outdir']
+    
+    # Save a copy of inputs in output directory
+    with open(os.path.join(OutDir, 'inputs.yml'), 'w') as outfile:
+        yaml.dump(inputs, outfile, default_flow_style=False)
 
     # --------------------------------------------------------------------------------
     # Clean up files
     # --------------------------------------------------------------------------------
     os.remove(os.path.join(OutDir, 'nb.txt'))
     if os.path.exists(os.path.join(OutDir, 'nvb.txt')):
-	    os.remove(os.path.join(OutDir, 'nvb.txt'))
+        os.remove(os.path.join(OutDir, 'nvb.txt'))
     shutil.rmtree(os.path.join(OutDir, 'tmp'))
 
 

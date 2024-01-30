@@ -38,15 +38,13 @@ def compare(blmmDir1, blmmDir2, OutDir):
     # --------------------------------------------------------------------------------
     # Load in basic inputs
     # --------------------------------------------------------------------------------
-
-    # A volume for reference
-    vol = nib.load(os.path.join(blmmDir1, 'blm_vox_mask.nii'))
-
-    # Volume features
-    dim = (*vol.shape,1)
-    aff = vol.affine
-    hdr = vol.header
-
+    
+    # Get the file extension of the data
+    try:
+        file_ext = get_ext(blmmDir1, 'blmm_vox_mask')
+    except:
+        file_ext = get_ext(blmmDir1, 'blm_vox_mask')
+        
     # Inputs for first directory.
     with open(os.path.join(blmmDir1, 'inputs.yml'), 'r') as stream:
         inputs1 = yaml.load(stream,Loader=yaml.FullLoader)
@@ -64,44 +62,48 @@ def compare(blmmDir1, blmmDir2, OutDir):
         os.mkdir(OutDir)
 
     # If previous files exist, delete them.
-    if os.path.exists(os.path.join(OutDir, 'blmm_vox_mask.nii')):
-        os.remove(os.path.join(OutDir, 'blmm_vox_mask.nii'))    
+    if os.path.exists(os.path.join(OutDir, 'blmm_vox_mask' + file_ext)):
+        os.remove(os.path.join(OutDir, 'blmm_vox_mask' + file_ext))    
 
-    if os.path.exists(os.path.join(OutDir, 'blmm_vox_Chi2.nii')):
-        os.remove(os.path.join(OutDir, 'blmm_vox_Chi2.nii'))
+    if os.path.exists(os.path.join(OutDir, 'blmm_vox_Chi2' + file_ext)):
+        os.remove(os.path.join(OutDir, 'blmm_vox_Chi2' + file_ext))
 
-    if os.path.exists(os.path.join(OutDir, 'blmm_vox_Chi2lp.nii')):
-        os.remove(os.path.join(OutDir, 'blmm_vox_Chi2lp.nii'))      
+    if os.path.exists(os.path.join(OutDir, 'blmm_vox_Chi2lp' + file_ext)):
+        os.remove(os.path.join(OutDir, 'blmm_vox_Chi2lp' + file_ext))      
 
     # --------------------------------------------------------------------------------
     # Check if BLMM or BLM
     # --------------------------------------------------------------------------------
 
     # Check first model is blm or blmm
-    if os.path.isfile(os.path.join(blmmDir1, 'blmm_vox_mask.nii')):
+    if os.path.isfile(os.path.join(blmmDir1, 'blmm_vox_mask' + file_ext)):
 
         # We have random effects in the model
         model1_isBLM = False
+        prefix1 = 'blmm'
 
-    elif os.path.isfile(os.path.join(blmmDir1, 'blm_vox_mask.nii')):
+    elif os.path.isfile(os.path.join(blmmDir1, 'blm_vox_mask' + file_ext)):
 
         # There are no random effects in the model
         model1_isBLM = True
+        prefix1 = 'blm'
 
     else:
         
         raise ValueError('Directory for model 1 is not a BLMM/BLM directory. Missing mask file.')
 
     # Check second model is blm or blmm
-    if os.path.isfile(os.path.join(blmmDir2, 'blmm_vox_mask.nii')):
+    if os.path.isfile(os.path.join(blmmDir2, 'blmm_vox_mask' + file_ext)):
 
         # We have random effects in the model
         model2_isBLM = False
+        prefix2 = 'blmm'
 
-    elif os.path.isfile(os.path.join(blmmDir2, 'blm_vox_mask.nii')):
+    elif os.path.isfile(os.path.join(blmmDir2, 'blm_vox_mask' + file_ext)):
 
         # There are no random effects in the model
         model2_isBLM = True
+        prefix2 = 'blm'
 
     else:
         
@@ -283,8 +285,8 @@ def compare(blmmDir1, blmmDir2, OutDir):
     # --------------------------------------------------------------------------------
 
     # Load masks
-    mask1 = nib.load(os.path.join(blmmDir1, 'blm_vox_mask.nii')).get_fdata()>0
-    mask2 = nib.load(os.path.join(blmmDir2, 'blmm_vox_mask.nii')).get_fdata()>0
+    mask1 = loadFile(os.path.join(blmmDir1, prefix1 + '_vox_mask' + file_ext), dtype=np.int32)>0
+    mask2 = loadFile(os.path.join(blmmDir2, prefix2 + '_vox_mask' + file_ext), dtype=np.int32)>0
 
     # Get volume size
     dim_vol = mask1.shape
@@ -303,8 +305,8 @@ def compare(blmmDir1, blmmDir2, OutDir):
     # --------------------------------------------------------------------------------
 
     # Load log likelihoods
-    llh1 = nib.load(os.path.join(blmmDir1, 'blm_vox_llh.nii')).get_fdata()
-    llh2 = nib.load(os.path.join(blmmDir2, 'blmm_vox_llh.nii')).get_fdata()
+    llh1 = loadFile(os.path.join(blmmDir1, prefix1 + '_vox_llh' + file_ext))
+    llh2 = loadFile(os.path.join(blmmDir2, prefix2 + '_vox_llh' + file_ext))
 
     # X^2 statistic
     Chi2 = np.maximum(-2*(llh1-llh2),0)
@@ -354,9 +356,10 @@ def compare(blmmDir1, blmmDir2, OutDir):
 
     # Remove infs
     p[np.logical_and(np.isinf(p), p<0)]=minlog
+    p[np.isinf(p)] = np.max(p[~np.isinf(p)])
 
     # Make a p value volume (1 to 0)
-    pvol = np.zeros(vol.shape)
+    pvol = np.zeros(dim_vol)
     pvol[mask]=p.reshape(pvol[mask].shape)
 
     # Save X^2 p-values
@@ -367,3 +370,4 @@ def compare(blmmDir1, blmmDir2, OutDir):
 
 
     # TODO OPTIONAL AICS?
+    

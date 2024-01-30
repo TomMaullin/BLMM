@@ -12,6 +12,7 @@ np.set_printoptions(threshold=sys.maxsize)
 from blmm.src.fileio import *
 import pandas as pd
 from blmm.src.npMatrix3d import flattenZtZ
+from blmm.src.npMatrix2d import get_ZtZ_indices
 
 # ====================================================================================
 #
@@ -292,11 +293,16 @@ def batch(*args):
         ZtZ = ZtZ.reshape([ZtZ.shape[0], ZtZ.shape[1]*ZtZ.shape[2]])
 
     else:
+        
+        # We need to get the indices representing the potential
+        # missingness in ZtZ
+        ZtZ_inds = get_ZtZ_indices(nraneffs, nlevels).flatten()
 
         # We reshape to n by q^2 so that we can save as a csv.
         ZtZ = ZtZ.reshape([ZtZ.shape[0], ZtZ.shape[1]*ZtZ.shape[2]])
+        ZtZ = ZtZ[:, ZtZ_inds]
 
-    # Record product matrices X'X, Y'Y, Z'X and Z'Z.
+    # Record product matrices X'X, Z'X and Z'Z.
     np.save(os.path.join(OutDir,"tmp","XtX" + str(batchNo)), 
                 XtX)
     np.save(os.path.join(OutDir,"tmp","ZtX" + str(batchNo)), 
