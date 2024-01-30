@@ -722,6 +722,104 @@ def get_ext(directory, filename):
     return os.path.splitext(matches[0])[1]
 
 
+
+
+# ============================================================================
+#
+# Converts a dat file to the filetype of an existing file Y0, preserving data
+# shape and header from Y0.
+#
+# ----------------------------------------------------------------------------
+#
+#  - `Y0` (str): Filename of file with desired filetype.
+#  - `out_file` (str): Filename of file to convert.
+#
+# ============================================================================
+def convert_dat(Y0, out_file):
+    
+    # Load the first input file to determine its type and get its header
+    Y0_img = nib.load(Y0)
+    Y0_shape = Y0_img.shape
+    Y0_size = np.prod(Y0_shape)  # Total number of datapoints in Y0
+
+    # Load the data from out_file
+    out_data = np.fromfile(out_file, dtype=Y0_img.get_data_dtype())
+    out_data_size = out_data.size
+
+    # Calculate the number of volumes (p) in out_file
+    p = out_data_size // Y0_size
+
+    # Check if the division is valid
+    if out_data_size % Y0_size != 0:
+        raise ValueError("The size of data in out_file is not a multiple of the size of Y0")
+
+    # Reshape the out_data
+    new_shape = Y0_shape + (p,) 
+    out_data = out_data.reshape(new_shape)
+
+    # Determine output filepath based on Y0 extension
+    base_out_file = os.path.splitext(out_file)[0]
+    if any(ext in Y0 for ext in ['.nii', '.nii.gz']):
+        # NIFTI file
+        new_img = nib.Nifti1Image(out_data, affine=Y0_img.affine, header=Y0_img.header.copy())
+        output_extension = '.nii'
+    elif any(ext in Y0 for ext in ['.dscalar.nii', '.dtseries.nii']):
+        # CIFTI file
+        new_img = nib.Cifti2Image(out_data, header=Y0_img.header, nifti_header=Y0_img.nifti_header)
+        output_extension = '.dscalar.nii'
+    else:
+        raise ValueError("Unsupported file type for Y0 file")
+
+    output_filepath = base_out_file + output_extension
+
+    # Save the new image to the generated output filepath
+    nib.save(new_img, output_filepath)
+
+    
+    
+# ============================================================================
+#
+# Converts all dat files in directory to the filetype of an existing file Y0,
+# preserving data shape and header from Y0.
+#
+# ----------------------------------------------------------------------------
+#
+#  - `out_dir` (str): Directory containing files to convert.
+#  - `Y0` (str): Filename of file with desired filetype.
+#
+# ============================================================================
+def convert_all_dat_files(out_dir, Y0):
+    
+    # Ensure the directory exists
+    if not os.path.isdir(out_dir):
+        raise ValueError("The specified output directory does not exist: " + out_dir)
+
+    # List all files in the directory
+    files = os.listdir(out_dir)
+
+    # Iterate over each file and convert if it's a .dat file
+    for file in files:
+        
+        if file.endswith('.dat'):
+            
+            # Construct filepath
+            dat_file_path = os.path.join(out_dir, file)
+            
+            # Call the conversion function
+            try:
+                
+                # Get output filepath
+                output_filepath = convert_dat(Y0, dat_file_path)
+                
+                # Remove the original .dat file
+                os.remove(dat_file_path)
+                
+            except Exception as e:
+                
+                # Raise error
+                print(f"Error converting {dat_file_path}: {e}")
+
+
 # ============================================================================
 #
 # This function converts the output of a BLMM analysis from .dat files back to
