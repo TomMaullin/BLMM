@@ -9,7 +9,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="pyblmm",
-    version="0.1.0",
+    version="0.1.1",
     author="Tom Maullin",
     author_email="TomMaullin@gmail.com",
     description="The Big Linear Mixed Models Toolbox",
