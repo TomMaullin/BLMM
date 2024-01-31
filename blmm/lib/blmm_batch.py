@@ -12,6 +12,7 @@ np.set_printoptions(threshold=sys.maxsize)
 from blmm.src.fileio import *
 import pandas as pd
 from blmm.src.npMatrix3d import flattenZtZ
+from blmm.src.npMatrix2d import get_ZtZ_indices
 
 # ====================================================================================
 #
@@ -92,24 +93,27 @@ def batch(*args):
 
             Y_files.append(line.replace('\n', ''))
 
-    # Load in one nifti to check NIFTI size
+    # Load in one volume to check volume size
     try:
         Y0 = loadFile(Y_files[0])
     except Exception as error:
-        raise ValueError('The NIFTI "' + Y_files[0] + '"does not exist')
+        raise ValueError('The image "' + Y_files[0] + '"does not exist')
 
-    # Read in some data as a default nifti
-    d0 = Y0.get_fdata()
+    # Read in some data as a default volume
+    d0 = np.array(Y0)
+    
+    # Get volume size
+    dim_vol = Y0.shape
 
     # Get q
     q = int(inputs["q"])
 
-    # Get the maximum memory a NIFTI could take in storage. 
-    NIFTImem = sys.getsizeof(np.zeros(d0.shape,dtype='uint64'))
+    # Get the maximum memory a volume could take in storage. 
+    mem_vol = sys.getsizeof(np.zeros(d0.shape,dtype='uint64'))
 
-    # Similar to blksize in SwE, we divide by 8 times the size of a nifti
+    # Similar to blksize in SwE, we divide by 8 times the size of a volume
     # to work out how many blocks we use.
-    blksize = int(np.floor(MAXMEM/8/NIFTImem/p))
+    blksize = int(np.floor(MAXMEM/8/mem_vol/p))
 
     # Reduce X to X for this block.
     X = loadFile(inputs['X'])
@@ -217,8 +221,8 @@ def batch(*args):
 
         # Load the file and check it's shape is 3d (as oppose to 4d with a 4th dimension
         # of 1)
-        M_a = loadFile(inputs['analysis_mask']).get_fdata()
-        M_a = M_a.reshape((M_a.shape[0],M_a.shape[1],M_a.shape[2]))
+        M_a = loadFile(inputs['analysis_mask'])
+        M_a = M_a.reshape(dim_vol)
 
     else:
 
@@ -289,41 +293,42 @@ def batch(*args):
         ZtZ = ZtZ.reshape([ZtZ.shape[0], ZtZ.shape[1]*ZtZ.shape[2]])
 
     else:
+        
+        # We need to get the indices representing the potential
+        # missingness in ZtZ
+        ZtZ_inds = get_ZtZ_indices(nraneffs, nlevels).flatten()
 
         # We reshape to n by q^2 so that we can save as a csv.
         ZtZ = ZtZ.reshape([ZtZ.shape[0], ZtZ.shape[1]*ZtZ.shape[2]])
+        ZtZ = ZtZ[:, ZtZ_inds]
 
-    # Record product matrices X'X, Y'Y, Z'X and Z'Z.
+    # Record product matrices X'X, Z'X and Z'Z.
     np.save(os.path.join(OutDir,"tmp","XtX" + str(batchNo)), 
                 XtX)
     np.save(os.path.join(OutDir,"tmp","ZtX" + str(batchNo)), 
                ZtX) 
     np.save(os.path.join(OutDir,"tmp","ZtZ" + str(batchNo)), 
                ZtZ)
+    
+    # Add block to memory map for n batch
+    addBlockToMmap(os.path.join(OutDir,'tmp',
+                    'blmm_vox_n_batch'+ str(batchNo) + '.dat'),
+                   n_sv.flatten(), np.array(range(int(n_sv.size))),
+                   dim_vol=dim_vol,dtype=np.int32)
 
-    # Get map of number of observations at voxel.
-    n_sv = nib.Nifti1Image(n_sv,
-                           Y0.affine,
-                           header=Y0.header)
-    nib.save(n_sv, os.path.join(OutDir,'tmp',
-                    'blmm_vox_n_batch'+ str(batchNo) + '.nii'))
-
-    # Get Mmap, indicating which design each voxel must use for analysis,
-    # using an integer representing the order in which X'X, Z'X and Z'Z 
-    # appear in the `XtX.npy`, `ZtX.npy` and `ZtZ.npy` files respectively.
-    Mmap = nib.Nifti1Image(Mmap,
-                           Y0.affine,
-                           header=Y0.header)
-    nib.save(Mmap, os.path.join(OutDir,'tmp',
-                    'blmm_vox_uniqueM_batch'+ str(batchNo) + '.nii'))
-
+    # Add block to memory map for uniqueM_batch
+    addBlockToMmap(os.path.join(OutDir,'tmp',
+                    'blmm_vox_uniqueM_batch'+ str(batchNo) + '.dat'),
+                   Mmap.flatten(), np.array(range(int(Mmap.size))),
+                   dim_vol=dim_vol,dtype=np.int32)
+    
     w.resetwarnings()
 
 
 # ============================================================================
 # 
 # The below function performs some basic checks on the dimensions of the input
-# NIFTI files and verifies that they all exist.
+# volumes and verifies that they all exist.
 #
 # ----------------------------------------------------------------------------
 #
@@ -331,18 +336,17 @@ def batch(*args):
 #
 # ----------------------------------------------------------------------------
 #
-#  - `Y_files`: A list of input NIFTI volumes.
-#  - `M_files`: A list of input NIFTI mask volumes.
-#  - `Y0`: An example NIFTI to check all others against.
+#  - `Y_files`: A list of input  volumes.
+#  - `M_files`: A list of input  mask volumes.
+#  - `Y0`: An example volume to check all others against.
 #
 # ============================================================================
 def verifyInput(Y_files, M_files, Y0):
 
     # Obtain information about zero-th observation
-    d0 = Y0.get_fdata()
-    Y0aff = Y0.affine
+    d0 = np.array(Y0)
 
-    # Initial checks for NIFTI compatability for Y.
+    # Initial checks for image compatability for Y.
     for i in range(0, len(Y_files)):
 
         # Look at i^th observation
@@ -352,21 +356,15 @@ def verifyInput(Y_files, M_files, Y0):
         try:
             Y = loadFile(Y_file)
         except Exception as error:
-            raise ValueError('The NIFTI "' + Y_file + '"does not exist')
+            raise ValueError('The image "' + Y_file + '"does not exist')
 
-        # Check NIFTI images have the same dimensions.
+        # Check images have the same dimensions.
         if not np.array_equal(Y0.shape, Y.shape):
-            raise ValueError('Input NIFTI "' + Y_file + '" has ' +
+            raise ValueError('Input image "' + Y_file + '" has ' +
                              'different dimensions to "' +
                              Y0 + '"')
 
-        # Check NIFTI images are in the same space.
-        if not np.array_equal(Y.affine, Y0aff):
-            raise ValueError('Input NIFTI "' + Y_file + '" has a ' +
-                             'different affine transformation to "' +
-                             Y0 + '"')
-
-    # Initial checks for NIFTI compatability for M.
+    # Initial checks for image compatability for M.
     if M_files is not None:
         for i in range(0, len(M_files)):
 
@@ -377,18 +375,12 @@ def verifyInput(Y_files, M_files, Y0):
             try:
                 M = loadFile(M_file)
             except Exception as error:
-                raise ValueError('The NIFTI "' + M_file + '"does not exist')
+                raise ValueError('The image "' + M_file + '"does not exist')
 
-            # Check NIFTI images have the same dimensions.
+            # Check images have the same dimensions.
             if not np.array_equal(Y0.shape, M.shape):
-                raise ValueError('Input NIFTI "' + M_file + '" has ' +
+                raise ValueError('Input image "' + M_file + '" has ' +
                                  'different dimensions to "' +
-                                 Y0 + '"')
-
-            # Check NIFTI images are in the same space.
-            if not np.array_equal(M.affine, Y0aff):
-                raise ValueError('Input NIFTI "' + M_file + '" has a ' +
-                                 'different affine transformation to "' +
                                  Y0 + '"')
 
 
@@ -446,8 +438,8 @@ def applyMask(X,M):
 #
 # ----------------------------------------------------------------------------
 #
-#  - `Y_files`: A list of input NIFTI volumes.
-#  - `M_files`: A list of input NIFTI mask volumes.
+#  - `Y_files`: A list of input volumes.
+#  - `M_files`: A list of input mask volumes.
 #  - `M_t`: A numerical threshold k. Any voxel with less than k input volumes
 #           present will be discarded. Can be set to None.
 #  - `M_a`: An overall analysis mask 3D numpy array. Can be set to None.
@@ -467,9 +459,9 @@ def applyMask(X,M):
 # ============================================================================
 def obtainY(Y_files, M_files, M_t, M_a):
 
-    # Load in one nifti to check NIFTI size
+    # Load in one image to check image size
     Y0 = loadFile(Y_files[0])
-    d = Y0.get_fdata()
+    d = np.array(Y0)
     
     # Get number of voxels.
     v = np.prod(d.shape)
@@ -484,20 +476,20 @@ def obtainY(Y_files, M_files, M_t, M_a):
     Y = np.zeros([n, v])
     for i in range(0, len(Y_files)):
 
-        # Read in each individual NIFTI.
+        # Read in each individual image
         Y_indiv = loadFile(Y_files[i])
 
         # Mask Y if necesary
         if M_files:
         
             # Apply mask
-            M_indiv = loadFile(M_files[i]).get_fdata()
+            M_indiv = loadFile(M_files[i])
             d = np.multiply(
-                Y_indiv.get_fdata(),
+                Y_indiv,
                 M_indiv)
         else: 
             #Just load in Y
-            d = Y_indiv.get_fdata()
+            d = np.array(Y_indiv)
 
         # If theres an initial threshold for the data apply it.
         if M_t is not None:
@@ -534,15 +526,15 @@ def obtainY(Y_files, M_files, M_t, M_a):
     # Get indices corresponding to the unique rows of M
     M_df = pd.DataFrame(M.transpose())
     M_df['id'] = M_df.groupby(M_df.columns.tolist(), sort=False).ngroup() + 1
-    unique_id_nifti = M_df['id'].values
+    unique_id_vol = M_df['id'].values
 
-    # Make a nifti which will act as a "key" telling us which voxel had which design
+    # Make an image which will act as a "key" telling us which voxel had which design
     Mmap = np.zeros(Mask.shape)
-    Mmap[np.flatnonzero(Mask)] = unique_id_nifti[:]
+    Mmap[np.flatnonzero(Mask)] = unique_id_vol[:]
     Mmap = Mmap.reshape(n_sv.shape)
 
     # Get the unique columns of M (Care must be taken here to retain
-    # the original ordering, as unique_id_nifti is now based on said
+    # the original ordering, as unique_id_vol is now based on said
     # ordering)
     _, idx = np.unique(M, axis=1, return_index=True)
     M = M[:,np.sort(idx)]

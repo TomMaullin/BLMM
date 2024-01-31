@@ -2190,7 +2190,7 @@ def sumAijKronBij3D(A, B, pttn, perm=None):
 # - `YtY`: Y transpose multiplied by Y (Y'Y in the above notation).
 # - `XtX`: X transpose multiplied by X (X'X in the above notation).
 # - `beta`: An estimate of the parameter vector (\beta in the above notation).
-# - `n`: The number of observations/input niftis (potentially spatially
+# - `n`: The number of observations/input images (potentially spatially
 #        varying)
 # - `p`: The number of fixed effects parameters.
 #
@@ -2558,7 +2558,7 @@ def F2P3D(F, L, df_denom, minlog):
 #          we are looking at a one random factor one random effect design 
 #          the variable ZtZ only holds the diagonal elements of the matrix 
 #          Z'Z.
-# - `n`: The number of observations/input niftis (potentially spatially
+# - `n`: The number of observations/input images (potentially spatially
 #        varying)
 # - `nlevels`: A vector containing the number of levels for each factor, e.g.
 #              `nlevels=[3,4]` would mean the first factor has 3 levels and
@@ -2646,7 +2646,7 @@ def get_swdf_F3D(L, sigma2, XtiVX, ZtiVX, XtZ, ZtX, ZtZ, DinvIplusZtZD, n, nleve
 #          we are looking at a one random factor one random effect design 
 #          the variable ZtZ only holds the diagonal elements of the matrix 
 #          Z'Z.
-# - `n`: The number of observations/input niftis (potentially spatially
+# - `n`: The number of observations/input images (potentially spatially
 #        varying)
 # - `nlevels`: A vector containing the number of levels for each factor, e.g.
 #              `nlevels=[3,4]` would mean the first factor has 3 levels and

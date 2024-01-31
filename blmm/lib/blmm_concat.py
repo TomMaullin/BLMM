@@ -105,13 +105,13 @@ def concat(ipath):
     p = L1.shape[0]
     del L1, rfxdes, rfxfac
     
-    # Read in the nifti size and work out number of voxels.
+    # Read in the volume size and work out number of voxels.
     with open(inputs['Y_files']) as a:
-        nifti_path = a.readline().replace('\n', '')
-        nifti = loadFile(nifti_path)
+        vol_path = a.readline().replace('\n', '')
+        vol = loadFile(vol_path)
 
-    NIFTIsize = nifti.shape
-    v = int(np.prod(NIFTIsize))
+    dim_vol = vol.shape
+    v = int(np.prod(dim_vol))
 
     # --------------------------------------------------------------------------------
     # Get n (number of observations) and n_sv (spatially varying number of
@@ -119,32 +119,31 @@ def concat(ipath):
     # --------------------------------------------------------------------------------
 
     # Work out number of batchs
-    n_b = len(glob.glob(os.path.join(OutDir,"tmp","blmm_vox_n_batch*")))
+    n_b = len(glob.glob(os.path.join(OutDir,"tmp","blmm_vox_n_batch*.dat")))
 
     # Read in n (spatially varying)
-    nmapb  = loadFile(os.path.join(OutDir,"tmp", "blmm_vox_n_batch1.nii"))
-    n_sv = nmapb.get_fdata()# Read in uniqueness Mask file
+    n_sv  = loadFile(os.path.join(OutDir,"tmp","blmm_vox_n_batch1.dat"), dtype=np.int32)
 
     # Remove file we just read
-    os.remove(os.path.join(OutDir,"tmp", "blmm_vox_n_batch1.nii"))
+    os.remove(os.path.join(OutDir,"tmp", "blmm_vox_n_batch1.dat"))
 
     # Cycle through batches and add together n.
     for batchNo in range(2,(n_b+1)):
         
         # Obtain the full nmap.
         n_sv = n_sv + loadFile(os.path.join(OutDir,"tmp", 
-            "blmm_vox_n_batch" + str(batchNo) + ".nii")).get_fdata()
+            "blmm_vox_n_batch" + str(batchNo) + ".dat"), dtype=np.int32).reshape(n_sv.shape)
 
         # Remove file we just read
-        os.remove(os.path.join(OutDir,"tmp", "blmm_vox_n_batch" + str(batchNo) + ".nii"))
-        
-    # Save nmap
-    nmap = nib.Nifti1Image(n_sv,
-                           nifti.affine,
-                           header=nifti.header)
-    nib.save(nmap, os.path.join(OutDir,'blmm_vox_n.nii'))
+        os.remove(os.path.join(OutDir,"tmp", "blmm_vox_n_batch" + str(batchNo) + ".dat"))
+    
+    # Add block to memory map for spatially varying n
+    addBlockToMmap(os.path.join(OutDir,'blmm_vox_n.dat'),
+                   n_sv.flatten(), np.array(range(int(n_sv.size))),
+                   dim_vol=dim_vol,dtype=np.int32)
+    
+    # Reshape n_sv
     n_sv = n_sv.reshape(v, 1)
-    del nmap
 
     # Get ns.
     X = loadFile(inputs['X'])
@@ -213,8 +212,8 @@ def concat(ipath):
 
         amask_path = inputs["analysis_mask"]
         
-        # Read in the mask nifti.
-        amask = loadFile(amask_path).get_fdata().reshape([v,1])
+        # Read in the mask volume.
+        amask = loadFile(amask_path).reshape([v,1])
 
     else:
 
@@ -228,17 +227,11 @@ def concat(ipath):
         
     # Ensure overall mask matches analysis mask
     Mask[~np.in1d(np.arange(v).reshape(v,1), amInds)]=0
-
-    # Output final mask map
-    maskmap = nib.Nifti1Image(Mask.reshape(
-                                    NIFTIsize[0],
-                                    NIFTIsize[1],
-                                    NIFTIsize[2]
-                                    ),
-                              nifti.affine,
-                              header=nifti.header) 
-    nib.save(maskmap, os.path.join(OutDir,'blmm_vox_mask.nii'))
-    del maskmap
+    
+    # Add block to memory map for mask
+    addBlockToMmap(os.path.join(OutDir,'blmm_vox_mask.dat'),
+                   Mask.flatten(), np.array(range(int(Mask.size))),
+                   dim_vol=dim_vol,dtype=np.int32)
 
     # ------------------------------------------------------------------------
     # Work out "Ring" and "Inner" indices
@@ -274,16 +267,11 @@ def concat(ipath):
     df[R_inds] = df_r 
     df[I_inds] = df_i
 
-    df = df.reshape(int(NIFTIsize[0]),
-                    int(NIFTIsize[1]),
-                    int(NIFTIsize[2]))
-
-    # Save beta map.
-    dfmap = nib.Nifti1Image(df,
-                            nifti.affine,
-                            header=nifti.header) 
-    nib.save(dfmap, os.path.join(OutDir,'blmm_vox_edf.nii'))
-    del df, dfmap
+    # Add block to memory map for df
+    addBlockToMmap(os.path.join(OutDir,'blmm_vox_edf.dat'),
+                   df.flatten(), np.array(range(int(df.size))),
+                   dim_vol=dim_vol,dtype=np.int32)
+    del df
 
     w.resetwarnings()
 
